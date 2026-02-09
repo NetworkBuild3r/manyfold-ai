@@ -43,9 +43,10 @@ class Components::ResolveButton < Components::Base
     }
   }
 
-  def initialize(problem:, user: nil)
+  def initialize(problem:, user: nil, from_model: nil)
     @problem = problem
     @user = user
+    @from_model = from_model
   end
 
   def before_template
@@ -53,8 +54,15 @@ class Components::ResolveButton < Components::Base
     @text = t @options[:i18n_key]
   end
 
+  def resolve_url
+    opts = { resolve: true, format: :turbo_stream }
+    opts[:from] = "model"
+    opts[:model_id] = @from_model.id if @from_model
+    resolve_problem_path(@problem, opts)
+  end
+
   def view_template
-    if @problem.in_progress
+    if @problem.in_progress || @problem.resolving?
       button_to("#", class: "btn btn-#{@options[:button_type]} disabled") do
         span(class: "spinner-border spinner-border-sm") { Icon(icon: "", label: "") }
         whitespace
@@ -63,7 +71,7 @@ class Components::ResolveButton < Components::Base
     else
       DoButton(
         label: @text,
-        href: resolve_problem_path(@problem, resolve: true),
+        href: resolve_url,
         variant: @options[:button_type],
         icon: @options[:icon],
         method: :post,

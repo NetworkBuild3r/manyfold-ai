@@ -25,6 +25,7 @@ class ProblemsController < ApplicationController
     query = query.where(problematic_type: params[:type].map(&:classify)) if params[:type]
     # Don't show types ignored in user settings
     query = query.visible(helpers.problem_settings)
+    @counts_by_category = query.group(:category).count
     query = query.includes([:problematic])
     @problems = query.page(page).per(params[:per_page]&.to_i || 50).order([:category, :problematic_type]).includes(problematic: [:library, :model])
     # Do we have any filters at all?
@@ -44,114 +45,48 @@ class ProblemsController < ApplicationController
   end
 
   def resolve
-    ids = params[:id] ? [params[:id]] : params["problems"].select { |k, v| v == "1" }.keys
-    @problems = policy_scope(Problem).where(public_id: ids)
-    # Resolve each problem individually
-    # Some can't be done in bulk mode, so check that
-    bulk = @problems.count > 1
+    ids = params[:id] ? [params[:id]] : params["problems"]&.select { |_k, v| v == "1" }&.keys || []
+    @problems = policy_scope(Problem).where(public_id: ids).to_a
+    bulk = @problems.size > 1
+
     if params[:resolve]
-      @problems.each do |problem|
-        case problem.resolution_strategy
-        when :show
-          resolve_by_showing(problem) unless bulk
-        when :edit
-          resolve_by_editing(problem) unless bulk
-        when :destroy
-          resolve_by_destroying(problem)
-        when :merge
-          resolve_by_merging(problem)
-        when :upload
-          resolve_by_uploading(problem) unless bulk
-        when :convert
-          resolve_by_converting(problem)
-        when :organize
-          resolve_by_organizing(problem)
-        else
-          raise NotImplementedError
-        end
-      end
+      result = Problem.resolve_batch(@problems)
+      handle_resolve_result(result, bulk)
     elsif params[:ignore]
-      @problems.update(ignored: true)
+      result = Problem.resolve_batch(@problems, override_action: :ignore)
+      handle_resolve_result(result, bulk)
+    else
+      redirect_back_or_to problems_path unless performed?
     end
-    redirect_back_or_to problems_path unless performed?
   end
 
   private
 
-  def resolve_by_showing(problem)
-    case problem.problematic_type
-    when "Model"
-      redirect_to problem.problematic
-    when "ModelFile"
-      redirect_to [problem.problematic.model, problem.problematic]
-    else
-      raise NotImplementedError
+  def handle_resolve_result(result, bulk)
+    if result[:redirect].present? && !bulk && !performed?
+      redirect_to result[:redirect]
+      return
     end
+
+    ids_to_remove = result[:removed_ids] + result[:ignored_ids]
+    if request.format.turbo_stream? && ids_to_remove.any? && !performed?
+      render turbo_stream: build_resolve_turbo_streams(ids_to_remove)
+      return
+    end
+
+    redirect_back_or_to problems_path unless performed?
   end
 
-  def resolve_by_editing(problem)
-    case problem.problematic_type
-    when "Library"
-      redirect_to edit_library_path(problem.problematic)
-    when "Model"
-      redirect_to edit_model_path(problem.problematic)
-    when "ModelFile"
-      redirect_to edit_model_model_file_path([problem.problematic.model, problem.problematic])
-    when "Link"
-      redirect_to edit_model_path(problem.problematic.linkable)
-    else
-      raise NotImplementedError
+  def build_resolve_turbo_streams(ids_to_remove)
+    streams = ids_to_remove.map { |id| turbo_stream.remove("problem-#{id}") }
+    # When resolving from the model page, replace the problems card so the count updates.
+    if params[:from] == "model" && params[:model_id].present?
+      model = Model.find_by(id: params[:model_id])
+      if model && policy(:problem).show?
+        streams << turbo_stream.replace("model-problems-card", partial: "models/problems_card", locals: { model: model, problems: model.problems.visible(helpers.problem_settings) })
+      end
     end
-  end
-
-  def resolve_by_destroying(problem)
-    case problem.problematic_type
-    when "Model"
-      problem.problematic.delete_from_disk_and_destroy
-    when "ModelFile"
-      problem.problematic.delete_from_disk_and_destroy
-    else
-      raise NotImplementedError
-    end
-  end
-
-  def resolve_by_merging(problem)
-    case problem.problematic_type
-    when "Model"
-      problem.update(in_progress: true)
-      problem.problematic.merge!(problem.problematic.contained_models)
-    else
-      raise NotImplementedError
-    end
-  end
-
-  def resolve_by_uploading(problem)
-    case problem.problematic_type
-    when "Model"
-      redirect_to model_path(problem.problematic, anchor: "upload-form")
-    else
-      raise NotImplementedError
-    end
-  end
-
-  def resolve_by_converting(problem)
-    case problem.problematic_type
-    when "ModelFile"
-      problem.update(in_progress: true)
-      problem.problematic.convert_later :threemf
-    else
-      raise NotImplementedError
-    end
-  end
-
-  def resolve_by_organizing(problem)
-    case problem.problematic_type
-    when "Model"
-      problem.update(in_progress: true)
-      problem.problematic.organize_later(delay: 0)
-    else
-      raise NotImplementedError
-    end
+    streams
   end
 
   def permitted_params

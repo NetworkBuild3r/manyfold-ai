@@ -273,6 +273,16 @@ RSpec.describe Model do
           parent.merge! child
         }.to change(described_class, :count).from(2).to(1)
       end
+
+      it "restores files to correct paths when unmerging" do # rubocop:todo RSpec/MultipleExpectations
+        create(:model_file, model: child, filename: "child_part.stl")
+        parent.merge! child
+        history = parent.merge_histories.last
+        new_model = parent.unmerge!(history)
+        expect(new_model.path).to eq history.source_path
+        expect(new_model.model_files.pluck(:filename)).to contain_exactly("child_part.stl")
+        expect(new_model.model_files.first.model_id).to eq new_model.id
+      end
     end
 
     context "when merging models that have duplicated files" do
@@ -630,15 +640,12 @@ RSpec.describe Model do
     end
   end
 
-  context "when making changes" do
-    it "writes datapackage if model has changed" do
+  context "problem check cascade" do
+    it "does not enqueue CheckForProblemsJob when skip_problem_checks is set" do
       model = create(:model)
-      expect { model.update(name: "Changed") }.to have_enqueued_job(UpdateDatapackageJob).with(model.id)
-    end
-
-    it "doesn't update datapackage if model didn't actually change" do
-      model = create(:model)
-      expect { model.update(name: model.name) }.not_to have_enqueued_job(UpdateDatapackageJob)
+      Current.set(skip_problem_checks: true) do
+        expect { model.update!(name: "Changed") }.not_to have_enqueued_job(Scan::Model::CheckForProblemsJob)
+      end
     end
   end
 

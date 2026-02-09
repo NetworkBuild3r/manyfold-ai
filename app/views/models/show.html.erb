@@ -26,6 +26,10 @@
         <div class="alert alert-info"><%= t(".preview", count: @locked_files) %></div>
       <% end %>
 
+      <% if @model.respond_to?(:scan_started_at) && @model.scan_started_at.present? && !@model.scan_stale? %>
+        <div class="alert alert-info">Scan in progress…</div>
+      <% end %>
+
       <%= ImageCarousel(images: @images) %>
 
       <%= card(:secondary) do %>
@@ -138,7 +142,30 @@
             <% end %>
           <% end %>
         <% end %>
-        <%= render partial: "problems_card", locals: {problems: @model.problems.visible(problem_settings)} %>
+
+        <% merge_histories = @model.merge_histories.active.order(created_at: :desc) %>
+        <% if merge_histories.any? && policy(@model).unmerge? %>
+          <%= card :warning, "Merge history" do %>
+            <p><small>Undo is available for 30 days.</small></p>
+            <ul class="list-unstyled mb-0">
+              <% merge_histories.each do |h| %>
+                <li class="mb-2">
+                  <div><strong><%= h.source_name %></strong></div>
+                  <div><small><code><%= h.source_path %></code></small></div>
+                  <div class="text-end">
+                    <% if h.created_at >= Model::UNMERGE_WINDOW.ago %>
+                      <%= DoButton(icon: "arrow-counterclockwise", label: "Undo merge", href: unmerge_model_path(@model, merge_history_id: h.id), method: :post, variant: "warning", confirm: t("general.are_you_sure")) %>
+                    <% else %>
+                      <button class="btn btn-warning disabled">Undo merge</button>
+                    <% end %>
+                  </div>
+                </li>
+              <% end %>
+            </ul>
+          <% end %>
+        <% end %>
+
+        <%= render partial: "problems_card", locals: {model: @model, problems: @model.problems.visible(problem_settings)} %>
       <% end %>
 
       <%= card :secondary, t(".files_card.heading") do %>

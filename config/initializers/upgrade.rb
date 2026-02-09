@@ -12,7 +12,6 @@ Rails.application.config.after_initialize do
     Upgrade::GenerateSlugsJob.set(queue: :high).perform_later(Collection)
     Upgrade::FixStaleAttachmentDataJob.set(queue: :upgrade).perform_later
     Upgrade::FixNilFileSizeValues.set(queue: :upgrade).perform_later
-    Upgrade::BackfillDataPackages.set(queue: :upgrade).perform_later
     Upgrade::DisambiguateUsernamesJob.set(queue: :upgrade).perform_later
     Upgrade::UpdateActorsJob.set(queue: :upgrade).perform_later
     Upgrade::FixParentCollections.set(queue: :upgrade).perform_later

@@ -1,8 +1,7 @@
 <% return if problems.empty? %>
 <%= card("secondary", Problem.model_name.human(count: 100)) do %>
   <% problems.each do |problem| %>
-    <div class="clearfix">
-      <%= turbo_stream_from problem %>
+    <div class="clearfix" id="problem-<%= problem.id %>">
       <details>
         <summary>
           <%= problem_icon_tag(problem) %>

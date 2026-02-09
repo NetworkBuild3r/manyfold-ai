@@ -119,6 +119,7 @@ Rails.application.routes.draw do
     concerns :linkable
     member do
       post "scan"
+      post "unmerge"
     end
     collection do
       post "merge"

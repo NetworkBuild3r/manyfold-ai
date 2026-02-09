@@ -112,3 +112,6 @@ en:
         heading: Upload
     update:
       success: Model details saved.
+    unmerge:
+      missing: Merge history entry not found.
+      success: Merge undone.

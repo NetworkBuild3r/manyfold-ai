@@ -5,15 +5,21 @@ class Problem < ApplicationRecord
 
   validates :category, uniqueness: {scope: :problematic}, presence: true
 
-  default_scope { where(ignored: false) }
+  STATES = [
+    :detected,
+    :resolving,
+    :resolved
+  ]
+  enum :state, STATES, default: :detected
+
+  default_scope { where(ignored: false, state: [:detected, :resolving]) }
   scope :including_ignored, -> { unscope(where: :ignored) }
+  scope :including_resolved, -> { unscope(where: :state) }
 
   scope :visible, ->(settings) {
     enabled = DEFAULT_SEVERITIES.merge(settings.symbolize_keys).select { |cat, sev| sev.to_sym != :silent }
     where(category: enabled.keys)
   }
-
-  broadcasts_refreshes
 
   CATEGORIES = [
     :missing,
@@ -72,12 +78,37 @@ class Problem < ApplicationRecord
     file_naming: "folder-cross"
   )
 
+  # Sole creation path for Problem records. All detection/creation must go through this method
+  # so the unique index on [category, problematic_id, problematic_type] is respected and
+  # duplicates are avoided. On concurrent insert, RecordNotUnique is rescued and we retry.
   def self.create_or_clear(problematic, category, should_exist, options = {})
+    relation = Problem.unscoped.where(problematic: problematic, category: category)
     if should_exist
-      problematic.problems.where(category: category).first_or_create.update(options)
+      problem = relation.first_or_initialize
+      problem.assign_attributes(options)
+      problem.ignored = false
+      # If the user is actively resolving a problem, don't clobber that state from background checks.
+      unless problem.resolving?
+        problem.state = :detected
+        problem.in_progress = false
+      end
+      problem.save!
     else
-      problematic.problems.where(category: category).destroy_all
+      relation.destroy_all
     end
+    should_exist
+  rescue ActiveRecord::RecordNotUnique
+    relation = Problem.unscoped.where(problematic: problematic, category: category)
+    problem = relation.first
+    return should_exist unless problem
+
+    problem.assign_attributes(options)
+    problem.ignored = false
+    unless problem.resolving?
+      problem.state = :detected
+      problem.in_progress = false
+    end
+    problem.save!
     should_exist
   end
 
@@ -113,5 +144,35 @@ class Problem < ApplicationRecord
 
   def resolution_strategy
     RESOLUTIONS[category.to_sym] or raise NotImplementedError.new(category)
+  end
+
+  # Resolves multiple problems in one transaction. Returns a result hash for the controller.
+  # When override_action is set (e.g. :ignore), that action is used for every problem.
+  # { removed_ids: [...], ignored_ids: [...], redirect: url_or_nil, errors: [...] }
+  def self.resolve_batch(problems, override_action: nil)
+    removed_ids = []
+    ignored_ids = []
+    redirect_url = nil
+    errors = []
+
+    Current.set(skip_problem_checks: true) do
+      ActiveRecord::Base.transaction do
+        Array(problems).each do |problem|
+          problem_id = problem.id
+          strategy = override_action || problem.resolution_strategy
+          result = if Problems::Registry.registered?(problem.category, problem.problematic_type)
+            klass = Problems::Registry.for(problem.category, problem.problematic_type)
+            klass.new.resolve!(problem, action: strategy)
+          else
+            Problems::LegacyResolver.resolve(problem, action: strategy)
+          end
+          removed_ids << problem_id if result[:removed]
+          ignored_ids << problem_id if result[:ignored]
+          redirect_url ||= result[:redirect]
+        end
+      end
+    end
+
+    { removed_ids: removed_ids, ignored_ids: ignored_ids, redirect: redirect_url, errors: errors }
   end
 end

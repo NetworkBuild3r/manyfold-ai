@@ -2,6 +2,14 @@
 
 <%= render "filters" %>
 
+<% if @counts_by_category.present? %>
+  <div class="mb-3">
+    <% @counts_by_category.sort_by { |cat, _| cat.to_s }.each do |cat, count| %>
+      <%= link_to "#{t("problems.categories.%{cat}" % {cat: cat})} (#{count})", problems_path(request.query_parameters.merge(category: [cat])), class: "btn btn-outline-secondary btn-sm me-1 mb-1" %>
+    <% end %>
+  </div>
+<% end %>
+
 <%= paginate @problems %>
 
 <% if @problems.empty? %>
@@ -10,7 +18,7 @@
   </div>
 <% end %>
 
-<%= form_with url: resolve_problems_path, method: :post, class: "mb-3" do |form| %>
+<%= form_with url: resolve_problems_path(format: :turbo_stream), method: :post, class: "mb-3" do |form| %>
   <table class="table table-striped" data-controller="bulk-edit" data-action="change->bulk-edit#handleCheckboxChange">
     <tr>
       <th><input type="checkbox" aria-label="<%= translate ".select_all" %>" value="0" name="bulk-select-all"></th>
@@ -22,7 +30,6 @@
     <% @problems.each do |problem| %>
       <% next unless problem.problematic %>
       <tr id="problem-<%= problem.id %>" class="collapse show table-<%= problem_severity(problem) %> <%= problem.ignored && "opacity-50" %>">
-        <%= turbo_stream_from problem %>
         <td><%= form.check_box "problems[#{problem.to_param}]", data: {resolution_strategy: problem.resolution_strategy, bulk_item: problem.to_param}, "aria-label": translate(".select") %></td>
         <% if problem.parent %>
           <td><%= link_to problem.parent.name, problem.parent, class: "link-dark" %></td>

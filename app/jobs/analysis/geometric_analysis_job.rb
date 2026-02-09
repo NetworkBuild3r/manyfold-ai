@@ -18,11 +18,7 @@ class Analysis::GeometricAnalysisJob < ApplicationJob
         status[:step] = "jobs.analysis.geometric_analysis.manifold_check" # i18n-tasks-use t('jobs.analysis.geometric_analysis.manifold_check')
         # Check for manifold mesh
         manifold = mesh.manifold?
-        Problem.create_or_clear(
-          file,
-          :non_manifold,
-          !manifold
-        )
+        Problems::NonManifold.detect(file, should_exist: !manifold)
         # Temporarily disabled for release
         # # If the mesh is manifold, we can check if it's inside out
         # if manifold

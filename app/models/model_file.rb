@@ -8,16 +8,15 @@ class ModelFile < ApplicationRecord
 
   broadcasts_refreshes
 
-  SPECIAL_FILES = [
-    "datapackage.json"
-  ]
+  SPECIAL_FILES = [].freeze
 
-  belongs_to :model, touch: true
+  belongs_to :model
 
   after_create :attach_existing_file!
 
   before_destroy :rescan_duplicates
   after_commit :reattach!, on: :update, if: :filename_previously_changed?
+  after_commit :check_parent_model_for_problems_later, on: [:create, :destroy]
 
   belongs_to :presupported_version, class_name: "ModelFile", optional: true
   has_one :unsupported_version, class_name: "ModelFile", foreign_key: "presupported_version_id",
@@ -35,7 +34,7 @@ class ModelFile < ApplicationRecord
 
   after_commit :clear_presupported_relation, on: :update, if: :presupported_previously_changed?
 
-  scope :without_special, -> { where.not(filename: SPECIAL_FILES) }
+  scope :without_special, -> { SPECIAL_FILES.empty? ? all : where.not(filename: SPECIAL_FILES) }
   scope :unsupported, -> { where(presupported: false) }
   scope :presupported, -> { where(presupported: true) }
 
@@ -201,6 +200,9 @@ class ModelFile < ApplicationRecord
   def delete_from_disk_and_destroy
     model.library.storage.delete path_within_library
     destroy
+  rescue Shrine::FileNotFound, Errno::ENOENT
+    # If the file is already gone, still remove the DB record.
+    destroy
   end
 
   def analyse_later(delay: 5.seconds)
@@ -244,6 +246,11 @@ class ModelFile < ApplicationRecord
   end
 
   private
+
+  def check_parent_model_for_problems_later
+    return if Current.skip_problem_checks || Current.scan_batch_id.present?
+    Model.find_by(id: model_id)&.check_for_problems_later
+  end
 
   def rescan_duplicates
     duplicates.each { |it| it.analyse_later }

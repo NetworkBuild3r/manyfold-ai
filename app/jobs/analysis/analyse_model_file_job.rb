@@ -18,26 +18,17 @@ class Analysis::AnalyseModelFileJob < ApplicationJob
       file.analyse_geometry_later if file.is_3d_model? && file.digest_previously_changed?
     end
     # Raise problems for empty files
-    Problem.create_or_clear file, :empty, (file.size == 0)
+    Problems::EmptyFile.detect(file)
     status[:step] = "jobs.analysis.analyse_model_file.matching" # i18n-tasks-use t('jobs.analysis.analyse_model_file.matching')
     # Match supported files
     match_with_supported_file(file)
     status[:step] = "jobs.analysis.analyse_model_file.detect_ineffiency" # i18n-tasks-use t('jobs.analysis.analyse_model_file.detect_ineffiency')
     # Detect inefficient file formats
     message = inefficiency_problem(file)
-    Problem.create_or_clear(
-      file,
-      :inefficient,
-      !message.nil?,
-      note: message
-    )
+    Problems::Inefficient.detect(file, note: message)
     status[:step] = "jobs.analysis.analyse_model_file.detect_duplicates" # i18n-tasks-use t('jobs.analysis.analyse_model_file.detect_duplicates')
     # Detect duplicates
-    Problem.create_or_clear(
-      file,
-      :duplicate,
-      file.duplicate?
-    )
+    Problems::Duplicate.detect(file)
   end
 
   def match_with_supported_file(file)

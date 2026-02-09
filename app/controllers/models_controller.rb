@@ -154,6 +154,17 @@ class ModelsController < ApplicationController
     redirect_to @model, notice: t(".success")
   end
 
+  def unmerge
+    authorize @model, :unmerge?
+    history = @model.merge_histories.active.find(params[:merge_history_id])
+    new_model = @model.unmerge!(history)
+    redirect_to model_path(new_model), notice: t(".success")
+  rescue ActiveRecord::RecordNotFound
+    redirect_back_or_to @model, alert: t(".missing")
+  rescue ArgumentError => e
+    redirect_back_or_to @model, alert: e.message
+  end
+
   def bulk_edit
     authorize Model
     @models = @filter.models(policy_scope(Model, policy_scope_class: ApplicationPolicy::UpdateScope)).includes(:collection, :creator)

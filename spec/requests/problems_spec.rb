@@ -103,5 +103,17 @@ RSpec.describe "Problems" do
         expect(response).to have_http_status(:forbidden)
       end
     end
+
+    describe "POST /problems/:id/resolve with destroy resolution", :as_moderator do
+      it "destroys the problem record before running the destructive side effect" do
+        problem = create(:problem_on_model, category: :empty)
+        problem_id = problem.id
+        allow_any_instance_of(Model).to receive(:delete_from_disk_and_destroy) do
+          expect(Problem.exists?(problem_id)).to be false
+        end
+        post problem_resolve_path(problem), params: {resolve: "1"}
+        expect(response).to have_http_status(:redirect)
+      end
+    end
   end
 end

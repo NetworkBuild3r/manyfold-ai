@@ -11,7 +11,8 @@ class SiteSettings < RailsSettings::Base
   field :model_ignored_files, type: :array, default: [
     /^\.[^.]+/, # Hidden files starting with .
     /.*\/@eaDir\/.*/, # Synology temp files
-    /__MACOSX/ # MACOS resource forks
+    /__MACOSX/, # MACOS resource forks
+    /^datapackage\.json$/i # Manyfold metadata import/export file
   ]
   field :parse_metadata_from_path, type: :boolean, default: true
   field :safe_folder_names, type: :boolean, default: true
