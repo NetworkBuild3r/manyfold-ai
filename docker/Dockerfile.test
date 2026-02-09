@@ -1,0 +1,35 @@
+# Test image: full bundle (including development/test) and run RSpec.
+# Used by: docker compose --profile test run --rm test [rspec args]
+
+FROM ruby:3.4.8-alpine3.23 AS test
+
+WORKDIR /usr/src/app
+
+RUN apk add --no-cache \
+  tzdata \
+  alpine-sdk \
+  gcompat \
+  bzip2 \
+  ca-certificates \
+  gmp-dev \
+  libffi-dev \
+  nodejs \
+  npm \
+  sqlite-dev \
+  libarchive \
+  imagemagick \
+  imagemagick-jpeg \
+  imagemagick-webp \
+  imagemagick-heic \
+  assimp-dev
+
+RUN gem install bundler -v 2.5.23
+
+COPY .ruby-version .
+COPY Gemfile Gemfile.lock ./
+RUN bundle config set --local deployment 'false' \
+  && bundle install
+
+COPY . .
+
+CMD ["bundle", "exec", "rspec"]

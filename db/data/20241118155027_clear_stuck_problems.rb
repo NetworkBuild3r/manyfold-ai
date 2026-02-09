@@ -2,7 +2,8 @@
 
 class ClearStuckProblems < ActiveRecord::Migration[7.2]
   def up
-    Problem.update_all(in_progress: false) # rubocop:disable Rails/SkipsModelValidations
+    return unless connection.column_exists?(:problems, :in_progress)
+    connection.execute("UPDATE problems SET in_progress = 0")
   end
 
   def down
