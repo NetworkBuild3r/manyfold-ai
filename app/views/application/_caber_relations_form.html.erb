@@ -11,9 +11,9 @@
             [translate("settings.multiuser.default_viewer_role.options.advanced"), ""]
           ],
             {selected: form.object.matching_permission_preset},
-            {class: "form-control form-select", data: {controller: "caber-advanced", action: "change->caber-advanced#update"}} %>
+            {class: "tw:block tw:w-full tw:rounded-lg tw:border tw:border-secondary-300 tw:px-3 tw:py-2 tw:shadow-sm focus:tw:ring-2 focus:tw:ring-primary-500 tw:dark:border-secondary-600 tw:dark:bg-secondary-800", data: {controller: "caber-advanced", action: "change->caber-advanced#update"}} %>
     </div>
-    <div class="border p-3" id="advanced-permissions">
+    <div class="tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:p-3 tw:rounded-lg" id="advanced-permissions">
       <%= cocooned_container id: "cocooned-caber-relations", data: {controller: "cocooned"} do %>
         <%= form.fields_for :caber_relations do |f| %>
           <%= render "caber_relation_fields", f: f %>
@@ -21,7 +21,7 @@
       <% end %>
       <div>
         <%= cocooned_add_item_button t(".add"), form, :caber_relations,
-              class: "btn btn-secondary",
+              class: "tw:inline-flex tw:items-center tw:gap-1.5 tw:px-3 tw:py-1.5 tw:text-sm tw:font-medium tw:rounded-lg tw:border tw:border-secondary-300 tw:bg-white tw:dark:border-secondary-600 tw:dark:bg-secondary-800 tw:text-secondary-700 tw:dark:text-secondary-200 hover:tw:bg-secondary-50 hover:tw:dark:bg-secondary-700",
               insertion_node: "#cocooned-caber-relations",
               insertion_method: "append" %>
       </div>

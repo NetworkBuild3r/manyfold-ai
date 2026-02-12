@@ -1,11 +1,11 @@
-<div class="card">
-  <h2 class="card-header">
+<div class="tw:rounded-xl tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:bg-white tw:dark:tw:bg-secondary-800 tw:shadow-sm tw:overflow-hidden">
+  <h2 class="tw:px-4 tw:py-3 tw:bg-secondary-600 tw:text-white tw:m-0 tw:font-medium">
     ⁂
     <%= t ".title" %>
   </h2>
 
-  <div class="card-body">
-    <div class="mb-3">
+  <div class="tw:p-4">
+    <div class="tw:mb-4">
       <p>
         <%= t ".content_html" %>
       </p>
@@ -13,12 +13,12 @@
     </div>
 
     <% if SiteSettings.autocreate_creator_for_new_users %>
-      <div class="mb-3">
+      <div class="tw:mb-4">
         <p><%= t ".creator_handle_html", handle: current_user.creators.local.first.federails_actor.at_address %></p>
-        <div class="alert alert-info">
-          <div class="row">
-            <div class="col col-auto"><%= t(".creator_handle") %></div>
-            <div class="col">
+        <div class="tw:px-4 tw:py-3 tw:rounded-lg tw:bg-info/10 tw:text-info">
+          <div class="tw:flex tw:flex-wrap tw:items-center tw:gap-2">
+            <div class="tw:shrink-0"><%= t(".creator_handle") %></div>
+            <div class="tw:min-w-0">
               <%= CopyableText text: current_user.creators.local.first.federails_actor.at_address, label: t("general.copy_fediverse_handle") %>
             </div>
           </div>
@@ -26,12 +26,12 @@
       </div>
     <% end %>
 
-    <div class="mb-3">
+    <div class="tw:mb-4">
       <p><%= t ".handle_html", handle: current_user.federails_actor.at_address %></p>
-      <div class="alert alert-info">
-        <div class="row">
-          <div class="col col-auto"><%= t(".account_handle") %></div>
-          <div class="col">
+      <div class="tw:px-4 tw:py-3 tw:rounded-lg tw:bg-info/10 tw:text-info">
+        <div class="tw:flex tw:flex-wrap tw:items-center tw:gap-2">
+          <div class="tw:shrink-0"><%= t(".account_handle") %></div>
+          <div class="tw:min-w-0">
             <%= CopyableText text: current_user.federails_actor.at_address, label: t("general.copy_fediverse_handle") %>
           </div>
         </div>

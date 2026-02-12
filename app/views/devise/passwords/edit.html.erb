@@ -5,7 +5,7 @@
   <%= password_input_row f, :password, autocomplete: "new-password", autofocus: true %>
   <%= password_input_row f, :password_confirmation, autocomplete: "new-password" %>
   <div>
-    <%= f.submit translate(".change_my_password"), class: "btn btn-primary" %>
+    <%= f.submit translate(".change_my_password"), class: "tw:inline-flex tw:items-center tw:px-4 tw:py-2 tw:rounded-lg tw:bg-primary-600 tw:text-white hover:tw:bg-primary-700 focus-visible:tw:ring-2 focus-visible:tw:ring-primary-500" %>
   </div>
 <% end %>
 

@@ -1,15 +1,15 @@
 <%= form.fields_for :file_list_settings do |file_list_settings_form| %>
-  <div class="card mb-2">
-    <h3 class="card-header"><%= t(".heading") %></h3>
-    <div class="card-body lead">
+  <div class="tw:rounded-xl tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:bg-white tw:dark:tw:bg-secondary-800 tw:shadow-sm tw:mb-4 tw:overflow-hidden">
+    <h3 class="tw:px-4 tw:py-3 tw:bg-secondary-600 tw:text-white tw:m-0 tw:font-medium"><%= t(".heading") %></h3>
+    <div class="tw:p-4 tw:text-lg tw:text-secondary-600 tw:dark:tw:text-secondary-400">
       <%= t(".summary") %>
     </div>
-    <div class="card-body tabular-form">
+    <div class="tw:px-4 tw:pb-4 tabular-form">
       <div>
-        <%= file_list_settings_form.label :hide_presupported_versions, t(".hide_presupported_versions.label") %>
+        <%= file_list_settings_form.label :hide_presupported_versions, t(".hide_presupported_versions.label"), class: "tw:block tw:text-sm tw:font-medium tw:text-secondary-700 tw:dark:tw:text-secondary-300" %>
       </div>
-      <div class="form-check form-switch">
-        <%= file_list_settings_form.check_box :hide_presupported_versions, checked: file_list_settings["hide_presupported_versions"], class: "form-check-input" %>
+      <div class="tw:flex tw:items-center tw:gap-2">
+        <%= file_list_settings_form.check_box :hide_presupported_versions, checked: file_list_settings["hide_presupported_versions"], class: "tw:rounded tw:border-secondary-300 tw:text-primary-600 tw:focus:ring-primary-500 tw:h-4 tw:w-4" %>
       </div>
     </div>
   </div>

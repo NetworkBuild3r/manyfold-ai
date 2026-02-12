@@ -1,16 +1,16 @@
-<div class="col mb-4">
-  <div class="card preview-card <%= (file === @model.preview_file) ? "border-primary" : "" %>">
+<div class="tw:mb-4">
+  <div class="tw:rounded-xl tw:border tw:bg-white tw:dark:tw:bg-secondary-800 tw:overflow-hidden tw:shadow-sm <%= (file === @model.preview_file) ? "tw:border-primary-500" : "tw:border-secondary-200 tw:dark:tw:border-secondary-600" %>">
     <% if file.is_image? %>
-      <%= content_tag :div, nil, class: "card-img-top card-img-top-background", style: "background-image: url(#{model_model_file_path(@model, file, format: file.extension)})" %>
-      <%= image_tag model_model_file_path(@model, file, format: file.extension), class: "card-img-top image-preview", alt: file.name %>
+      <%= content_tag :div, nil, class: "tw:block tw:w-full tw:aspect-square tw:bg-cover tw:bg-center", style: "background-image: url(#{model_model_file_path(@model, file, format: file.extension)})" %>
+      <%= image_tag model_model_file_path(@model, file, format: file.extension), class: "tw:block tw:w-full tw:aspect-square tw:object-cover", alt: file.name %>
     <% elsif file.is_renderable? %>
-      <div class="card-img-top">
+      <div class="tw:block tw:w-full tw:aspect-square">
         <%= Renderer(file: file) %>
       </div>
     <% else %>
-      <%= content_tag :div, nil, class: "card-img-top", style: "aspect-ratio: 1" do %>
-        <svg height="100%" width="100%" viewBox="0 0 100 100">
-          <path stroke="black" stroke-linecap="round" stroke-width="0.5" fill="white" d="
+      <%= content_tag :div, nil, class: "tw:block tw:w-full tw:aspect-square" do %>
+        <svg class="tw:block tw:w-full tw:h-full" viewBox="0 0 100 100">
+          <path stroke="currentColor" stroke-linecap="round" stroke-width="0.5" fill="white" d="
             M60,15
             h-30
             q-5,0 -5,5
@@ -21,51 +21,49 @@
             v-55
             L60,15
           " />
-          <path stroke="black" stroke-linecap="round" stroke-width="0.5" fill="transparent" d="
+          <path stroke="currentColor" stroke-linecap="round" stroke-width="0.5" fill="transparent" d="
             M60,15
             v10
             q0,5 5,5
             h10
           " />
-          <text x="50%" y="80%" fill="black" dominant-baseline="middle" text-anchor="middle" style="font-size: 8px"><%= file.extension&.upcase %></text>
+          <text x="50%" y="80%" fill="currentColor" dominant-baseline="middle" text-anchor="middle" style="font-size: 8px"><%= file.extension&.upcase %></text>
         </svg>
       <% end %>
     <% end %>
-    <div class="card-body">
-      <div class="card-title">
+    <div class="tw:p-4">
+      <div class="tw:font-medium tw:text-secondary-900 tw:dark:tw:text-secondary-100">
         <%= file.name %>
       </div>
-      <div class="card-text">
+      <div class="tw:text-sm tw:text-secondary-600 tw:dark:tw:text-secondary-400">
         <% if file.caption %>
           <p><%= sanitize file.caption %></p>
         <% end %>
-        <small><code><%= sanitize file.filename %></code></small>
+        <small><code class="tw:text-xs"><%= sanitize file.filename %></code></small>
       </div>
-      <div class="row">
-        <div class="col">
-          <%= link_to t(".open_button.text"), model_model_file_path(@model, file), {class: "btn btn-primary", "aria-label": translate(".open_button.label", name: file.name)} %>
-          <%= link_to Icon(icon: "cloud-download-fill", label: t("general.download")), model_model_file_path(@model, file, file.extension&.to_sym, download: "true"), {class: "btn btn-secondary", download: "download"} %>
+      <div class="tw:flex tw:flex-wrap tw:items-center tw:gap-2 tw:mt-2">
+        <div class="tw:flex tw:flex-wrap tw:items-center tw:gap-2 tw:min-w-0">
+          <%= link_to t(".open_button.text"), model_model_file_path(@model, file), {class: "tw:inline-flex tw:items-center tw:gap-1.5 tw:px-3 tw:py-1.5 tw:text-sm tw:rounded-lg tw:bg-primary-600 tw:text-white hover:tw:bg-primary-700", "aria-label": translate(".open_button.label", name: file.name)} %>
+          <%= link_to Icon(icon: "cloud-download-fill", label: t("general.download")), model_model_file_path(@model, file, file.extension&.to_sym, download: "true"), {class: "tw:inline-flex tw:items-center tw:gap-1.5 tw:px-3 tw:py-1.5 tw:text-sm tw:rounded-lg tw:border tw:border-secondary-300 tw:dark:border-secondary-500 tw:bg-white tw:dark:tw:bg-secondary-800 hover:tw:bg-secondary-50 tw:dark:hover:tw:bg-secondary-700", download: "download"} %>
           <% if file.presupported || file.presupported_version %>
             <%= Icon icon: "bar-chart-line-fill", label: ModelFile.human_attribute_name(:presupported) %>
           <% end %>
           <%= problem_icon_tag(file.problems) if policy(Problem).show? %>
         </div>
-        <div class="col col-auto">
-          <div class="float-end">
-            <%= BurgerMenu(direction: :up) do %>
-              <%= app_links(file) %>
+        <div class="tw:ml-auto">
+          <%= BurgerMenu(direction: :up) do %>
+            <%= app_links(file) %>
+            <%= DropdownDivider() %>
+            <% if file.presupported_version %>
+              <%= DropdownHeader text: t(".presupported") %>
+              <%= link_to t("general.download"), model_model_file_path(@model, file.presupported_version, file.presupported_version.extension&.to_sym, download: "true"), {class: "tw:block tw:px-4 tw:py-2 tw:text-sm tw:text-secondary-700 tw:dark:tw:text-secondary-200 hover:tw:bg-secondary-100 tw:dark:hover:tw:bg-secondary-700", download: "download"} %>
+              <%= app_links(file.presupported_version) %>
               <%= DropdownDivider() %>
-              <% if file.presupported_version %>
-                <%= DropdownHeader text: t(".presupported") %>
-                <%= link_to t("general.download"), model_model_file_path(@model, file.presupported_version, file.presupported_version.extension&.to_sym, download: "true"), {class: "dropdown-item", download: "download"} %>
-                <%= app_links(file.presupported_version) %>
-                <%= DropdownDivider() %>
-              <% end %>
-              <%= DropdownItem icon: "pencil-fill", label: t(".edit"), path: edit_model_model_file_path(@model, file) if policy(file).edit? %>
-              <%= DropdownItem icon: "image", label: t(".set_as_preview"), path: model_path(@model, "model[preview_file_id]": file.id), method: :patch if policy(@model).edit? && file.is_renderable? || file.is_image? %>
-              <%= DropdownItem icon: "trash", label: t(".delete"), path: model_model_file_path(@model, file), method: :delete, confirm: translate("model_files.destroy.confirm") if policy(file).destroy? %>
             <% end %>
-          </div>
+            <%= DropdownItem icon: "pencil-fill", label: t(".edit"), path: edit_model_model_file_path(@model, file) if policy(file).edit? %>
+            <%= DropdownItem icon: "image", label: t(".set_as_preview"), path: model_path(@model, "model[preview_file_id]": file.id), method: :patch if policy(@model).edit? && (file.is_renderable? || file.is_image?) %>
+            <%= DropdownItem icon: "trash", label: t(".delete"), path: model_model_file_path(@model, file), method: :delete, confirm: translate("model_files.destroy.confirm") if policy(file).destroy? %>
+          <% end %>
         </div>
       </div>
     </div>

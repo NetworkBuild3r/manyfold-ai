@@ -1,28 +1,28 @@
 <%= PageTitle title: t(".title"), breadcrumbs: {} %>
 
-<p class="lead"><%= t(".description") %></p>
+<p class="tw:text-lg tw:text-secondary-600 tw:dark:text-secondary-400"><%= t(".description") %></p>
 
 <% if current_user&.is_moderator? %>
-  <div class="alert alert-info">
+  <div class="tw:px-4 tw:py-3 tw:rounded-lg tw:bg-info/10 tw:text-info tw:mb-4">
     <%= t(".moderator_notice") %>
   </div>
 <% end %>
 
-<table class="table table-striped">
+<table class="tw:w-full tw:border-collapse tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 [&>tr:nth-child(even)]:tw:bg-secondary-50 [&>tr:nth-child(even)]:dark:tw:bg-secondary-800/50">
   <tr>
-    <td><%= Doorkeeper::Application.human_attribute_name(:name) %></td>
-    <%= content_tag(:td) { Doorkeeper::Application.human_attribute_name(:owner) } if current_user&.is_moderator? %>
-    <td><%= t Doorkeeper::Application.human_attribute_name(:scopes) %></td>
-    <td><%= t Doorkeeper::Application.human_attribute_name(:created_at) %></td>
+    <td class="tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:px-4 tw:py-2"><%= Doorkeeper::Application.human_attribute_name(:name) %></td>
+    <%= content_tag(:td, class: "tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:px-4 tw:py-2") { Doorkeeper::Application.human_attribute_name(:owner) } if current_user&.is_moderator? %>
+    <td class="tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:px-4 tw:py-2"><%= t Doorkeeper::Application.human_attribute_name(:scopes) %></td>
+    <td class="tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:px-4 tw:py-2"><%= t Doorkeeper::Application.human_attribute_name(:created_at) %></td>
   </tr>
   <% @applications.find_each do |app| %>
     <tr>
-      <td><%= link_to app.name, app %></td>
-      <%= content_tag(:td) { app.owner.username } if current_user&.is_moderator? %>
-      <td><%= app.scopes %></td>
-      <td><%= app.created_at.to_fs(:long) %></td>
+      <td class="tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:px-4 tw:py-2"><%= link_to app.name, app, class: "tw:text-primary-600 hover:tw:underline" %></td>
+      <%= content_tag(:td, class: "tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:px-4 tw:py-2") { app.owner.username } if current_user&.is_moderator? %>
+      <td class="tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:px-4 tw:py-2"><%= app.scopes %></td>
+      <td class="tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:px-4 tw:py-2"><%= app.created_at.to_fs(:long) %></td>
     </tr>
   <% end %>
 </table>
 
-<%= link_to t(".new"), new_doorkeeper_application_path, class: "btn btn-primary" %>
+<%= link_to t(".new"), new_doorkeeper_application_path, class: "tw:inline-flex tw:items-center tw:gap-1.5 tw:px-3 tw:py-1.5 tw:text-sm tw:font-medium tw:rounded-lg tw:bg-primary-600 tw:text-white hover:tw:bg-primary-700 focus-visible:tw:ring-2 focus-visible:tw:ring-primary-500" %>

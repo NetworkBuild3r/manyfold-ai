@@ -1,20 +1,24 @@
 <h3><%= t(".title") %></h3>
 
-<p class="lead"><%= t(".description") %></p>
+<p class="tw:text-lg tw:text-secondary-600 tw:dark:tw:text-secondary-400"><%= t(".description") %></p>
 
-<table class="table table-striped">
-  <tr>
-    <th><%= Federails::Moderation::DomainBlock.human_attribute_name(:domain) %></th>
-    <th><%= Federails::Moderation::DomainBlock.human_attribute_name(:created_at) %></th>
-    <th></th>
-  </tr>
+<table class="tw:w-full tw:border-collapse tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600">
+  <thead>
+    <tr class="tw:border-b tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:bg-secondary-50 tw:dark:tw:bg-secondary-800/50">
+      <th class="tw:px-4 tw:py-2 tw:text-left"><%= Federails::Moderation::DomainBlock.human_attribute_name(:domain) %></th>
+      <th class="tw:px-4 tw:py-2 tw:text-left"><%= Federails::Moderation::DomainBlock.human_attribute_name(:created_at) %></th>
+      <th class="tw:px-4 tw:py-2 tw:text-left"></th>
+    </tr>
+  </thead>
+  <tbody>
   <% @blocks.each do |block| %>
-    <tr>
-      <td><%= block.domain %></td>
-      <td><%= block.created_at %></td>
-      <td><%= link_to safe_join([Icon(icon: "trash", label: t("general.delete")), t("general.delete")], " "), settings_domain_block_path(block), {method: :delete, class: "float-end btn btn-outline-danger", data: {confirm: translate(".confirm_destroy")}} if policy(block).destroy? %></td>
+    <tr class="tw:border-b tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:even:tw:bg-secondary-50 tw:dark:tw:even:tw:bg-secondary-800/30">
+      <td class="tw:px-4 tw:py-2"><%= block.domain %></td>
+      <td class="tw:px-4 tw:py-2"><%= block.created_at %></td>
+      <td class="tw:px-4 tw:py-2 tw:text-right"><%= link_to safe_join([Icon(icon: "trash", label: t("general.delete")), t("general.delete")], " "), settings_domain_block_path(block), {method: :delete, class: "tw:inline-flex tw:items-center tw:gap-2 tw:px-4 tw:py-2 tw:rounded-lg tw:border tw:border-danger tw:text-danger hover:tw:bg-danger/10 tw:no-underline", data: {confirm: translate(".confirm_destroy")}} if policy(block).destroy? %></td>
     </tr>
   <% end %>
+  </tbody>
 </table>
 
-<%= link_to t(".new"), new_settings_domain_block_path, class: "btn btn-primary" if policy(Federails::Moderation::DomainBlock).new? %>
+<%= link_to t(".new"), new_settings_domain_block_path, class: "tw:inline-flex tw:items-center tw:px-4 tw:py-2 tw:rounded-lg tw:bg-primary-600 tw:text-white hover:tw:bg-primary-700 focus-visible:tw:ring-2 focus-visible:tw:ring-primary-500 tw:no-underline tw:mt-4" if policy(Federails::Moderation::DomainBlock).new? %>

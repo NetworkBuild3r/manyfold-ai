@@ -1,25 +1,29 @@
 <h3><%= t(".title") %></h3>
 
-<p class="lead"><%= t(".description") %></p>
+<p class="tw:text-lg tw:text-secondary-600 tw:dark:tw:text-secondary-400"><%= t(".description") %></p>
 
-<table class="table table-striped">
-  <tr>
-    <th colspan="2"><%= Federails::Moderation::Report.human_attribute_name(:object) %></th>
-    <th colspan="2"><%= Federails::Moderation::Report.human_attribute_name(:federails_actor) %></th>
-    <th><%= Federails::Moderation::Report.human_attribute_name(:created_at) %></th>
-    <th></th>
-  </tr>
+<table class="tw:w-full tw:border-collapse tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600">
+  <thead>
+    <tr class="tw:border-b tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:bg-secondary-50 tw:dark:tw:bg-secondary-800/50">
+      <th colspan="2" class="tw:px-4 tw:py-2 tw:text-left"><%= Federails::Moderation::Report.human_attribute_name(:object) %></th>
+      <th colspan="2" class="tw:px-4 tw:py-2 tw:text-left"><%= Federails::Moderation::Report.human_attribute_name(:federails_actor) %></th>
+      <th class="tw:px-4 tw:py-2 tw:text-left"><%= Federails::Moderation::Report.human_attribute_name(:created_at) %></th>
+      <th class="tw:px-4 tw:py-2 tw:text-left"></th>
+    </tr>
+  </thead>
+  <tbody>
   <% @reports.each do |report|
     next unless report.object %>
-    <tr>
-      <td><%= Icon icon: icon_for(report.object.entity.class), label: "" %></td>
-      <td><%= link_to report.object.entity.name, report.object.entity if report.object&.entity %></td>
-      <td>
+    <tr class="tw:border-b tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:even:tw:bg-secondary-50 tw:dark:tw:even:tw:bg-secondary-800/30">
+      <td class="tw:px-4 tw:py-2"><%= Icon icon: icon_for(report.object.entity.class), label: "" %></td>
+      <td class="tw:px-4 tw:py-2"><%= link_to report.object.entity.name, report.object.entity, class: "tw:text-primary-600 tw:dark:tw:text-primary-400 hover:tw:underline" if report.object&.entity %></td>
+      <td class="tw:px-4 tw:py-2">
         <%= Icon icon: report.local? ? "house" : "globe", label: "" %>
       </td>
-      <td><%= report.reporter_address %></td>
-      <td><%= report.created_at %></td>
-      <td><%= link_to safe_join([Icon(icon: "search", label: t("general.view")), t("general.view")], " "), settings_report_path(report), {class: "float-end btn btn-primary"} %></td>
+      <td class="tw:px-4 tw:py-2"><%= report.reporter_address %></td>
+      <td class="tw:px-4 tw:py-2"><%= report.created_at %></td>
+      <td class="tw:px-4 tw:py-2 tw:text-right"><%= link_to safe_join([Icon(icon: "search", label: t("general.view")), t("general.view")], " "), settings_report_path(report), {class: "tw:inline-flex tw:items-center tw:gap-2 tw:px-4 tw:py-2 tw:rounded-lg tw:bg-primary-600 tw:text-white hover:tw:bg-primary-700 tw:no-underline"} %></td>
     </tr>
   <% end %>
+  </tbody>
 </table>

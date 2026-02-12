@@ -8,23 +8,23 @@
   <li><%= t ".non-archives" %></li>
 </ul>
 
-<%= form_with model: @model, id: "upload-form", class: "container-md tabular-form" do |form| %>
+<%= form_with model: @model, id: "upload-form", class: "tw:max-w-2xl tw:mx-auto tabular-form" do |form| %>
 
   <% if SiteSettings.show_libraries %>
     <div>
-      <%= form.label :library, Library.model_name.human %>
+      <%= form.label :library, Library.model_name.human, class: "tw:block tw:text-sm tw:font-medium tw:text-secondary-700 tw:dark:tw:text-secondary-300" %>
     </div>
     <div>
       <%= form.select :library,
             policy_scope(Library).all.map { |lib| [library_select_title(lib), lib.to_param] },
             {selected: Library.default.to_param},
-            {class: "form-control form-select"} %>
-      <span class="form-text"><%= t ".library.help" %></span>
+            {class: "tw:block tw:w-full tw:rounded-lg tw:border tw:border-secondary-300 tw:px-3 tw:py-2 tw:shadow-sm tw:focus:ring-2 tw:focus:ring-primary-500 tw:dark:tw:border-secondary-600 tw:dark:tw:bg-secondary-800"} %>
+      <span class="tw:text-sm tw:text-secondary-500 tw:dark:tw:text-secondary-400 tw:block tw:mt-1"><%= t ".library.help" %></span>
     </div>
   <% end %>
 
   <div>
-    <%= form.label :files, t(".files.label"), class: "col-sm-2 col-form-label" %>
+    <%= form.label :files, t(".files.label"), class: "tw:block tw:text-sm tw:font-medium tw:text-secondary-700 tw:dark:tw:text-secondary-300" %>
   </div>
   <div>
     <%= content_tag :div, nil, data: {
@@ -37,12 +37,12 @@
           upload_endpoint: upload_path
         } %>
 
-    <div class="alert alert-info" id="multi-model-message" style="display: none">
+    <div class="tw:flex tw:items-center tw:gap-2 tw:px-4 tw:py-3 tw:rounded-lg tw:bg-info/10 tw:text-info tw:mt-2" id="multi-model-message" style="display: none">
       <%= Icon(icon: "boxes", role: "presentation") %>
       <%= t(".multi_model") %>
     </div>
 
-    <div class="alert alert-info" id="single-model-message" style="display: none">
+    <div class="tw:flex tw:items-center tw:gap-2 tw:px-4 tw:py-3 tw:rounded-lg tw:bg-info/10 tw:text-info tw:mt-2" id="single-model-message" style="display: none">
       <%= Icon(icon: "box", role: "presentation") %>
       <%= t(".single_model") %>
     </div>
@@ -55,7 +55,7 @@
   <%= render "tags_edit", form: form, name: "model[tag_list]", selected: SiteSettings.model_tags_auto_tag_new, label: ActsAsTaggableOn::Tag.model_name.human(count: 100), tags: @available_tags || [] %>
 
   <div>
-    <%= form.label translate(".permission_preset"), for: :permission_preset %>
+    <%= form.label translate(".permission_preset"), for: :permission_preset, class: "tw:block tw:text-sm tw:font-medium tw:text-secondary-700 tw:dark:tw:text-secondary-300" %>
   </div>
   <div>
     <%= form.select :permission_preset, [
@@ -64,12 +64,10 @@
           [translate("settings.multiuser.default_viewer_role.options.public"), "public"]
         ],
           {selected: SiteSettings.default_viewer_role},
-          {class: "form-control col-auto form-select"} %>
+          {class: "tw:block tw:w-full tw:rounded-lg tw:border tw:border-secondary-300 tw:px-3 tw:py-2 tw:shadow-sm tw:focus:ring-2 tw:focus:ring-primary-500 tw:dark:tw:border-secondary-600 tw:dark:tw:bg-secondary-800"} %>
   </div>
 
-  <div class="row mb-3 input-group">
-    <div class='offset-sm-2 col-sm-10 ps-0'>
-      <%= submit_tag translate(".submit"), class: "btn btn-primary" %>
-    </div>
+  <div class="tw:mt-4">
+    <%= submit_tag translate(".submit"), class: "tw:inline-flex tw:items-center tw:px-4 tw:py-2 tw:rounded-lg tw:bg-primary-600 tw:text-white hover:tw:bg-primary-700 focus-visible:tw:ring-2 focus-visible:tw:ring-primary-500" %>
   </div>
 <% end %>

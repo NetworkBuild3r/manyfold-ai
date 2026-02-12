@@ -1,85 +1,69 @@
 <h3><%= t(".heading") %></h3>
-<%= link_to t("libraries.general.new"), new_library_path, class: "btn btn-secondary float-end" if policy(:library).new? %>
-<p class='lead'>
+<div class="tw:flex tw:flex-wrap tw:items-center tw:gap-2 tw:mb-4">
+  <%= link_to t("libraries.general.new"), new_library_path, class: "tw:inline-flex tw:items-center tw:px-4 tw:py-2 tw:rounded-lg tw:border tw:border-secondary-300 tw:dark:border-secondary-500 tw:bg-white tw:dark:tw:bg-secondary-800 hover:tw:bg-secondary-50 tw:dark:hover:tw:bg-secondary-700 focus:tw:ring-2 focus:tw:ring-primary-500 tw:ml-auto" if policy(:library).new? %>
+</div>
+<p class="tw:text-lg tw:text-secondary-700 tw:dark:tw:text-secondary-300 tw:mb-6">
   <%= t(".description") %>
 </p>
-<div class="row">
+<div class="tw:grid tw:grid-cols-1 tw:md:grid-cols-2 tw:gap-6">
   <% Library.find_each do |library| %>
-    <div class="col-md-6">
-      <div class="card <%= "border-info" if library.default? %>">
-        <div class="card-header">
-          <%= Icon(icon: library.icon, label: library.icon) if library.icon %>
-          <%= library.name %>
-          <%= content_tag(:small, class: "text-info float-end") { t("activerecord.attributes.library.default") } if library.default? %>
+    <div class="tw:rounded-xl tw:border tw:bg-white tw:dark:tw:bg-secondary-800 tw:overflow-hidden tw:shadow-sm <%= "tw:border-info" if library.default? %>">
+      <div class="tw:flex tw:flex-wrap tw:items-center tw:gap-2 tw:px-4 tw:py-3 tw:border-b tw:border-secondary-200 tw:dark:tw:border-secondary-600">
+        <%= Icon(icon: library.icon, label: library.icon) if library.icon %>
+        <span class="tw:font-medium tw:text-secondary-900 tw:dark:tw:text-secondary-100"><%= library.name %></span>
+        <%= content_tag(:small, class: "tw:text-info tw:ml-auto") { t("activerecord.attributes.library.default") } if library.default? %>
+        <div class="tw:flex tw:gap-2 tw:ml-auto">
+          <%= GoButton(icon: "box", icon_only: true, label: Model.model_name.human.pluralize, href: models_path(library: library.to_param), variant: "outline-secondary") %>
+          <%= DoButton(icon: "radar", icon_only: true, label: t("application.navbar.scan_changes.label"), href: scans_path(library: library.to_param), method: :post, variant: "outline-warning", confirm: translate(".scan_changes.confirm")) if policy(:scan).create? %>
+          <%= GoButton(icon: "pencil", label: t("general.edit"), href: edit_library_path(library), variant: :secondary) %>
         </div>
-        <div class="card-body">
-          <div class="float-end">
-            <%= GoButton(icon: "box", icon_only: true, label: Model.model_name.human.pluralize, href: models_path(library: library.to_param), variant: "outline-secondary") %>
-            <%= DoButton(icon: "radar", icon_only: true, label: t("application.navbar.scan_changes.label"), href: scans_path(library: library.to_param), method: :post, variant: "outline-warning", confirm: translate(".scan_changes.confirm")) if policy(:scan).create? %>
-            <%= GoButton(icon: "pencil", label: t("general.edit"), href: edit_library_path(library), variant: :secondary) %>
+      </div>
+      <div class="tw:p-4">
+        <% if library.notes.present? %>
+          <div class="tw:mb-4 tw:prose tw:prose-sm tw:dark:tw:prose-invert tw:max-w-none"><%= markdownify(library.notes) %></div>
+        <% end %>
+        <div class="tw:grid tw:grid-cols-[min-content_1fr] tw:gap-x-4 tw:gap-y-2 tw:items-baseline">
+          <span class="tw:text-secondary-600 tw:dark:tw:text-secondary-400"><%= t("activerecord.attributes.library.storage_service") %></span>
+          <span><%= t("libraries.storage_services.%{service}" % {service: library.storage_service}) %></span>
+          <% if library.storage_service == "filesystem" %>
+            <span class="tw:text-secondary-600 tw:dark:tw:text-secondary-400"><%= t("activerecord.attributes.library.path") %></span>
+            <code class="tw:text-sm tw:break-all"><%= library.path %></code>
+          <% end %>
+          <% if library.storage_service == "s3" %>
+            <span class="tw:text-secondary-600 tw:dark:tw:text-secondary-400"><%= t("activerecord.attributes.library.s3_endpoint") %></span>
+            <span><%= library.s3_endpoint %></span>
+            <span class="tw:text-secondary-600 tw:dark:tw:text-secondary-400"><%= t("activerecord.attributes.library.s3_bucket") %></span>
+            <span><%= library.s3_bucket %></span>
+            <span class="tw:text-secondary-600 tw:dark:tw:text-secondary-400"><%= t("activerecord.attributes.library.s3_region") %></span>
+            <span><%= library.s3_region %></span>
+          <% end %>
+          <% if library.free_space %>
+            <span class="tw:text-secondary-600 tw:dark:tw:text-secondary-400"><%= t(".free_space.label") %></span>
+            <span><%= number_to_human_size(library.free_space, precision: 2) %></span>
+          <% end %>
+          <span class="tw:text-secondary-600 tw:dark:tw:text-secondary-400"><%= t("activerecord.attributes.library.caption") %></span>
+          <span><%= library.caption %></span>
+          <span class="tw:text-secondary-600 tw:dark:tw:text-secondary-400"><%= t("activerecord.attributes.library.tag_regex") %></span>
+          <div class="tw:flex tw:flex-wrap tw:gap-2 tw:min-w-0">
+            <% library.tag_regex.each do |reg| %>
+              <%= link_to t(".tag_regex.check"), models_path(library: library, missingtag: reg), class: "tw:inline-flex tw:items-center tw:px-3 tw:py-1.5 tw:text-sm tw:rounded-lg tw:border tw:border-secondary-300 tw:dark:border-secondary-500 tw:bg-white tw:dark:tw:bg-secondary-800 hover:tw:bg-secondary-50 tw:dark:hover:tw:bg-secondary-700" %>
+              <code class="tw:text-sm"><%= reg %></code>
+            <% end %>
+            <%= link_to t(".tag_regex.search_missing"), models_path(library: library, missingtag: ""), class: "tw:inline-flex tw:items-center tw:px-3 tw:py-1.5 tw:text-sm tw:rounded-lg tw:border tw:border-secondary-300 tw:dark:border-secondary-500 tw:bg-white tw:dark:tw:bg-secondary-800 hover:tw:bg-secondary-50 tw:dark:hover:tw:bg-secondary-700" if library.tag_regex.any? %>
           </div>
-          <p>
-            <%= markdownify(library.notes) if library.notes %>
-          </p>
-          <table class="table">
-            <tr>
-              <td><%= t("activerecord.attributes.library.storage_service") %></td>
-              <td><%= t("libraries.storage_services.%{service}" % {service: library.storage_service}) %></td>
-            </tr>
-            <% if library.storage_service == "filesystem" %>
-              <tr>
-                <td><%= t("activerecord.attributes.library.path") %></td>
-                <td><code style="word-break: break-all"><%= library.path %></code></td>
-              </tr>
-            <% end %>
-            <% if library.storage_service == "s3" %>
-              <tr>
-                <td><%= t("activerecord.attributes.library.s3_endpoint") %></td>
-                <td><%= library.s3_endpoint %></td>
-              </tr>
-              <tr>
-                <td><%= t("activerecord.attributes.library.s3_bucket") %></td>
-                <td><%= library.s3_bucket %></td>
-              </tr>
-              <tr>
-                <td><%= t("activerecord.attributes.library.s3_region") %></td>
-                <td><%= library.s3_region %></td>
-              </tr>
-            <% end %>
-            <% if library.free_space %>
-              <tr>
-                <td><%= t(".free_space.label") %></td>
-                <td><%= number_to_human_size(library.free_space, precision: 2) %></td>
-              </tr>
-            <% end %>
-            <tr>
-              <td><%= t("activerecord.attributes.library.caption") %></td>
-              <td><%= library.caption %></td>
-            </tr>
-            <tr>
-              <td><%= t("activerecord.attributes.library.tag_regex") %></td>
-              <td>
-                <% library.tag_regex.each do |reg| %>
-                  <%= link_to t(".tag_regex.check"), models_path(library: library, missingtag: reg), {class: "btn btn-secondary"} %>
-                  <code><%= reg %></code><br>
-                <% end %>
-                <%= if !library.tag_regex.empty? then link_to t(".tag_regex.search_missing"), models_path(library: library, missingtag: ""), {class: "btn btn-secondary"} end %>
-              </td>
-            </tr>
-          </table>
-          <div class="row">
-            <%= StatBlock(title: Model, value: model_count(library: library)) %>
-            <%= StatBlock(title: ModelFile, value: model_file_count(library: library)) %>
-            <%= StatBlock(title: t("settings.show.total_file_size"), value: number_to_human_size(total_file_size(library: library), precision: 2)) %>
-          </div>
+        </div>
+        <div class="tw:flex tw:flex-wrap tw:gap-2 tw:mt-4">
+          <%= StatBlock(title: Model, value: model_count(library: library)) %>
+          <%= StatBlock(title: ModelFile, value: model_file_count(library: library)) %>
+          <%= StatBlock(title: t("settings.show.total_file_size"), value: number_to_human_size(total_file_size(library: library), precision: 2)) %>
         </div>
       </div>
     </div>
   <% end %>
 </div>
 
-<hr>
-<h4><%= t(".settings") %></h4>
+<hr class="tw:my-8 tw:border-secondary-200 tw:dark:tw:border-secondary-600">
+<h4 class="tw:mb-4"><%= t(".settings") %></h4>
 
 <%= form_with url: settings_path, method: :patch, class: "tabular-form" do |form| %>
   <%= checkbox_input_row form, "libraries[show]",

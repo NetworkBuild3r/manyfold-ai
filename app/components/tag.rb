@@ -3,7 +3,7 @@
 class Components::Tag < Components::Base
   include Phlex::Rails::Helpers::LinkTo
 
-  CLASSES = "badge rounded-pill bg-secondary tag"
+  CLASSES = "tw:inline-flex tw:items-center tw:px-2.5 tw:py-0.5 tw:rounded-full tw:text-xs tw:font-medium tw:bg-secondary-200 tw:text-secondary-800 tw:dark:bg-secondary-600 tw:dark:text-secondary-200 tw:no-underline hover:tw:opacity-90".freeze
 
   def initialize(tag:, show_count: false, filters: {}, html_options: {}, filter_in_place: false)
     @tag = tag

@@ -1,15 +1,15 @@
-<div class="card">
-  <h2 class="card-header">
+<div class="tw:rounded-xl tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:bg-white tw:dark:tw:bg-secondary-800 tw:shadow-sm tw:overflow-hidden">
+  <h2 class="tw:px-4 tw:py-3 tw:bg-secondary-600 tw:text-white tw:m-0 tw:font-medium tw:flex tw:items-center tw:gap-2">
     <%= Icon icon: "search" %>
     <%= t ".title" %>
   </h2>
 
-  <div class="card-body">
+  <div class="tw:p-4">
     <p>
       <%= t ".content" %>
     </p>
     <%= content_tag(:p) { t ".more_access" } if current_user && !current_user&.is_contributor? %>
-    <div class="text-end">
+    <div class="tw:text-right tw:mt-2">
       <%= GoButton(label: t(".manual_link"), href: "https://manyfold.app/manual", variant: :primary, icon: "box-arrow-up-right", target: "_manyfold_user_guide") %>
     </div>
   </div>

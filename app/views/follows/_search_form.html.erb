@@ -1,11 +1,11 @@
 <p>
   <%= t(".help") %>
 </p>
-<div class="col-8">
-  <%= form_with url: new_follow_path, method: :get, class: "mt-3" do |f| %>
-    <div class="input-group mb-3">
-      <%= f.text_field :uri, class: "form-control", placeholder: translate(".placeholder"), aria_label: translate(".submit"), aria_describedby: "button-search", value: query %>
-      <%= f.submit translate(".submit"), class: "btn btn-primary", name: nil %>
+<div class="tw:max-w-xl">
+  <%= form_with url: new_follow_path, method: :get, class: "tw:mt-4" do |f| %>
+    <div class="tw:flex tw:rounded-lg tw:overflow-hidden tw:border tw:border-secondary-300 tw:dark:tw:border-secondary-600 tw:mb-4">
+      <%= f.text_field :uri, class: "tw:flex-1 tw:block tw:w-full tw:rounded-none tw:border-0 tw:px-3 tw:py-2 tw:shadow-sm focus:tw:ring-2 focus:tw:ring-primary-500 tw:dark:tw:bg-secondary-800", placeholder: translate(".placeholder"), aria_label: translate(".submit"), aria_describedby: "button-search", value: query %>
+      <%= f.submit translate(".submit"), class: "tw:inline-flex tw:items-center tw:px-4 tw:py-2 tw:bg-primary-600 tw:text-white hover:tw:bg-primary-700 focus-visible:tw:ring-2 focus-visible:tw:ring-primary-500", name: nil, id: "button-search" %>
     </div>
   <% end %>
 </div>

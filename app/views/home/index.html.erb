@@ -1,32 +1,30 @@
-<div class="row pt-3 mb-3 text-center">
-  <h1 class="d-none d-md-block"><%= site_name %></h1>
-  <p class='lead'><%= site_tagline %></p>
+<div class="tw:pt-4 tw:pb-4 tw:text-center">
+  <h1 class="tw:hidden tw:md:block"><%= site_name %></h1>
+  <p class="tw:text-lg tw:text-secondary-600 tw:dark:tw:text-secondary-400"><%= site_tagline %></p>
   <% if SiteSettings.demo_mode_enabled? %>
-    <div class="alert alert-info">
+    <div class="tw:px-4 tw:py-3 tw:rounded-lg tw:bg-info/10 tw:text-info tw:inline-block tw:mt-2">
       <%= t "application.demo_mode" %>
     </div>
   <% end %>
-  <div id="home-search" class="col-8 offset-md-2 mt-3 mb-3" data-turbo-permanent>
+  <div id="home-search" class="tw:max-w-2xl tw:mx-auto tw:mt-4 tw:mb-4" data-turbo-permanent>
     <%= form_with url: models_path, method: :get do |f| %>
-      <div class="input-group">
-        <%= f.text_field :q, class: "form-control", placeholder: translate(".search.placeholder"), aria_label: translate(".search.submit"), aria_describedby: "button-search", value: @query, role: "search" %>
-        <%= f.submit translate(".search.submit"), class: "btn btn-primary", name: nil %>
+      <div class="tw:flex tw:rounded-lg tw:overflow-hidden tw:border tw:border-secondary-300 tw:dark:tw:border-secondary-600">
+        <%= f.text_field :q, class: "tw:flex-1 tw:block tw:w-full tw:rounded-none tw:border-0 tw:px-3 tw:py-2 tw:shadow-sm focus:tw:ring-2 focus:tw:ring-primary-500 tw:dark:tw:bg-secondary-800", placeholder: translate(".search.placeholder"), aria_label: translate(".search.submit"), aria_describedby: "button-search", value: @query, role: "search" %>
+        <%= f.submit translate(".search.submit"), class: "tw:inline-flex tw:items-center tw:px-4 tw:py-2 tw:bg-primary-600 tw:text-white hover:tw:bg-primary-700 focus-visible:tw:ring-2 focus-visible:tw:ring-primary-500", name: nil, id: "button-search" %>
       </div>
       <%= SearchHelp do %>
-        <small class="ms-3"><%= t(".open_search_help") %></small>
+        <small class="tw:inline-block tw:mt-3 tw:ms-3 tw:text-secondary-600 tw:dark:tw:text-secondary-400"><%= t(".open_search_help") %></small>
       <% end %>
     <% end %>
   </div>
 </div>
-<div class="row row-cols-2">
-  <div class="col-8 offset-md-2">
-    <% if !@feed.empty? %>
-      <p class="lead"><%= t(".recent_activity") %></p>
-      <%= render partial: "activity", collection: @feed %>
-    <% else %>
-      <div class="alert alert-info">
-        <%= t(".no_activities") %>
-      </div>
-    <% end %>
-  </div>
+<div class="tw:max-w-2xl tw:mx-auto">
+  <% if !@feed.empty? %>
+    <p class="tw:text-lg tw:text-secondary-600 tw:dark:tw:text-secondary-400"><%= t(".recent_activity") %></p>
+    <%= render partial: "activity", collection: @feed %>
+  <% else %>
+    <div class="tw:px-4 tw:py-3 tw:rounded-lg tw:bg-info/10 tw:text-info">
+      <%= t(".no_activities") %>
+    </div>
+  <% end %>
 </div>

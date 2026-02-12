@@ -2,48 +2,43 @@
       Model.model_name.human(count: 100) => models_path
     } %>
 
-<p class="lead">
+<p class="tw:text-lg tw:text-secondary-600 tw:dark:tw:text-secondary-400">
   <%= t(".description") %>
 </p>
 
-<div class="container">
+<div class="tw:max-w-2xl tw:mx-auto">
   <%= form_with url: merge_models_path do |form| %>
     <% @models.each do |it| %>
-      <div class="row p-2 radio-option rounded">
+      <div class="tw:flex tw:items-start tw:gap-3 tw:p-3 tw:mb-2 tw:rounded-lg tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:has-[:checked]:tw:border-primary-500 tw:has-[:checked]:tw:ring-2 tw:has-[:checked]:tw:ring-primary-500/20">
         <%= form.hidden_field "models[]", value: it.public_id %>
-        <%= form.radio_button :target, it.public_id, id: it.public_id %>
-        <label for="<%= it.public_id %>">
+        <%= form.radio_button :target, it.public_id, id: it.public_id, class: "tw:mt-1 tw:border-secondary-300 tw:text-primary-600 tw:focus:ring-primary-500" %>
+        <label for="<%= it.public_id %>" class="tw:flex-1 tw:cursor-pointer">
           <%= ModelSummary(model: it) %>
         </label>
       </div>
     <% end %>
-    <div class="row p-2 radio-option rounded">
-      <%= form.radio_button :target, "==new==", id: "==new==" %>
-      <label for="==new==">
-        <div class="card">
-          <div class="card-body">
-            <h5><%= t(".new_model.title") %></h5>
-            <p><%= t(".new_model.description") %></p>
-          </div>
+    <div class="tw:flex tw:items-start tw:gap-3 tw:p-3 tw:mb-2 tw:rounded-lg tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:has-[:checked]:tw:border-primary-500 tw:has-[:checked]:tw:ring-2 tw:has-[:checked]:tw:ring-primary-500/20">
+      <%= form.radio_button :target, "==new==", id: "==new==", class: "tw:mt-1 tw:border-secondary-300 tw:text-primary-600 tw:focus:ring-primary-500" %>
+      <label for="==new==" class="tw:flex-1 tw:cursor-pointer">
+        <div class="tw:rounded-xl tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:bg-white tw:dark:tw:bg-secondary-800 tw:p-4">
+          <h5 class="tw:text-lg tw:font-medium tw:mb-1"><%= t(".new_model.title") %></h5>
+          <p class="tw:text-secondary-600 tw:dark:tw:text-secondary-400"><%= t(".new_model.description") %></p>
         </div>
       </label>
     </div>
     <% if @common_root %>
-      <div class="row p-2 radio-option rounded">
-        <%= form.radio_button :target, "==common_root==", id: "==common_root==" %>
-        <label for="==common_root==">
-        <div class="card">
-          <div class="card-body">
-            <h5><%= t(".common_root.title") %></h5>
-            <p><%= t(".common_root.description") %>: <code><%= @common_root %></code></p>
+      <div class="tw:flex tw:items-start tw:gap-3 tw:p-3 tw:mb-2 tw:rounded-lg tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:has-[:checked]:tw:border-primary-500 tw:has-[:checked]:tw:ring-2 tw:has-[:checked]:tw:ring-primary-500/20">
+        <%= form.radio_button :target, "==common_root==", id: "==common_root==", class: "tw:mt-1 tw:border-secondary-300 tw:text-primary-600 tw:focus:ring-primary-500" %>
+        <label for="==common_root==" class="tw:flex-1 tw:cursor-pointer">
+          <div class="tw:rounded-xl tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:bg-white tw:dark:tw:bg-secondary-800 tw:p-4">
+            <h5 class="tw:text-lg tw:font-medium tw:mb-1"><%= t(".common_root.title") %></h5>
+            <p class="tw:text-secondary-600 tw:dark:tw:text-secondary-400"><%= t(".common_root.description") %>: <code class="tw:px-1.5 tw:py-0.5 tw:rounded tw:bg-secondary-100 tw:dark:tw:bg-secondary-700 tw:text-sm"><%= @common_root %></code></p>
           </div>
-        </div>
-
         </label>
       </div>
     <% end %>
-    <div class="mt-3">
-      <%= form.submit %>
+    <div class="tw:mt-4">
+      <%= form.submit class: "tw:inline-flex tw:items-center tw:px-4 tw:py-2 tw:rounded-lg tw:bg-primary-600 tw:text-white hover:tw:bg-primary-700 focus-visible:tw:ring-2 focus-visible:tw:ring-primary-500" %>
     </div>
   <% end %>
 </div>

@@ -1,15 +1,14 @@
-<div class="card border-0 border-bottom">
+<div class="tw:border-b tw:border-secondary-200 tw:dark:tw:border-secondary-600">
   <%= turbo_stream_from activity %>
-  <div class="card-body py-2">
-    <div class="row">
-      <div class="col col-auto">
+  <div class="tw:py-3 tw:flex tw:flex-wrap tw:items-center tw:gap-3">
+    <div class="tw:shrink-0">
         <%= Icon icon: icon_for(activity.class), label: activity.class.model_name.human %>
       </div>
-      <div class="col">
+    <div class="tw:flex-1 tw:min-w-0">
         <%- if activity.federails_actor.nil? || activity.federails_actor.local? %>
-          <%= link_to activity.name, activity %>
+          <%= link_to activity.name, activity, class: "tw:text-primary-600 tw:dark:tw:text-primary-400 hover:tw:underline" %>
         <%- elsif activity.federails_actor&.profile_url %>
-          <%= link_to activity.name, activity.federails_actor&.profile_url %>
+          <%= link_to activity.name, activity.federails_actor&.profile_url, class: "tw:text-primary-600 tw:dark:tw:text-primary-400 hover:tw:underline" %>
         <%- else %>
           <%= activity.name %>
         <%- end %>
@@ -18,12 +17,12 @@
         <%= AccessIndicator(object: activity) %>
       </div>
       <% if activity.is_a? Model %>
-        <div class="col col-auto">
+        <div class="tw:shrink-0">
           <%= StatusBadges(model: activity) %>
         </div>
       <% end %>
-      <div class="col col-auto">
-        <small>
+      <div class="tw:shrink-0">
+        <small class="tw:text-secondary-600 tw:dark:tw:text-secondary-400">
           <% if activity.updated_at >= (activity.created_at + 1.minute) %>
             <%= t(".updated", time: time_ago_in_words(activity.updated_at)) %>
           <% else %>
@@ -31,6 +30,5 @@
           <% end %>
         </small>
       </div>
-    </div>
   </div>
 </div>

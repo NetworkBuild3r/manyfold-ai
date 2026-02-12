@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Components::Avatar < Components::Base
   def initialize(url:, size: nil)
     @url = url
@@ -5,9 +7,11 @@ class Components::Avatar < Components::Base
   end
 
   def view_template
-    classes = ["avatar"]
-    classes << "avatar-lg" if @size == :large
-    classes << "avatar-sm" if @size == :small
-    img src: @url, class: classes.join(" ")
+    size_class = case @size
+    when :large then "tw:w-16 tw:h-16"
+    when :small then "tw:w-8 tw:h-8"
+    else "tw:w-10 tw:h-10"
+    end
+    img src: @url, class: "tw:rounded-full tw:object-cover #{size_class}"
   end
 end

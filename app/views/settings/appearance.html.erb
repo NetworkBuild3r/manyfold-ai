@@ -1,5 +1,5 @@
 <h3><%= t(".heading") %></h3>
-<p class="lead"><%= t(".summary") %></p>
+<p class="tw:text-lg tw:text-secondary-600 tw:dark:text-secondary-400"><%= t(".summary") %></p>
 
 <%= form_with url: settings_path, method: :patch, class: "tabular-form" do |form| %>
   <%= text_input_row form, "appearance[site_name]", label: t(".site_name.label"), value: SiteSettings.site_name, placeholder: t("application.title"), help: t(".site_name.help") %>

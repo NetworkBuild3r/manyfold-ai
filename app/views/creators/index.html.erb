@@ -3,26 +3,43 @@
 <% end %>
 
 <% content_for :items do %>
-  <div class="skip-link-container">
-    <%= skip_link "sidebar", t(".skip_creators") %>
-    <div class="row">
-      <div class="col">
-        <%= paginate @creators %>
-      </div>
-      <div class="col col-auto">
-        <%= SortMenu(filter: @filter) %>
-      </div>
+  <% if @creators.empty? && (@unassigned_count || 0) == 0 %>
+    <div class="tw:flex tw:flex-col tw:items-center tw:justify-center tw:py-12 tw:px-4 tw:text-center tw:rounded-xl tw:bg-surface-alt tw:dark:bg-secondary-800/50 tw:border tw:border-secondary-200 tw:dark:border-secondary-600" role="status" aria-live="polite">
+      <%= Icon icon: "people", label: "" %>
+      <p class="tw:mt-4 tw:text-secondary-700 tw:dark:tw:text-secondary-300"><%= t(".no_results_html") %></p>
+      <% if @filter.any? %>
+        <p class="tw:mt-2"><%= link_to t(".clear_filters"), creators_path, class: "tw:inline-flex tw:items-center tw:px-4 tw:py-2 tw:rounded-lg tw:bg-primary-600 tw:text-white hover:tw:bg-primary-700 focus:tw:ring-2 focus:tw:ring-primary-500" %></p>
+      <% end %>
     </div>
-    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 mb-4">
-      <%= render "unassigned" if @unassigned_count > 0 && @creators.first_page? %>
-      <%= render @creators %>
+  <% else %>
+    <div class="skip-link-container">
+      <div class="tw:flex tw:flex-wrap tw:items-center tw:gap-2 tw:mb-4">
+        <%= skip_link "sidebar", t(".skip_creators") %>
+        <div class="tw:ml-auto">
+          <%= SortMenu(filter: @filter) %>
+        </div>
+      </div>
+      <% if @filter.any? %>
+        <div class="tw:flex tw:flex-wrap tw:gap-2 tw:mb-4" role="group" aria-label="Active filters">
+          <% active_filters_list(@filter).each do |entry| %>
+            <span class="tw:inline-flex tw:items-center tw:gap-1 tw:px-3 tw:py-1.5 tw:rounded-full tw:bg-secondary-200 tw:dark:tw:bg-secondary-600 tw:text-sm">
+              <span class="tw:truncate tw:max-w-[200px]"><%= entry[:pill_label] %></span>
+              <%= link_to "×", entry[:remove_url], class: "tw:flex-shrink-0 tw:rounded-full tw:p-0.5 hover:tw:bg-secondary-300 tw:dark:hover:tw:bg-secondary-500 focus:tw:ring-2 focus:tw:ring-primary-500 focus:tw:outline-none", aria: { label: entry[:aria_remove] } %>
+            </span>
+          <% end %>
+        </div>
+      <% end %>
+      <div class="tw:grid tw:grid-cols-[repeat(auto-fill,minmax(240px,1fr))] tw:gap-4 tw:mb-4" role="list" aria-label="Creators">
+        <%= render "unassigned" if @unassigned_count > 0 && @creators.first_page? %>
+        <%= render @creators %>
+      </div>
+      <%= paginate @creators %>
     </div>
-    <%= paginate @creators %>
-  </div>
+  <% end %>
 <% end %>
 
 <% content_for :actions do %>
-  <%= link_to t("creators.general.new"), new_creator_path, class: "btn btn-primary" if policy(:creator).new? %>
+  <%= link_to t("creators.general.new"), new_creator_path, class: "tw:inline-flex tw:items-center tw:px-4 tw:py-2 tw:rounded-lg tw:bg-primary-600 tw:text-white hover:tw:bg-primary-700 focus:tw:ring-2 focus:tw:ring-primary-500" if policy(:creator).new? %>
 <% end %>
 
 <% content_for :sidebar do %>

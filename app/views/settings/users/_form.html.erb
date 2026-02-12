@@ -6,7 +6,7 @@
   <% if !user.persisted? %>
     <% if SiteSettings.email_configured? %>
       <div></div>
-      <div class="alert alert-info">
+      <div class="tw:px-4 tw:py-3 tw:rounded-lg tw:bg-info/10 tw:text-info">
         <%= t(".password_reset_help") %>
       </div>
     <% else %>
@@ -16,13 +16,13 @@
   <% end %>
 
   <div>
-    <%= form.label :roles, class: "col-auto col-form-label" %>
+    <%= form.label :roles, class: "tw:block tw:text-sm tw:font-medium tw:text-secondary-700 tw:dark:tw:text-secondary-300" %>
   </div>
-  <div>
+  <div class="tw:flex tw:flex-wrap tw:gap-4 tw:items-center">
     <%= form.collection_check_boxes :role_ids, @available_roles, :id, :name do |b| # rubocop:disable Pundit/UsePolicyScope
-          content_tag :div, class: "form-check" do
-            b.check_box(class: "form-check-input") +
-              b.label(class: "form-check-label")
+          content_tag :div, class: "tw:flex tw:items-center tw:gap-2" do
+            b.check_box(class: "tw:rounded tw:border-secondary-300 tw:text-primary-600 tw:focus:ring-primary-500 tw:h-4 tw:w-4") +
+              b.label(class: "tw:text-sm tw:text-secondary-700 tw:dark:tw:text-secondary-300 tw:cursor-pointer")
           end
         end %>
   </div>
@@ -38,7 +38,7 @@
   <% end %>
 
   <div>
-    <%= form.submit translate(".submit"), class: "btn btn-primary" %>
+    <%= form.submit translate(".submit"), class: "tw:inline-flex tw:items-center tw:px-4 tw:py-2 tw:rounded-lg tw:bg-primary-600 tw:text-white hover:tw:bg-primary-700 focus-visible:tw:ring-2 focus-visible:tw:ring-primary-500" %>
   </div>
 
 <% end %>

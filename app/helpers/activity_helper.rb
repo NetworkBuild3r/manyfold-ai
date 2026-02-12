@@ -15,11 +15,11 @@ module ActivityHelper
   def activity_row_style(status)
     case status
     when :working
-      "table-info"
+      "tw:bg-info/10"
     when :completed
-      "table-success"
+      "tw:bg-success/10"
     when :failed
-      "table-danger"
+      "tw:bg-danger/10"
     end
   end
 end

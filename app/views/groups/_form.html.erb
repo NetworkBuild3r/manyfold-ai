@@ -14,17 +14,17 @@
           end
         end %>
     <%= cocooned_add_item_button t(".add"), form, :memberships,
-          class: "btn btn-secondary",
+          class: "tw:inline-flex tw:items-center tw:gap-1.5 tw:px-3 tw:py-1.5 tw:text-sm tw:font-medium tw:rounded-lg tw:border tw:border-secondary-300 tw:bg-white tw:dark:border-secondary-600 tw:dark:bg-secondary-800 tw:text-secondary-700 tw:dark:text-secondary-200 hover:tw:bg-secondary-50 hover:tw:dark:bg-secondary-700",
           insertion_node: "#cocooned-memberships",
           insertion_method: "append" %>
   </div>
 
-  <div>
-    <%= form.submit class: "btn btn-primary" %>
+  <div class="tw:flex tw:flex-wrap tw:items-center tw:gap-2">
+    <%= form.submit class: "tw:inline-flex tw:items-center tw:gap-1.5 tw:px-3 tw:py-1.5 tw:text-sm tw:font-medium tw:rounded-lg tw:bg-primary-600 tw:text-white hover:tw:bg-primary-700 focus-visible:tw:ring-2 focus-visible:tw:ring-primary-500" %>
     <% if group.persisted? && policy(group).destroy? %>
       <%= link_to creator_group_path(creator, group), {
             method: :delete,
-            class: "float-end btn btn-outline-danger",
+            class: "tw:inline-flex tw:items-center tw:gap-1.5 tw:px-3 tw:py-1.5 tw:text-sm tw:font-medium tw:rounded-lg tw:border tw:border-danger tw:text-danger tw:bg-transparent hover:tw:bg-danger/10 tw:ms-auto",
             data: {confirm: translate("views.groups.form.confirm_destroy")}
           } do %>
         <%= Icon(icon: "trash", label: t("general.delete")) %>

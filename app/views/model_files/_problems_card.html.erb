@@ -1,25 +1,25 @@
 <% return if problems.empty? %>
 <%= card("secondary", Problem.model_name.human(count: 100)) do %>
   <% problems.each do |problem| %>
-    <div class="clearfix" id="problem-<%= problem.id %>">
+    <div class="tw:mb-4 tw:last:tw:mb-0" id="problem-<%= problem.id %>">
       <details>
-        <summary>
+        <summary class="tw:flex tw:items-center tw:gap-2 tw:cursor-pointer tw:list-none [&::-webkit-details-marker]:tw:hidden">
           <%= problem_icon_tag(problem) %>
           <%= t("problems.model_file.%{cat}.title" % {cat: problem.category}) %>
         </summary>
-        <div class="card mb-2">
-          <div class="card-body">
-            <p>
+        <div class="tw:mt-2 tw:mb-4 tw:rounded-lg tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:bg-secondary-50 tw:dark:tw:bg-secondary-800/50">
+          <div class="tw:p-4">
+            <p class="tw:mb-3 tw:last:tw:mb-0">
               <%= t("problems.model_file.%{cat}.description_html" % {cat: problem.category}, note: problem.note) %>
             </p>
             <% if problem.category == "duplicate" && !@duplicates.empty? %>
-              <ul>
+              <ul class="tw:list-disc tw:pl-5 tw:mb-3">
                 <% @duplicates.each do |file| %>
-                  <li><%= link_to "#{file.model.name}/#{file.filename}", [file.model, file] %></li>
+                  <li><%= link_to "#{file.model.name}/#{file.filename}", [file.model, file], class: "tw:text-primary-600 tw:dark:tw:text-primary-400 hover:tw:underline" %></li>
                 <% end %>
               </ul>
             <% end %>
-            <div class="text-end"><%= ResolveButton(problem: problem, user: current_user) %></div>
+            <div class="tw:text-right tw:mt-2"><%= ResolveButton(problem: problem, user: current_user) %></div>
           </div>
         </div>
       </details>

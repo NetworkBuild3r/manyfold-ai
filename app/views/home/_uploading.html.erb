@@ -1,12 +1,12 @@
 <%- if current_user.has_quota? %>
-  <div class="card">
-    <h2 class="card-header">
+  <div class="tw:rounded-xl tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:bg-white tw:dark:tw:bg-secondary-800 tw:shadow-sm tw:overflow-hidden">
+    <h2 class="tw:px-4 tw:py-3 tw:bg-secondary-600 tw:text-white tw:m-0 tw:font-medium tw:flex tw:items-center tw:gap-2">
       <%= Icon icon: "upload" %>
       <%= t ".title" %>
     </h2>
 
-    <div class="card-body">
-      <p>
+    <div class="tw:p-4">
+      <p class="tw:mb-0">
         <%= t ".quota", quota: number_to_human_size(current_user.quota) %>
       </p>
     </div>

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Components::InputRow < Components::Base
   def initialize(form:, attribute:, label:, help: nil, options: {})
     @form = form
@@ -12,7 +14,7 @@ class Components::InputRow < Components::Base
     div do
       @form.label(@attribute, @label, class: label_class)
     end
-    div do
+    div(class: "tw:mt-1") do
       input_group
       errors_for(@form.object, @attribute_without_id)
       help
@@ -20,11 +22,11 @@ class Components::InputRow < Components::Base
   end
 
   def label_class
-    "col-form-label"
+    "tw:block tw:text-sm tw:font-medium tw:text-secondary-700 tw:dark:text-secondary-300"
   end
 
   def input_group
-    div class: "input-group" do
+    div(class: "tw:flex") do
       input_element
     end
   end
@@ -34,13 +36,13 @@ class Components::InputRow < Components::Base
   end
 
   def help
-    span(class: "form-text") { @help } if @help
+    span(class: "tw:text-sm tw:text-secondary-500 tw:dark:text-secondary-400 tw:mt-1 tw:block") { @help } if @help
   end
 
   def errors_for(object, attribute)
     return if object.nil? || attribute.nil?
     return unless object.errors.include? attribute
-    div class: "invalid-feedback d-block" do
+    div(class: "tw:text-danger tw:text-sm tw:mt-1") do
       object.errors.full_messages_for(attribute).join("; ")
     end
   end

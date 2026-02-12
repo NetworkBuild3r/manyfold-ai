@@ -1,8 +1,7 @@
 import { Controller } from '@hotwired/stimulus'
 
-import { Collapse } from 'bootstrap'
-
-// Connects to data-controller="storage-service"
+// Shows the storage options section that matches the select value; hides the rest.
+// Uses .show class for visibility (Bootstrap .collapse styling). No Bootstrap JS dependency.
 export default class extends Controller {
   connect (): void {
     this.onChange()
@@ -14,12 +13,12 @@ export default class extends Controller {
 
   updateSections (active: string): void {
     const selected = 'options-' + active
-    document.querySelectorAll('.storage-collapse').forEach((section: HTMLDivElement) => {
-      const control = Collapse.getOrCreateInstance(section, { toggle: false })
-      if (section.id === selected) {
-        control.show()
+    document.querySelectorAll('.storage-collapse').forEach((section: Element) => {
+      const el = section as HTMLElement
+      if (el.id === selected) {
+        el.classList.add('show')
       } else {
-        control.hide()
+        el.classList.remove('show')
       }
     })
   }

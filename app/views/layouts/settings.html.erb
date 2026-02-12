@@ -4,95 +4,97 @@
 <% elsif policy(:user).index? %>
   <%= PageTitle title: t(".moderation_settings_title") %>
 <% end %>
-<div class="row mt-2 flex-nowrap">
-  <div class="col col-auto border-end" id="sidebar">
-    <ul class="nav flex-column">
+<div class="tw:flex tw:flex-nowrap tw:gap-6 tw:mt-4">
+  <nav class="tw:sticky tw:top-16 tw:self-start tw:w-56 tw:flex-shrink-0 tw:border-r tw:border-secondary-200 tw:dark:border-secondary-600 tw:pr-6" id="sidebar" aria-label="Settings">
+    <ul class="tw:list-none tw:m-0 tw:p-0 tw:space-y-0.5">
       <% if policy(:settings).index? %>
-        <li class="nav-item">
-          <%= link_to t(".organization"), settings_path, class: "nav-link" %>
+        <li>
+          <%= link_to t(".organization"), settings_path, class: current_page?(settings_path) ? "tw:block tw:px-3 tw:py-2 tw:text-sm tw:rounded-lg tw:bg-primary-100 tw:text-primary-700 tw:dark:bg-primary-900/40 tw:dark:text-primary-200 tw:font-medium" : "tw:block tw:px-3 tw:py-2 tw:text-sm tw:text-secondary-700 tw:dark:text-secondary-300 tw:rounded-lg tw:no-underline hover:tw:bg-secondary-100 tw:dark:hover:bg-secondary-800", aria: (current_page?(settings_path) ? { current: "page" } : {}) %>
         </li>
-        <li class="nav-item">
-          <%= link_to t(".libraries"), settings_libraries_path, class: "nav-link" %>
+        <li>
+          <%= link_to t(".libraries"), settings_libraries_path, class: current_page?(settings_libraries_path) ? "tw:block tw:px-3 tw:py-2 tw:text-sm tw:rounded-lg tw:bg-primary-100 tw:text-primary-700 tw:dark:bg-primary-900/40 tw:dark:text-primary-200 tw:font-medium" : "tw:block tw:px-3 tw:py-2 tw:text-sm tw:text-secondary-700 tw:dark:text-secondary-300 tw:rounded-lg tw:no-underline hover:tw:bg-secondary-100 tw:dark:hover:bg-secondary-800", aria: (current_page?(settings_libraries_path) ? { current: "page" } : {}) %>
         </li>
-        <li class="nav-item">
-          <%= link_to t(".downloads"), downloads_settings_path, class: "nav-link" %>
+        <li>
+          <%= link_to t(".downloads"), downloads_settings_path, class: current_page?(downloads_settings_path) ? "tw:block tw:px-3 tw:py-2 tw:text-sm tw:rounded-lg tw:bg-primary-100 tw:text-primary-700 tw:dark:bg-primary-900/40 tw:dark:text-primary-200 tw:font-medium" : "tw:block tw:px-3 tw:py-2 tw:text-sm tw:text-secondary-700 tw:dark:text-secondary-300 tw:rounded-lg tw:no-underline hover:tw:bg-secondary-100 tw:dark:hover:bg-secondary-800", aria: (current_page?(downloads_settings_path) ? { current: "page" } : {}) %>
         </li>
-        <li class="nav-item">
-          <%= link_to t(".appearance"), appearance_settings_path, class: "nav-link" %>
+        <li>
+          <%= link_to t(".appearance"), appearance_settings_path, class: current_page?(appearance_settings_path) ? "tw:block tw:px-3 tw:py-2 tw:text-sm tw:rounded-lg tw:bg-primary-100 tw:text-primary-700 tw:dark:bg-primary-900/40 tw:dark:text-primary-200 tw:font-medium" : "tw:block tw:px-3 tw:py-2 tw:text-sm tw:text-secondary-700 tw:dark:text-secondary-300 tw:rounded-lg tw:no-underline hover:tw:bg-secondary-100 tw:dark:hover:bg-secondary-800", aria: (current_page?(appearance_settings_path) ? { current: "page" } : {}) %>
         </li>
-        <li class="nav-item">
-          <%= link_to t("settings.analysis.heading"), analysis_settings_path, class: "nav-link" %>
+        <li>
+          <%= link_to t("settings.analysis.heading"), analysis_settings_path, class: current_page?(analysis_settings_path) ? "tw:block tw:px-3 tw:py-2 tw:text-sm tw:rounded-lg tw:bg-primary-100 tw:text-primary-700 tw:dark:bg-primary-900/40 tw:dark:text-primary-200 tw:font-medium" : "tw:block tw:px-3 tw:py-2 tw:text-sm tw:text-secondary-700 tw:dark:text-secondary-300 tw:rounded-lg tw:no-underline hover:tw:bg-secondary-100 tw:dark:hover:bg-secondary-800", aria: (current_page?(analysis_settings_path) ? { current: "page" } : {}) %>
         </li>
-        <li class="nav-item">
-          <%= link_to t("settings.multiuser.heading"), multiuser_settings_path, class: "nav-link" %>
+        <li>
+          <%= link_to t("settings.multiuser.heading"), multiuser_settings_path, class: current_page?(multiuser_settings_path) ? "tw:block tw:px-3 tw:py-2 tw:text-sm tw:rounded-lg tw:bg-primary-100 tw:text-primary-700 tw:dark:bg-primary-900/40 tw:dark:text-primary-200 tw:font-medium" : "tw:block tw:px-3 tw:py-2 tw:text-sm tw:text-secondary-700 tw:dark:text-secondary-300 tw:rounded-lg tw:no-underline hover:tw:bg-secondary-100 tw:dark:hover:bg-secondary-800", aria: (current_page?(multiuser_settings_path) ? { current: "page" } : {}) %>
         </li>
       <% end %>
     </ul>
     <% if SiteSettings.multiuser_enabled? %>
-      <hr>
-      <h5><%= t(".moderation_heading") %></h5>
-      <ul class="nav flex-column">
-        <li class="nav-item">
-          <%= link_to t("settings.users.index.title"), settings_users_path, class: "nav-link" %>
+      <hr class="tw:my-3 tw:border-secondary-200 tw:dark:border-secondary-600">
+      <h5 class="tw:text-xs tw:font-semibold tw:uppercase tw:text-secondary-500 tw:dark:text-secondary-400 tw:mt-4 tw:mb-2 tw:first:mt-0"><%= t(".moderation_heading") %></h5>
+      <ul class="tw:list-none tw:m-0 tw:p-0 tw:space-y-0.5">
+        <li>
+          <%= link_to t("settings.users.index.title"), settings_users_path, class: current_page?(settings_users_path) ? "tw:block tw:px-3 tw:py-2 tw:text-sm tw:rounded-lg tw:bg-primary-100 tw:text-primary-700 tw:dark:bg-primary-900/40 tw:dark:text-primary-200 tw:font-medium" : "tw:block tw:px-3 tw:py-2 tw:text-sm tw:text-secondary-700 tw:dark:text-secondary-300 tw:rounded-lg tw:no-underline hover:tw:bg-secondary-100 tw:dark:hover:bg-secondary-800", aria: (current_page?(settings_users_path) ? { current: "page" } : {}) %>
         </li>
-        <li class="nav-item">
-          <%= link_to t("settings.reports.index.title"), settings_reports_path, class: "nav-link" %>
+        <li>
+          <%= link_to t("settings.reports.index.title"), settings_reports_path, class: current_page?(settings_reports_path) ? "tw:block tw:px-3 tw:py-2 tw:text-sm tw:rounded-lg tw:bg-primary-100 tw:text-primary-700 tw:dark:bg-primary-900/40 tw:dark:text-primary-200 tw:font-medium" : "tw:block tw:px-3 tw:py-2 tw:text-sm tw:text-secondary-700 tw:dark:text-secondary-300 tw:rounded-lg tw:no-underline hover:tw:bg-secondary-100 tw:dark:hover:bg-secondary-800", aria: (current_page?(settings_reports_path) ? { current: "page" } : {}) %>
         </li>
         <% if SiteSettings.federation_enabled? %>
-          <li class="nav-item">
-            <%= link_to t("settings.domain_blocks.index.title"), settings_domain_blocks_path, class: "nav-link" %>
+          <li>
+            <%= link_to t("settings.domain_blocks.index.title"), settings_domain_blocks_path, class: current_page?(settings_domain_blocks_path) ? "tw:block tw:px-3 tw:py-2 tw:text-sm tw:rounded-lg tw:bg-primary-100 tw:text-primary-700 tw:dark:bg-primary-900/40 tw:dark:text-primary-200 tw:font-medium" : "tw:block tw:px-3 tw:py-2 tw:text-sm tw:text-secondary-700 tw:dark:text-secondary-300 tw:rounded-lg tw:no-underline hover:tw:bg-secondary-100 tw:dark:hover:bg-secondary-800", aria: (current_page?(settings_domain_blocks_path) ? { current: "page" } : {}) %>
           </li>
         <% end %>
       </ul>
     <% end %>
     <% if policy(:settings).index? && current_user.is_administrator? %>
-      <hr>
-      <h5><%= t(".search_heading") %></h5>
-      <ul class="nav flex-column">
-        <li class="nav-item">
-          <%= link_to t("settings.discovery.heading"), discovery_settings_path, class: "nav-link" %>
+      <hr class="tw:my-3 tw:border-secondary-200 tw:dark:border-secondary-600">
+      <h5 class="tw:text-xs tw:font-semibold tw:uppercase tw:text-secondary-500 tw:dark:text-secondary-400 tw:mt-4 tw:mb-2 tw:first:mt-0"><%= t(".search_heading") %></h5>
+      <ul class="tw:list-none tw:m-0 tw:p-0 tw:space-y-0.5">
+        <li>
+          <%= link_to t("settings.discovery.heading"), discovery_settings_path, class: current_page?(discovery_settings_path) ? "tw:block tw:px-3 tw:py-2 tw:text-sm tw:rounded-lg tw:bg-primary-100 tw:text-primary-700 tw:dark:bg-primary-900/40 tw:dark:text-primary-200 tw:font-medium" : "tw:block tw:px-3 tw:py-2 tw:text-sm tw:text-secondary-700 tw:dark:text-secondary-300 tw:rounded-lg tw:no-underline hover:tw:bg-secondary-100 tw:dark:hover:bg-secondary-800", aria: (current_page?(discovery_settings_path) ? { current: "page" } : {}) %>
         </li>
         <% if SiteSettings.federation_enabled? %>
-          <li class="nav-item">
-            <%= link_to t("fasp_client.providers.index.heading"), fasp_client.providers_path, class: "nav-link" %>
+          <li>
+            <%= link_to t("fasp_client.providers.index.heading"), fasp_client.providers_path, class: current_page?(fasp_client.providers_path) ? "tw:block tw:px-3 tw:py-2 tw:text-sm tw:rounded-lg tw:bg-primary-100 tw:text-primary-700 tw:dark:bg-primary-900/40 tw:dark:text-primary-200 tw:font-medium" : "tw:block tw:px-3 tw:py-2 tw:text-sm tw:text-secondary-700 tw:dark:text-secondary-300 tw:rounded-lg tw:no-underline hover:tw:bg-secondary-100 tw:dark:hover:bg-secondary-800", aria: (current_page?(fasp_client.providers_path) ? { current: "page" } : {}) %>
           </li>
         <% end %>
       </ul>
     <% end %>
     <% if policy(:settings).index? and not SiteSettings.demo_mode_enabled? %>
-      <hr>
-      <h5><%= t(".integrations_heading") %></h5>
-      <ul class="nav flex-column">
-        <li class="nav-item">
-          <%= link_to t("doorkeeper_applications.index.title"), doorkeeper_applications_path, class: "nav-link" %>
+      <hr class="tw:my-3 tw:border-secondary-200 tw:dark:border-secondary-600">
+      <h5 class="tw:text-xs tw:font-semibold tw:uppercase tw:text-secondary-500 tw:dark:text-secondary-400 tw:mt-4 tw:mb-2 tw:first:mt-0"><%= t(".integrations_heading") %></h5>
+      <ul class="tw:list-none tw:m-0 tw:p-0 tw:space-y-0.5">
+        <li>
+          <%= link_to t("doorkeeper_applications.index.title"), doorkeeper_applications_path, class: current_page?(doorkeeper_applications_path) ? "tw:block tw:px-3 tw:py-2 tw:text-sm tw:rounded-lg tw:bg-primary-100 tw:text-primary-700 tw:dark:bg-primary-900/40 tw:dark:text-primary-200 tw:font-medium" : "tw:block tw:px-3 tw:py-2 tw:text-sm tw:text-secondary-700 tw:dark:text-secondary-300 tw:rounded-lg tw:no-underline hover:tw:bg-secondary-100 tw:dark:hover:bg-secondary-800", aria: (current_page?(doorkeeper_applications_path) ? { current: "page" } : {}) %>
         </li>
-        <li class="nav-item">
-          <%= link_to t("settings.integrations.heading"), integrations_settings_path, class: "nav-link" %>
+        <li>
+          <%= link_to t("settings.integrations.heading"), integrations_settings_path, class: current_page?(integrations_settings_path) ? "tw:block tw:px-3 tw:py-2 tw:text-sm tw:rounded-lg tw:bg-primary-100 tw:text-primary-700 tw:dark:bg-primary-900/40 tw:dark:text-primary-200 tw:font-medium" : "tw:block tw:px-3 tw:py-2 tw:text-sm tw:text-secondary-700 tw:dark:text-secondary-300 tw:rounded-lg tw:no-underline hover:tw:bg-secondary-100 tw:dark:hover:bg-secondary-800", aria: (current_page?(integrations_settings_path) ? { current: "page" } : {}) %>
         </li>
       </ul>
     <% end %>
     <% if policy(:settings).index? and not SiteSettings.demo_mode_enabled? %>
-      <hr>
-      <h5><%= t(".tools_heading") %></h5>
-      <ul class="nav flex-column">
-        <li class="nav-item">
-          <%= link_to t("settings.reporting.heading"), reporting_settings_path, class: "nav-link" %>
+      <hr class="tw:my-3 tw:border-secondary-200 tw:dark:border-secondary-600">
+      <h5 class="tw:text-xs tw:font-semibold tw:uppercase tw:text-secondary-500 tw:dark:text-secondary-400 tw:mt-4 tw:mb-2 tw:first:mt-0"><%= t(".tools_heading") %></h5>
+      <ul class="tw:list-none tw:m-0 tw:p-0 tw:space-y-0.5">
+        <li>
+          <%= link_to t("settings.reporting.heading"), reporting_settings_path, class: current_page?(reporting_settings_path) ? "tw:block tw:px-3 tw:py-2 tw:text-sm tw:rounded-lg tw:bg-primary-100 tw:text-primary-700 tw:dark:bg-primary-900/40 tw:dark:text-primary-200 tw:font-medium" : "tw:block tw:px-3 tw:py-2 tw:text-sm tw:text-secondary-700 tw:dark:text-secondary-300 tw:rounded-lg tw:no-underline hover:tw:bg-secondary-100 tw:dark:hover:bg-secondary-800", aria: (current_page?(reporting_settings_path) ? { current: "page" } : {}) %>
         </li>
-        <li class="nav-item">
-          <%= link_to t(".performance"), rails_performance_path, class: "nav-link" unless Rails.env.test? %>
-        </li>
-        <li class="nav-item">
-          <%= link_to t(".sidekiq"), sidekiq_web_path, class: "nav-link" %>
+        <% unless Rails.env.test? %>
+          <li>
+            <%= link_to t(".performance"), rails_performance_path, class: current_page?(rails_performance_path) ? "tw:block tw:px-3 tw:py-2 tw:text-sm tw:rounded-lg tw:bg-primary-100 tw:text-primary-700 tw:dark:bg-primary-900/40 tw:dark:text-primary-200 tw:font-medium" : "tw:block tw:px-3 tw:py-2 tw:text-sm tw:text-secondary-700 tw:dark:text-secondary-300 tw:rounded-lg tw:no-underline hover:tw:bg-secondary-100 tw:dark:hover:bg-secondary-800", aria: (current_page?(rails_performance_path) ? { current: "page" } : {}) %>
+          </li>
+        <% end %>
+        <li>
+          <%= link_to t(".sidekiq"), sidekiq_web_path, class: current_page?(sidekiq_web_path) ? "tw:block tw:px-3 tw:py-2 tw:text-sm tw:rounded-lg tw:bg-primary-100 tw:text-primary-700 tw:dark:bg-primary-900/40 tw:dark:text-primary-200 tw:font-medium" : "tw:block tw:px-3 tw:py-2 tw:text-sm tw:text-secondary-700 tw:dark:text-secondary-300 tw:rounded-lg tw:no-underline hover:tw:bg-secondary-100 tw:dark:hover:bg-secondary-800", aria: (current_page?(sidekiq_web_path) ? { current: "page" } : {}) %>
         </li>
         <% if DatabaseDetector.is_postgres? %>
-          <li class="nav-item">
-            <%= link_to t(".pghero"), pg_hero_path, class: "nav-link" %>
+          <li>
+            <%= link_to t(".pghero"), pg_hero_path, class: current_page?(pg_hero_path) ? "tw:block tw:px-3 tw:py-2 tw:text-sm tw:rounded-lg tw:bg-primary-100 tw:text-primary-700 tw:dark:bg-primary-900/40 tw:dark:text-primary-200 tw:font-medium" : "tw:block tw:px-3 tw:py-2 tw:text-sm tw:text-secondary-700 tw:dark:text-secondary-300 tw:rounded-lg tw:no-underline hover:tw:bg-secondary-100 tw:dark:hover:bg-secondary-800", aria: (current_page?(pg_hero_path) ? { current: "page" } : {}) %>
           </li>
         <% end %>
       </ul>
     <% end %>
-  </div>
-  <div class="col" id="content">
+  </nav>
+  <div class="tw:min-w-0 tw:flex-1" id="content">
     <%= yield %>
   </div>
 </div>

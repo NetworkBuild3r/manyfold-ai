@@ -18,33 +18,31 @@ class Components::ModelCard < Components::Base
   end
 
   def view_template
-    div class: "col mb-3" do
-      div class: "card preview-card" do
-        div(class: "card-header position-absolute w-100 top-0 z-3 bg-body-secondary text-secondary-emphasis opacity-75") { server_indicator @model } if @model.remote?
-        div class: "position-relative" do
-          selection_bubble if @editable
-          if @actor && !@actor.local
+    div(class: "tw:relative tw:flex tw:flex-col tw:rounded-xl tw:overflow-hidden tw:bg-white tw:dark:bg-secondary-800 tw:shadow-sm tw:hover:shadow-md tw:transition-shadow tw:mb-3") do
+      div(class: "tw:absolute tw:top-0 tw:left-0 tw:right-0 tw:z-10 tw:px-2 tw:py-1 tw:bg-secondary-200/90 tw:dark:bg-secondary-700/90 tw:text-sm") { server_indicator @model } if @model.remote?
+      div(class: "tw:relative tw:w-full tw:aspect-[4/3]") do
+        selection_bubble if @editable
+        if @actor && !@actor.local
+          PreviewFrame(object: @model)
+        else
+          link_to @model, class: "tw:block tw:no-underline", data: {turbo_frame: "_top"}, aria: {label: translate("components.model_card.open_button.label", name: @model.name)} do
             PreviewFrame(object: @model)
-          else
-            link_to @model, class: "text-decoration-none d-block", data: {turbo_frame: "_top"}, aria: {label: translate("components.model_card.open_button.label", name: @model.name)} do
-              PreviewFrame(object: @model)
-            end
           end
         end
-        div(class: "card-body") { info_row }
-        actions
       end
+      div(class: "tw:p-3 tw:flex tw:flex-col tw:gap-1") { info_row }
+      actions
     end
   end
 
   private
 
   def title
-    div class: "card-title" do
+    div(class: "tw:font-medium tw:text-secondary-900 tw:dark:text-secondary-100") do
       if @editable
         EditableSpan(fieldname: "model[name]", path: model_path(@model), text: @model.name)
       else
-        link_to @model.name, @model, class: "text-body text-decoration-none", data: {turbo_frame: "_top"}, "aria-label": translate("components.model_card.open_button.label", name: @model.name)
+        link_to @model.name, @model, class: "tw:text-inherit tw:no-underline hover:tw:underline", data: {turbo_frame: "_top"}, "aria-label": translate("components.model_card.open_button.label", name: @model.name)
       end
       if @model.sensitive
         whitespace
@@ -56,7 +54,8 @@ class Components::ModelCard < Components::Base
   end
 
   def open_button
-    link_opts = {class: "btn btn-primary btn-sm", "aria-label": translate("components.model_card.open_button.label", name: @model.name), data: {turbo_frame: "_top"}}
+    link_class = "tw:inline-flex tw:items-center tw:gap-1.5 tw:px-2 tw:py-1 tw:text-sm tw:font-medium tw:rounded-lg tw:transition-colors tw:focus-visible:ring-2 tw:focus-visible:ring-primary-500 tw:focus-visible:ring-offset-2 tw:bg-primary-600 tw:text-white tw:hover:bg-primary-700"
+    link_opts = {class: link_class, "aria-label": translate("components.model_card.open_button.label", name: @model.name), data: {turbo_frame: "_top"}}
     if @actor && !@actor.local
       link_to @actor.profile_url, link_opts do
         span { "⁂" }
@@ -69,7 +68,7 @@ class Components::ModelCard < Components::Base
   end
 
   def credits
-    ul class: "list-unstyled" do
+    ul(class: "tw:list-none tw:flex tw:flex-wrap tw:gap-x-2 tw:text-xs tw:text-secondary-500 tw:dark:text-secondary-400 tw:m-0 tw:p-0") do
       if @actor && !@actor.local
         if (creator = @actor.extensions["attributedTo"])
           li { creator target: creator["url"], name: creator["name"] }
@@ -98,10 +97,10 @@ class Components::ModelCard < Components::Base
 
   def selection_bubble
     button type: "button",
-      class: "model-card-selection-bubble position-absolute top-0 start-0 m-2 rounded-circle border border-2 border-white bg-body-secondary bg-opacity-75 p-0",
+      class: "model-card-selection-bubble tw:absolute tw:top-2 tw:left-2 tw:z-20 tw:w-8 tw:h-8 tw:min-w-[44px] tw:min-h-[44px] tw:rounded-full tw:border-2 tw:border-white tw:bg-secondary-200/80 tw:dark:bg-secondary-700/80 tw:p-0 tw:flex tw:items-center tw:justify-center tw:focus-visible:ring-2 tw:focus-visible:ring-primary-500 tw:focus-visible:ring-offset-2",
       data: {model_id: @model.public_id, action: "click->model-list-selection#toggle", model_list_selection_target: "bubble"},
       aria: {label: t("models.list.selection.select"), pressed: "false"} do
-      span(class: "model-card-selection-check d-inline-flex align-items-center justify-content-center") do
+      span(class: "tw:inline-flex tw:items-center tw:justify-center") do
         Icon(icon: "check2", label: "")
       end
     end
@@ -109,35 +108,33 @@ class Components::ModelCard < Components::Base
 
   def caption
     if (summary = @model.try(:caption) || @actor.extensions&.dig("summary"))
-      span class: "card-subtitle text-muted" do
+      span(class: "tw:text-sm tw:text-secondary-500 tw:dark:text-secondary-400") do
         sanitize summary.split("</p>", 2).first
       end
     end
   end
 
   def info_row
-    div class: "row" do
-      div class: "col" do
+    div(class: "tw:flex tw:flex-wrap tw:items-start tw:gap-x-2 tw:gap-y-1") do
+      div(class: "tw:min-w-0 tw:flex-1") do
         title
         caption
       end
-      div class: "col-auto" do
-        small do
-          credits
-        end
+      div(class: "tw:flex-shrink-0") do
+        small { credits }
       end
     end
   end
 
   def actions
-    div class: "card-footer" do
-      div class: "row" do
-        div class: "col" do
+    div(class: "tw:px-3 tw:py-2 tw:border-t tw:border-secondary-200 tw:dark:border-secondary-600") do
+      div(class: "tw:flex tw:flex-wrap tw:items-center tw:gap-2") do
+        div(class: "tw:min-w-0 tw:flex-1") do
           open_button
           whitespace
           StatusBadges model: @model
         end
-        div class: "col col-auto" do
+        div(class: "tw:flex-shrink-0") do
           BurgerMenu(small: true) do
             DropdownItem(icon: "pencil", label: t("components.model_card.edit_button.text"), path: edit_model_path(@model), aria_label: translate("components.model_card.edit_button.label", name: @model.name), turbo_frame: "_top") if policy(@model).edit?
             DropdownItem(icon: "trash", label: t("components.model_card.delete_button.text"), path: model_path(@model), method: :delete, aria_label: translate("components.model_card.delete_button.label", name: @model.name), confirm: translate("models.destroy.confirm"), turbo_frame: "_top") if policy(@model).destroy?

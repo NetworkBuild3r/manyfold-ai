@@ -51,6 +51,7 @@ en:
       edit: Edit Model
     list:
       bulk_edit: Edit All Models
+      clear_filters: Clear filters
       selection:
         bulk_edit: Bulk edit
         clear: Clear selection

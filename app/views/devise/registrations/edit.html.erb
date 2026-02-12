@@ -1,28 +1,28 @@
 <%= PageTitle title: t(".title") %>
 
 <%= form_for(resource, as: resource_name, url: registration_path(resource_name), html: {method: :put}) do |f| %>
-  <div class="row mb-4">
-    <div class="col-12 col-sm">
+  <div class="tw:grid tw:grid-cols-1 tw:md:grid-cols-2 tw:gap-6 tw:mb-6">
+    <div>
       <%- if SiteSettings.multiuser_enabled? %>
-        <div class="card mb-2">
-          <h4 class="card-header"><%= t(".contact_info") %></h4>
-          <div class="card-body tabular-form">
+        <div class="tw:rounded-xl tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:bg-white tw:dark:tw:bg-secondary-800 tw:shadow-sm tw:mb-4 tw:overflow-hidden">
+          <h4 class="tw:px-4 tw:py-3 tw:bg-secondary-600 tw:text-white tw:m-0 tw:font-medium"><%= t(".contact_info") %></h4>
+          <div class="tw:p-4 tabular-form">
             <%= text_input_row f, :email, autocomplete: "email",
                   help: (devise_mapping.confirmable? && resource.pending_reconfirmation?) ?
                     t(".currently_waiting_confirmation_for_email", email: resource.unconfirmed_email) :
                     nil %>
             <%= text_input_row f, :username, autocomplete: false %>
             <% if SiteSettings.federation_enabled? %>
-              <div class="col-auto col-form-label"><%= t("settings.users.index.fediverse_address") %></div>
-              <div class="col col-form-label">
+              <div class="tw:block tw:text-sm tw:font-medium tw:text-secondary-700 tw:dark:tw:text-secondary-300"><%= t("settings.users.index.fediverse_address") %></div>
+              <div class="tw:mt-1">
                 <%= CopyableText(text: resource.federails_actor.at_address, label: t("general.copy_fediverse_handle")) %>
               </div>
             <% end %>
           </div>
         </div>
-        <div class="card mb-2">
-          <h4 class="card-header"><%= t(".security") %></h4>
-          <div class="card-body tabular-form">
+        <div class="tw:rounded-xl tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:bg-white tw:dark:tw:bg-secondary-800 tw:shadow-sm tw:mb-4 tw:overflow-hidden">
+          <h4 class="tw:px-4 tw:py-3 tw:bg-secondary-600 tw:text-white tw:m-0 tw:font-medium"><%= t(".security") %></h4>
+          <div class="tw:p-4 tabular-form">
             <%= password_input_row f, :password, autocomplete: "new-password" %>
             <%= password_input_row f, :password_confirmation, autocomplete: "new-password" %>
             <%= password_input_row f, :current_password, autocomplete: "current-password",
@@ -35,17 +35,13 @@
       <%= render "pagination_settings", form: f %>
       <%= render "file_list_settings", form: f %>
     </div>
-    <div class="col-12 col-sm">
+    <div>
       <%- if SiteSettings.multiuser_enabled? %>
         <%- if @user.has_quota? %>
-        <div class="card mb-2">
-          <h3 class="card-header"><%= t("settings.users.quota.title") %></h3>
-          <div class="card-body">
-            <div class="row text-center">
-              <div class="col">
-                <%= DisplayUserQuota(current_size: @user.current_space_used, quota: @user.quota) %>
-              </div>
-            </div>
+        <div class="tw:rounded-xl tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:bg-white tw:dark:tw:bg-secondary-800 tw:shadow-sm tw:mb-4 tw:overflow-hidden">
+          <h3 class="tw:px-4 tw:py-3 tw:bg-secondary-600 tw:text-white tw:m-0 tw:font-medium"><%= t("settings.users.quota.title") %></h3>
+          <div class="tw:p-4 tw:text-center">
+            <%= DisplayUserQuota(current_size: @user.current_space_used, quota: @user.quota) %>
           </div>
         </div>
         <% end %>
@@ -53,15 +49,15 @@
       <%= render "renderer_settings", form: f %>
       <%= render "problem_settings", form: f %>
       <%- if SiteSettings.multiuser_enabled? %>
-        <div class="card border-danger mt-3">
-          <h4 class="card-header text-bg-danger"><%= t ".danger_zone" %></h4>
-          <div class="card-body">
-            <p class="card-text">
+        <div class="tw:rounded-xl tw:border tw:border-danger tw:bg-white tw:dark:tw:bg-secondary-800 tw:shadow-sm tw:mt-4 tw:overflow-hidden">
+          <h4 class="tw:px-4 tw:py-3 tw:bg-danger tw:text-white tw:m-0 tw:font-medium"><%= t ".danger_zone" %></h4>
+          <div class="tw:p-4">
+            <p class="tw:mb-0">
               <%= link_to t(".cancel_my_account"),
                     registration_path(resource_name),
                     data: {confirm: translate(".confirm_deletion"), turbo_confirm: translate(".confirm_deletion")},
                     method: :delete,
-                    class: "btn btn-danger" %>
+                    class: "tw:inline-flex tw:items-center tw:px-4 tw:py-2 tw:rounded-lg tw:bg-danger tw:text-white hover:tw:opacity-90 focus-visible:tw:ring-2 focus-visible:tw:ring-primary-500 tw:no-underline" %>
             </p>
           </div>
         </div>
@@ -69,10 +65,8 @@
     </div>
   </div>
 
-  <div class="row mb-4">
-    <div class='col'>
-      <button type="submit" class="btn btn-primary"><%= Icon(icon: "save", label: t(".submit")) %> <%= t(".submit") %></button>
-    </div>
+  <div class="tw:mb-6">
+    <button type="submit" class="tw:inline-flex tw:items-center tw:gap-2 tw:px-4 tw:py-2 tw:rounded-lg tw:bg-primary-600 tw:text-white hover:tw:bg-primary-700 focus-visible:tw:ring-2 focus-visible:tw:ring-primary-500"><%= Icon(icon: "save", label: t(".submit")) %> <%= t(".submit") %></button>
   </div>
 
 <% end %>

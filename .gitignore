@@ -36,6 +36,8 @@
 /public/packs-test
 /node_modules
 /yarn-error.log
+.idea/
+nul
 yarn-debug.log*
 .yarn-integrity
 
@@ -75,3 +77,4 @@ db/data_schema.rb
 
 .yardoc
 doc
+/.cursor/

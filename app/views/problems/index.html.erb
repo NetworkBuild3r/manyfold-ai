@@ -3,9 +3,9 @@
 <%= render "filters" %>
 
 <% if @counts_by_category.present? %>
-  <div class="mb-3">
+  <div class="tw:flex tw:flex-wrap tw:gap-2 tw:mb-4">
     <% @counts_by_category.sort_by { |cat, _| cat.to_s }.each do |cat, count| %>
-      <%= link_to "#{t("problems.categories.%{cat}" % {cat: cat})} (#{count})", problems_path(request.query_parameters.merge(category: [cat])), class: "btn btn-outline-secondary btn-sm me-1 mb-1" %>
+      <%= link_to "#{t("problems.categories.%{cat}" % {cat: cat})} (#{count})", problems_path(request.query_parameters.merge(category: [cat])), class: "tw:inline-flex tw:items-center tw:px-3 tw:py-1.5 tw:rounded-lg tw:border tw:border-secondary-300 tw:bg-white tw:dark:tw:bg-secondary-800 tw:text-secondary-700 hover:tw:bg-secondary-50 tw:text-sm tw:no-underline" %>
     <% end %>
   </div>
 <% end %>
@@ -13,57 +13,63 @@
 <%= paginate @problems %>
 
 <% if @problems.empty? %>
-  <div class="alert alert-info">
+  <div class="tw:px-4 tw:py-3 tw:rounded-lg tw:bg-info/10 tw:text-info tw:mb-4">
     <%= t(".no_problems") %>
   </div>
 <% end %>
 
-<%= form_with url: resolve_problems_path(format: :turbo_stream), method: :post, class: "mb-3" do |form| %>
-  <table class="table table-striped" data-controller="bulk-edit" data-action="change->bulk-edit#handleCheckboxChange">
-    <tr>
-      <th><input type="checkbox" aria-label="<%= translate ".select_all" %>" value="0" name="bulk-select-all"></th>
-      <th colspan=2><%= t(".item") %></th>
-      <th><%= t(".description") %></th>
-      <th><span id="resolve-heading"><%= t(".resolve") %></span></th>
-      <th><%= t(".ignore") %></th>
-    </tr>
+<%= form_with url: resolve_problems_path(format: :turbo_stream), method: :post, class: "tw:mb-4" do |form| %>
+  <table class="tw:w-full tw:border-collapse tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600" data-controller="bulk-edit collapse" data-action="change->bulk-edit#handleCheckboxChange">
+    <thead>
+      <tr class="tw:border-b tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:bg-secondary-50 tw:dark:tw:bg-secondary-800/50">
+        <th class="tw:px-4 tw:py-2 tw:text-left"><input type="checkbox" aria-label="<%= translate ".select_all" %>" value="0" name="bulk-select-all"></th>
+        <th class="tw:px-4 tw:py-2 tw:text-left" colspan=2><%= t(".item") %></th>
+        <th class="tw:px-4 tw:py-2 tw:text-left"><%= t(".description") %></th>
+        <th class="tw:px-4 tw:py-2 tw:text-left"><span id="resolve-heading"><%= t(".resolve") %></span></th>
+        <th class="tw:px-4 tw:py-2 tw:text-left"><%= t(".ignore") %></th>
+      </tr>
+    </thead>
+    <tbody>
     <% @problems.each do |problem| %>
       <% next unless problem.problematic %>
-      <tr id="problem-<%= problem.id %>" class="collapse show table-<%= problem_severity(problem) %> <%= problem.ignored && "opacity-50" %>">
-        <td><%= form.check_box "problems[#{problem.to_param}]", data: {resolution_strategy: problem.resolution_strategy, bulk_item: problem.to_param}, "aria-label": translate(".select") %></td>
+      <tr id="problem-<%= problem.id %>" class="tw:border-b tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:even:tw:bg-secondary-50 tw:dark:tw:even:tw:bg-secondary-800/30 show problem-severity-<%= problem_severity(problem) %> <%= problem.ignored && "tw:opacity-50" %>" data-collapse-target="content">
+        <td class="tw:px-4 tw:py-2"><%= form.check_box "problems[#{problem.to_param}]", data: {resolution_strategy: problem.resolution_strategy, bulk_item: problem.to_param}, "aria-label": translate(".select"), class: "tw:rounded tw:border-secondary-300 tw:text-primary-600 tw:focus:ring-primary-500 tw:h-4 tw:w-4" %></td>
         <% if problem.parent %>
-          <td><%= link_to problem.parent.name, problem.parent, class: "link-dark" %></td>
+          <td class="tw:px-4 tw:py-2"><%= link_to problem.parent.name, problem.parent, class: "tw:text-primary-600 tw:dark:tw:text-primary-400 hover:tw:underline" %></td>
           <% if problem.problematic.is_a? ModelFile %>
-            <td><%= link_to problem.problematic.name, [problem.parent, problem.problematic], class: "link-dark" %></td>
+            <td class="tw:px-4 tw:py-2"><%= link_to problem.problematic.name, [problem.parent, problem.problematic], class: "tw:text-primary-600 tw:dark:tw:text-primary-400 hover:tw:underline" %></td>
           <% elsif problem.problematic.is_a? Link %>
-            <td><%= link_to problem.problematic.url, problem.problematic.url, class: "link-dark" %></td>
+            <td class="tw:px-4 tw:py-2"><%= link_to problem.problematic.url, problem.problematic.url, class: "tw:text-primary-600 tw:dark:tw:text-primary-400 hover:tw:underline" %></td>
           <% else %>
-            <td></td>
+            <td class="tw:px-4 tw:py-2"></td>
           <% end %>
         <% else %>
-          <td colspan=2><%= link_to problem.problematic.name, problem.problematic, class: "link-dark" %></td>
+          <td class="tw:px-4 tw:py-2" colspan=2><%= link_to problem.problematic.name, problem.problematic, class: "tw:text-primary-600 tw:dark:tw:text-primary-400 hover:tw:underline" %></td>
         <% end %>
-        <td>
+        <td class="tw:px-4 tw:py-2">
           <%= t "problems.%{type}.%{category}.title" % {type: problem.problematic_type.underscore, category: problem.category} %>
           <% if problem.note %>
             <br>
-            <small><%= problem.note %></small>
+            <small class="tw:text-secondary-600 tw:dark:tw:text-secondary-400"><%= problem.note %></small>
           <% end %>
         </td>
-        <td><%= ResolveButton(problem: problem, user: current_user) %></td>
-        <td>
+        <td class="tw:px-4 tw:py-2"><%= ResolveButton(problem: problem, user: current_user) %></td>
+        <td class="tw:px-4 tw:py-2">
           <% if problem.ignored %>
-            <%= link_to Icon(icon: "eye-fill", label: t(".unignore")), problem_path(problem, problem: {ignored: false}), method: :patch, class: "btn btn-secondary" %>
+            <%= link_to Icon(icon: "eye-fill", label: t(".unignore")), problem_path(problem, problem: {ignored: false}), method: :patch, class: "tw:inline-flex tw:items-center tw:px-3 tw:py-1.5 tw:rounded-lg tw:border tw:border-secondary-300 tw:bg-white tw:dark:tw:bg-secondary-800 tw:text-secondary-700 hover:tw:bg-secondary-50 tw:no-underline tw:text-sm" %>
           <% else %>
-            <%= link_to Icon(icon: "eye-slash", label: t(".ignore")), problem_path(problem, problem: {ignored: true}), method: :patch, class: "btn btn-secondary", data: {bs_toggle: "collapse", bs_target: "#problem-#{problem.id}"} %>
+            <%= link_to Icon(icon: "eye-slash", label: t(".ignore")), problem_path(problem, problem: {ignored: true}), method: :patch, class: "tw:inline-flex tw:items-center tw:px-3 tw:py-1.5 tw:rounded-lg tw:border tw:border-secondary-300 tw:bg-white tw:dark:tw:bg-secondary-800 tw:text-secondary-700 hover:tw:bg-secondary-50 tw:no-underline tw:text-sm", data: {action: "click->collapse#hideContaining"} %>
           <% end %>
         </td>
       </tr>
     <% end %>
+    </tbody>
   </table>
 
-  <%= form.submit translate(".bulk_resolve"), name: "resolve", class: "btn btn-danger", data: {confirm: translate(".bulk_confirm")} %>
-  <%= form.submit translate(".bulk_ignore"), name: "ignore", class: "btn btn-secondary" %>
+  <div class="tw:flex tw:flex-wrap tw:gap-2 tw:mt-4">
+    <%= form.submit translate(".bulk_resolve"), name: "resolve", class: "tw:inline-flex tw:items-center tw:px-4 tw:py-2 tw:rounded-lg tw:bg-danger tw:text-white hover:tw:opacity-90 focus-visible:tw:ring-2 focus-visible:tw:ring-primary-500", data: {confirm: translate(".bulk_confirm")} %>
+    <%= form.submit translate(".bulk_ignore"), name: "ignore", class: "tw:inline-flex tw:items-center tw:px-4 tw:py-2 tw:rounded-lg tw:border tw:border-secondary-300 tw:bg-white tw:dark:tw:bg-secondary-800 tw:text-secondary-700 hover:tw:bg-secondary-50 focus-visible:tw:ring-2 focus-visible:tw:ring-primary-500" %>
+  </div>
 <% end %>
 
 <%= paginate @problems %>

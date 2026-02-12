@@ -1,53 +1,16 @@
 <% if @filter.any? %>
   <%= card :secondary, t(".title") do %>
-    <% if @filter.filtering_by?(:q) %>
-      <div class="row">
-        <div class="col-auto"><%= Icon icon: "search", label: t(".search") %></div>
-        <div class="col-auto"><%= t(".search") %></div>
-        <div class="col"><%= @filter.parameter(:q) %></div>
-        <div class="col-auto"><%= link_to Icon(icon: "trash", label: t(".remove_search_filter")), @filter.to_params(except: :q), {class: "text-danger"} %></div>
-      </div>
-    <% end %>
-    <% if @filter.filtering_by?(:collection) %>
-      <div class="row">
-        <div class="col-auto"><%= Icon icon: "collection", label: Collection.model_name.human %></div>
-        <div class="col" aria-label="<%= Collection.model_name.human %>"><%= @filter.collection ? link_to(@filter.collection.name, {collection: @filter.collection}) : "Unknown" %></div>
-        <div class="col-auto"><%= link_to Icon(icon: "trash", label: t(".remove_collection_filter")), @filter.to_params(except: :collection), {class: "text-danger"} %></div>
-      </div>
-    <% end %>
-    <% if @filter.filtering_by?(:library) %>
-      <div class="row">
-        <div class="col-auto"><%= Icon icon: "boxes", label: Library.model_name.human %></div>
-        <div class="col" aria-label="<%= Library.model_name.human %>"><%= [*@filter.parameter(:library)].map { |l| Library.find_param(l).name }.join(", ") %></div>
-        <div class="col-auto"><%= link_to Icon(icon: "trash", label: t(".remove_library_filter")), @filter.to_params(except: :library), {class: "text-danger"} %></div>
-      </div>
-    <% end %>
-    <% if @filter.filtering_by?(:creator) %>
-      <div class="row">
-        <div class="col-auto"><%= Icon icon: "person", label: Creator.model_name.human %></div>
-        <div class="col" aria-label="<%= Creator.model_name.human %>"><%= @filter.creator ? link_to(@filter.creator.name.careful_titleize, @filter.creator) : t(".unknown") %></div>
-        <div class="col-auto"><%= link_to Icon(icon: "trash", label: t(".remove_creator_filter")), @filter.to_params(except: :creator), {class: "text-danger"} %></div>
-      </div>
-    <% end %>
-    <% if @filter.filtering_by?(:owner) %>
-      <div class="row">
-        <div class="col-auto"><%= Icon icon: "person", label: t(".owner") %></div>
-        <div class="col" aria-label="<%= t(".owner") %>"><%= @filter.owner.username %></div>
-        <div class="col-auto"><%= link_to Icon(icon: "trash", label: t(".remove_owner_filter")), @filter.to_params(except: :owner), {class: "text-danger"} %></div>
-      </div>
-    <% end %>
-    <% if @filter.filtering_by?(:tag) %>
-      <div class="row">
-        <div class="col-auto"><%= Icon icon: "tag", label: ActsAsTaggableOn::Tag.model_name.human(count: 100) %></div>
-        <div class="col" aria-label="<%= ActsAsTaggableOn::Tag.model_name.human(count: 100) %>"><span class='pe-none'><%= render "tag_list", tags: @filter.tags, filter: @filter %></span></div>
-        <div class="col-auto"><%= link_to Icon(icon: "trash", label: t(".remove_tag_filter")), @filter.to_params(except: :tag), {class: "text-danger"} %></div>
-      </div>
-    <% end %>
-    <% if @filter.filtering_by?(:missingtag) %>
-      <div class="row">
-        <div class="col-auto"><%= Icon icon: "tag", label: t(".missing_tags") %></div>
-        <div class="col" aria-label="<%= t(".missing_tags") %>"><span class='pe-none'><%= content_tag(:a, @filter.parameter(:missingtag).presence || "*", {class: "badge rounded-pill border border-muted text-danger tag"}) %></span></div>
-        <div class="col-auto"><%= link_to Icon(icon: "trash", label: t(".remove_missing_tag_filter")), @filter.to_params(except: :missingtag), {class: "text-danger"} %></div>
+    <% active_filters_list(@filter).each do |entry| %>
+      <div class="tw:flex tw:items-center tw:gap-2 tw:py-2 tw:border-b tw:border-secondary-200 tw:dark:border-secondary-600 last:tw:border-0">
+        <span class="tw:flex-shrink-0" aria-hidden="true"><%= Icon icon: entry[:icon], label: entry[:type_label] %></span>
+        <div class="tw:min-w-0 tw:flex-1" aria-label="<%= entry[:type_label] %>">
+          <% if entry[:key] == :tag %>
+            <span class="tw:pe-none"><%= render "tag_list", tags: @filter.tags, filter: @filter %></span>
+          <% else %>
+            <%= entry[:value_html] %>
+          <% end %>
+        </div>
+        <span class="tw:flex-shrink-0"><%= link_to Icon(icon: "trash", label: entry[:aria_remove]), entry[:remove_url], class: "tw:text-danger hover:tw:underline", aria: { label: entry[:aria_remove] } %></span>
       </div>
     <% end %>
   <% end %>

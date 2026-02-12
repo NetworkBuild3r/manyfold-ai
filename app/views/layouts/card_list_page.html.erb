@@ -1,14 +1,14 @@
 <%= yield :page_header %>
 
-<div class="row row-cols-md-2 mt-2">
-  <div class="col-md-9" id="item_list">
+<div class="tw:grid tw:grid-cols-1 tw:lg:grid-cols-[1fr_280px] tw:gap-6 tw:mt-4">
+  <div class="tw:min-w-0" id="item_list">
     <%= yield :items %>
   </div>
-  <div class="col-md-3" id="sidebar">
+  <aside class="tw:space-y-4" id="sidebar">
     <% action_content = yield :actions %>
     <%= card(:secondary, t(".actions_heading"), class: "action-card") { action_content } if action_content.present? %>
     <%= yield :sidebar %>
-  </div>
+  </aside>
 </div>
 
 <% parent_layout "application" %>

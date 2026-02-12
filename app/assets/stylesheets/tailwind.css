@@ -1,0 +1,408 @@
+/*
+ * Manyfold Tailwind CSS entrypoint (Phase 8: Tailwind only).
+ * Prefix: all utilities are tw:*.
+ */
+
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme) prefix(tw);
+@import "tailwindcss/utilities.css" layer(utilities) prefix(tw);
+
+/* Dark mode: class strategy on <html> element */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Content sources (relative to this file) */
+@source "../../views";
+@source "../../components";
+@source "../../helpers";
+@source "../../javascript";
+
+/* ============================================
+   Design Tokens
+   ============================================ */
+@theme {
+  /* --- Primary (Indigo) --- */
+  --color-primary-50: oklch(0.962 0.018 272.314);
+  --color-primary-100: oklch(0.930 0.034 272.788);
+  --color-primary-200: oklch(0.870 0.065 274.039);
+  --color-primary-300: oklch(0.785 0.115 274.713);
+  --color-primary-400: oklch(0.673 0.182 276.935);
+  --color-primary-500: oklch(0.585 0.233 277.117);
+  --color-primary-600: oklch(0.511 0.262 276.966);
+  --color-primary-700: oklch(0.457 0.240 277.023);
+  --color-primary-800: oklch(0.398 0.195 277.366);
+  --color-primary-900: oklch(0.359 0.144 278.697);
+  --color-primary-950: oklch(0.257 0.09 281.288);
+
+  /* --- Secondary (Slate) --- */
+  --color-secondary-50: oklch(0.984 0.003 247.858);
+  --color-secondary-100: oklch(0.968 0.007 247.896);
+  --color-secondary-200: oklch(0.929 0.013 255.508);
+  --color-secondary-300: oklch(0.869 0.022 252.894);
+  --color-secondary-400: oklch(0.704 0.04 256.788);
+  --color-secondary-500: oklch(0.554 0.046 257.417);
+  --color-secondary-600: oklch(0.446 0.043 257.281);
+  --color-secondary-700: oklch(0.372 0.044 257.287);
+  --color-secondary-800: oklch(0.279 0.041 260.031);
+  --color-secondary-900: oklch(0.208 0.042 265.755);
+  --color-secondary-950: oklch(0.129 0.042 264.695);
+
+  /* --- Accent (CSS custom properties, swappable) --- */
+  --color-accent-50: var(--accent-50, var(--color-primary-50));
+  --color-accent-100: var(--accent-100, var(--color-primary-100));
+  --color-accent-200: var(--accent-200, var(--color-primary-200));
+  --color-accent-300: var(--accent-300, var(--color-primary-300));
+  --color-accent-400: var(--accent-400, var(--color-primary-400));
+  --color-accent-500: var(--accent-500, var(--color-primary-500));
+  --color-accent-600: var(--accent-600, var(--color-primary-600));
+  --color-accent-700: var(--accent-700, var(--color-primary-700));
+  --color-accent-800: var(--accent-800, var(--color-primary-800));
+  --color-accent-900: var(--accent-900, var(--color-primary-900));
+  --color-accent-950: var(--accent-950, var(--color-primary-950));
+
+  /* --- Semantic Colors --- */
+  --color-success: oklch(0.627 0.194 149.214);
+  --color-warning: oklch(0.666 0.179 58.318);
+  --color-danger: oklch(0.577 0.245 27.325);
+  --color-info: oklch(0.546 0.245 262.881);
+
+  /* --- Surface Colors (for cards, backgrounds) --- */
+  --color-surface: oklch(1 0 0);
+  --color-surface-alt: oklch(0.985 0.002 247);
+  --color-surface-dark: oklch(0.205 0.042 265.755);
+
+  /* --- Typography --- */
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+
+  /* --- Border Radius --- */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+}
+
+:root {
+  --brand-primary: var(--color-primary-600);
+  --brand-primary-hover: var(--color-primary-700);
+}
+
+/* ============================================
+   Accent Color Palettes (swapped via data-accent on <html>)
+   Default = primary (indigo), no override needed.
+   ============================================ */
+:root[data-accent="green"] {
+  --accent-50: oklch(0.962 0.044 156.743);
+  --accent-100: oklch(0.923 0.096 155.995);
+  --accent-200: oklch(0.863 0.168 152.882);
+  --accent-300: oklch(0.777 0.216 152.328);
+  --accent-400: oklch(0.670 0.214 149.480);
+  --accent-500: oklch(0.596 0.191 149.214);
+  --accent-600: oklch(0.519 0.157 149.141);
+  --accent-700: oklch(0.443 0.126 149.214);
+  --accent-800: oklch(0.378 0.100 149.235);
+  --accent-900: oklch(0.327 0.078 150.069);
+  --accent-950: oklch(0.216 0.058 152.036);
+}
+
+:root[data-accent="purple"] {
+  --accent-50: oklch(0.977 0.014 308.299);
+  --accent-100: oklch(0.946 0.033 307.174);
+  --accent-200: oklch(0.902 0.063 306.703);
+  --accent-300: oklch(0.827 0.119 306.383);
+  --accent-400: oklch(0.714 0.203 305.504);
+  --accent-500: oklch(0.627 0.265 303.9);
+  --accent-600: oklch(0.558 0.288 302.321);
+  --accent-700: oklch(0.496 0.265 301.924);
+  --accent-800: oklch(0.438 0.218 303.724);
+  --accent-900: oklch(0.381 0.176 304.987);
+  --accent-950: oklch(0.291 0.149 302.717);
+}
+
+:root[data-accent="amber"] {
+  --accent-50: oklch(0.987 0.022 95.277);
+  --accent-100: oklch(0.962 0.059 95.617);
+  --accent-200: oklch(0.924 0.12 95.746);
+  --accent-300: oklch(0.879 0.169 91.605);
+  --accent-400: oklch(0.828 0.189 84.429);
+  --accent-500: oklch(0.769 0.188 70.08);
+  --accent-600: oklch(0.666 0.179 58.318);
+  --accent-700: oklch(0.555 0.163 48.998);
+  --accent-800: oklch(0.473 0.137 46.201);
+  --accent-900: oklch(0.414 0.112 45.904);
+  --accent-950: oklch(0.279 0.077 45.635);
+}
+
+:root[data-accent="rose"] {
+  --accent-50: oklch(0.969 0.015 12.422);
+  --accent-100: oklch(0.941 0.030 12.58);
+  --accent-200: oklch(0.892 0.058 10.001);
+  --accent-300: oklch(0.810 0.117 11.638);
+  --accent-400: oklch(0.712 0.194 13.428);
+  --accent-500: oklch(0.645 0.246 16.439);
+  --accent-600: oklch(0.586 0.253 17.585);
+  --accent-700: oklch(0.514 0.222 16.935);
+  --accent-800: oklch(0.455 0.188 13.697);
+  --accent-900: oklch(0.410 0.159 10.539);
+  --accent-950: oklch(0.271 0.105 12.094);
+}
+
+/* Native <dialog> used as modal */
+dialog.modal {
+  border: none;
+  padding: 0;
+}
+dialog.modal::backdrop {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+/* ============================================
+   Phase 3: Visibility contracts for Stimulus
+   (dropdown, collapse, carousel). Raw CSS so
+   we don't depend on @apply with prefix.
+   ============================================ */
+[data-dropdown-target="menu"] {
+  display: none;
+}
+[data-dropdown-target="menu"].show {
+  display: block;
+}
+[data-collapse-target="content"] {
+  display: none;
+}
+[data-collapse-target="content"].show {
+  display: block;
+}
+.storage-collapse {
+  display: none;
+}
+.storage-collapse.show {
+  display: block;
+}
+
+/* Problems index: row background by severity */
+.problem-severity-error,
+.problem-severity-danger {
+  background: color-mix(in oklch, var(--color-danger), transparent 90%);
+}
+.problem-severity-warning {
+  background: color-mix(in oklch, var(--color-warning), transparent 90%);
+}
+.problem-severity-info {
+  background: color-mix(in oklch, var(--color-info), transparent 90%);
+}
+
+.carousel-item {
+  display: none;
+}
+.carousel-item.active {
+  display: block;
+}
+.carousel-indicators button.active {
+  background-color: white;
+}
+
+/* Card helper: when collapse is "md", content is visible on md+ without .show */
+@media (min-width: 768px) {
+  [data-collapse-target="content"].collapse-md {
+    display: block;
+  }
+}
+
+/* Navbar: collapse content always visible on md+, toggled by .show on small */
+#navbar.navbar-collapse {
+  display: none;
+}
+#navbar.navbar-collapse.show {
+  display: flex;
+}
+@media (min-width: 768px) {
+  #navbar.navbar-collapse {
+    display: flex !important;
+  }
+}
+
+/* Phase 5: Model card grid — turbo-frames inside the grid must not take a grid cell */
+#model-card-grid turbo-frame {
+  display: contents;
+}
+
+/* ============================================
+   Third-party: icons, tom-select, uppy, driver
+   (paths relative to this file; Tailwind CLI resolves from project)
+   ============================================ */
+@import "../../../node_modules/bootstrap-icons/font/bootstrap-icons.css";
+@import "../../../node_modules/@infinizhen/rpg-awesome-continued/css/rpg-awesome-continued.min.css";
+@import "../../../node_modules/tom-select/dist/css/tom-select.css";
+@import "../../../node_modules/@uppy/core/dist/style.min.css";
+@import "../../../node_modules/@uppy/dashboard/dist/style.min.css";
+@import "../../../node_modules/driver.js/dist/driver.css";
+
+/* ============================================
+   Migrated app rules (from removed SCSS)
+   ============================================ */
+
+/* Skip-link (layout) */
+.skip-link {
+  position: absolute;
+  width: 100%;
+  z-index: 9999999;
+  transform: translateY(-100%);
+  transition: transform 0.2s ease-out;
+}
+.skip-link:focus-within {
+  transform: translateY(0%);
+}
+.skip-link-container {
+  overflow-y: hidden;
+  position: relative;
+}
+
+/* Tabular form grid (forms) */
+.tabular-form {
+  display: grid;
+  grid-template-columns: minmax(min-content, max-content) auto;
+  gap: 1em;
+}
+.tabular-form div:has(input[type=submit]),
+.tabular-form div:has(button[type=submit]) {
+  grid-column: 2;
+}
+.tabular-form table,
+.tabular-form hr,
+.tabular-form h1, .tabular-form h2, .tabular-form h3, .tabular-form h4, .tabular-form h5, .tabular-form h6,
+.tabular-form p, .tabular-form ul {
+  grid-column: span 2;
+}
+
+/* Libraries: badge link */
+a.badge {
+  text-decoration: none;
+}
+
+/* Effects: icon animations */
+.icon-flip::before {
+  animation: flip 5s ease-in-out infinite;
+}
+@keyframes flip {
+  0% { transform: rotate(0deg); }
+  10% { transform: rotate(180deg); }
+  50% { transform: rotate(180deg); }
+  60% { transform: rotate(360deg); }
+  100% { transform: rotate(360deg); }
+}
+.icon-spin::before {
+  animation: spin 5s linear infinite;
+}
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  50% { transform: rotate(180deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Avatars */
+img.avatar {
+  width: 4rem;
+  object-fit: cover;
+  aspect-ratio: 1;
+  clip-path: circle();
+}
+img.avatar.avatar-sm {
+  width: 2rem;
+}
+img.avatar.avatar-lg {
+  width: 6rem;
+}
+div.with-background {
+  text-shadow:
+    0 -1px 0 oklch(0.985 0.002 247),
+    0 1px 0 oklch(0.985 0.002 247),
+    1px 0 0 oklch(0.985 0.002 247),
+    -1px 0 0 oklch(0.985 0.002 247),
+    1px 1px 0 oklch(0.985 0.002 247),
+    -1px 1px 0 oklch(0.985 0.002 247),
+    -1px -1px 0 oklch(0.985 0.002 247),
+    1px -1px 0 oklch(0.985 0.002 247);
+}
+
+/* Model card selection bubble selected state */
+.model-card-selection-bubble.model-card-selection-selected {
+  background: var(--color-primary-600) !important;
+  color: white;
+}
+
+/* Application one-offs */
+.creator-card {
+  height: 100%;
+}
+.ts-control {
+  padding: 1px;
+}
+p.alert:empty,
+p.notice:empty {
+  display: none;
+}
+.button_to,
+.button_to .div {
+  display: inline;
+}
+span.obfuscated {
+  -webkit-text-security: disc;
+}
+span.deobfuscated {
+  -webkit-text-security: none;
+}
+
+/* Object preview / model files (minimal) */
+.object-preview {
+  aspect-ratio: 1;
+  width: 100%;
+  touch-action: none;
+}
+.app-icon {
+  height: 1.2rem;
+}
+
+/* Tom-select dark mode (class strategy) */
+.dark .ts-control,
+.dark .ts-wrapper.single.input-active .ts-control {
+  background-color: var(--color-secondary-800);
+  border: 1px solid var(--color-secondary-600);
+  color: var(--color-secondary-200);
+}
+.dark .ts-control > .item,
+.dark .ts-control > input {
+  color: var(--color-secondary-200);
+}
+.dark .ts-wrapper.multi .ts-control > div {
+  background-color: var(--color-secondary-700);
+  color: var(--color-secondary-200);
+}
+.dark .ts-dropdown {
+  background-color: var(--color-secondary-800);
+  color: var(--color-secondary-200);
+}
+.dark .ts-dropdown .active {
+  background-color: var(--color-secondary-700);
+  color: var(--color-secondary-200);
+}
+
+/* Altcha (replacement for Bootstrap @extend) */
+.altcha-wrapper {
+  border: 1px solid var(--color-secondary-300);
+  border-radius: var(--radius-md);
+  padding: 0.25rem;
+}
+.altcha-wrapper:has(div.altcha[data-state="verifying"]) {
+  border-color: var(--color-secondary-500);
+  background: color-mix(in oklch, var(--color-secondary-200), transparent 50%);
+}
+.altcha-wrapper:has(div.altcha[data-state="verified"]) {
+  border-color: var(--color-success);
+  background: color-mix(in oklch, var(--color-success), transparent 90%);
+}
+.altcha-wrapper div.altcha {
+  display: inline-block;
+}
+.altcha-wrapper .altcha-checkbox {
+  display: none;
+}

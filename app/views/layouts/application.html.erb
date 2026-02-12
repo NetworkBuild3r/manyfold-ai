@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="<%= I18n.locale %>" data-controller="i18n">
+<html lang="<%= I18n.locale %>" class="<%= 'dark' if dark_theme? %>" data-controller="i18n">
   <head>
     <title><%= @title || site_name %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -9,25 +9,25 @@
     <%= tag.link rel: "apple-touch-icon", href: asset_path("square-180.png") %>
     <%= tag.meta name: "apple-mobile-web-app-title", content: site_name %>
     <%= javascript_include_tag "application", nonce: true, defer: true %>
-    <%= stylesheet_link_tag "themes/#{SiteSettings.validated_theme}", nonce: true %>
+    <%= stylesheet_link_tag "tailwind", nonce: true %>
     <%= turbo_refreshes_with method: :morph, scroll: :preserve %>
     <%= tag.meta name: "robots", content: @indexing_directives if @indexing_directives.presence %>
     <%= yield :head %>
   </head>
 
-  <body class="<%= "#{SiteSettings.validated_theme}-theme" %>" data-controller="tour">
+  <body data-controller="tour">
     <%= skip_link "content", t(".skip_to_content") %>
     <%= render "application/navbar" %>
-    <main class="container-fluid" id="content">
+    <main class="tw:max-w-screen-2xl tw:mx-auto tw:px-4 tw:sm:px-6 tw:lg:px-8" id="content">
       <div id="alerts" aria-live="polite">
         <% if notice %>
-          <p class="alert alert-info">
+          <p class="tw:flex tw:items-center tw:gap-2 tw:px-4 tw:py-3 tw:rounded-lg tw:bg-primary-50 tw:text-primary-800 tw:dark:bg-primary-900/30 tw:dark:text-primary-200 tw:mb-4">
             <%= Icon icon: "info-circle-fill", label: t(".alert.info") %>
             <%= notice %>
           </p>
         <% end %>
         <% if alert %>
-          <p class="alert alert-danger">
+          <p class="tw:flex tw:items-center tw:gap-2 tw:px-4 tw:py-3 tw:rounded-lg tw:bg-danger/10 tw:text-danger tw:dark:bg-danger/20 tw:mb-4">
             <%= Icon icon: "x-octagon-fill", label: t(".alert.danger") %>
             <%= alert %>
           </p>

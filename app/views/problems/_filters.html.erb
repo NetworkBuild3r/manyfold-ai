@@ -1,9 +1,9 @@
 <form action="<%= problems_path %>" method="GET">
   <%= Accordion(title: safe_join([Icon(icon: "filter", label: t(".title")), t(".title")], " "), id: "filters", open: @filters_applied) do %>
-    <div class="row mb-2">
-      <div class="col col-sm-6 col-md-4">
-        <label><%= Problem.human_attribute_name :category %></label>
-        <select name="category[]" class="form-select" multiple=true>
+    <div class="tw:grid tw:grid-cols-1 tw:sm:grid-cols-2 tw:md:grid-cols-3 tw:gap-4 tw:mb-4">
+      <div>
+        <label class="tw:block tw:text-sm tw:font-medium tw:text-secondary-700 tw:dark:tw:text-secondary-300 tw:mb-1"><%= Problem.human_attribute_name :category %></label>
+        <select name="category[]" class="tw:block tw:w-full tw:rounded-lg tw:border tw:border-secondary-300 tw:px-3 tw:py-2 tw:shadow-sm tw:focus:ring-2 tw:focus:ring-primary-500 tw:dark:tw:border-secondary-600 tw:dark:tw:bg-secondary-800" multiple=true>
           <% Problem::CATEGORIES # rubocop:disable Pundit/UsePolicyScope
                .select { |it| Problem::DEFAULT_SEVERITIES[it].present? }
                .select { |it| current_user.problem_severity(it) != :silent }
@@ -14,9 +14,9 @@
           <% end %>
         </select>
       </div>
-      <div class="col col-sm-auto col-md-4">
-        <label><%= Problem.human_attribute_name :severity %></label>
-        <select name="severity[]" class="form-select" multiple=true>
+      <div>
+        <label class="tw:block tw:text-sm tw:font-medium tw:text-secondary-700 tw:dark:tw:text-secondary-300 tw:mb-1"><%= Problem.human_attribute_name :severity %></label>
+        <select name="severity[]" class="tw:block tw:w-full tw:rounded-lg tw:border tw:border-secondary-300 tw:px-3 tw:py-2 tw:shadow-sm tw:focus:ring-2 tw:focus:ring-primary-500 tw:dark:tw:border-secondary-600 tw:dark:tw:bg-secondary-800" multiple=true>
           <% (Problem::SEVERITIES - [:silent]).each do |sev| %>
             <option
               value="<%= sev %>"
@@ -24,9 +24,9 @@
           <% end %>
         </select>
       </div>
-      <div class="col col-sm-auto col-md-4">
-        <label><%= Problem.human_attribute_name :problematic_type %></label>
-        <select name="type[]" class="form-select" multiple=true>
+      <div>
+        <label class="tw:block tw:text-sm tw:font-medium tw:text-secondary-700 tw:dark:tw:text-secondary-300 tw:mb-1"><%= Problem.human_attribute_name :problematic_type %></label>
+        <select name="type[]" class="tw:block tw:w-full tw:rounded-lg tw:border tw:border-secondary-300 tw:px-3 tw:py-2 tw:shadow-sm tw:focus:ring-2 tw:focus:ring-primary-500 tw:dark:tw:border-secondary-600 tw:dark:tw:bg-secondary-800" multiple=true>
           <option value="<%= Model.model_name.param_key %>"
             <%= "selected" if params[:type]&.include?(Model.model_name.param_key) %>><%= Model.model_name.human %></option>
           <option value="<%= ModelFile.model_name.param_key %>"
@@ -36,19 +36,18 @@
         </select>
       </div>
     </div>
-    <div class="row">
-      <div class="col">
-        <div class="form-check form-switch">
-          <input class="form-check-input" type="checkbox" name="show_ignored" value="true"
-            <%= "checked" if params[:show_ignored] == "true" %>>
-          <label class="form-check-label" for="show_ignored">
-            <%= t(".show_ignored") %>
-          </label>
-        </div>
+    <div class="tw:flex tw:flex-wrap tw:items-center tw:justify-between tw:gap-4">
+      <div class="tw:flex tw:items-center tw:gap-2">
+        <input type="checkbox" name="show_ignored" value="true" id="show_ignored"
+          <%= "checked" if params[:show_ignored] == "true" %>
+          class="tw:rounded tw:border-secondary-300 tw:text-primary-600 tw:focus:ring-primary-500 tw:h-4 tw:w-4">
+        <label for="show_ignored" class="tw:text-sm tw:text-secondary-700 tw:dark:tw:text-secondary-300 tw:cursor-pointer">
+          <%= t(".show_ignored") %>
+        </label>
       </div>
-      <div class="col text-end">
-        <button type="submit" class="btn btn-primary"><%= t ".apply_filters" %></button>
-        <a href='/problems' class="btn btn-secondary"><%= t ".clear_filters" %></a>
+      <div class="tw:flex tw:gap-2">
+        <button type="submit" class="tw:inline-flex tw:items-center tw:px-4 tw:py-2 tw:rounded-lg tw:bg-primary-600 tw:text-white hover:tw:bg-primary-700 focus-visible:tw:ring-2 focus-visible:tw:ring-primary-500"><%= t ".apply_filters" %></button>
+        <a href='/problems' class="tw:inline-flex tw:items-center tw:px-4 tw:py-2 tw:rounded-lg tw:border tw:border-secondary-300 tw:bg-white tw:dark:tw:bg-secondary-800 tw:text-secondary-700 hover:tw:bg-secondary-50 tw:no-underline"><%= t ".clear_filters" %></a>
       </div>
     </div>
   <% end %>

@@ -4,20 +4,20 @@
 </p>
 
 <% if @remote_account %>
-  <div class="alert alert-info">
+  <div class="tw:px-4 tw:py-3 tw:rounded-lg tw:bg-info/10 tw:text-info tw:mb-4 tw:flex tw:items-center tw:gap-2">
     <%= Icon icon: "person-arms-up", label: "" %>
     <%= t(".no_results_html", query: @remote_account) %>
   </div>
 <% end %>
 
-<div class="col-8">
-  <%= form_with url: perform_remote_follow_path, class: "mt-3", data: {turbo: false} do |f| %>
-    <div class="input-group mb-3">
+<div class="tw:max-w-xl">
+  <%= form_with url: perform_remote_follow_path, class: "tw:mt-4", data: {turbo: false} do |f| %>
+    <div class="tw:flex tw:rounded-lg tw:overflow-hidden tw:border tw:border-secondary-300 tw:dark:tw:border-secondary-600 tw:mb-4">
       <%= f.hidden_field :uri, value: @uri %>
       <%= f.hidden_field :name, value: @name %>
-      <%= f.text_field :remote_account, class: "form-control", placeholder: translate(".placeholder"),
+      <%= f.text_field :remote_account, class: "tw:flex-1 tw:block tw:w-full tw:rounded-none tw:border-0 tw:px-3 tw:py-2 tw:shadow-sm focus:tw:ring-2 focus:tw:ring-primary-500 tw:dark:tw:bg-secondary-800", placeholder: translate(".placeholder"),
             aria_label: translate(".submit"), aria_describedby: "button-search", value: @remote_account %>
-      <%= f.submit translate(".submit"), class: "btn btn-primary", name: nil %>
+      <%= f.submit translate(".submit"), class: "tw:inline-flex tw:items-center tw:px-4 tw:py-2 tw:bg-primary-600 tw:text-white hover:tw:bg-primary-700 focus-visible:tw:ring-2 focus-visible:tw:ring-primary-500", name: nil, id: "button-search" %>
     </div>
   <% end %>
 </div>

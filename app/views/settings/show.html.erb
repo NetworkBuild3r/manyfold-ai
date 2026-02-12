@@ -1,6 +1,6 @@
 <h3><%= t(".stats") %></h3>
 
-<div class="row">
+<div class="tw:flex tw:flex-wrap tw:gap-4">
   <%= StatBlock(title: Model, value: model_count) %>
   <%= StatBlock(title: ModelFile, value: model_file_count) %>
   <%= StatBlock(title: Creator, value: creator_count) %>

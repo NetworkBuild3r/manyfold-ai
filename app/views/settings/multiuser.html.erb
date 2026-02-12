@@ -1,24 +1,26 @@
 <h3><%= t(".heading") %></h3>
-<p class='lead'>
+<p class="tw:text-lg tw:text-secondary-600 tw:dark:tw:text-secondary-400">
   <%= SiteSettings.multiuser_enabled? ? t(".multiuser_mode") : t(".single_user_mode") %>
 </p>
-<table class='table table-striped'>
-  <tr>
-    <td><%= t(".multiuser") %></td>
-    <td><%= SiteSettings.multiuser_enabled? ? "✅" : "❌" %></td>
+<table class="tw:w-full tw:border-collapse tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600">
+  <tbody>
+  <tr class="tw:border-b tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:even:tw:bg-secondary-50 tw:dark:tw:even:tw:bg-secondary-800/30">
+    <td class="tw:px-4 tw:py-2 tw:font-medium"><%= t(".multiuser") %></td>
+    <td class="tw:px-4 tw:py-2"><%= SiteSettings.multiuser_enabled? ? "✅" : "❌" %></td>
   </tr>
-  <tr>
-    <td><%= t(".federation") %></td>
-    <td><%= SiteSettings.federation_enabled? ? "✅" : "❌" %></td>
+  <tr class="tw:border-b tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:even:tw:bg-secondary-50 tw:dark:tw:even:tw:bg-secondary-800/30">
+    <td class="tw:px-4 tw:py-2 tw:font-medium"><%= t(".federation") %></td>
+    <td class="tw:px-4 tw:py-2"><%= SiteSettings.federation_enabled? ? "✅" : "❌" %></td>
   </tr>
-  <tr>
-    <td><%= t(".email") %></td>
-    <td><%= SiteSettings.email_configured? ? "✅" : "❌" %></td>
+  <tr class="tw:border-b tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:even:tw:bg-secondary-50 tw:dark:tw:even:tw:bg-secondary-800/30">
+    <td class="tw:px-4 tw:py-2 tw:font-medium"><%= t(".email") %></td>
+    <td class="tw:px-4 tw:py-2"><%= SiteSettings.email_configured? ? "✅" : "❌" %></td>
   </tr>
-  <tr>
-    <td><%= t(".oidc") %></td>
-    <td><%= SiteSettings.oidc_enabled? ? "✅" : "❌" %></td>
+  <tr class="tw:border-b tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:even:tw:bg-secondary-50 tw:dark:tw:even:tw:bg-secondary-800/30">
+    <td class="tw:px-4 tw:py-2 tw:font-medium"><%= t(".oidc") %></td>
+    <td class="tw:px-4 tw:py-2"><%= SiteSettings.oidc_enabled? ? "✅" : "❌" %></td>
   </tr>
+  </tbody>
 </table>
 <p>
   <%= t(".details_html") %>

@@ -48,7 +48,7 @@ class MaintainTestAssets
   #
   EXPECTED_ASSETS = %w[
     application.js
-    themes/default.css
+    tailwind.css
   ]
 
   # Call this method somewhere at test startup, e.g. in "spec_helper.rb" before

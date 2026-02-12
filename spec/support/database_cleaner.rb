@@ -1,7 +1,8 @@
 RSpec.configure do |config|
   config.before(:suite) do
     DatabaseCleaner.clean_with(:truncation)
-    DatabaseCleaner.strategy = :truncation
+    # Use :deletion in Docker/CI to avoid PG deadlocks when Sidekiq holds a connection (truncation needs exclusive locks).
+    DatabaseCleaner.strategy = (ENV["CI"] == "true" || ENV["DOCKER_TEST"] == "1") ? :deletion : :truncation
   end
 
   config.around do |example|

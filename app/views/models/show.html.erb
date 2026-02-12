@@ -12,90 +12,177 @@
   <%= PageTitle title: @model.name, heading: false, breadcrumbs: {
         Model.model_name.human(count: 100) => models_path
       } %>
-  <div class="row row-cols-md-2 mt-2">
-    <div class="col-md-9" id="item_list">
 
-      <h1>
-        <%= policy(@model).edit? ? EditableSpan(fieldname: "model[name]", path: model_path(@model), text: @model.name) : @model.name %>
-        <%= link_to Icon(icon: "search", label: t(".search")),
-              "https://yeggi.com/q/#{ERB::Util.url_encode(@model.name)}/",
-              class: "btn btn-outline", target: "manyfold_search", rel: "noreferrer" %>
-      </h1>
-
-      <% if @locked_files > 0 %>
-        <div class="alert alert-info"><%= t(".preview", count: @locked_files) %></div>
-      <% end %>
-
-      <% if @model.respond_to?(:scan_started_at) && @model.scan_started_at.present? && !@model.scan_stale? %>
-        <div class="alert alert-info"><%= t(".scan_in_progress") %></div>
-      <% end %>
-
+  <article>
+    <section class="tw:bg-secondary-900 tw:dark:bg-secondary-950 tw:-mx-4 tw:sm:-mx-6 tw:lg:-mx-8 tw:px-4 tw:sm:px-6 tw:lg:px-8 tw:py-6 tw:mb-6" aria-label="Model preview">
       <%= ImageCarousel(images: @images) %>
+    </section>
 
-      <%= card(:secondary) do %>
-        <p class="card-text" itemprop="description"><%= markdownify @model.notes %></p>
-      <% end if @model.notes.present? %>
+    <div class="tw:grid tw:grid-cols-1 tw:lg:grid-cols-[1fr_320px] tw:gap-6">
+      <div class="tw:min-w-0" id="item_list">
+        <h1>
+          <%= policy(@model).edit? ? EditableSpan(fieldname: "model[name]", path: model_path(@model), text: @model.name) : @model.name %>
+          <%= link_to Icon(icon: "search", label: t(".search")),
+                "https://yeggi.com/q/#{ERB::Util.url_encode(@model.name)}/",
+                class: "tw:inline-flex tw:items-center tw:gap-1.5 tw:px-3 tw:py-1.5 tw:text-sm tw:rounded-lg tw:border tw:border-secondary-300 tw:dark:border-secondary-500 tw:bg-white tw:dark:tw:bg-secondary-800 hover:tw:bg-secondary-50 tw:dark:hover:tw:bg-secondary-700", target: "manyfold_search", rel: "noreferrer" %>
+        </h1>
 
-      <% if @num_files > 0 %>
-        <h2><a name="files"><%= t(".files") %></a></h2>
-        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 mb-4">
-          <%= render partial: "file", collection: @groups.delete(nil) %>
-        </div>
-        <% @groups.each_pair do |group, files| %>
-          <h3><a name="<%= group.parameterize %>"><%= group.strip.careful_titleize %>*</a></h3>
-          <div class="row  row-cols-1 row-cols-md-2 row-cols-lg-3 mb-4">
-            <%= render partial: "file", collection: files %>
-          </div>
+        <% if @locked_files > 0 %>
+          <div class="tw:flex tw:items-center tw:gap-2 tw:px-4 tw:py-3 tw:rounded-lg tw:bg-info/10 tw:text-info tw:mb-4"><%= t(".preview", count: @locked_files) %></div>
         <% end %>
-      <% end %>
-    </div>
-    <div class="col-md-3" id="sidebar">
-      <%= card :secondary, t(".model_details") do %>
-        <div class="details-table">
+
+        <% if @model.respond_to?(:scan_started_at) && @model.scan_started_at.present? && !@model.scan_stale? %>
+          <div class="tw:flex tw:items-center tw:gap-2 tw:px-4 tw:py-3 tw:rounded-lg tw:bg-info/10 tw:text-info tw:mb-4"><%= t(".scan_in_progress") %></div>
+        <% end %>
+
+        <%= card(:secondary) do %>
+          <p class="tw:text-secondary-700 tw:dark:tw:text-secondary-300" itemprop="description"><%= markdownify @model.notes %></p>
+        <% end if @model.notes.present? %>
+
+        <div class="tw:flex tw:flex-wrap tw:items-center tw:gap-3 tw:mb-6" role="toolbar" aria-label="Model actions">
+          <%= DownloadButton(model: @model) %>
+          <% if policy(@model).edit? %>
+            <%= link_to Icon(icon: "pencil", label: translate("general.edit")), edit_model_path(@model), class: "tw:inline-flex tw:items-center tw:gap-1.5 tw:px-3 tw:py-1.5 tw:text-sm tw:rounded-lg tw:border tw:border-secondary-300 tw:dark:border-secondary-500 tw:bg-white tw:dark:tw:bg-secondary-800 hover:tw:bg-secondary-50 tw:dark:hover:tw:bg-secondary-700", aria: { label: translate("components.model_card.edit_button.label", name: @model.name) } %>
+          <% end %>
+          <% if policy(@model).destroy? %>
+            <%= link_to Icon(icon: "trash", label: translate("general.delete")), model_path(@model), method: :delete, data: { confirm: t("models.destroy.confirm") }, class: "tw:inline-flex tw:items-center tw:gap-1.5 tw:px-3 tw:py-1.5 tw:text-sm tw:rounded-lg tw:border tw:border-secondary-300 tw:dark:border-secondary-500 tw:bg-white tw:dark:tw:bg-secondary-800 hover:tw:bg-secondary-50 tw:dark:hover:tw:bg-secondary-700", aria: { label: translate("components.model_card.delete_button.label", name: @model.name) } %>
+          <% end %>
+          <% if policy(@model).scan? %>
+            <%= link_to Icon(icon: "radar", label: t(".rescan")), scan_model_path(@model), method: :post, class: "tw:inline-flex tw:items-center tw:gap-1.5 tw:px-3 tw:py-1.5 tw:text-sm tw:rounded-lg tw:border tw:border-secondary-300 tw:dark:border-secondary-500 tw:bg-white tw:dark:tw:bg-secondary-800 hover:tw:bg-secondary-50 tw:dark:hover:tw:bg-secondary-700" %>
+          <% end %>
+          <% if SiteSettings.multiuser_enabled? %>
+            <%= link_to Icon(icon: "flag", label: translate("general.report", type: "")), new_model_report_path(@model), class: "tw:inline-flex tw:items-center tw:gap-1.5 tw:px-3 tw:py-1.5 tw:text-sm tw:rounded-lg tw:border tw:border-secondary-300 tw:dark:border-secondary-500 tw:bg-white tw:dark:tw:bg-secondary-800 hover:tw:bg-secondary-50 tw:dark:hover:tw:bg-secondary-700" %>
+          <% end %>
+          <% if policy(@model).edit? %>
+            <%= link_to Icon(icon: "pencil", label: t(".files_card.bulk_edit")), bulk_edit_model_model_files_path(@model), class: "tw:inline-flex tw:items-center tw:gap-1.5 tw:px-3 tw:py-1.5 tw:text-sm tw:rounded-lg tw:border tw:border-secondary-300 tw:dark:border-secondary-500 tw:bg-white tw:dark:tw:bg-secondary-800 hover:tw:bg-secondary-50 tw:dark:hover:tw:bg-secondary-700" %>
+          <% end %>
+        </div>
+
+        <% if @num_files > 0 %>
+          <h2><a name="files"><%= t(".files") %></a></h2>
+          <div class="tw:grid tw:grid-cols-[repeat(auto-fill,minmax(240px,1fr))] tw:gap-4 tw:mb-4" role="list">
+            <%= render partial: "file", collection: @groups.delete(nil) %>
+          </div>
+          <% @groups.each_pair do |group, files| %>
+            <h3><a name="<%= group.parameterize %>"><%= group.strip.careful_titleize %>*</a></h3>
+            <div class="tw:grid tw:grid-cols-[repeat(auto-fill,minmax(240px,1fr))] tw:gap-4 tw:mb-4" role="list">
+              <%= render partial: "file", collection: files %>
+            </div>
+          <% end %>
+        <% end %>
+
+        <% if policy(:problem).show? %>
+          <% if !@model.parents.empty? && policy(@model).merge? %>
+            <%= card :danger, t(".merge.heading") do %>
+              <p class="tw:mb-2">
+                <%= t(".merge.warning") %>
+              </p>
+              <strong><%= t(".merge.with") %>:</strong>
+              <% @model.parents.each do |parent| %>
+                <%= DoButton(icon: "union", label: parent.name, href: merge_models_path(target: parent.public_id, models: [@model.public_id]), method: :post, variant: "danger") %>
+              <% end %>
+            <% end %>
+          <% end %>
+
+          <% merge_histories = @model.merge_histories.active.order(created_at: :desc) %>
+          <% if merge_histories.any? && policy(@model).unmerge? %>
+            <% unmerge_days = (Model::UNMERGE_WINDOW / 1.day).to_i %>
+            <%= card :warning, t(".merge_history.heading") do %>
+              <p><small><%= t(".merge_history.window_notice", days: unmerge_days) %></small></p>
+              <ul class="tw:list-none tw:pl-0 tw:m-0">
+                <% merge_histories.each do |h| %>
+                  <li class="tw:mb-4">
+                    <div><strong><%= h.source_name %></strong></div>
+                    <div><small><code class="tw:text-xs"><%= h.source_path %></code></small></div>
+                    <div class="tw:text-end">
+                      <% if h.created_at >= Model::UNMERGE_WINDOW.ago %>
+                        <%= DoButton(icon: "arrow-counterclockwise", label: t(".merge_history.undo_button"), href: unmerge_model_path(@model, merge_history_id: h.id), method: :post, variant: "warning", confirm: t("general.are_you_sure")) %>
+                      <% else %>
+                        <button type="button" class="tw:inline-flex tw:items-center tw:gap-1.5 tw:px-3 tw:py-1.5 tw:text-sm tw:rounded-lg tw:bg-warning/20 tw:text-warning tw:cursor-not-allowed tw:opacity-75" disabled><%= t(".merge_history.undo_button") %></button>
+                      <% end %>
+                    </div>
+                  </li>
+                <% end %>
+              </ul>
+            <% end %>
+          <% end %>
+
+          <%= render partial: "problems_card", locals: {model: @model, problems: @model.problems.visible(problem_settings)} %>
+        <% end %>
+
+        <%= card :secondary, t(".files_card.heading") do %>
+          <a href="#files" class="tw:no-underline hover:tw:underline tw:text-primary-600 tw:dark:tw:text-primary-400">Top</a>
+          <ul class="tw:list-none tw:pl-0 tw:mt-2">
+            <% @groups.each_pair do |group, files| %>
+              <li class="tw:mt-1"><a href="#<%= group.parameterize %>" class="tw:no-underline hover:tw:underline tw:text-primary-600 tw:dark:tw:text-primary-400"><%= group.strip.careful_titleize %>*</a></li>
+            <% end %>
+          </ul>
+        <% end %>
+
+        <% if policy(@model).upload? %>
+          <%= card :secondary, t(".upload_card.heading") do %>
+            <%= form_with url: model_model_files_path(@model), id: "upload-form", class: "tw:grid" do |form| %>
+
+              <%= content_tag :div, nil, class: "tw:mb-4", data: {
+                    controller: "upload",
+                    action: "turbo:morph@window->upload#reconnect",
+                    max_file_size: SiteSettings.max_file_upload_size,
+                    allowed_file_types: input_accept_string,
+                    upload_endpoint: upload_path
+                  } %>
+              <%= submit_tag translate(".submit"), class: "tw:block tw:w-full tw:inline-flex tw:justify-center tw:items-center tw:px-4 tw:py-2 tw:rounded-lg tw:bg-primary-600 tw:text-white hover:tw:bg-primary-700" %>
+            <% end %>
+          <% end %>
+        <% end %>
+      </div>
+
+      <aside class="tw:space-y-4 tw:sticky tw:top-16 tw:self-start" id="sidebar">
+        <%= card :secondary, t(".model_details") do %>
+        <div class="tw:grid tw:grid-cols-[min-content_1fr] tw:gap-x-4 tw:gap-y-3 tw:items-baseline">
           <%= AccessIndicator(object: @model, text: false) %>
           <%= AccessIndicator(object: @model, text: true, icon: false) %>
           <% if @model.creator %>
-            <div><%= Icon icon: "person", label: Creator.model_name.human %></div>
-            <div><%= link_to @model.creator.name, @model.creator, itemprop: "author" %></div>
+            <div class="tw:flex tw:items-center tw:gap-2"><%= Icon icon: "person", label: Creator.model_name.human %></div>
+            <div class="tw:min-w-0"><%= link_to @model.creator.name, @model.creator, itemprop: "author" %></div>
           <% end %>
           <% if @model.collection %>
-            <div><%= Icon icon: "collection", label: Collection.model_name.human(count: 100) %></div>
-            <div><%= link_to @model.collection.name, models_path({collection: @model.collection}.merge(@filter&.to_params)) %></div>
+            <div class="tw:flex tw:items-center tw:gap-2"><%= Icon icon: "collection", label: Collection.model_name.human(count: 100) %></div>
+            <div class="tw:min-w-0"><%= link_to @model.collection.name, models_path({collection: @model.collection}.merge(@filter&.to_params)) %></div>
           <% end %>
           <% if SiteSettings.show_libraries || current_user&.is_administrator? %>
-            <div><%= Icon icon: "boxes", label: Library.model_name.human %></div>
-            <div><%= link_to @model.library.name, models_path({library: @model.library}.merge(@filter&.to_params)) %></div>
+            <div class="tw:flex tw:items-center tw:gap-2"><%= Icon icon: "boxes", label: Library.model_name.human %></div>
+            <div class="tw:min-w-0"><%= link_to @model.library.name, models_path({library: @model.library}.merge(@filter&.to_params)) %></div>
           <% end %>
           <% if @model.license %>
-            <div><%= Icon icon: "card-heading", label: t(".license") %></div>
-            <div>
+            <div class="tw:flex tw:items-center tw:gap-2"><%= Icon icon: "card-heading", label: t(".license") %></div>
+            <div class="tw:min-w-0">
               <%= Spdx.licenses[@model.license]&.fetch("reference") ?
                 link_to(t_license(@model.license), Spdx.licenses[@model.license]["reference"], itemprop: "license") :
                 t_license(@model.license) %>
             </div>
           <% end %>
           <% if @model.sensitive %>
-            <div><%= Icon(icon: "explicit", label: Model.human_attribute_name(:sensitive)) %></div>
-            <div>
+            <div class="tw:flex tw:items-center tw:gap-2"><%= Icon(icon: "explicit", label: Model.human_attribute_name(:sensitive)) %></div>
+            <div class="tw:min-w-0">
               <%= Model.human_attribute_name(:sensitive) %>
             </div>
           <% end %>
           <% if current_user&.is_administrator? %>
-            <div><%= Icon icon: "folder", label: t(".path") %></div>
-            <div>
+            <div class="tw:flex tw:items-center tw:gap-2"><%= Icon icon: "folder", label: t(".path") %></div>
+            <div class="tw:min-w-0">
               <%= content_tag(:code, class: "path") { safe_join @model.path.split("/"), safe_join([tag.wbr, "/"]) } %>
             </div>
           <% end %>
-          <div><%= Icon icon: "tag", label: t(".tags") %></div>
-          <div><%= render "tag_list", tags: @model.tags.order(taggings_count: :desc, name: :asc), filter: @filter %></div>
+          <div class="tw:flex tw:items-center tw:gap-2"><%= Icon icon: "tag", label: t(".tags") %></div>
+          <div class="tw:min-w-0"><%= render "tag_list", tags: @model.tags.order(taggings_count: :desc, name: :asc), filter: @filter %></div>
           <% unless @model.links.empty? %>
-            <div><%= Icon icon: "link-45deg", role: "presentation", label: Model.human_attribute_name(:links) %></div>
-            <%= LinkList links: @model.links, icons: false %>
+            <div class="tw:flex tw:items-center tw:gap-2"><%= Icon icon: "link-45deg", role: "presentation", label: Model.human_attribute_name(:links) %></div>
+            <div class="tw:min-w-0"><%= LinkList links: @model.links, icons: false %></div>
           <% end %>
           <% if SiteSettings.social_enabled? %>
             <% if SiteSettings.federation_enabled? %>
               <div>⁂</div>
-              <div>
+              <div class="tw:min-w-0">
                 <% if @model.remote? %>
                   <small><%= link_to @model.federails_actor.at_address, @model.federails_actor.profile_url, target: "new" %></small>
                 <% else %>
@@ -105,94 +192,17 @@
                 <% end %>
               </div>
             <% end %>
-            <div><%= Icon icon: "people", label: t(".followers") %></div>
-            <div>
+            <div class="tw:flex tw:items-center tw:gap-2"><%= Icon icon: "people", label: t(".followers") %></div>
+            <div class="tw:min-w-0">
               <%= t("general.followers", count: @model.followers.count) %>
-              <div class="float-end">
+              <div class="tw:mt-1">
                 <%= FollowButton(follower: current_user, target: @model) %>
               </div>
             </div>
           <% end %>
         </div>
-      </div>
+        <% end %>
+      </aside>
     </div>
-    <div class="card-footer">
-      <%= DownloadButton(model: @model) %>
-      <div class="float-end">
-        <%= BurgerMenu id: "model-actions-menu", data: tour_attributes(id: "model-actions-menu", title: translate(".menu.tour.title"), description: translate(".menu.tour.description")) do %>
-          <%= DropdownItem(icon: "pencil", label: translate("general.edit"), path: edit_model_path(@model), aria_label: translate("components.model_card.edit_button.label", name: @model.name)) if policy(@model).edit? %>
-          <%= DropdownItem(icon: "trash", label: translate("general.delete"), path: model_path(@model), method: :delete, aria_label: translate("components.model_card.delete_button.label", name: @model.name), confirm: t("models.destroy.confirm")) if policy(@model).destroy? %>
-          <%= DropdownDivider() %>
-          <%= DropdownItem(icon: "pencil", label: t(".files_card.bulk_edit"), path: bulk_edit_model_model_files_path(@model)) if policy(@model).edit? %>
-          <%= DropdownItem(icon: "radar", label: t(".rescan"), path: scan_model_path(@model), method: :post) if policy(@model).scan? %>
-          <%= DropdownDivider() %>
-          <%= DropdownItem(icon: "flag", label: translate("general.report", type: ""), path: new_model_report_path(@model)) if SiteSettings.multiuser_enabled? %>
-        <% end %>
-      <% end %>
-
-      <% if policy(:problem).show? %>
-        <% if !@model.parents.empty? && policy(@model).merge? %>
-          <%= card :danger, t(".merge.heading") do %>
-            <p>
-              <%= t(".merge.warning") %>
-            </p>
-            <strong><%= t(".merge.with") %>:</strong>
-            <% @model.parents.each do |parent| %>
-              <%= DoButton(icon: "union", label: parent.name, href: merge_models_path(target: parent.public_id, models: [@model.public_id]), method: :post, variant: "danger") %>
-            <% end %>
-          <% end %>
-        <% end %>
-
-        <% merge_histories = @model.merge_histories.active.order(created_at: :desc) %>
-        <% if merge_histories.any? && policy(@model).unmerge? %>
-          <% unmerge_days = (Model::UNMERGE_WINDOW / 1.day).to_i %>
-          <%= card :warning, t(".merge_history.heading") do %>
-            <p><small><%= t(".merge_history.window_notice", days: unmerge_days) %></small></p>
-            <ul class="list-unstyled mb-0">
-              <% merge_histories.each do |h| %>
-                <li class="mb-2">
-                  <div><strong><%= h.source_name %></strong></div>
-                  <div><small><code><%= h.source_path %></code></small></div>
-                  <div class="text-end">
-                    <% if h.created_at >= Model::UNMERGE_WINDOW.ago %>
-                      <%= DoButton(icon: "arrow-counterclockwise", label: t(".merge_history.undo_button"), href: unmerge_model_path(@model, merge_history_id: h.id), method: :post, variant: "warning", confirm: t("general.are_you_sure")) %>
-                    <% else %>
-                      <button class="btn btn-warning disabled"><%= t(".merge_history.undo_button") %></button>
-                    <% end %>
-                  </div>
-                </li>
-              <% end %>
-            </ul>
-          <% end %>
-        <% end %>
-
-        <%= render partial: "problems_card", locals: {model: @model, problems: @model.problems.visible(problem_settings)} %>
-      <% end %>
-
-      <%= card :secondary, t(".files_card.heading") do %>
-        <a href="#files">Top</a>
-        <ul>
-          <% @groups.each_pair do |group, files| %>
-            <li><a href="#<%= group.parameterize %>"><%= group.strip.careful_titleize %>*</a></li>
-          <% end %>
-        </ul>
-      <% end %>
-
-      <% if policy(@model).upload? %>
-        <%= card :secondary, t(".upload_card.heading") do %>
-          <%= form_with url: model_model_files_path(@model), id: "upload-form", class: "d-grid" do |form| %>
-
-            <%= content_tag :div, nil, class: "mb-3", data: {
-                  controller: "upload",
-                  action: "turbo:morph@window->upload#reconnect",
-                  max_file_size: SiteSettings.max_file_upload_size,
-                  allowed_file_types: input_accept_string,
-                  upload_endpoint: upload_path
-                } %>
-            <%= submit_tag translate(".submit"), class: "btn btn-primary d-block" %>
-          <% end %>
-        <% end %>
-      <% end %>
-    </div>
-  </div>
+  </article>
 </div>

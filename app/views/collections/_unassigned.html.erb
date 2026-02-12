@@ -1,12 +1,14 @@
-<div class="col mb-4">
-  <div class="card preview-card border-warning">
-    <div class='preview-empty'> <p><%= t "collections.collection.no_preview" %></p></div>
-    <div class="card-body">
-      <div class="card-title"><%= t(".name") %></div>
-      <span class="card-subtitle mb-2 text-muted"><%= t(".caption") %></span>
+<div class="tw:mb-4">
+  <div class="tw:rounded-xl tw:border tw:border-warning-400 tw:dark:tw:border-warning-500 tw:bg-white tw:dark:tw:bg-secondary-800 tw:overflow-hidden tw:shadow-sm">
+    <div class="tw:flex tw:items-center tw:justify-center tw:aspect-[4/3] tw:bg-secondary-100 tw:dark:tw:bg-secondary-700/50">
+      <p class="tw:text-sm tw:text-secondary-600 tw:dark:tw:text-secondary-400 tw:text-center tw:px-4"><%= t "collections.collection.no_preview" %></p>
     </div>
-    <div class='card-footer'>
-      <%= link_to "#{@unassigned_count} #{Model.model_name.human count: @unassigned_count}", models_path(collection: ""), {class: "btn btn-primary"} %>
+    <div class="tw:p-4">
+      <div class="tw:font-medium tw:text-secondary-900 tw:dark:tw:text-secondary-100"><%= t(".name") %></div>
+      <span class="tw:block tw:mt-1 tw:text-sm tw:text-secondary-600 tw:dark:tw:text-secondary-400"><%= t(".caption") %></span>
+    </div>
+    <div class="tw:px-4 tw:py-3 tw:border-t tw:border-secondary-200 tw:dark:tw:border-secondary-600">
+      <%= link_to "#{@unassigned_count} #{Model.model_name.human count: @unassigned_count}", models_path(collection: ""), class: "tw:inline-flex tw:items-center tw:px-4 tw:py-2 tw:rounded-lg tw:bg-primary-600 tw:text-white hover:tw:bg-primary-700 focus:tw:ring-2 focus:tw:ring-primary-500" %>
     </div>
   </div>
 </div>

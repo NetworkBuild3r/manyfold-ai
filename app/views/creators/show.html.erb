@@ -12,24 +12,24 @@
 
 <%= content_for :items do %>
   <%= turbo_stream_from @creator %>
-  <div class="card mb-3 <%= "remote-actor" if @creator.remote? %>">
-    <%= content_tag :div, class: "card-body row me-0 ms-0 with-background", style: (@creator.banner ? "background-image: url(#{banner_creator_path(@creator)}); background-position: center; background-size: cover" : nil) do %>
+  <div class="tw:rounded-xl tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:bg-white tw:dark:tw:bg-secondary-800 tw:shadow-sm tw:overflow-hidden tw:mb-4 <%= "remote-actor" if @creator.remote? %>">
+    <%= content_tag :div, class: "tw:flex tw:flex-wrap tw:items-start tw:gap-4 tw:p-4 with-background", style: (@creator.banner ? "background-image: url(#{banner_creator_path(@creator)}); background-position: center; background-size: cover" : nil) do %>
       <% if @creator.avatar %>
-        <div class="col col-auto">
+        <div class="tw:shrink-0">
           <%= Avatar(url: avatar_creator_path(@creator), size: :large) if @creator.avatar %>
         </div>
       <% end %>
-      <div class="col col-auto">
-        <%= content_tag(:div, class: "text-center") do %>
-          <h2>
+      <div class="tw:shrink-0">
+        <%= content_tag(:div, class: "tw:text-center") do %>
+          <h2 class="tw:text-xl tw:font-semibold tw:mb-2">
             <%= @creator.name %>
           </h2>
           <% if SiteSettings.federation_enabled? %>
-            <p>
+            <p class="tw:mb-2">
               <% if @creator.remote? %>
-                <small class="text-secondary"><%= link_to @creator.federails_actor.at_address, @creator.federails_actor.profile_url, target: "new" %></small>
+                <small class="tw:text-secondary-600 tw:dark:tw:text-secondary-400"><%= link_to @creator.federails_actor.at_address, @creator.federails_actor.profile_url, target: "new", class: "tw:text-primary-600 tw:dark:tw:text-primary-400 hover:tw:underline" %></small>
               <% elsif SiteSettings.federation_enabled? %>
-                <small class="text-secondary">
+                <small class="tw:text-secondary-600 tw:dark:tw:text-secondary-400">
                   <%= CopyableText(text: @creator.federails_actor.at_address, label: t("general.copy_fediverse_handle")) %>
                 </small>
               <% end %>
@@ -38,20 +38,20 @@
           <%= FollowButton(follower: current_user, target: @creator) %>
         <% end %>
       </div>
-      <div class="col">
-        <%= content_tag(:p, class: "lead") { @creator.caption } if @creator.caption %>
+      <div class="tw:flex-1 tw:min-w-0">
+        <%= content_tag(:p, class: "tw:text-lg tw:text-secondary-600 tw:dark:tw:text-secondary-400 tw:mb-2") { @creator.caption } if @creator.caption %>
         <% model_count = policy_scope(Model).where(creator: @creator).count %>
-        <p><%= "#{model_count} #{Model.model_name.human count: model_count}" %></p>
-        <%= content_tag(:p) { t("general.followers", count: @creator.followers.count) } if SiteSettings.social_enabled? %>
+        <p class="tw:mb-1"><%= "#{model_count} #{Model.model_name.human count: model_count}" %></p>
+        <%= content_tag(:p, class: "tw:mb-1") { t("general.followers", count: @creator.followers.count) } if SiteSettings.social_enabled? %>
         <p><%= AccessIndicator(object: @creator, text: true) %></p>
       </div>
-      <div class="col col-auto">
+      <div class="tw:shrink-0">
         <%= LinkList links: @creator.links %>
       </div>
     <% end %>
     <% if @creator.notes %>
-      <hr class="mt-0">
-      <%= content_tag :div, class: "card-body row me-0 ms-0" do %>
+      <hr class="tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:my-0">
+      <%= content_tag :div, class: "tw:p-4 tw:prose tw:dark:tw:prose-invert tw:max-w-none" do %>
         <%= markdownify @creator.notes %>
       <% end %>
     <% end %>
@@ -59,7 +59,7 @@
 <% end %>
 
 <% content_for :actions do %>
-  <%= link_to safe_join([Icon(icon: "pencil", label: t(".edit")), t(".edit")], " "), edit_creator_path(@creator), class: "btn btn-primary" if policy(@creator).edit? %>
+  <%= link_to safe_join([Icon(icon: "pencil", label: t(".edit")), t(".edit")], " "), edit_creator_path(@creator), class: "tw:inline-flex tw:items-center tw:gap-2 tw:px-4 tw:py-2 tw:rounded-lg tw:bg-primary-600 tw:text-white hover:tw:bg-primary-700 focus-visible:tw:ring-2 focus-visible:tw:ring-primary-500 tw:no-underline" if policy(@creator).edit? %>
   <%= ReportButton(object: @creator, path: new_creator_report_path(@creator)) %>
   <%= GoButton(href: creator_groups_path(@creator), label: t("views.groups.index.title"), variant: :secondary) if policy(Group.new(creator: @creator)).index? %>
 <% end %>

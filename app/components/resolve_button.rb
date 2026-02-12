@@ -63,8 +63,8 @@ class Components::ResolveButton < Components::Base
 
   def view_template
     if @problem.in_progress || @problem.resolving?
-      button_to("#", class: "btn btn-#{@options[:button_type]} disabled") do
-        span(class: "spinner-border spinner-border-sm") { Icon(icon: "", label: "") }
+      button_to("#", class: "#{resolve_button_base_class} #{resolve_button_variant_class} tw:opacity-70 tw:cursor-not-allowed", disabled: true) do
+        span(class: "tw:animate-spin tw:inline-block tw:w-4 tw:h-4 tw:border-2 tw:border-current tw:border-t-transparent tw:rounded-full") { "" }
         whitespace
         span { @text }
       end
@@ -83,5 +83,20 @@ class Components::ResolveButton < Components::Base
 
   def render?
     ProblemPolicy.new(@user, @problem).resolve?
+  end
+
+  private
+
+  def resolve_button_base_class
+    "tw:inline-flex tw:items-center tw:gap-1.5 tw:px-3 tw:py-1.5 tw:text-sm tw:font-medium tw:rounded-lg tw:transition-colors tw:focus-visible:ring-2 tw:focus-visible:ring-primary-500 tw:focus-visible:ring-offset-2"
+  end
+
+  def resolve_button_variant_class
+    case @options[:button_type]
+    when "primary" then "tw:bg-primary-600 tw:text-white tw:hover:bg-primary-700"
+    when "danger" then "tw:bg-danger tw:text-white tw:hover:opacity-90"
+    when "warning" then "tw:bg-warning tw:text-secondary-900 tw:hover:opacity-90"
+    else "tw:bg-primary-600 tw:text-white tw:hover:bg-primary-700"
+    end
   end
 end

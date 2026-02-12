@@ -1,4 +1,8 @@
 module ApplicationHelper
+  def dark_theme?
+    SiteSettings.validated_theme == "dark"
+  end
+
   def site_name(default: translate("application.title"))
     SiteSettings.site_name.presence || default
   end
@@ -47,34 +51,41 @@ module ApplicationHelper
 
   def card(style, title = nil, options = {}, &content)
     id = options[:id] || "card-#{SecureRandom.hex(4)}"
-    card_class = ["card", "mb-4", options[:class]].join(" ")
-    if options[:skip_link]
-      skiplink = skip_link(options[:skip_link][:target], options[:skip_link][:text])
-      card_class += " skip-link-container"
-    end
-    tag.div class: card_class, data: options[:data], id: id do
+    card_class = ["tw:rounded-xl", "tw:border", "tw:border-secondary-200", "tw:dark:border-secondary-600", "tw:bg-white", "tw:dark:bg-secondary-800", "tw:shadow-sm", "tw:mb-4", options[:class]].compact.join(" ")
+    card_class += " skip-link-container" if options[:skip_link]
+    card_data = options[:data] || {}
+    card_data = card_data.merge(controller: "collapse") if options[:collapse]
+    tag.div class: card_class, data: card_data, id: id do
       safe_join([
         if title.present?
-          tag.div(class: "card-header text-white bg-#{style}") do
-            options[:collapse] ?
+          header_bg = style.to_s == "primary" ? "tw:bg-primary-600" : "tw:bg-secondary-600"
+          tag.div(class: "tw:px-4 tw:py-3 tw:text-white tw:rounded-t-xl #{header_bg} tw:relative") do
+            if options[:collapse]
               safe_join([
-                title,
-                tag.span(Icon(icon: "arrows-expand", label: t("general.expand")), class: "float-end d-#{options[:collapse]}-none"),
+                tag.div(class: "tw:flex tw:items-center tw:justify-between tw:relative tw:z-10") do
+                  safe_join([title, tag.span(Icon(icon: "arrows-expand", label: t("general.expand")), class: "tw:md:hidden")])
+                end,
                 tag.a(
                   nil,
-                  class: "link-unstyled stretched-link d-#{options[:collapse]}-none",
-                  "data-bs-toggle": "collapse",
-                  "data-bs-target": "##{id}-collapse",
+                  class: "tw:md:hidden tw:absolute tw:inset-0 tw:z-0 tw:block",
+                  "data-action": "click->collapse#toggle",
                   "aria-expanded": false,
-                  "aria-controls": "#{id}-collapse"
+                  "aria-controls": "#{id}-collapse",
+                  "aria-label": t("general.expand")
                 )
-              ]) :
+              ])
+            else
               title
+            end
           end
         end,
-        skiplink,
-        tag.div(class: "card-body #{"collapse d-#{options[:collapse]}-block" if options[:collapse]}", id: "#{id}-collapse") do
-          tag.div class: "card-text" do
+        (skip_link(options[:skip_link][:target], options[:skip_link][:text]) if options[:skip_link]),
+        tag.div(
+          class: ["tw:p-4", ("collapse-md" if options[:collapse] == "md")].compact.join(" "),
+          id: "#{id}-collapse",
+          data: (options[:collapse] ? { collapse_target: "content" } : {})
+        ) do
+          tag.div do
             yield
           end
         end
@@ -168,27 +179,37 @@ module ApplicationHelper
   end
 
   def file_input_row(form, name, options = {})
+    input_class = "tw:block tw:w-full tw:rounded-lg tw:border tw:border-secondary-300 tw:px-3 tw:py-2 tw:shadow-sm tw:focus:ring-2 tw:focus:ring-primary-500 tw:dark:border-secondary-600 tw:dark:bg-secondary-800"
     safe_join([
       content_tag(:div) do
-        form.label(name, options[:label], class: "col-form-label")
+        form.label(name, options[:label], class: "tw:block tw:text-sm tw:font-medium tw:text-secondary-700 tw:dark:text-secondary-300")
       end,
-      content_tag(:div) do
+      content_tag(:div, class: "tw:mt-1") do
         safe_join [
-          content_tag(:div, class: "input-group") do
+          content_tag(:div, class: "tw:flex tw:gap-2 tw:items-center") do
             safe_join [
-              form.file_field(name, class: "form-control"),
-              options[:remove] ? form.check_box(:"remove_#{name}", class: "btn-check", autocomplete: "off") : nil,
-              options[:remove] ? form.label(:"remove_#{name}", Icon(icon: "trash", label: options[:remove_label]), class: "btn btn-outline-danger") : nil
+              form.file_field(name, class: input_class),
+              options[:remove] ? form.check_box(:"remove_#{name}", class: "tw:rounded tw:border-secondary-300 tw:text-primary-600 tw:focus:ring-primary-500 tw:h-4 tw:w-4", autocomplete: "off") : nil,
+              options[:remove] ? form.label(:"remove_#{name}", Icon(icon: "trash", label: options[:remove_label]), class: "tw:inline-flex tw:items-center tw:gap-1.5 tw:px-3 tw:py-1.5 tw:text-sm tw:font-medium tw:rounded-lg tw:border tw:border-danger tw:text-danger tw:bg-transparent tw:hover:bg-danger/10 tw:focus-visible:ring-2 tw:focus-visible:ring-primary-500 tw:cursor-pointer") : nil
             ].compact
           end,
           errors_for(form.object, name),
-          (options[:help] ? content_tag(:span, class: "form-text") { options[:help] } : nil)
+          (options[:help] ? content_tag(:span, class: "tw:text-sm tw:text-secondary-500 tw:dark:text-secondary-400 tw:mt-1 tw:block") { options[:help] } : nil)
         ].compact
       end
     ])
   end
 
   def nav_link(ico, text, path, options = {})
+    link_class = if options[:style].present?
+      options[:style]
+    else
+      base = "tw:flex tw:items-center tw:gap-1.5 tw:px-3 tw:py-2 tw:rounded-lg tw:text-white/90 tw:hover:text-white tw:hover:bg-primary-500 tw:no-underline tw:transition-colors focus-visible:tw:ring-2 focus-visible:tw:ring-white focus-visible:tw:ring-offset-2 focus-visible:tw:ring-offset-primary-600"
+      base += " tw:bg-primary-500 tw:text-white" if current_page?(path)
+      base
+    end
+    aria = {label: options[:aria_label]}
+    aria[:current] = "page" if !options[:style].present? && current_page?(path)
     link_to(
       safe_join(
         [
@@ -198,14 +219,12 @@ module ApplicationHelper
         " "
       ),
       path,
-      class: options[:style] || safe_join(["nav-link", (current_page?(path) ? "active" : "")], " "),
+      class: link_class,
       method: options[:method],
       rel: options[:nofollow] ? "nofollow" : nil,
       id: options[:id],
       data: options[:data],
-      aria: {
-        label: options[:aria_label]
-      }
+      aria: aria
     )
   end
 
@@ -214,12 +233,12 @@ module ApplicationHelper
     return unless record.errors.include? attribute
     content_tag(:div,
       record.errors.full_messages_for(attribute).join("; "),
-      class: "invalid-feedback d-block")
+      class: "tw:text-danger tw:text-sm tw:mt-1 tw:block")
   end
 
   def skip_link(target, text)
-    content_tag :div, class: "container-fluid skip-link text-bg-success p-2" do
-      link_to text, "##{target}", class: "text-reset", tabindex: 0
+    content_tag :div, class: "tw:max-w-screen-2xl tw:mx-auto tw:px-4 tw:py-2 tw:bg-primary-600 tw:text-white focus-within:tw:ring-2 focus-within:tw:ring-primary-400" do
+      link_to text, "##{target}", class: "tw:text-white tw:no-underline focus:tw:underline tw:outline-none", tabindex: 0
     end
   end
 
@@ -234,10 +253,107 @@ module ApplicationHelper
     current_user&.pagination_settings || SiteSettings::UserDefaults::PAGINATION
   end
 
-  # Bootstrap row-cols class for the model card grid (2, 3, or 4 columns). Used by models list and infinite-scroll frame.
-  def model_list_grid_class
-    cols = (pagination_settings["grid_columns"] || SiteSettings::UserDefaults::PAGINATION["grid_columns"] || 3).to_i.clamp(2, 4)
-    "row-cols-1 row-cols-md-#{[2, cols].min} row-cols-lg-#{cols}"
+  # Returns an array of active filter entries for pills and sidebar. Each entry is a hash with:
+  # :key, :icon, :type_label, :value_html, :remove_url, :aria_remove, :pill_label
+  # Reused by models list (Phase 5) and creators/collections index (Phase 7).
+  def active_filters_list(filter)
+    return [] if filter.blank? || !filter.any?
+
+    base_params = filter.to_params
+    entries = []
+
+    if filter.filtering_by?(:q)
+      q = filter.parameter(:q)
+      entries << {
+        key: :q,
+        icon: "search",
+        type_label: t("application.filters_card.search"),
+        value_html: q,
+        remove_url: url_for(base_params.except(:q)),
+        aria_remove: t("application.filters_card.remove_search_filter"),
+        pill_label: "#{t("application.filters_card.search")}: #{q}"
+      }
+    end
+
+    if filter.filtering_by?(:collection)
+      coll = filter.collection
+      val = coll ? link_to(coll.name, {collection: filter.collection}) : t("application.filters_card.unknown")
+      entries << {
+        key: :collection,
+        icon: "collection",
+        type_label: Collection.model_name.human,
+        value_html: val,
+        remove_url: url_for(base_params.except(:collection)),
+        aria_remove: t("application.filters_card.remove_collection_filter"),
+        pill_label: "#{Collection.model_name.human}: #{coll&.name || t("application.filters_card.unknown")}"
+      }
+    end
+
+    if filter.filtering_by?(:library)
+      libs = [*filter.parameter(:library)].map { |l| Library.find_param(l).name }.join(", ")
+      entries << {
+        key: :library,
+        icon: "boxes",
+        type_label: Library.model_name.human,
+        value_html: libs,
+        remove_url: url_for(base_params.except(:library)),
+        aria_remove: t("application.filters_card.remove_library_filter"),
+        pill_label: "#{Library.model_name.human}: #{libs}"
+      }
+    end
+
+    if filter.filtering_by?(:creator)
+      cr = filter.creator
+      val = cr ? link_to(cr.name.careful_titleize, cr) : t("application.filters_card.unknown")
+      entries << {
+        key: :creator,
+        icon: "person",
+        type_label: Creator.model_name.human,
+        value_html: val,
+        remove_url: url_for(base_params.except(:creator)),
+        aria_remove: t("application.filters_card.remove_creator_filter"),
+        pill_label: "#{Creator.model_name.human}: #{cr&.name&.careful_titleize || t("application.filters_card.unknown")}"
+      }
+    end
+
+    if filter.filtering_by?(:owner)
+      entries << {
+        key: :owner,
+        icon: "person",
+        type_label: t("application.filters_card.owner"),
+        value_html: filter.owner.username,
+        remove_url: url_for(base_params.except(:owner)),
+        aria_remove: t("application.filters_card.remove_owner_filter"),
+        pill_label: "#{t("application.filters_card.owner")}: #{filter.owner.username}"
+      }
+    end
+
+    if filter.filtering_by?(:tag)
+      entries << {
+        key: :tag,
+        icon: "tag",
+        type_label: ActsAsTaggableOn::Tag.model_name.human(count: 100),
+        value_html: nil, # sidebar renders application/tag_list for this row
+        remove_url: url_for(base_params.except(:tag)),
+        aria_remove: t("application.filters_card.remove_tag_filter"),
+        pill_label: "#{ActsAsTaggableOn::Tag.model_name.human(count: 100)}: #{filter.tags&.map(&:name)&.join(", ") || ""}"
+      }
+    end
+
+    if filter.filtering_by?(:missingtag)
+      mt = filter.parameter(:missingtag).presence || "*"
+      entries << {
+        key: :missingtag,
+        icon: "tag",
+        type_label: t("application.filters_card.missing_tags"),
+        value_html: mt,
+        remove_url: url_for(base_params.except(:missingtag)),
+        aria_remove: t("application.filters_card.remove_missing_tag_filter"),
+        pill_label: "#{t("application.filters_card.missing_tags")}: #{mt}"
+      }
+    end
+
+    entries
   end
 
   def tag_cloud_settings

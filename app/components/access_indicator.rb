@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Components::AccessIndicator < Components::Base
   # @param object The object to show the access details for; must include the CaberSubject concern
   # @param icon Whether or not to show an indicator icon
@@ -15,19 +17,19 @@ class Components::AccessIndicator < Components::Base
   def view_template
     span do
       if @object.private?
-        span(class: "text-danger") { Icon(icon: "lock-fill", label: t("general.private")) } if @icon
+        span(class: "tw:text-danger") { Icon(icon: "lock-fill", label: t("general.private")) } if @icon
         if @text
           whitespace
           span { t("general.private") }
         end
       elsif @object.public?
-        span(class: "text-success") { Icon(icon: "eye-fill", label: t("general.public")) } if @icon
+        span(class: "tw:text-success") { Icon(icon: "eye-fill", label: t("general.public")) } if @icon
         if @text
           whitespace
           span { t("general.public") }
         end
       else
-        span(class: "text-info") { Icon(icon: "unlock", label: t("general.shared")) } if @icon
+        span(class: "tw:text-info") { Icon(icon: "unlock", label: t("general.shared")) } if @icon
         if @text
           whitespace
           span { t("general.shared") }

@@ -1,7 +1,7 @@
 <%- @collection.links.build if @collection.links.empty? # populate empty link %>
 <%- @collection.caber_relations.build if @collection.caber_relations.empty? %>
 
-<%= form_with model: @collection, class: "container-md tabular-form" do |form| %>
+<%= form_with model: @collection, class: "tw:max-w-2xl tw:mx-auto tabular-form" do |form| %>
   <%= text_input_row form, :name %>
 
   <%= collection_select_input_row form,
@@ -29,10 +29,10 @@
   <%= select_input_row form, :indexable, indexable_select_options(form.object) %>
   <%= select_input_row form, :ai_indexable, ai_indexable_select_options(form.object) if SiteSettings.allow_ai_bots %>
   <%= render "caber_relations_form", form: form %>
-  <div>
-    <%= form.submit translate("general.save"), class: "btn btn-primary" %>
+  <div class="tw:flex tw:flex-wrap tw:items-center tw:gap-2">
+    <%= form.submit translate("general.save"), class: "tw:inline-flex tw:items-center tw:px-4 tw:py-2 tw:rounded-lg tw:bg-primary-600 tw:text-white hover:tw:bg-primary-700 focus-visible:tw:ring-2 focus-visible:tw:ring-primary-500" %>
     <% if @collection.persisted? %>
-      <span class="float-end">
+      <span class="tw:ml-auto">
         <%= DoButton(icon: "trash", label: t("general.delete"), href: collection_path(@collection), method: :delete, variant: "outline-danger", confirm: translate("collections.destroy.confirm")) if policy(@collection).destroy? %>
       </span>
     <% end %>

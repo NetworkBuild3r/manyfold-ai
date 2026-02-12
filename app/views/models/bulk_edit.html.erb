@@ -2,37 +2,41 @@
       Model.model_name.human(count: 100) => models_path
     } %>
 
-<p class="lead"><%= t(".description") %></p>
+<p class="tw:text-lg tw:text-secondary-600 tw:dark:tw:text-secondary-400"><%= t(".description") %></p>
 
 <%= paginate @models %>
 
 <%= form_with url: update_models_path, method: :patch do |form| %>
 
-  <table class="table table-striped" data-controller="bulk-edit" data-action="change->bulk-edit#handleCheckboxChange">
-    <tr>
-      <th><input type="checkbox" aria-label="<%= translate ".select_all" %>" value="0" name="bulk-select-all"></th>
-      <th><%= Model.human_attribute_name(:name) %></th>
-      <th><%= Model.human_attribute_name(:collection) %></th>
-      <th><%= Model.human_attribute_name(:tags) %></th>
-      <th><%= Model.human_attribute_name(:creator) %></th>
-      <th><%= Model.human_attribute_name(:sensitive) %></th>
-    </tr>
+  <table class="tw:w-full tw:border-collapse tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600" data-controller="bulk-edit" data-action="change->bulk-edit#handleCheckboxChange">
+    <thead>
+      <tr class="tw:border-b tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:bg-secondary-50 tw:dark:tw:bg-secondary-800/50">
+        <th class="tw:px-4 tw:py-2 tw:text-left"><input type="checkbox" aria-label="<%= translate ".select_all" %>" value="0" name="bulk-select-all"></th>
+        <th class="tw:px-4 tw:py-2 tw:text-left"><%= Model.human_attribute_name(:name) %></th>
+        <th class="tw:px-4 tw:py-2 tw:text-left"><%= Model.human_attribute_name(:collection) %></th>
+        <th class="tw:px-4 tw:py-2 tw:text-left"><%= Model.human_attribute_name(:tags) %></th>
+        <th class="tw:px-4 tw:py-2 tw:text-left"><%= Model.human_attribute_name(:creator) %></th>
+        <th class="tw:px-4 tw:py-2 tw:text-left"><%= Model.human_attribute_name(:sensitive) %></th>
+      </tr>
+    </thead>
+    <tbody>
     <% @models.each do |model| %>
-      <tr>
-        <td><%= form.check_box "models[#{model.to_param}]", data: {bulk_item: model.to_param}, "aria-label": translate(".select", name: model.name) %></td>
-        <td><%= link_to model.name, model, title: model.path %></td>
-        <td><%= link_to model.collection.name, model.collection if model.collection %></td>
-        <td><%= render "tag_list", tags: model.tags.order(taggings_count: :desc, name: :asc), model_id: model.to_param, show_count: false, filter: @filter %></td>
-        <td><%= link_to model.creator.name, model.creator if model.creator %></td>
-        <td><%= Icon(icon: "explicit", label: Model.human_attribute_name(:sensitive)) if model.sensitive %></td>
+      <tr class="tw:border-b tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:even:tw:bg-secondary-50 tw:dark:tw:even:tw:bg-secondary-800/30">
+        <td class="tw:px-4 tw:py-2"><%= form.check_box "models[#{model.to_param}]", data: {bulk_item: model.to_param}, "aria-label": translate(".select", name: model.name), class: "tw:rounded tw:border-secondary-300 tw:text-primary-600 tw:focus:ring-primary-500 tw:h-4 tw:w-4" %></td>
+        <td class="tw:px-4 tw:py-2"><%= link_to model.name, model, title: model.path, class: "tw:text-primary-600 tw:dark:tw:text-primary-400 hover:tw:underline" %></td>
+        <td class="tw:px-4 tw:py-2"><%= link_to model.collection.name, model.collection, class: "tw:text-primary-600 tw:dark:tw:text-primary-400 hover:tw:underline" if model.collection %></td>
+        <td class="tw:px-4 tw:py-2"><%= render "tag_list", tags: model.tags.order(taggings_count: :desc, name: :asc), model_id: model.to_param, show_count: false, filter: @filter %></td>
+        <td class="tw:px-4 tw:py-2"><%= link_to model.creator.name, model.creator, class: "tw:text-primary-600 tw:dark:tw:text-primary-400 hover:tw:underline" if model.creator %></td>
+        <td class="tw:px-4 tw:py-2"><%= Icon(icon: "explicit", label: Model.human_attribute_name(:sensitive)) if model.sensitive %></td>
       </tr>
     <% end %>
+    </tbody>
   </table>
 
-  <p class="lead"><%= t ".form_subtitle" %></p>
+  <p class="tw:text-lg tw:text-secondary-600 tw:dark:tw:text-secondary-400 tw:mt-4"><%= t ".form_subtitle" %></p>
 
-  <div class="row">
-    <div class="col tabular-form">
+  <div class="tw:grid tw:grid-cols-1 tw:md:grid-cols-[1fr_minmax(0,280px)] tw:gap-6 tw:mt-4">
+    <div class="tabular-form">
       <%= render "bulk_fields", form: form %>
 
       <%= render "tags_edit", form: form, name: :add_tags, label: translate(".add_tags"), tags: @available_tags || [] %>
@@ -40,10 +44,10 @@
 
       <% if SiteSettings.show_libraries || current_user.is_administrator? %>
         <div>
-          <%= form.label :new_library_id, class: "col-sm-2 col-form-label" %>
+          <%= form.label :new_library_id, class: "tw:block tw:text-sm tw:font-medium tw:text-secondary-700 tw:dark:tw:text-secondary-300" %>
         </div>
         <div>
-          <%= form.collection_select :new_library_id, policy_scope(Library).all, :id, :name, {include_blank: t("general.no_change")}, {class: "form-control col-auto form-select"} %>
+          <%= form.collection_select :new_library_id, policy_scope(Library).all, :id, :name, {include_blank: t("general.no_change")}, {class: "tw:block tw:w-full tw:rounded-lg tw:border tw:border-secondary-300 tw:px-3 tw:py-2 tw:shadow-sm tw:focus:ring-2 tw:focus:ring-primary-500 tw:dark:tw:border-secondary-600 tw:dark:tw:bg-secondary-800"} %>
         </div>
       <% end %>
 
@@ -56,14 +60,14 @@
       <%= form.hidden_field :collection, value: @filter.parameter(:collection) if @filter.filtering_by?(:collection) %>
       <%= form.hidden_field :library, value: @filter.parameter(:library) if @filter.filtering_by?(:library) %>
       <%= form.hidden_field :creator, value: @filter.parameter(:creator) if @filter.filtering_by?(:creator) %>
-      <div>
-        <%= form.submit translate(".submit"), class: "btn btn-primary" %>
-        <%= form.submit translate(".update_all.label", count: @models.total_count), class: "btn btn-secondary", name: "update_all", data: {confirm: translate(".update_all.confirm", count: @models.total_count)} %>
-        <%= form.submit translate(".merge"), class: "btn btn-outline-warning", formaction: merge_models_path, formmethod: :post, name: "merge" %>
+      <div class="tw:flex tw:flex-wrap tw:items-center tw:gap-2">
+        <%= form.submit translate(".submit"), class: "tw:inline-flex tw:items-center tw:px-4 tw:py-2 tw:rounded-lg tw:bg-primary-600 tw:text-white hover:tw:bg-primary-700 focus-visible:tw:ring-2 focus-visible:tw:ring-primary-500" %>
+        <%= form.submit translate(".update_all.label", count: @models.total_count), class: "tw:inline-flex tw:items-center tw:px-4 tw:py-2 tw:rounded-lg tw:border tw:border-secondary-300 tw:bg-white tw:dark:tw:bg-secondary-800 tw:text-secondary-700 hover:tw:bg-secondary-50 focus-visible:tw:ring-2 focus-visible:tw:ring-primary-500", name: "update_all", data: {confirm: translate(".update_all.confirm", count: @models.total_count)} %>
+        <%= form.submit translate(".merge"), class: "tw:inline-flex tw:items-center tw:px-4 tw:py-2 tw:rounded-lg tw:border tw:border-warning tw:text-warning hover:tw:bg-warning/10 focus-visible:tw:ring-2 focus-visible:tw:ring-primary-500", formaction: merge_models_path, formmethod: :post, name: "merge" %>
       </div>
     </div>
     <% if !@filter.to_params.empty? %>
-      <div class="col col-md-3">
+      <div>
         <%= render "filters_card" %>
       </div>
     <% end %>

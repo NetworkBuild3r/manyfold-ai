@@ -100,36 +100,14 @@ class SiteSettings < RailsSettings::Base
     federation_enabled? && FaspClient::Provider.any? { |it| it.has_capability? :account_search }
   end
 
-  AVAILABLE_THEMES = [
-    "brite",
-    "cerulean",
-    "cosmo",
-    "cyborg",
-    "darkly",
-    "default",
-    "flatly",
-    "journal",
-    "litera",
-    "lumen",
-    "materia",
-    "minty",
-    "pulse",
-    "quartz",
-    "sandstone",
-    "simplex",
-    "sketchy",
-    "slate",
-    "solar",
-    "spacelab",
-    "superhero",
-    "united",
-    "vapor",
-    "yeti",
-    "zephyr"
-  ]
+  AVAILABLE_THEMES = %w[light dark].freeze
+
+  LEGACY_DARK_THEMES = %w[cyborg darkly slate solar superhero vapor].freeze
 
   def self.validated_theme
-    AVAILABLE_THEMES.include?(theme) ? theme : "default"
+    return theme if AVAILABLE_THEMES.include?(theme)
+    return "dark" if LEGACY_DARK_THEMES.include?(theme)
+    "light"
   end
 
   module UserDefaults

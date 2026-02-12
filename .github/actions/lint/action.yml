@@ -1,0 +1,21 @@
+# Reusable lint steps (Ruby, ERB, TypeScript, Tailwind). Use after setup.
+name: Lint
+description: Run Ruby, ERB, TypeScript, and Tailwind build
+runs:
+  using: composite
+  steps:
+    - name: Build Tailwind CSS
+      run: yarn build:css:tailwind
+      shell: bash
+    - name: Lint Ruby code
+      run: bundle exec rake rubocop
+      shell: bash
+    - name: Lint ERB templates
+      run: bundle exec erb_lint --lint-all
+      shell: bash
+    - name: Lint TypeScript code
+      run: yarn run lint:ts
+      shell: bash
+    - name: Check TypeScript types
+      run: yarn typecheck
+      shell: bash

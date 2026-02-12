@@ -1,4 +1,4 @@
-<%= cocooned_item class: "input-group" do %>
-  <%= f.url_field :url, class: "form-control", placeholder: translate(".url.placeholder") %>
-  <%= cocooned_remove_item_button Icon(icon: "trash", label: translate(".url.delete")), f, class: "btn btn-outline-danger" %>
+<%= cocooned_item class: "tw:flex tw:gap-2 tw:mb-2" do %>
+  <%= f.url_field :url, class: "tw:block tw:flex-1 tw:rounded-lg tw:border tw:border-secondary-300 tw:px-3 tw:py-2 tw:shadow-sm focus:tw:ring-2 focus:tw:ring-primary-500 tw:dark:border-secondary-600 tw:dark:bg-secondary-800", placeholder: translate(".url.placeholder") %>
+  <%= cocooned_remove_item_button Icon(icon: "trash", label: translate(".url.delete")), f, class: "tw:inline-flex tw:items-center tw:gap-1.5 tw:px-3 tw:py-1.5 tw:text-sm tw:font-medium tw:rounded-lg tw:border tw:border-danger tw:text-danger tw:bg-transparent hover:tw:bg-danger/10 focus-visible:tw:ring-2 focus-visible:tw:ring-primary-500" %>
 <% end %>

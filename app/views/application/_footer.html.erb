@@ -1,39 +1,33 @@
-<footer class="container-fluid mt-5 py-2 border-top" id="footer">
-  <div class="row">
-    <div class="col-lg-3 me-auto">
-      <span class="d-inline-flex align-items-center mb-2">
-        <%= image_tag "roundel.svg", width: 48, height: 48, class: "me-2", alt: translate("application.title") %>
-        <span class="fs-5"><%= t(".powered_by_html", name: t("application.title")) %></span>
+<footer class="tw:border-t tw:border-secondary-200 tw:dark:border-secondary-600 tw:mt-8 tw:py-4" id="footer">
+  <div class="tw:max-w-screen-2xl tw:mx-auto tw:px-4 tw:sm:px-6 tw:lg:px-8 tw:flex tw:flex-wrap tw:items-center tw:justify-between tw:gap-4">
+    <div class="tw:flex tw:items-center tw:gap-3 tw:flex-wrap">
+      <span class="tw:inline-flex tw:items-center tw:gap-2">
+        <%= image_tag "roundel.svg", width: 48, height: 48, class: "tw:h-12 tw:w-12", alt: translate("application.title") %>
+        <span class="tw:text-sm tw:text-secondary-600 tw:dark:text-secondary-400"><%= t(".powered_by_html", name: t("application.title")) %></span>
       </span>
-      <ul class="list-unstyled small text-muted">
-        <li class="mb-2"><%= t ".by_html" %></li>
-        <li class="mb-2"><%= t ".open_source_html" %></li>
+      <ul class="tw:list-none tw:m-0 tw:p-0 tw:text-sm tw:text-secondary-500 tw:dark:text-secondary-400">
+        <li class="tw:mb-1"><%= t ".by_html" %></li>
+        <li class="tw:mb-1"><%= t ".open_source_html" %></li>
         <% if current_user&.is_administrator? %>
-          <li class="mb-2"><%= t ".version" %>:
+          <li class="tw:mb-1"><%= t ".version" %>:
             <%= link_to "#{Rails.application.config.app_version} (#{Rails.application.config.git_sha.first(8)})",
                   "#{Rails.application.config.upstream_repo}/tree/#{Rails.application.config.git_sha}",
-                  target: "_blank", rel: "noreferrer" %>
+                  target: "_blank", rel: "noreferrer", class: "tw:text-primary-600 tw:dark:text-primary-400 tw:no-underline hover:tw:underline" %>
           </li>
         <% end %>
       </ul>
     </div>
-    <div class="col-4 col-lg-2 mb-3">
-      <h5><%= site_name(default: t(".instance_heading")) %></h5>
-      <ul class="list-unstyled">
-        <li class="mb-2"><%= link_to t(".about"), about_path %></li>
-        <% if SiteSettings.support_link.presence %>
-          <li class="mb-2"><a href="<%= SiteSettings.support_link %>" target="_blank" rel="noreferrer"><%= t ".support" %></a></li>
-        <% end %>
-        <li class="mb-2"><%= link_to t(".api"), api_url, rel: "noopener", target: "_blank" %></li>
-      </ul>
-    </div>
-    <div class="col-4 col-lg-2 mb-3">
-      <h5><%= t "application.title" %></h5>
-      <ul class="list-unstyled">
-        <li class="mb-2"><a href="https://github.com/manyfold3d/manyfold/issues/new/choose" target="_blank" rel="noreferrer"><%= t ".issues" %></a></li>
-        <li class="mb-2"><a href="https://manyfold.app/community" target="_blank" rel="noreferrer"><%= t ".community" %></a></li>
-        <li class="mb-2"><a href="https://manyfold.app/donate" target="_blank" rel="noreferrer"><%= t ".sponsor" %></a></li>
-      </ul>
+    <div class="tw:flex tw:flex-wrap tw:items-center tw:gap-x-6 tw:gap-y-1">
+      <span class="tw:text-xs tw:font-semibold tw:uppercase tw:text-secondary-500 tw:dark:text-secondary-400 tw:mr-2"><%= site_name(default: t(".instance_heading")) %></span>
+      <%= link_to t(".about"), about_path, class: "tw:text-sm tw:text-secondary-600 tw:dark:text-secondary-400 tw:no-underline hover:tw:underline" %>
+      <% if SiteSettings.support_link.presence %>
+        <a href="<%= SiteSettings.support_link %>" target="_blank" rel="noreferrer" class="tw:text-sm tw:text-secondary-600 tw:dark:text-secondary-400 tw:no-underline hover:tw:underline"><%= t ".support" %></a>
+      <% end %>
+      <%= link_to t(".api"), api_url, rel: "noopener", target: "_blank", class: "tw:text-sm tw:text-secondary-600 tw:dark:text-secondary-400 tw:no-underline hover:tw:underline" %>
+      <span class="tw:text-xs tw:font-semibold tw:uppercase tw:text-secondary-500 tw:dark:text-secondary-400 tw:mr-2 tw:ml-2"><%= t "application.title" %></span>
+      <a href="https://github.com/manyfold3d/manyfold/issues/new/choose" target="_blank" rel="noreferrer" class="tw:text-sm tw:text-secondary-600 tw:dark:text-secondary-400 tw:no-underline hover:tw:underline"><%= t ".issues" %></a>
+      <a href="https://manyfold.app/community" target="_blank" rel="noreferrer" class="tw:text-sm tw:text-secondary-600 tw:dark:text-secondary-400 tw:no-underline hover:tw:underline"><%= t ".community" %></a>
+      <a href="https://manyfold.app/donate" target="_blank" rel="noreferrer" class="tw:text-sm tw:text-secondary-600 tw:dark:text-secondary-400 tw:no-underline hover:tw:underline"><%= t ".sponsor" %></a>
     </div>
   </div>
 </footer>
