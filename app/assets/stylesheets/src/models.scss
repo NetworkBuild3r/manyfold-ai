@@ -26,6 +26,22 @@ div.form-control.tag-container {
   background: none;
   justify-content: space-between;
 
+  .preview-image-wrap {
+    position: relative;
+    aspect-ratio: 1;
+    overflow: hidden;
+    background: var(--bs-secondary-bg);
+
+    .image-preview {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: center;
+    }
+  }
+
   .image-preview {
     min-width: 100%;
   }
@@ -95,6 +111,44 @@ div.form-control.tag-container {
 
   .sensitive {
     filter: blur(1rem);
+  }
+}
+
+// Selection bubble on model cards (list index). Visible only on card hover or when selected.
+// Checkmark inside the bubble is hidden until the bubble is selected (clicked).
+.preview-card .model-card-selection-bubble {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+
+  .model-card-selection-check {
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+}
+
+.preview-card:hover .model-card-selection-bubble,
+.preview-card .model-card-selection-bubble.model-card-selection-selected {
+  opacity: 1;
+}
+
+.preview-card .model-card-selection-bubble.model-card-selection-selected .model-card-selection-check {
+  opacity: 1;
+}
+
+.model-card-selection-bubble {
+  z-index: 2;
+  width: 1.25rem;
+  height: 1.25rem;
+  min-width: 1.25rem;
+  min-height: 1.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+
+  &.model-card-selection-selected {
+    background: var(--bs-primary) !important;
+    color: var(--bs-white);
   }
 }
 

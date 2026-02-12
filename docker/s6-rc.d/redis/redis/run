@@ -1,2 +1,2 @@
-#!/usr/bin/execlineb -P
-redis-server
+#!/bin/sh
+exec /usr/bin/redis-server

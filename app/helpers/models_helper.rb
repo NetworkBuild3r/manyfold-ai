@@ -1,4 +1,11 @@
 module ModelsHelper
+  # URL for models index with a given page, preserving filter and sort params (for infinite-scroll sentinel frames).
+  def models_page_url(page, filter = nil)
+    base = filter&.to_params || {}
+    sort = request.query_parameters.slice("order", "direction")
+    models_path(base.merge(page: page).merge(sort))
+  end
+
   def group(files)
     return {} if files.empty?
     sections = {}

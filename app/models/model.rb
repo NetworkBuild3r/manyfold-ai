@@ -40,7 +40,7 @@ class Model < ApplicationRecord
   belongs_to :collection, optional: true
   belongs_to :preview_file, class_name: "ModelFile", optional: true
   has_many :model_files, dependent: :destroy
-  has_many :merge_histories, foreign_key: :target_model_id, dependent: :destroy
+  has_many :merge_histories, foreign_key: :target_model_id, dependent: :destroy, inverse_of: :target_model
   acts_as_taggable_on :tags
 
   accepts_nested_attributes_for :creator
@@ -193,11 +193,11 @@ class Model < ApplicationRecord
     raise ArgumentError, "merge is too old to undo" if history.created_at < UNMERGE_WINDOW.ago
 
     Current.set(skip_problem_checks: true) do
-      library = Library.find(history.source_library_id)
+      library = policy_scope(Library).find(history.source_library_id)
       source_meta = history.source_metadata || {}
 
       new_path = history.source_path
-      if library.models.where(path: new_path.trim_path_separators).exists?
+      if library.models.exists?(path: new_path.trim_path_separators)
         new_path = "#{new_path.trim_path_separators}--unmerged-#{history.id}"
       end
 

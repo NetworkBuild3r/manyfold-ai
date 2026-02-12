@@ -1,6 +1,7 @@
 if defined?(RailsPerformance) && !Rails.env.test? && ENV["RAILS_ASSETS_PRECOMPILE"].blank?
   RailsPerformance.setup do |config|
-    config.redis = Redis::Namespace.new("#{Rails.env}-rails-performance", redis: Redis.new)
+    redis_url = ENV.fetch("REDIS_URL", "redis://localhost:6379")
+    config.redis = Redis::Namespace.new("#{Rails.env}-rails-performance", redis: Redis.new(url: redis_url))
     config.duration = 4.hours
 
     config.enabled = true

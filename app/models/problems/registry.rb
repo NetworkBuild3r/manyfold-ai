@@ -11,7 +11,7 @@ module Problems
 
       # Look up class for category (and optional problematic_type). Type-specific registration takes precedence.
       def for(category, problematic_type = nil)
-        key = problematic_type.presence && store.key?("#{category}/#{problematic_type}") ? "#{category}/#{problematic_type}" : category.to_sym
+        key = (problematic_type.presence && store.key?("#{category}/#{problematic_type}")) ? "#{category}/#{problematic_type}" : category.to_sym
         store[key] or raise KeyError, "No problem class registered for category: #{category.inspect}"
       end
 

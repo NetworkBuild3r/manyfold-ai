@@ -81,8 +81,9 @@ class Problem < ApplicationRecord
   # Sole creation path for Problem records. All detection/creation must go through this method
   # so the unique index on [category, problematic_id, problematic_type] is respected and
   # duplicates are avoided. On concurrent insert, RecordNotUnique is rescued and we retry.
+  # Must bypass default scope to find/create by (problematic, category) regardless of visibility.
   def self.create_or_clear(problematic, category, should_exist, options = {})
-    relation = Problem.unscoped.where(problematic: problematic, category: category)
+    relation = Problem.unscoped.where(problematic: problematic, category: category) # rubocop:disable Pundit/AvoidUnscoped
     if should_exist
       problem = relation.first_or_initialize
       problem.assign_attributes(options)
@@ -98,7 +99,7 @@ class Problem < ApplicationRecord
     end
     should_exist
   rescue ActiveRecord::RecordNotUnique
-    relation = Problem.unscoped.where(problematic: problematic, category: category)
+    relation = Problem.unscoped.where(problematic: problematic, category: category) # rubocop:disable Pundit/AvoidUnscoped
     problem = relation.first
     return should_exist unless problem
 
@@ -173,6 +174,6 @@ class Problem < ApplicationRecord
       end
     end
 
-    { removed_ids: removed_ids, ignored_ids: ignored_ids, redirect: redirect_url, errors: errors }
+    {removed_ids: removed_ids, ignored_ids: ignored_ids, redirect: redirect_url, errors: errors}
   end
 end

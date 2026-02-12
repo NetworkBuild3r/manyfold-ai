@@ -6,7 +6,7 @@ module Problems
 
     class << self
       def detect(link, should_exist:, note: nil)
-        opts = note.present? ? { note: note } : {}
+        opts = note.present? ? {note: note} : {}
         Problem.create_or_clear(link, :http_error, should_exist, opts)
       end
     end
@@ -14,10 +14,10 @@ module Problems
     def resolve!(problem, action:)
       case action
       when :edit
-        { redirect: edit_model_path(problem.problematic.linkable) }
+        {redirect: edit_model_path(problem.problematic.linkable)}
       when :ignore
         problem.update!(ignored: true)
-        { ignored: true }
+        {ignored: true}
       else
         raise ArgumentError, "Unsupported action for HttpError: #{action.inspect}"
       end

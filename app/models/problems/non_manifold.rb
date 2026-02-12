@@ -13,10 +13,10 @@ module Problems
     def resolve!(problem, action:)
       case action
       when :show
-        { redirect: model_model_file_path(problem.problematic.model, problem.problematic) }
+        {redirect: model_model_file_path(problem.problematic.model, problem.problematic)}
       when :ignore
         problem.update!(ignored: true)
-        { ignored: true }
+        {ignored: true}
       else
         raise ArgumentError, "Unsupported action for NonManifold: #{action.inspect}"
       end

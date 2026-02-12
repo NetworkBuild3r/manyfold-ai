@@ -11,8 +11,8 @@ class ModelsController < ApplicationController
   before_action :get_creators_and_collections, only: [:new, :edit, :bulk_edit]
   before_action :set_returnable, only: [:bulk_edit, :edit, :new]
   before_action :clear_returnable, only: [:bulk_update, :update, :create]
-  before_action :get_filters, only: [:bulk_edit, :bulk_update, :index, :show] # rubocop:todo Rails/LexicallyScopedActionFilter
-  before_action :get_model, except: [:bulk_edit, :bulk_update, :index, :new, :create]
+  before_action :get_filters, only: [:bulk_edit, :bulk_update, :bulk_edit_selected, :index, :show] # rubocop:todo Rails/LexicallyScopedActionFilter
+  before_action :get_model, except: [:bulk_edit, :bulk_update, :bulk_edit_selected, :index, :new, :create]
   before_action -> { set_indexable @model if @model }
 
   after_action :verify_policy_scoped, only: [:bulk_edit, :bulk_update]
@@ -25,7 +25,13 @@ class ModelsController < ApplicationController
     prepare_model_list
     set_indexable @models
     respond_to do |format|
-      format.html { render layout: "card_list_page" }
+      format.html do
+        if turbo_frame_request?
+          render partial: "list_page", layout: false
+        else
+          render layout: "card_list_page"
+        end
+      end
       format.manyfold_api_v0 { render json: ManyfoldApi::V0::ModelListSerializer.new(@models).serialize }
     end
   end
@@ -165,16 +171,28 @@ class ModelsController < ApplicationController
     redirect_back_or_to @model, alert: e.message
   end
 
+  def bulk_edit_selected
+    authorize Model, :bulk_edit?
+    ids = params.permit(ids: [])[:ids].to_a.compact_blank
+    if ids.any?
+      session[:bulk_edit_model_ids] = policy_scope(Model, policy_scope_class: ApplicationPolicy::UpdateScope).where(public_id: ids).pluck(:public_id)
+    end
+    redirect_to edit_models_path, notice: (ids.any? ? t(".success", count: session[:bulk_edit_model_ids].size) : t(".no_selection"))
+  end
+
   def bulk_edit
     authorize Model
-    @models = @filter.models(policy_scope(Model, policy_scope_class: ApplicationPolicy::UpdateScope)).includes(:collection, :creator)
-    generate_available_tag_list
+    scope = policy_scope(Model, policy_scope_class: ApplicationPolicy::UpdateScope).includes(:collection, :creator)
+    @models = if session[:bulk_edit_model_ids].present?
+      scope.where(public_id: session[:bulk_edit_model_ids])
+    else
+      @filter.models(scope)
+    end
     page = params[:page] || 1
-    # Double the normal page size for bulk editing
     @models = @models.page(page).per(helpers.pagination_settings["per_page"] * 2)
-    set_indexable @models
-    # Apply tag filters in-place
     @filter_in_place = true
+    generate_available_tag_list
+    set_indexable @models
   end
 
   def bulk_update
@@ -185,10 +203,15 @@ class ModelsController < ApplicationController
     remove_tags = Set.new(hash.delete(:remove_tags))
 
     models_to_update = if params.key?(:update_all)
-      # If "Update All Models" was clicked, update all models in the filtered set
-      @filter.models(policy_scope(Model, policy_scope_class: ApplicationPolicy::UpdateScope))
+      if session[:bulk_edit_model_ids].present?
+        ids = session[:bulk_edit_model_ids]
+        session.delete(:bulk_edit_model_ids)
+        policy_scope(Model, policy_scope_class: ApplicationPolicy::UpdateScope).where(public_id: ids)
+      else
+        @filter.models(policy_scope(Model, policy_scope_class: ApplicationPolicy::UpdateScope))
+      end
     else
-      # If "Update Selected Models" was clicked, only update checked models
+      session.delete(:bulk_edit_model_ids) if session[:bulk_edit_model_ids].present?
       ids = params[:models].select { |k, v| v == "1" }.keys
       policy_scope(Model, policy_scope_class: ApplicationPolicy::UpdateScope).where(public_id: ids)
     end

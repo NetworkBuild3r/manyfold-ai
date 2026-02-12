@@ -33,7 +33,7 @@ class Components::PreviewFrame < Components::Base
 
   def render_local
     if @file.is_image?
-      image model_model_file_path(@file.model, @file, format: @file.extension, derivative: "preview"), @file.name
+      image model_model_file_path(@file.model, @file, format: @file.extension, derivative: "carousel"), @file.name
     elsif @file.is_renderable?
       div class: "card-img-top #{"sensitive" if needs_hiding?}" do
         Renderer file: @file
@@ -85,7 +85,12 @@ class Components::PreviewFrame < Components::Base
   end
 
   def image(url, alt)
-    div class: "card-img-top card-img-top-background", style: "background-image: url(#{url})"
-    image_tag url, class: "card-img-top image-preview #{"sensitive" if needs_hiding?}", alt: alt
+    div class: "card-img-top preview-image-wrap" do
+      image_tag url,
+        class: "image-preview #{"sensitive" if needs_hiding?}",
+        alt: alt,
+        loading: "lazy",
+        decoding: "async"
+    end
   end
 end

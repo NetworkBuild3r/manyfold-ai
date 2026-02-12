@@ -15,11 +15,13 @@ module Problems
       when :destroy
         problematic = problem.problematic
         problem.destroy!
-        problematic.delete_from_disk_and_destroy
-        { removed: true }
+        # A library has no single on-disk path to delete (it might be missing, remote, etc);
+        # destroying the record (and dependent models) is the appropriate destructive action.
+        problematic.destroy!
+        {removed: true}
       when :ignore
         problem.update!(ignored: true)
-        { ignored: true }
+        {ignored: true}
       else
         raise ArgumentError, "Unsupported action for MissingLibrary: #{action.inspect}"
       end

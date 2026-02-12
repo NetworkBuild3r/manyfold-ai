@@ -2,6 +2,8 @@
 
 module Problems
   class Base
+    include Rails.application.routes.url_helpers
+
     class << self
       # Subclasses implement: return truthy if the problem exists for the given problematic.
       # They should call Problem.create_or_clear(problematic, category, should_exist, options).

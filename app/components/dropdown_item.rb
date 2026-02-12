@@ -3,7 +3,7 @@
 class Components::DropdownItem < Components::Base
   include Phlex::Rails::Helpers::LinkTo
 
-  def initialize(label:, path:, icon: nil, method: nil, aria_label: nil, confirm: nil, active: false)
+  def initialize(label:, path:, icon: nil, method: nil, aria_label: nil, confirm: nil, active: false, turbo_frame: nil)
     @icon = icon
     @label = label
     @path = path
@@ -11,6 +11,7 @@ class Components::DropdownItem < Components::Base
     @aria_label = aria_label
     @confirm = confirm
     @active = active
+    @turbo_frame = turbo_frame
   end
 
   def view_template
@@ -20,7 +21,7 @@ class Components::DropdownItem < Components::Base
         class: "dropdown-item #{"active" if @active}",
         role: "menuitem",
         aria: {label: @aria_label, current: @active.to_s},
-        data: {confirm: @confirm},
+        data: {confirm: @confirm, turbo_frame: @turbo_frame}.compact,
         rel: "nofollow" do
         if @icon
           Icon(icon: @icon, label: @label)

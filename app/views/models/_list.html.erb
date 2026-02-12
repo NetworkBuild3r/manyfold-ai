@@ -9,20 +9,31 @@
       <% end %>
     </div>
   <% else %>
-    <div class="skip-link-container">
+    <div data-controller="model-list-selection" class="skip-link-container">
+      <div data-model-list-selection-target="toolbar" hidden class="row align-items-center mb-2">
+        <div class="col-auto">
+          <%= link_to t(".selection.edit"), "#", data: {model_list_selection_target: "editLink", base_href: edit_model_path("__ID__")}, class: "btn btn-sm btn-primary me-2" %>
+          <% if policy(:model).bulk_edit? %>
+            <%= form_with url: bulk_edit_selected_models_path, method: :post, data: {model_list_selection_target: "bulkEditForm", action: "submit->model-list-selection#clearOnSubmit"}, class: "d-inline" do %>
+              <div data-model-list-selection-target="idsContainer"></div>
+              <button type="submit" class="btn btn-sm btn-secondary me-2"><%= t(".selection.bulk_edit") %></button>
+            <% end %>
+          <% end %>
+          <button type="button" data-model-list-selection-target="clearButton" data-action="click->model-list-selection#clear" class="btn btn-sm btn-outline-secondary"><%= t(".selection.clear") %></button>
+        </div>
+      </div>
       <div class="row">
         <%= skip_link "sidebar", t(".skip_models") %>
-        <div class="col">
-          <%= paginate @models %>
-        </div>
-        <div class="col col-auto">
+        <div class="col col-auto ms-auto">
           <%= SortMenu(filter: @filter) %>
         </div>
       </div>
-      <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 mb-4">
+      <div class="row <%= model_list_grid_class %> mb-4">
         <%= render_component_collection Components::ModelCard, :model, @models %>
       </div>
-      <%= paginate @models %>
+      <% if @models.next_page %>
+        <%= turbo_frame_tag "models_page_#{@models.next_page}", src: models_page_url(@models.next_page, @filter), loading: :lazy %>
+      <% end %>
       <% if @search %>
         <div class="alert alert-info">
           <%= Icon icon: "search", label: "" %>

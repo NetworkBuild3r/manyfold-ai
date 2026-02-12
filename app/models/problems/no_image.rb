@@ -13,10 +13,10 @@ module Problems
     def resolve!(problem, action:)
       case action
       when :upload
-        { redirect: model_path(problem.problematic, anchor: "upload-form") }
+        {redirect: model_path(problem.problematic, anchor: "upload-form")}
       when :ignore
         problem.update!(ignored: true)
-        { ignored: true }
+        {ignored: true}
       else
         raise ArgumentError, "Unsupported action for NoImage: #{action.inspect}"
       end

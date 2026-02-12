@@ -18,4 +18,3 @@ class CreateMergeHistories < ActiveRecord::Migration[8.0]
     add_index :merge_histories, [:target_model_id, :created_at]
   end
 end
-

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 Rails.application.config.upstream_repo = ENV.fetch("UPSTREAM_REPO", "https://github.com/manyfold3d/manyfold")
-Rails.application.config.app_version = ENV.fetch("APP_VERSION", "unknown").split(":")[-1]
+Rails.application.config.app_version = (ENV.fetch("APP_VERSION", "unknown").to_s.split(":")[-1].presence || "unknown")
 Rails.application.config.git_sha = ENV.fetch("GIT_SHA", "main")
 
 if Rails.env.development?
@@ -13,6 +13,6 @@ if Rails.env.development?
     app_version.strip!
 
     Rails.application.config.git_sha = git_sha
-    Rails.application.config.app_version = app_version
+    Rails.application.config.app_version = (app_version.presence || Rails.application.config.app_version)
   end
 end

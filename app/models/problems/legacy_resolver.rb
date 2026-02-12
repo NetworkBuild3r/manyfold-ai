@@ -13,8 +13,8 @@ module Problems
     def resolve(problem, action: nil)
       strategy = action || problem.resolution_strategy
       case strategy
-      when :show then { redirect: show_redirect_url(problem) }
-      when :edit then { redirect: edit_redirect_url(problem) }
+      when :show then {redirect: show_redirect_url(problem)}
+      when :edit then {redirect: edit_redirect_url(problem)}
       when :destroy
         problematic = problem.problematic
         problem.destroy!
@@ -24,7 +24,7 @@ module Problems
         else
           raise NotImplementedError
         end
-        { removed: true }
+        {removed: true}
       when :merge
         case problem.problematic_type
         when "Model"
@@ -33,20 +33,20 @@ module Problems
         else
           raise NotImplementedError
         end
-        { removed: true }
+        {removed: true}
       when :upload
-        { redirect: model_path(problem.problematic, anchor: "upload-form") }
+        {redirect: model_path(problem.problematic, anchor: "upload-form")}
       when :convert
         problem.update!(state: :resolving, in_progress: true)
         problem.problematic.convert_later :threemf
-        { in_progress: true }
+        {in_progress: true}
       when :organize
         problem.update!(state: :resolving, in_progress: true)
         problem.problematic.organize_later(delay: 0)
-        { in_progress: true }
+        {in_progress: true}
       when :ignore
         problem.update!(ignored: true)
-        { ignored: true }
+        {ignored: true}
       else
         raise NotImplementedError, "No resolution for #{strategy}"
       end

@@ -5,4 +5,3 @@ class Current < ActiveSupport::CurrentAttributes
   # Optional identifier used to group related scan jobs.
   attribute :scan_batch_id
 end
-

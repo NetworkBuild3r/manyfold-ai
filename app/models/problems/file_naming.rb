@@ -7,7 +7,7 @@ module Problems
     class << self
       def detect(model, note: nil)
         should_exist = model.needs_organizing? && !model.contains_other_models?
-        opts = { note: note.presence || model.formatted_path }
+        opts = {note: note.presence || model.formatted_path}
         Problem.create_or_clear(model, :file_naming, should_exist, opts)
       end
     end
@@ -17,10 +17,10 @@ module Problems
       when :organize
         problem.update!(state: :resolving, in_progress: true)
         problem.problematic.organize_later(delay: 0)
-        { in_progress: true }
+        {in_progress: true}
       when :ignore
         problem.update!(ignored: true)
-        { ignored: true }
+        {ignored: true}
       else
         raise ArgumentError, "Unsupported action for FileNaming: #{action.inspect}"
       end

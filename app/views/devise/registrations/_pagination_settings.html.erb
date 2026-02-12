@@ -13,6 +13,12 @@
       <div>
         <%= pagination_settings_form.number_field :per_page, value: pagination_settings["per_page"], in: 1..100, class: "form-control" %>
       </div>
+      <div>
+        <%= pagination_settings_form.label :grid_columns, t(".grid_columns.label"), class: "col-form-label" %>
+      </div>
+      <div>
+        <%= pagination_settings_form.select :grid_columns, options_for_select([[2, 2], [3, 3], [4, 4]], pagination_settings["grid_columns"] || 3), {}, class: "form-control" %>
+      </div>
     </div>
   </div>
 <% end %>

@@ -16,10 +16,10 @@ module Problems
         problematic = problem.problematic
         problem.destroy!
         problematic.delete_from_disk_and_destroy
-        { removed: true }
+        {removed: true}
       when :ignore
         problem.update!(ignored: true)
-        { ignored: true }
+        {ignored: true}
       else
         raise ArgumentError, "Unsupported action for MissingFile: #{action.inspect}"
       end

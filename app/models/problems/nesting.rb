@@ -15,10 +15,10 @@ module Problems
       when :merge
         problem.update!(state: :resolving, in_progress: true)
         problem.problematic.merge!(problem.problematic.contained_models)
-        { removed: true }
+        {removed: true}
       when :ignore
         problem.update!(ignored: true)
-        { ignored: true }
+        {ignored: true}
       else
         raise ArgumentError, "Unsupported action for Nesting: #{action.inspect}"
       end

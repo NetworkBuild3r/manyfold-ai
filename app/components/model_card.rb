@@ -21,7 +21,16 @@ class Components::ModelCard < Components::Base
     div class: "col mb-3" do
       div class: "card preview-card" do
         div(class: "card-header position-absolute w-100 top-0 z-3 bg-body-secondary text-secondary-emphasis opacity-75") { server_indicator @model } if @model.remote?
-        PreviewFrame(object: @model)
+        div class: "position-relative" do
+          selection_bubble if @editable
+          if @actor && !@actor.local
+            PreviewFrame(object: @model)
+          else
+            link_to @model, class: "text-decoration-none d-block", data: {turbo_frame: "_top"}, aria: {label: translate("components.model_card.open_button.label", name: @model.name)} do
+              PreviewFrame(object: @model)
+            end
+          end
+        end
         div(class: "card-body") { info_row }
         actions
       end
@@ -32,7 +41,11 @@ class Components::ModelCard < Components::Base
 
   def title
     div class: "card-title" do
-      @editable ? EditableSpan(fieldname: "model[name]", path: model_path(@model), text: @model.name) : span { @model.name }
+      if @editable
+        EditableSpan(fieldname: "model[name]", path: model_path(@model), text: @model.name)
+      else
+        link_to @model.name, @model, class: "text-body text-decoration-none", data: {turbo_frame: "_top"}, "aria-label": translate("components.model_card.open_button.label", name: @model.name)
+      end
       if @model.sensitive
         whitespace
         Icon(icon: "explicit", label: Model.human_attribute_name(:sensitive))
@@ -43,14 +56,15 @@ class Components::ModelCard < Components::Base
   end
 
   def open_button
+    link_opts = {class: "btn btn-primary btn-sm", "aria-label": translate("components.model_card.open_button.label", name: @model.name), data: {turbo_frame: "_top"}}
     if @actor && !@actor.local
-      link_to @actor.profile_url, {class: "btn btn-primary btn-sm", "aria-label": translate("components.model_card.open_button.label", name: @actor.name)} do
+      link_to @actor.profile_url, link_opts do
         span { "⁂" }
         whitespace
         span { t("components.model_card.open_button.text") }
       end
     else
-      link_to t("components.model_card.open_button.text"), @model, {class: "btn btn-primary btn-sm", "aria-label": translate("components.model_card.open_button.label", name: @model.name)}
+      link_to t("components.model_card.open_button.text"), @model, link_opts
     end
   end
 
@@ -73,13 +87,24 @@ class Components::ModelCard < Components::Base
   def creator(target:, name:)
     Icon icon: "person", label: Creator.model_name.human
     whitespace
-    link_to name, target, "aria-label": [Creator.model_name.human, name].join(": ")
+    link_to name, target, "aria-label": [Creator.model_name.human, name].join(": "), data: {turbo_frame: "_top"}
   end
 
   def collection(target:, name:)
     Icon icon: "collection", label: Collection.model_name.human
     whitespace
-    link_to name, target, "aria-label": [Collection.model_name.human, name].join(": ")
+    link_to name, target, "aria-label": [Collection.model_name.human, name].join(": "), data: {turbo_frame: "_top"}
+  end
+
+  def selection_bubble
+    button type: "button",
+      class: "model-card-selection-bubble position-absolute top-0 start-0 m-2 rounded-circle border border-2 border-white bg-body-secondary bg-opacity-75 p-0",
+      data: {model_id: @model.public_id, action: "click->model-list-selection#toggle", model_list_selection_target: "bubble"},
+      aria: {label: t("models.list.selection.select"), pressed: "false"} do
+      span(class: "model-card-selection-check d-inline-flex align-items-center justify-content-center") do
+        Icon(icon: "check2", label: "")
+      end
+    end
   end
 
   def caption
@@ -114,9 +139,9 @@ class Components::ModelCard < Components::Base
         end
         div class: "col col-auto" do
           BurgerMenu(small: true) do
-            DropdownItem(icon: "pencil", label: t("components.model_card.edit_button.text"), path: edit_model_path(@model), aria_label: translate("components.model_card.edit_button.label", name: @model.name)) if policy(@model).edit?
-            DropdownItem(icon: "trash", label: t("components.model_card.delete_button.text"), path: model_path(@model), method: :delete, aria_label: translate("components.model_card.delete_button.label", name: @model.name), confirm: translate("models.destroy.confirm")) if policy(@model).destroy?
-            DropdownItem(icon: "flag", label: t("general.report", type: ""), path: new_model_report_path(@model)) if SiteSettings.multiuser_enabled?
+            DropdownItem(icon: "pencil", label: t("components.model_card.edit_button.text"), path: edit_model_path(@model), aria_label: translate("components.model_card.edit_button.label", name: @model.name), turbo_frame: "_top") if policy(@model).edit?
+            DropdownItem(icon: "trash", label: t("components.model_card.delete_button.text"), path: model_path(@model), method: :delete, aria_label: translate("components.model_card.delete_button.label", name: @model.name), confirm: translate("models.destroy.confirm"), turbo_frame: "_top") if policy(@model).destroy?
+            DropdownItem(icon: "flag", label: t("general.report", type: ""), path: new_model_report_path(@model), turbo_frame: "_top") if SiteSettings.multiuser_enabled?
           end
         end
       end

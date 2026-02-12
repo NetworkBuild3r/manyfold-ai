@@ -32,8 +32,15 @@ module DatabaseDetector
     server == :sqlite
   end
 
+  # Cached per process to avoid repeated DB checks (reduces SQLite lock contention
+  # when Rails and Sidekiq share the same DB and caber_ready? is called often).
+  @table_ready_cache = {}
+
   def self.table_ready?(table_name)
-    ActiveRecord::Base.with_connection do |connection|
+    key = table_name.to_s
+    return @table_ready_cache[key] if @table_ready_cache.key?(key)
+
+    @table_ready_cache[key] = ActiveRecord::Base.with_connection do |connection|
       connection.data_source_exists? table_name
     end
   end

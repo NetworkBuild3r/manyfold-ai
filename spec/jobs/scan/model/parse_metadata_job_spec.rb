@@ -486,7 +486,7 @@ RSpec.describe Scan::Model::ParseMetadataJob do
       before do
         allow(Model).to receive(:find).with(model.id).and_return(model)
         allow(model).to receive_messages(
-          model_files: instance_double(ActiveRecord::Relation, find_by: readme, min_by: nil),
+          model_files: instance_double(ActiveRecord::Relation, find_by: readme, min_by: nil)
         )
         allow(readme).to receive(:attachment).and_return class_double(File, read: content)
         described_class.perform_now(model.id)
@@ -520,7 +520,7 @@ RSpec.describe Scan::Model::ParseMetadataJob do
       before do
         allow(Model).to receive(:find).with(model.id).and_return(model)
         allow(model).to receive_messages(
-          model_files: instance_double(ActiveRecord::Relation, find_by: readme, min_by: nil),
+          model_files: instance_double(ActiveRecord::Relation, find_by: readme, min_by: nil)
         )
         allow(readme).to receive(:attachment).and_return class_double(File, read: content)
         described_class.perform_now(model.id)

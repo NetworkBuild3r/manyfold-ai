@@ -7,4 +7,3 @@ class MergeHistory < ApplicationRecord
     source_metadata&.dig("preview_filename")
   end
 end
-

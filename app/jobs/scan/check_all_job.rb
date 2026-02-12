@@ -9,6 +9,8 @@ class Scan::CheckAllJob < ApplicationJob
       ModelPolicy::UpdateScope.new(instigator, Model).resolve :
       Model.all
     scope = Search::FilterService.new(filter_params).models(scope)
+    # Explicit order by primary key so job-iteration cursor works and the "Scoped order is ignored" warning is avoided.
+    scope = scope.reorder(Model.arel_table[Model.primary_key].asc)
     Rails.logger.info "queueing rescan for #{scope.count} models"
     enumerator_builder.active_record_on_records(scope, cursor: cursor)
   end

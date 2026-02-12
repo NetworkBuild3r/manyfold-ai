@@ -31,7 +31,6 @@ class Scan::Model::AddNewFilesJob < ApplicationJob
         file.parse_metadata_later if file.valid?
       end
       model.parse_metadata_later(scan_batch_id: scan_batch_id)
-      Scan::Model::FinalizeScanBatchJob.set(wait: 15.seconds).perform_later(model.id, scan_batch_id: scan_batch_id) if scan_batch_id.present?
     end
   end
 end

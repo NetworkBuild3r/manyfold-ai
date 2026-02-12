@@ -104,9 +104,6 @@ GEM
       activemodel (= 8.0.4)
       activesupport (= 8.0.4)
       timeout (>= 0.4.0)
-    activerecord-enhancedsqlite3-adapter (0.8.0)
-      activerecord (>= 7.1)
-      sqlite3 (>= 1.6)
     activerecord-nulldb-adapter (1.2.2)
       activerecord (>= 6.1, < 8.2)
     activestorage (8.0.4)
@@ -841,14 +838,6 @@ GEM
     spdx (4.1.5)
       treetop (~> 1.6)
     spring (4.4.2)
-    sqlite3 (2.8.1)
-      mini_portile2 (~> 2.8.0)
-    sqlite3 (2.8.1-x64-mingw-ucrt)
-    sqlite3 (2.8.1-x86_64-darwin)
-    sqlite3 (2.8.1-x86_64-linux-gnu)
-    sqlite3_ar_regexp (3.0.0)
-      activerecord (>= 6.0)
-      sqlite3 (>= 1.4)
     standard (1.53.0)
       language_server-protocol (~> 3.17.0.2)
       lint_roller (~> 1.0)
@@ -952,7 +941,6 @@ PLATFORMS
 DEPENDENCIES
   activejob-status (~> 1.0)
   activejob-uniqueness (~> 0.4)
-  activerecord-enhancedsqlite3-adapter (~> 0.8)
   activerecord-nulldb-adapter (~> 1.2)
   acts-as-taggable-on (~> 13.0)
   acts_as_favoritor (~> 6.0)
@@ -1056,7 +1044,6 @@ DEPENDENCIES
   simplecov-cobertura
   spdx (~> 4.1)
   spring
-  sqlite3_ar_regexp (~> 3.0)
   standard (~> 1.53)
   stimulus-rails (~> 1.3.4)
   stopwords-filter2
@@ -1089,7 +1076,6 @@ CHECKSUMS
   activejob-uniqueness (0.4.0) sha256=d39228f03a0bae895460a2a6d285071939a1fcc7f675d0c0c90651a8dd25828f
   activemodel (8.0.4) sha256=8f4e4fac3cd104b1bf30419c3745206f6f724c0e2902a939b4113f4c90730dfd
   activerecord (8.0.4) sha256=bda32c171799e5ca5460447d3b7272ed14447244e2497abf2107f87fc44cbf32
-  activerecord-enhancedsqlite3-adapter (0.8.0) sha256=5cf9a4a42104c4792f4a8808008c0ec8ad1b9a86b08ad7aa0107cb456256f329
   activerecord-nulldb-adapter (1.2.2) sha256=01e0b2e49af11ad56a92e274a3d8c9fb3c50a12a5460218c4c4b45355d9ef968
   activestorage (8.0.4) sha256=47f312962fc898c1669f20cf7448d19668a5547f4a5f64e59a837d9d3f64a043
   activesupport (8.0.4) sha256=894a3a6c7733b5fae5a7df3acd76c4b563f38687df8a04fa3cbd25360f3fe95a
@@ -1374,11 +1360,6 @@ CHECKSUMS
   smart_properties (1.17.0) sha256=f9323f8122e932341756ddec8e0ac9ec6e238408a7661508be99439ca6d6384b
   spdx (4.1.5) sha256=e9e4cf58e8ccea488b5ad029dd7c0a4cdcdaf194ad14635a6b85e8bce513a83b
   spring (4.4.2) sha256=22f61bacd8dc8595cedcdc738de46d7fc18be4d7a770986760344c924f485ce7
-  sqlite3 (2.8.1) sha256=acd0ac7912a4d92b2484b5befb6faa8d496497eb1e38bdbe8d7818fb8d05d726
-  sqlite3 (2.8.1-x64-mingw-ucrt) sha256=f3cd0f188c156f54787ced89b1875873537b3d4cf26e9af042dcba883799f53a
-  sqlite3 (2.8.1-x86_64-darwin) sha256=0028f5dd0b7a1ee6f1dadf31fc632abf7d815cb0baa0606549634fa45578f92e
-  sqlite3 (2.8.1-x86_64-linux-gnu) sha256=878f4a0c5c2c4d9d4345afe2a142a87805f388a24aa8a3c2dfe2f964d7686b7a
-  sqlite3_ar_regexp (3.0.0) sha256=90ce99f00b9256721104550853a227e31972c6488963f203aa50f053a8c7c005
   standard (1.53.0) sha256=f3c9493385db7079d0abce6f7582f553122156997b81258cd361d3480eeacf9c
   standard-custom (1.0.2) sha256=424adc84179a074f1a2a309bb9cf7cd6bfdb2b6541f20c6bf9436c0ba22a652b
   standard-performance (1.9.0) sha256=49483d31be448292951d80e5e67cdcb576c2502103c7b40aec6f1b6e9c88e3f2

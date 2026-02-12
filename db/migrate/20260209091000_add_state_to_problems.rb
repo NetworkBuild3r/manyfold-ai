@@ -4,4 +4,3 @@ class AddStateToProblems < ActiveRecord::Migration[8.0]
     add_index :problems, :state
   end
 end
-

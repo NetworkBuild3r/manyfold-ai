@@ -3,7 +3,7 @@
 class ClearStuckProblems < ActiveRecord::Migration[7.2]
   def up
     return unless connection.column_exists?(:problems, :in_progress)
-    connection.execute("UPDATE problems SET in_progress = 0")
+    connection.execute("UPDATE problems SET in_progress = false")
   end
 
   def down

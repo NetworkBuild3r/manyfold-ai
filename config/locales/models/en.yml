@@ -14,6 +14,9 @@ en:
       update_all:
         confirm: Are you sure you want to apply these changes to all %{count} models matching the current filters?
         label: Update All %{count} Models
+    bulk_edit_selected:
+      no_selection: No models selected.
+      success: '%{count} model(s) selected for bulk edit.'
     bulk_update:
       success: Models updated successfully.
     configure_merge:
@@ -48,6 +51,11 @@ en:
       edit: Edit Model
     list:
       bulk_edit: Edit All Models
+      selection:
+        bulk_edit: Bulk edit
+        clear: Clear selection
+        edit: Edit
+        select: Select model
       no_results_html: Sorry, we couldn't find anything to show you! Try changing your filters or search terms, or uploading some models.
       no_results_signed_out_html: Sorry, we couldn't find anything to show you! There might be more to see if you <a href="%{link}">sign in</a>.
       search:
@@ -93,6 +101,10 @@ en:
         heading: Files
       followers: Followers
       license: License
+      merge_history:
+        heading: Merge history
+        undo_button: Undo merge
+        window_notice: Undo is available for %{days} days.
       menu:
         tour:
           description: This menu contains extra functions like editing or deleting the model, or editing multiple files at once.
@@ -105,6 +117,7 @@ en:
       path: Path
       preview: This is just a preview of the complete model, which contains %{count} more files. Contact the model owner to get full access.
       rescan: Rescan files
+      scan_in_progress: Scan in progress...
       search: Search the Internet for models with this name
       submit: Upload Files
       tags: Tags

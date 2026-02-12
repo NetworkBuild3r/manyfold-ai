@@ -4,14 +4,14 @@ FROM base as runtime
 
 RUN apk add --no-cache \
   file \
-  s6-overlay \
   gcompat \
   jemalloc \
   imagemagick \
   imagemagick-jpeg \
   imagemagick-webp \
   imagemagick-heic \
-  assimp-dev
+  assimp-dev \
+  wget
 
 COPY . .
 COPY --from=build /usr/src/app/vendor/bundle vendor/bundle
@@ -36,8 +36,8 @@ ENV LD_PRELOAD="libjemalloc.so.2"
 ENV MALLOC_CONF="dirty_decay_ms:1000,narenas:2,background_thread:true"
 ENV RUBY_YJIT_ENABLE="1"
 
-ARG APP_VERSION
-ARG GIT_SHA
+ARG APP_VERSION=unknown
+ARG GIT_SHA=main
 ARG DOCKER_TAG
 ENV APP_VERSION=$APP_VERSION
 ENV GIT_SHA=$GIT_SHA
@@ -51,21 +51,9 @@ ENV NODE_ENV=production
 ENV RAILS_SERVE_STATIC_FILES=true
 ENV AWS_RESPONSE_CHECKSUM_VALIDATION=when_required
 ENV AWS_REQUEST_CHECKSUM_CALCULATION=when_required
-# PUID and PGID env vars - these control what user the app is run as inside
-# the entrypoint script. Default to root for backwards compatibility with existing
-# installations, but the admin will be warned if these aren't overridden with something
-# else at runtime, and this default will be removed in future.
 ENV PUID=0
 ENV PGID=0
 
-RUN gem install foreman
-
-# Tell s6 we're in a read-only root filesystem
-ENV S6_READ_ONLY_ROOT=1
-
-# Run the app itself as an s6 service
-COPY ./docker/s6-rc.d/manyfold/manyfold /etc/s6-overlay/s6-rc.d/manyfold
-COPY ./docker/s6-rc.d/manyfold/user/contents.d/manyfold /etc/s6-overlay/s6-rc.d/user/contents.d/manyfold
-
 EXPOSE 3214
-ENTRYPOINT ["/init"]
+ENTRYPOINT ["bin/docker-entrypoint.sh"]
+CMD ["bundle", "exec", "rails", "server", "-p", "3214", "-b", "[::]"]

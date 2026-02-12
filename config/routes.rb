@@ -122,6 +122,7 @@ Rails.application.routes.draw do
       post "unmerge"
     end
     collection do
+      post "bulk_edit_selected"
       post "merge"
       get "merge", action: "configure_merge", as: "configure_merge"
       get "edit", action: "bulk_edit"

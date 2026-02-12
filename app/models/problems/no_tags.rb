@@ -13,10 +13,10 @@ module Problems
     def resolve!(problem, action:)
       case action
       when :edit
-        { redirect: edit_model_path(problem.problematic) }
+        {redirect: edit_model_path(problem.problematic)}
       when :ignore
         problem.update!(ignored: true)
-        { ignored: true }
+        {ignored: true}
       else
         raise ArgumentError, "Unsupported action for NoTags: #{action.inspect}"
       end

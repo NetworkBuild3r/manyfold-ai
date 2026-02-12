@@ -1,6 +1,6 @@
 # Sidekiq and Rails communicate via redis, so we should always use that.
 ActiveJob::Status.store = :redis_cache_store, {
-  url: ENV.fetch("REDIS_URL", nil),
+  url: ENV.fetch("REDIS_URL", "redis://localhost:6379"),
   pool: {
     size: ActiveRecord::Base.connection_pool.size
   }

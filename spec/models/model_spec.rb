@@ -283,6 +283,36 @@ RSpec.describe Model do
         expect(new_model.model_files.pluck(:filename)).to contain_exactly("child_part.stl")
         expect(new_model.model_files.first.model_id).to eq new_model.id
       end
+
+      it "raises when attempting to unmerge an already-undone merge" do
+        create(:model_file, model: child, filename: "child_part.stl")
+        parent.merge! child
+        history = parent.merge_histories.last
+
+        parent.unmerge!(history)
+
+        expect { parent.unmerge!(history) }.to raise_error(ArgumentError, /merge already undone/)
+      end
+
+      it "raises when attempting to unmerge a merge older than the allowed window" do
+        create(:model_file, model: child, filename: "child_part.stl")
+        parent.merge! child
+        history = parent.merge_histories.last
+        history.update_column(:created_at, (Model::UNMERGE_WINDOW + 1.day).ago) # rubocop:disable Rails/SkipsModelValidations
+
+        expect { parent.unmerge!(history) }.to raise_error(ArgumentError, /merge is too old to undo/)
+      end
+
+      it "disambiguates the original path if it is already taken" do
+        create(:model_file, model: child, filename: "child_part.stl")
+        parent.merge! child
+        history = parent.merge_histories.last
+        create(:model, library: library, path: history.source_path)
+
+        new_model = parent.unmerge!(history)
+
+        expect(new_model.path).to eq("#{history.source_path}--unmerged-#{history.id}")
+      end
     end
 
     context "when merging models that have duplicated files" do
@@ -640,7 +670,7 @@ RSpec.describe Model do
     end
   end
 
-  context "problem check cascade" do
+  context "when problem check cascade" do
     it "does not enqueue CheckForProblemsJob when skip_problem_checks is set" do
       model = create(:model)
       Current.set(skip_problem_checks: true) do

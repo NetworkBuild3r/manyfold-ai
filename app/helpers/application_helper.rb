@@ -234,6 +234,12 @@ module ApplicationHelper
     current_user&.pagination_settings || SiteSettings::UserDefaults::PAGINATION
   end
 
+  # Bootstrap row-cols class for the model card grid (2, 3, or 4 columns). Used by models list and infinite-scroll frame.
+  def model_list_grid_class
+    cols = (pagination_settings["grid_columns"] || SiteSettings::UserDefaults::PAGINATION["grid_columns"] || 3).to_i.clamp(2, 4)
+    "row-cols-1 row-cols-md-#{[2, cols].min} row-cols-lg-#{cols}"
+  end
+
   def tag_cloud_settings
     current_user&.tag_cloud_settings || SiteSettings::UserDefaults::TAG_CLOUD.merge(heatmap: false)
   end

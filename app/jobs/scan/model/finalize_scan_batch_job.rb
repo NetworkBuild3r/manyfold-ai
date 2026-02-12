@@ -19,4 +19,3 @@ class Scan::Model::FinalizeScanBatchJob < ApplicationJob
     Model.where(id: model_id).update_all(scan_started_at: nil) # rubocop:disable Rails/SkipsModelValidations
   end
 end
-
