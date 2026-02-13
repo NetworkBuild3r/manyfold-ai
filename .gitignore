@@ -71,8 +71,7 @@ dump.rdb
 
 .yarn
 
-# Ignore schema file, it's database-dependent and Manyfold shouldn't be
-db/schema.rb
+# Ignore data_migrate schema dump (database-dependent)
 db/data_schema.rb
 
 .yardoc

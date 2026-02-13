@@ -1,16 +1,25 @@
 # frozen_string_literal: true
 
+require File.expand_path("../../lib/data_migration_helpers", __dir__)
+
 class GeneratePublicIDsForModels < ActiveRecord::Migration[7.1]
+  include DataMigrationHelpers
+
   ALPHABET = "bcdfghjklmnpqrstvwxz0123456789"
 
   def up
     [Model, ModelFile, Creator, Collection, Library].each do |model|
+      next unless connection.table_exists?(model.table_name) && connection.column_exists?(model.table_name, :public_id)
+
+      model.reset_column_information
       model.unscoped.where(public_id: nil).find_each do |obj|
         obj.send :generate_public_id
         obj.update_column :public_id, obj.public_id # rubocop:disable Rails/SkipsModelValidations
       end
     end
     backfill_problem_public_ids
+  rescue StandardError => e
+    Rails.logger.warn "[DataMigration] #{self.class.name} skipped: #{e.message}"
   end
 
   def down

@@ -1,8 +1,23 @@
 #!/bin/ash
 set -e
+
+# Refuse to run as root; require PUID/PGID for a non-root user
+if [ "${PUID}" = "0" ] || [ "${PGID}" = "0" ]; then
+  echo "Manyfold must not run as root. Set PUID and PGID to a non-root user (e.g. 1000:1000)."
+  exit 1
+fi
+
 if [ -f tmp/pids/server.pid ]; then
   rm tmp/pids/server.pid
 fi
+
+# Solo mode: start Redis in this container when REDIS_URL points to localhost
+case "${REDIS_URL}" in
+  redis://127.0.0.1*|redis://localhost*)
+    echo "Solo mode: starting Redis..."
+    redis-server &
+    ;;
+esac
 
 # Wait for PostgreSQL to accept connections (safety net on top of depends_on)
 if [ -n "${DATABASE_HOST}" ]; then
@@ -21,17 +36,36 @@ fi
 
 # Only web runs migrations to avoid ConcurrentMigrationError when multiple containers start.
 if [ -z "${SKIP_MIGRATIONS}" ]; then
-  echo "Preparing database..."
-  bundle exec rails db:prepare:with_data
+  if [ -f db/schema.rb ]; then
+    echo "Preparing database (loading schema.rb then data migrations)..."
+  else
+    echo "Preparing database (full schema + data migrations; consider generating db/schema.rb for faster boots)..."
+  fi
+  if ! bundle exec rails db:prepare:with_data 2>&1; then
+    echo "ERROR: Database preparation failed. Migration status below:"
+    bundle exec rails db:migrate:status 2>&1 || true
+    echo "Data migration status:"
+    bundle exec rails db:data:migrate:status 2>&1 || echo "(data migration status unavailable)"
+    exit 1
+  fi
 else
   echo "Skipping migrations (SKIP_MIGRATIONS set)."
 fi
 
+# Use runtime user for PUID:PGID (built-in manyfold for 1000:1000, else create appuser)
+if [ "$PUID" = "1000" ] && [ "$PGID" = "1000" ]; then
+  RUN_USER=manyfold
+else
+  addgroup -g "$PGID" appgroup 2>/dev/null || true
+  adduser -D -u "$PUID" -G appgroup appuser 2>/dev/null || true
+  RUN_USER=appuser
+fi
+
 # Ensure app user can write to config and library paths
-if [ -d /config ] && [ -n "${PUID}" ] && [ "${PUID}" != "0" ]; then
+if [ -d /config ]; then
   chown -R "$PUID:$PGID" /config
 fi
-if [ -d /libraries ] && [ -n "${PUID}" ] && [ "${PUID}" != "0" ]; then
+if [ -d /libraries ]; then
   chown -R "$PUID:$PGID" /libraries 2>/dev/null || true
 fi
 
@@ -39,9 +73,11 @@ echo "Cleaning up old cache files..."
 bundle exec rake tmp:cache:clear
 
 echo "Setting temporary directory permissions..."
-chown -R "${PUID:-0}:${PGID:-0}" tmp log 2>/dev/null || true
+chown -R "$PUID:$PGID" tmp log 2>/dev/null || true
+[ -d storage ] && chown -R "$PUID:$PGID" storage 2>/dev/null || true
 
 echo "Launching application..."
 export RAILS_PORT=$PORT
 export RAILS_LOG_TO_STDOUT=true
-exec "$@"
+# Drop privileges: run CMD as RUN_USER (su-exec does not parse our args, so -b etc. are safe)
+exec su-exec "$RUN_USER" "$@"
