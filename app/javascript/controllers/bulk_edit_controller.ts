@@ -1,16 +1,21 @@
 import { Controller } from '@hotwired/stimulus'
+import type TomSelect from 'tom-select'
+
+interface TomSelectElement extends HTMLSelectElement {
+  tomselect: TomSelect
+}
 
 // Connects to data-controller="bulk-edit"
 export default class extends Controller {
   connect (): void {
   }
 
-  updateTagOptions (tags: string[], input, addTags = true): void {
+  updateTagOptions (tags: string[], input: TomSelectElement, addTags = true): void {
     tags.forEach((tag) => {
       if (addTags) {
         input.tomselect.addOption({ value: tag, text: tag })
       } else {
-        input.tomselect.removeOption({ value: tag, text: tag })
+        input.tomselect.removeOption(tag)
       }
     })
     input.tomselect.refreshOptions(false)
@@ -29,11 +34,12 @@ export default class extends Controller {
   updateTagList (modelId: string, add: boolean): void {
     const tags = this.getTags(modelId)
     if (tags.length > 0) {
-      this.updateTagOptions(tags, document.querySelector('select[name="remove_tags[]"]'), add)
+      const select = document.querySelector<TomSelectElement>('select[name="remove_tags[]"]')
+      if (select != null) this.updateTagOptions(tags, select, add)
     }
   }
 
-  handleCheckboxChange (event): void {
+  handleCheckboxChange (event: Event): void {
     const target = event.target as HTMLInputElement
     event.preventDefault()
     // the bulk select checkbox has been selected

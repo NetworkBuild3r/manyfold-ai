@@ -6,15 +6,15 @@
 
 <% if @query.present? %>
 
-  <h3><%= t(".results") %></h3>
+  <h3 class="text-lg font-semibold text-secondary-900 dark:text-secondary-100 mb-2"><%= t(".results") %></h3>
   <% if @actors&.any? %>
-    <div class="row">
+    <div class="flex flex-wrap gap-4">
       <% @actors.each do |actor| %>
         <%= ActorCard actor: actor %>
       <% end %>
     </div>
   <% else %>
-    <div class="alert alert-info">
+    <div class="flex items-center gap-2 px-4 py-3 rounded-lg bg-info/10 text-info dark:bg-info/20">
       <%= Icon icon: "person-arms-up", label: "" %>
       <%= t(".no_results", query: @query) %>
     </div>
@@ -23,8 +23,8 @@
 
 <% if @recommended&.any? %>
 
-  <h3><%= t(".recommended") %></h3>
-  <div class="row">
+  <h3 class="text-lg font-semibold text-secondary-900 dark:text-secondary-100 mb-2"><%= t(".recommended") %></h3>
+  <div class="flex flex-wrap gap-4">
     <% @recommended.each do |actor| %>
       <%= ActorCard actor: actor %>
     <% end %>

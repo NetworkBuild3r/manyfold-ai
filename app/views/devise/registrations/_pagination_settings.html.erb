@@ -1,23 +1,23 @@
 <%= form.fields_for :pagination_settings do |pagination_settings_form| %>
-  <div class="tw:rounded-xl tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:bg-white tw:dark:tw:bg-secondary-800 tw:shadow-sm tw:mb-4 tw:overflow-hidden">
-    <h3 class="tw:px-4 tw:py-3 tw:bg-secondary-600 tw:text-white tw:m-0 tw:font-medium"><%= t(".heading") %></h3>
-    <div class="tw:p-4 tabular-form">
+  <div class="rounded-xl border border-secondary-200 dark:border-secondary-600 bg-white dark:bg-secondary-800 shadow-sm mb-4 overflow-hidden">
+    <h3 class="px-4 py-3 bg-secondary-600 text-white m-0 font-medium"><%= t(".heading") %></h3>
+    <div class="p-4 tabular-form">
       <%= SelectInputRow form: form, attribute: :sort_order, label: t("components.sort_menu.sort-by"), select_options: [
             [t("components.sort_menu.name"), "name"],
             [t("components.sort_menu.recent"), "recent"],
             [t("components.sort_menu.updated"), "updated"]
           ] %>
       <div>
-        <%= pagination_settings_form.label :per_page, t(".per_page.label"), class: "tw:block tw:text-sm tw:font-medium tw:text-secondary-700 tw:dark:tw:text-secondary-300" %>
+        <%= pagination_settings_form.label :per_page, t(".per_page.label"), class: "block text-sm font-medium text-secondary-700 dark:text-secondary-300" %>
       </div>
       <div>
-        <%= pagination_settings_form.number_field :per_page, value: pagination_settings["per_page"], in: 1..100, class: "tw:block tw:w-full tw:rounded-lg tw:border tw:border-secondary-300 tw:px-3 tw:py-2 tw:shadow-sm tw:focus:ring-2 tw:focus:ring-primary-500 tw:dark:tw:border-secondary-600 tw:dark:tw:bg-secondary-800" %>
+        <%= pagination_settings_form.number_field :per_page, value: pagination_settings["per_page"], in: 1..100, class: "block w-full rounded-lg border border-secondary-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-primary-500 dark:border-secondary-600 dark:bg-secondary-800" %>
       </div>
       <div>
-        <%= pagination_settings_form.label :grid_columns, t(".grid_columns.label"), class: "tw:block tw:text-sm tw:font-medium tw:text-secondary-700 tw:dark:tw:text-secondary-300" %>
+        <%= pagination_settings_form.label :grid_columns, t(".grid_columns.label"), class: "block text-sm font-medium text-secondary-700 dark:text-secondary-300" %>
       </div>
       <div>
-        <%= pagination_settings_form.select :grid_columns, options_for_select([[2, 2], [3, 3], [4, 4]], pagination_settings["grid_columns"] || 3), {}, class: "tw:block tw:w-full tw:rounded-lg tw:border tw:border-secondary-300 tw:px-3 tw:py-2 tw:shadow-sm tw:focus:ring-2 tw:focus:ring-primary-500 tw:dark:tw:border-secondary-600 tw:dark:tw:bg-secondary-800" %>
+        <%= pagination_settings_form.select :grid_columns, options_for_select([[2, 2], [3, 3], [4, 4]], pagination_settings["grid_columns"] || 3), {}, class: "block w-full rounded-lg border border-secondary-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-primary-500 dark:border-secondary-600 dark:bg-secondary-800" %>
       </div>
     </div>
   </div>

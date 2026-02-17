@@ -49,9 +49,9 @@ export class OffscreenRenderer {
   gridHelper: THREE.GridHelper
   ready: boolean = false
 
-  cbLoadComplete: any = null
-  cbLoadProgress: any = null
-  cbLoadError: any = null
+  cbLoadComplete: (() => void) | null = null
+  cbLoadProgress: ((percentage: number) => void) | null = null
+  cbLoadError: (() => void) | null = null
 
   constructor (
     canvas: HTMLCanvasElement,
@@ -63,7 +63,7 @@ export class OffscreenRenderer {
     this.setup()
   }
 
-  handleEvent (event): void {
+  handleEvent (event: Event): void {
     this.canvas.handleEvent(event)
   }
 
@@ -76,7 +76,8 @@ export class OffscreenRenderer {
       0.1,
       100000
     )
-    this.controls = new OrbitControls(this.camera, this.canvas as any)
+    // OrbitControls expects an element-like object; CanvasProxy provides event dispatch and getBoundingClientRect
+    this.controls = new OrbitControls(this.camera, this.canvas as unknown as HTMLElement)
     this.controls.enableDamping = true
     this.controls.enablePan = this.controls.enableZoom = (this.settings.enablePanZoom === 'true')
     this.controls.keyPanSpeed = 35
@@ -105,7 +106,11 @@ export class OffscreenRenderer {
     this.composer.addPass(new OutputPass())
   }
 
-  async load (cbLoadComplete, cbLoadProgress, cbLoadError): Promise<void> {
+  async load (
+    cbLoadComplete: () => void,
+    cbLoadProgress: (percentage: number) => void,
+    cbLoadError: () => void
+  ): Promise<void> {
     // Store callbacks
     this.cbLoadComplete = cbLoadComplete
     this.cbLoadProgress = cbLoadProgress
@@ -140,12 +145,12 @@ export class OffscreenRenderer {
     }
   }
 
-  onLoadProgress (xhr): void {
+  onLoadProgress (xhr: ProgressEvent<EventTarget>): void {
     const percentage = Math.floor((xhr.loaded / xhr.total) * 100)
-    this.cbLoadProgress(percentage)
+    this.cbLoadProgress?.(percentage)
   }
 
-  onLoad (model): void {
+  onLoad (model: unknown): void {
     let material: THREE.Material = new THREE.MeshLambertMaterial({
       flatShading: true,
       color: (this.settings.objectColour ?? '#cccccc')
@@ -159,13 +164,14 @@ export class OffscreenRenderer {
         break
     }
     // find mesh
-    let object: THREE.Mesh | THREE.Group | null = null
-    if (model.type === 'BufferGeometry') {
-      object = new THREE.Mesh(model, material)
-    } else if ('scene' in model) {
-      object = model.scene
-    } else {
-      object = model
+    let object: THREE.Mesh | THREE.Group | THREE.Object3D | null = null
+    const m = model as THREE.BufferGeometry | THREE.Object3D | { scene: THREE.Group }
+    if (m != null && 'type' in m && (m as THREE.BufferGeometry).type === 'BufferGeometry') {
+      object = new THREE.Mesh(m as THREE.BufferGeometry, material)
+    } else if (m != null && 'scene' in m) {
+      object = (m as { scene: THREE.Group }).scene
+    } else if (m != null) {
+      object = m as THREE.Object3D
     }
     // Set material
     if (object == null) { return }
@@ -259,15 +265,15 @@ export class OffscreenRenderer {
     this.controls.addEventListener('change', this.render.bind(this))
 
     // Report load complete
-    this.cbLoadComplete()
+    this.cbLoadComplete?.()
   }
 
-  onLoadError (e): void {
-    console.log(e)
-    this.cbLoadError()
+  onLoadError (_e: unknown): void {
+    console.error('[OffscreenRenderer] Load error:', _e)
+    this.cbLoadError?.()
   }
 
-  onResize (width, height, pixelRatio): void {
+  onResize (width: number, height: number, pixelRatio: number): void {
     this.canvas.resize(width, height)
     this.renderer.setSize(width, height, false)
     this.composer.setSize(width, height)

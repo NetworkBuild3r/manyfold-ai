@@ -14,7 +14,7 @@ class Components::InputRow < Components::Base
     div do
       @form.label(@attribute, @label, class: label_class)
     end
-    div(class: "tw:mt-1") do
+    div(class: "mt-1") do
       input_group
       errors_for(@form.object, @attribute_without_id)
       help
@@ -22,11 +22,11 @@ class Components::InputRow < Components::Base
   end
 
   def label_class
-    "tw:block tw:text-sm tw:font-medium tw:text-secondary-700 tw:dark:text-secondary-300"
+    "block text-sm font-medium text-secondary-700 dark:text-secondary-300"
   end
 
   def input_group
-    div(class: "tw:flex") do
+    div(class: "flex") do
       input_element
     end
   end
@@ -36,13 +36,13 @@ class Components::InputRow < Components::Base
   end
 
   def help
-    span(class: "tw:text-sm tw:text-secondary-500 tw:dark:text-secondary-400 tw:mt-1 tw:block") { @help } if @help
+    span(class: "text-sm text-secondary-500 dark:text-secondary-400 mt-1 block") { @help } if @help
   end
 
   def errors_for(object, attribute)
     return if object.nil? || attribute.nil?
     return unless object.errors.include? attribute
-    div(class: "tw:text-danger tw:text-sm tw:mt-1") do
+    div(class: "text-danger text-sm mt-1") do
       object.errors.full_messages_for(attribute).join("; ")
     end
   end

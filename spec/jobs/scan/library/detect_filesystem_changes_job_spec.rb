@@ -18,14 +18,14 @@ RSpec.describe Scan::Library::DetectFilesystemChangesJob do
 
     it "can scan a library directory" do # rubocop:todo RSpec/MultipleExpectations
       described_class.perform_now(library.id)
-      expect(Scan::Library::CreateModelFromPathJob).to have_been_enqueued.with(library.id, "model_one")
-      expect(Scan::Library::CreateModelFromPathJob).to have_been_enqueued.with(library.id, "subfolder/model_two")
+      expect(Scan::Library::CreateModelFromPathJob).to have_been_enqueued.with(library.id, "model_one", hash_including(scan_batch_id: kind_of(String)))
+      expect(Scan::Library::CreateModelFromPathJob).to have_been_enqueued.with(library.id, "subfolder/model_two", hash_including(scan_batch_id: kind_of(String)))
     end
 
     it "only scans models with changes on rescan" do
       model_one = create(:model, path: "model_one", library: library)
       Scan::Model::AddNewFilesJob.perform_now(model_one.id)
-      expect { described_class.perform_now(library.id) }.to have_enqueued_job(Scan::Library::CreateModelFromPathJob).with(library.id, "subfolder/model_two").exactly(1).times
+      expect { described_class.perform_now(library.id) }.to have_enqueued_job(Scan::Library::CreateModelFromPathJob).with(library.id, "subfolder/model_two", hash_including(scan_batch_id: kind_of(String))).exactly(1).times
     end
   end
 
@@ -47,8 +47,8 @@ RSpec.describe Scan::Library::DetectFilesystemChangesJob do
 
     it "pulls out nested model as separate" do # rubocop:todo RSpec/MultipleExpectations
       described_class.perform_now(library.id)
-      expect(Scan::Library::CreateModelFromPathJob).to have_been_enqueued.with(library.id, "model_one")
-      expect(Scan::Library::CreateModelFromPathJob).to have_been_enqueued.with(library.id, "model_one/nested")
+      expect(Scan::Library::CreateModelFromPathJob).to have_been_enqueued.with(library.id, "model_one", hash_including(scan_batch_id: kind_of(String)))
+      expect(Scan::Library::CreateModelFromPathJob).to have_been_enqueued.with(library.id, "model_one/nested", hash_including(scan_batch_id: kind_of(String)))
     end
 
     context "with existing model" do
@@ -82,7 +82,7 @@ RSpec.describe Scan::Library::DetectFilesystemChangesJob do
     # rubocop:enable RSpec/InstanceVariable
 
     it "understands that it's a single model" do
-      expect { described_class.perform_now(library.id) }.to have_enqueued_job(Scan::Library::CreateModelFromPathJob).with(library.id, "thingiverse_model").exactly(1).times
+      expect { described_class.perform_now(library.id) }.to have_enqueued_job(Scan::Library::CreateModelFromPathJob).with(library.id, "thingiverse_model", hash_including(scan_batch_id: kind_of(String))).exactly(1).times
     end
   end
 
@@ -131,7 +131,7 @@ RSpec.describe Scan::Library::DetectFilesystemChangesJob do
     # rubocop:enable RSpec/InstanceVariable
 
     it "understands that it's a single model" do
-      expect { described_class.perform_now(library.id) }.to have_enqueued_job(Scan::Library::CreateModelFromPathJob).with(library.id, "model").exactly(1).times
+      expect { described_class.perform_now(library.id) }.to have_enqueued_job(Scan::Library::CreateModelFromPathJob).with(library.id, "model", hash_including(scan_batch_id: kind_of(String))).exactly(1).times
     end
   end
 
@@ -156,7 +156,7 @@ RSpec.describe Scan::Library::DetectFilesystemChangesJob do
     # rubocop:enable RSpec/InstanceVariable
 
     it "ignores case and filters out subfolders correctly" do
-      expect { described_class.perform_now(library.id) }.to have_enqueued_job(Scan::Library::CreateModelFromPathJob).with(library.id, "model").exactly(1).times
+      expect { described_class.perform_now(library.id) }.to have_enqueued_job(Scan::Library::CreateModelFromPathJob).with(library.id, "model", hash_including(scan_batch_id: kind_of(String))).exactly(1).times
     end
   end
 
@@ -299,8 +299,8 @@ RSpec.describe Scan::Library::DetectFilesystemChangesJob do
 
     it "can scan a library directory" do # rubocop:todo RSpec/MultipleExpectations
       described_class.perform_now(library.id)
-      expect(Scan::Library::CreateModelFromPathJob).to have_been_enqueued.with(library.id, "model_one")
-      expect(Scan::Library::CreateModelFromPathJob).to have_been_enqueued.with(library.id, "subfolder/model_two")
+      expect(Scan::Library::CreateModelFromPathJob).to have_been_enqueued.with(library.id, "model_one", hash_including(scan_batch_id: kind_of(String)))
+      expect(Scan::Library::CreateModelFromPathJob).to have_been_enqueued.with(library.id, "subfolder/model_two", hash_including(scan_batch_id: kind_of(String)))
     end
   end
 end

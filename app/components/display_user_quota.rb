@@ -12,16 +12,16 @@ class Components::DisplayUserQuota < Components::Base
     quota_in_mb = number_to_human_size(@quota)
     current_size_in_mb = number_to_human_size(@current_size)
     percent_used = ((@current_size / @quota) * 100).ceil
-    bar_class = "tw:h-4 tw:rounded tw:flex tw:items-center tw:justify-center tw:text-xs tw:font-medium tw:text-white"
+    bar_class = "h-4 rounded flex items-center justify-center text-xs font-medium text-white"
     bar_class += case percent_used
-    when 0..60 then " tw:bg-success"
-    when 61..90 then " tw:bg-warning"
-    else " tw:bg-danger"
+    when 0..60 then " bg-success"
+    when 61..90 then " bg-warning"
+    else " bg-danger"
     end
-    div class: "tw:text-2xl" do
+    div class: "text-2xl" do
       plain "#{current_size_in_mb} / #{quota_in_mb}"
     end
-    div class: "tw:w-full tw:bg-secondary-200 tw:dark:bg-secondary-700 tw:rounded tw:overflow-hidden",
+    div class: "w-full bg-secondary-200 dark:bg-secondary-700 rounded overflow-hidden",
       role: "progressbar",
       "aria-label": "Quota progress bar",
       "aria-valuemin": 0,
@@ -31,7 +31,7 @@ class Components::DisplayUserQuota < Components::Base
         "#{percent_used}%"
       end
     end
-    p class: "tw:mt-3 tw:text-left tw:text-sm tw:text-secondary-600 tw:dark:text-secondary-400" do
+    p class: "mt-3 text-left text-sm text-secondary-600 dark:text-secondary-400" do
       t "components.display_user_quota.request_increase"
     end
   end

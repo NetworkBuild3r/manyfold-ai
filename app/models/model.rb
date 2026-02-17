@@ -108,79 +108,81 @@ class Model < ApplicationRecord
   end
 
   def adopt_file(file, path_prefix: nil)
-    # Work out the new filename
     new_filename = path_prefix ? File.join(path_prefix, file.filename) : file.filename
-    # If there's an identical file already there...
     existing_file = model_files.find_by(filename: new_filename)
-    if file.digest && file.digest == existing_file&.digest
-      file.problems.destroy_all # Remove associated problems for this file manually
-      file.delete # Don't run callbacks, just remove the database record
-      return
-    elsif existing_file
-      # Otherwise, make sure the name is distinct by adding the digest to the end if there's a clash
-      new_filename = "#{File.basename(new_filename, ".*")}_#{file.digest}#{File.extname(new_filename)}"
+
+    if existing_file
+      if file.digest.present? && file.digest == existing_file.digest
+        # Identical content at same path -- deduplicate (don't delete; let source destroy handle it)
+        return {status: :deduplicated, existing_file_id: existing_file.id}
+      else
+        # Name collision, different content -- disambiguate
+        suffix = file.digest.presence || SecureRandom.hex(6)
+        new_filename = "#{File.basename(new_filename, ".*")}_#{suffix}#{File.extname(new_filename)}"
+      end
     end
-    # Adopt the file
-    file.update(
-      filename: new_filename,
-      model: self
-    )
+
+    file.update!(filename: new_filename, model: self)
     file.reattach!
+    {status: :adopted}
   end
 
   def merge!(*models)
-    # If we've got one argument and it's enumerable, use it directly
     models = models[0] if models.length == 1 && models[0].is_a?(Enumerable)
-    # Go through the list
+
     models.each do |other|
-      # Work out path to the other target from here
-      relative_path = contains?(other) ? Pathname.new(other.path).relative_path_from(Pathname.new(path)) : nil
-      # Capture merge history so we can reverse the operation later.
-      moved_files = []
-      source_files = other.model_files.to_a
-      source_files.each do |it|
-        source_filename = it.filename
-        adopt_file(it, path_prefix: relative_path)
-        moved_files << {
-          id: it.id,
-          source_filename: source_filename,
-          merged_filename: it.filename
-        }
+      ActiveRecord::Base.transaction do
+        path_prefix = compute_merge_prefix(other)
+
+        moved_files = []
+        other.model_files.to_a.each do |file|
+          source_filename = file.filename
+          result = adopt_file(file, path_prefix: path_prefix)
+
+          moved_files << {
+            id: file.id,
+            source_filename: source_filename,
+            merged_filename: (result[:status] == :adopted) ? file.filename : nil,
+            deduplicated: result[:status] == :deduplicated,
+            existing_file_id: result[:existing_file_id]
+          }
+        end
+
+        MergeHistory.create!(
+          target_model: self,
+          source_library_id: other.library_id,
+          source_path: other.path,
+          source_name: other.name,
+          path_prefix: path_prefix,
+          source_metadata: {
+            creator_id: other.creator_id,
+            collection_id: other.collection_id,
+            license: other.license,
+            caption: other.caption,
+            notes: other.notes,
+            sensitive: other.sensitive,
+            tag_list: other.tag_list,
+            links: other.links.map(&:url),
+            preview_filename: other.preview_file&.filename
+          },
+          moved_files: moved_files
+        )
+
+        # Merge metadata (target wins for single-value fields)
+        self.creator ||= other.creator
+        self.collection ||= other.collection
+        self.license ||= other.license
+        self.caption ||= other.caption
+        self.notes ||= other.notes
+        self.sensitive ||= other.sensitive
+        tag_list.add(*other.tag_list)
+        self.links_attributes = other.links.map { |it| {url: it.url} }
+        save!
+
+        other.reload
+        other.destroy!
       end
-
-      MergeHistory.create!(
-        target_model: self,
-        source_library_id: other.library_id,
-        source_path: other.path,
-        source_name: other.name,
-        source_metadata: {
-          creator_id: other.creator_id,
-          collection_id: other.collection_id,
-          license: other.license,
-          caption: other.caption,
-          notes: other.notes,
-          sensitive: other.sensitive,
-          tag_list: other.tag_list,
-          links: other.links.map(&:url),
-          preview_filename: other.preview_file&.filename
-        },
-        moved_files: moved_files
-      )
-
       check_for_problems_later
-      # Merge metadata
-      self.creator ||= other.creator
-      self.collection ||= other.collection
-      self.license ||= other.license
-      self.caption ||= other.caption
-      self.notes ||= other.notes
-      self.sensitive ||= other.sensitive
-      tag_list.add(*other.tag_list)
-      self.links_attributes = other.links.map { |it| {url: it.url} }
-      save!
-      # Destroy the other model
-      other.reload
-      other.destroy
     end
   end
 
@@ -191,50 +193,76 @@ class Model < ApplicationRecord
     raise ArgumentError, "merge history does not belong to this model" if history.target_model_id != id
     raise ArgumentError, "merge already undone" if history.undone_at.present?
     raise ArgumentError, "merge is too old to undo" if history.created_at < UNMERGE_WINDOW.ago
+    if history.source_library_id.nil?
+      raise ActiveRecord::RecordNotFound,
+        "Cannot unmerge: source library no longer exists (was deleted after merge)"
+    end
 
-    Current.set(skip_problem_checks: true) do
-      library = policy_scope(Library).find(history.source_library_id)
-      source_meta = history.source_metadata || {}
+    ActiveRecord::Base.transaction do
+      Current.set(skip_problem_checks: true) do
+        library = Library.find(history.source_library_id)
+        source_meta = history.source_metadata || {}
 
-      new_path = history.source_path
-      if library.models.exists?(path: new_path.trim_path_separators)
-        new_path = "#{new_path.trim_path_separators}--unmerged-#{history.id}"
+        new_path = history.source_path
+        if library.models.exists?(path: new_path.trim_path_separators)
+          new_path = "#{new_path.trim_path_separators}--unmerged-#{history.id}"
+        end
+
+        # Guard against creator/collection deleted between merge and unmerge
+        creator = Creator.find_by(id: source_meta["creator_id"])
+        collection = Collection.find_by(id: source_meta["collection_id"])
+
+        new_model = library.models.create!(
+          name: history.source_name,
+          path: new_path.trim_path_separators,
+          creator_id: creator&.id,
+          collection_id: collection&.id,
+          license: source_meta["license"],
+          caption: source_meta["caption"],
+          notes: source_meta["notes"],
+          sensitive: source_meta["sensitive"]
+        )
+
+        new_model.tag_list = Array(source_meta["tag_list"])
+        new_model.links_attributes = Array(source_meta["links"]).map { |url| {url: url} }
+        new_model.save!
+
+        Array(history.moved_files).each do |entry|
+          file_id = entry["id"] || entry[:id]
+          source_filename = entry["source_filename"] || entry[:source_filename]
+          was_deduplicated = entry["deduplicated"] || entry[:deduplicated]
+
+          if was_deduplicated
+            existing_id = entry["existing_file_id"] || entry[:existing_file_id]
+            existing_file = ModelFile.find_by(id: existing_id)
+            next unless existing_file && source_filename.present?
+
+            new_file = new_model.model_files.create!(
+              filename: source_filename,
+              digest: existing_file.digest,
+              size: existing_file.size,
+              presupported: existing_file.presupported,
+              y_up: existing_file.y_up,
+              previewable: existing_file.previewable
+            )
+            copy_file_to_model_file(existing_file, new_file)
+          else
+            file = ModelFile.find_by(id: file_id)
+            next unless file && source_filename.present?
+
+            file.filename = source_filename
+            new_model.adopt_file(file)
+          end
+        end
+
+        if (preview_filename = history.source_preview_filename)
+          preview = new_model.model_files.find_by(filename: preview_filename)
+          new_model.update!(preview_file: preview) if preview
+        end
+
+        history.update!(undone_at: Time.current)
+        new_model
       end
-
-      new_model = library.models.create!(
-        name: history.source_name,
-        path: new_path.trim_path_separators,
-        creator_id: source_meta["creator_id"],
-        collection_id: source_meta["collection_id"],
-        license: source_meta["license"],
-        caption: source_meta["caption"],
-        notes: source_meta["notes"],
-        sensitive: source_meta["sensitive"]
-      )
-
-      # Tags & links (acts-as-taggable uses tag_list API)
-      new_model.tag_list = Array(source_meta["tag_list"])
-      new_model.links_attributes = Array(source_meta["links"]).map { |url| {url: url} }
-      new_model.save!
-
-      Array(history.moved_files).each do |entry|
-        file_id = entry["id"] || entry[:id]
-        source_filename = entry["source_filename"] || entry[:source_filename]
-        file = ModelFile.find_by(id: file_id)
-        next unless file && source_filename.present?
-
-        # Restore the source filename (in-memory) then adopt into the new model.
-        file.filename = source_filename
-        new_model.adopt_file(file)
-      end
-
-      if (preview_filename = history.source_preview_filename)
-        preview = new_model.model_files.find_by(filename: preview_filename)
-        new_model.update!(preview_file: preview) if preview
-      end
-
-      history.update!(undone_at: Time.current)
-      new_model
     end
   end
 
@@ -414,6 +442,26 @@ class Model < ApplicationRecord
   end
 
   private
+
+  def compute_merge_prefix(other)
+    if contains?(other)
+      Pathname.new(other.path).relative_path_from(Pathname.new(path)).to_s
+    elsif other.library_id == library_id && Model.common_root(self, other)
+      Pathname.new(other.path).relative_path_from(Pathname.new(path)).to_s
+    else
+      File.basename(other.path)
+    end
+  end
+
+  # Copy physical file from source_file (e.g. target's file) to dest_file (e.g. restored model's new record).
+  def copy_file_to_model_file(source_file, dest_file)
+    dest_path = dest_file.path_within_library
+    dest_storage = dest_file.model.library.storage
+    source_file.attachment.download do |io|
+      dest_storage.upload(io, dest_path)
+    end
+    dest_file.attach_existing_file!
+  end
 
   def normalize_license
     self.license = nil if license.blank?

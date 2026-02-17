@@ -15,7 +15,7 @@ class Components::ImageCarousel < Components::Base
 
   def view_template
     div id: "imageCarousel",
-      class: "tw:relative tw:rounded-xl tw:overflow-hidden tw:mb-4",
+      class: "relative w-full aspect-[4/3] rounded-xl overflow-hidden mb-4",
       role: "group",
       data: {
         controller: "carousel",
@@ -28,14 +28,14 @@ class Components::ImageCarousel < Components::Base
         play_pause_control
       end
       div id: "imageCarouselInner",
-        class: "tw:relative tw:overflow-hidden",
+        class: "absolute inset-0 overflow-hidden",
         data: {carousel_target: "inner"},
         aria: {
           atomic: false,
           live: "off"
         } do
         @images.each_with_index do |image, index|
-          div class: (index == 0 ? "carousel-item active" : "carousel-item"),
+          div class: (index == 0 ? "carousel-item active absolute inset-0 w-full h-full" : "carousel-item absolute inset-0 w-full h-full"),
             data: {carousel_target: "slide"},
             role: "group",
             aria: {
@@ -44,7 +44,7 @@ class Components::ImageCarousel < Components::Base
             } do
             img src: model_model_file_path(image.model, image, format: image.extension, derivative: "carousel"),
               alt: image.name,
-              class: "tw:block tw:w-full tw:h-auto",
+              class: "block w-full h-full object-contain bg-secondary-900 dark:bg-secondary-950",
               loading: (index <= 1 ? "eager" : "lazy"),
               decoding: "async"
             button_overlay(image)
@@ -62,19 +62,19 @@ class Components::ImageCarousel < Components::Base
 
   def play_pause_control
     button id: "rotationControl",
-      class: "tw:absolute tw:top-2 tw:right-2 tw:z-20 tw:inline-flex tw:items-center tw:gap-1.5 tw:px-3 tw:py-1.5 tw:text-sm tw:font-medium tw:rounded-lg tw:bg-white/90 tw:dark:bg-secondary-800/90 tw:border tw:border-secondary-200 tw:shadow tw:hover:bg-white tw:focus-visible:ring-2 tw:focus-visible:ring-primary-500 tw:min-w-[44px] tw:min-h-[44px]",
+      class: "absolute top-2 right-2 z-20 inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-white/90 dark:bg-secondary-800/90 border border-secondary-200 shadow hover:bg-white focus-visible:ring-2 focus-visible:ring-primary-500 min-w-[44px] min-h-[44px]",
       data: {action: "click->carousel#onPauseButton"} do
       Icon icon: "pause", label: t("components.image_carousel.play_pause"), id: "rotationControlIcon"
     end
   end
 
   def slide_indicators
-    div class: "carousel-indicators tw:absolute tw:bottom-2 tw:left-0 tw:right-0 tw:flex tw:justify-center tw:gap-1 tw:z-10",
+    div class: "carousel-indicators absolute bottom-2 left-0 right-0 flex justify-center gap-1 z-10",
       role: "group",
       aria: {label: translate("components.image_carousel.select_slide")} do
       @images.each_with_index do |image, index|
         button type: "button",
-          class: "tw:w-2 tw:h-2 tw:rounded-full tw:bg-white/50 tw:hover:bg-white/80 tw:transition-colors #{'active' if index == 0}",
+          class: "w-2 h-2 rounded-full bg-white/50 hover:bg-white/80 dark:bg-secondary-400/80 dark:hover:bg-secondary-300 transition-colors #{'active' if index == 0}",
           data: {
             carousel_target: "indicator",
             action: "click->carousel#goTo",
@@ -90,14 +90,14 @@ class Components::ImageCarousel < Components::Base
   end
 
   def next_prev_controls
-    button class: "tw:absolute tw:top-1/2 tw:left-2 tw:-translate-y-1/2 tw:z-10 tw:w-10 tw:h-10 tw:min-w-[44px] tw:min-h-[44px] tw:flex tw:items-center tw:justify-center tw:rounded-full tw:bg-black/30 tw:hover:bg-black/50 tw:text-white tw:focus-visible:ring-2 tw:focus-visible:ring-primary-500 tw:border-0",
+    button class: "absolute top-1/2 left-2 -translate-y-1/2 z-10 w-10 h-10 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-black/30 hover:bg-black/50 dark:bg-white/20 dark:hover:bg-white/30 text-white focus-visible:ring-2 focus-visible:ring-primary-500 border-0",
       type: "button",
       tabindex: 0,
       data: {action: "click->carousel#prev"},
       aria: {label: t("components.image_carousel.previous")} do
       Icon(icon: "chevron-left", label: t("components.image_carousel.previous"))
     end
-    button class: "tw:absolute tw:top-1/2 tw:right-2 tw:-translate-y-1/2 tw:z-10 tw:w-10 tw:h-10 tw:min-w-[44px] tw:min-h-[44px] tw:flex tw:items-center tw:justify-center tw:rounded-full tw:bg-black/30 tw:hover:bg-black/50 tw:text-white tw:focus-visible:ring-2 tw:focus-visible:ring-primary-500 tw:border-0",
+    button class: "absolute top-1/2 right-2 -translate-y-1/2 z-10 w-10 h-10 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-black/30 hover:bg-black/50 dark:bg-white/20 dark:hover:bg-white/30 text-white focus-visible:ring-2 focus-visible:ring-primary-500 border-0",
       type: "button",
       tabindex: 0,
       data: {action: "click->carousel#next"},
@@ -107,18 +107,18 @@ class Components::ImageCarousel < Components::Base
   end
 
   def button_overlay(image)
-    div class: "tw:absolute tw:bottom-0 tw:left-0 tw:right-0 tw:bg-black/50 tw:text-white tw:px-3 tw:py-2 tw:text-sm tw:hidden tw:md:block" do
+    div class: "absolute bottom-0 left-0 right-0 bg-black/50 dark:bg-black/70 text-white px-3 py-2 text-sm hidden md:block" do
       if image.model.preview_file != image && policy(image).edit?
-        form_with model: image.model, class: "tw:inline-block" do |form|
+        form_with model: image.model, class: "inline-block" do |form|
           form.hidden_field :preview_file_id, value: image.id
           form.button t("models.file.set_as_preview"),
-            class: "tw:inline-flex tw:items-center tw:gap-1.5 tw:px-2 tw:py-1 tw:text-xs tw:font-medium tw:rounded tw:border tw:border-warning tw:text-warning tw:bg-transparent tw:hover:bg-warning/10 tw:mr-2"
+            class: "inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded-full border border-warning text-warning bg-transparent hover:bg-warning/10 mr-2"
         end
       end
       if policy(image).destroy?
         a href: model_model_file_path(image.model, image),
           tabindex: 0,
-          class: "tw:inline-flex tw:items-center tw:gap-1.5 tw:px-2 tw:py-1 tw:text-xs tw:font-medium tw:rounded tw:border tw:border-danger tw:text-white tw:bg-transparent tw:hover:bg-danger/20",
+          class: "inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded-full border border-danger text-white bg-transparent hover:bg-danger/20",
           data: {
             method: "delete",
             confirm: translate("model_files.destroy.confirm")

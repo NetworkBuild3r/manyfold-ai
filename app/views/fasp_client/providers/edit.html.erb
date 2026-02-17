@@ -1,71 +1,71 @@
-<h3>FASP: <%= link_to sanitize(@provider.name), sanitize(@provider.base_url) %></h3>
+<h3 class="<%= heading_classes(:section) %> mb-4">FASP: <%= link_to sanitize(@provider.name), sanitize(@provider.base_url), class: "text-primary-600 dark:text-primary-400 hover:underline" %></h3>
 
-<div class="tw:grid tw:grid-cols-1 tw:md:grid-cols-3 tw:gap-6">
-  <div class="tw:rounded-xl tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:bg-white tw:dark:tw:bg-secondary-800 tw:shadow-sm tw:overflow-hidden">
-    <div class="tw:px-4 tw:py-3 tw:bg-secondary-600 tw:text-white tw:font-medium">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+  <div class="rounded-xl border border-secondary-200 dark:border-secondary-600 bg-surface dark:bg-surface-dark shadow-sm overflow-hidden">
+    <div class="px-4 py-3 bg-secondary-600 text-white font-medium">
       <%= t ".registration" %>
     </div>
-    <div class="tw:p-4">
-      <p class="tw:mb-1">Requested at: <%= @provider.created_at %></p>
-      <p class="tw:mb-0">Status: <%= @provider.status %></p>
+    <div class="p-4">
+      <p class="mb-1">Requested at: <%= @provider.created_at %></p>
+      <p class="mb-0">Status: <%= @provider.status %></p>
     </div>
   </div>
-  <div class="tw:rounded-xl tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:bg-white tw:dark:tw:bg-secondary-800 tw:shadow-sm tw:overflow-hidden">
-    <div class="tw:px-4 tw:py-3 tw:bg-secondary-600 tw:text-white tw:font-medium">
+  <div class="rounded-xl border border-secondary-200 dark:border-secondary-600 bg-surface dark:bg-surface-dark shadow-sm overflow-hidden">
+    <div class="px-4 py-3 bg-secondary-600 text-white font-medium">
       <%= t ".links" %>
     </div>
-    <div class="tw:p-4">
-      <ul class="tw:list-disc tw:pl-5 tw:mb-0">
+    <div class="p-4">
+      <ul class="list-disc pl-5 mb-0">
         <% if @provider.privacy_policy.any? %>
-          <li><%= link_to t(".privacy_policy"), sanitize(@provider.privacy_policy.first["url"]), class: "tw:text-primary-600 tw:dark:tw:text-primary-400 hover:tw:underline" %></li>
+          <li><%= link_to t(".privacy_policy"), sanitize(@provider.privacy_policy.first["url"]), class: "text-primary-600 dark:text-primary-400 hover:underline" %></li>
         <% end %>
         <% if @provider.sign_in_url %>
-          <li><%= link_to t(".sign_in"), sanitize(@provider.sign_in_url), class: "tw:text-primary-600 tw:dark:tw:text-primary-400 hover:tw:underline" %></li>
+          <li><%= link_to t(".sign_in"), sanitize(@provider.sign_in_url), class: "text-primary-600 dark:text-primary-400 hover:underline" %></li>
         <% end %>
       </ul>
     </div>
   </div>
-  <div class="tw:rounded-xl tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:bg-white tw:dark:tw:bg-secondary-800 tw:shadow-sm tw:overflow-hidden">
-    <div class="tw:px-4 tw:py-3 tw:bg-secondary-600 tw:text-white tw:font-medium">
+  <div class="rounded-xl border border-secondary-200 dark:border-secondary-600 bg-surface dark:bg-surface-dark shadow-sm overflow-hidden">
+    <div class="px-4 py-3 bg-secondary-600 text-white font-medium">
       <%= t ".contact_details" %>
     </div>
-    <div class="tw:p-4">
+    <div class="p-4">
       <% if @provider.contact_email %>
-        <p class="tw:mb-1"><%= t ".email" %>: <%= link_to sanitize(@provider.contact_email), "mailto:#{@provider.contact_email}", class: "tw:text-primary-600 tw:dark:tw:text-primary-400 hover:tw:underline" %></p>
+        <p class="mb-1"><%= t ".email" %>: <%= link_to sanitize(@provider.contact_email), "mailto:#{@provider.contact_email}", class: "text-primary-600 dark:text-primary-400 hover:underline" %></p>
       <% end %>
       <% if @provider.fediverse_account %>
-        <p class="tw:mb-0"><%= t ".fediverse_account" %>: <%= sanitize(@provider.fediverse_account) %></p>
+        <p class="mb-0"><%= t ".fediverse_account" %>: <%= sanitize(@provider.fediverse_account) %></p>
       <% end %>
     </div>
   </div>
 </div>
 
-<div class="tw:mt-6">
+<div class="mt-6">
   <% if @provider.pending? %>
     <p><%= t ".approval_help" %>
     <p>
       <%= t ".fingerprint" %>:
-      <code class="tw:px-1.5 tw:py-0.5 tw:rounded tw:bg-secondary-100 tw:dark:tw:bg-secondary-700 tw:text-sm"><%= sanitize(@provider.fingerprint) %></code>
+      <code class="px-1.5 py-0.5 rounded bg-secondary-100 dark:bg-secondary-700 text-sm"><%= sanitize(@provider.fingerprint) %></code>
     </p>
-    <%= button_to t(".approve"), @provider, method: :patch, params: {provider: {status: "approved"}}, form: {style: "display: inline"}, class: "tw:inline-flex tw:items-center tw:px-4 tw:py-2 tw:rounded-lg tw:bg-success tw:text-white hover:tw:opacity-90 focus-visible:tw:ring-2 focus-visible:tw:ring-primary-500" %>
-    <%= button_to t(".deny"), @provider, method: :patch, params: {provider: {status: "denied"}}, form: {style: "display: inline"}, class: "tw:inline-flex tw:items-center tw:px-4 tw:py-2 tw:rounded-lg tw:bg-danger tw:text-white hover:tw:opacity-90 focus-visible:tw:ring-2 focus-visible:tw:ring-primary-500 tw:ml-2" %>
+    <%= button_to t(".approve"), @provider, method: :patch, params: {provider: {status: "approved"}}, form: {style: "display: inline"}, class: "inline-flex items-center px-4 py-2 rounded-lg bg-success text-white hover:opacity-90 focus-visible:ring-2 focus-visible:ring-primary-500" %>
+    <%= button_to t(".deny"), @provider, method: :patch, params: {provider: {status: "denied"}}, form: {style: "display: inline"}, class: "inline-flex items-center px-4 py-2 rounded-lg bg-danger text-white hover:opacity-90 focus-visible:ring-2 focus-visible:ring-primary-500 ml-2" %>
   <% else %>
-    <table class="tw:w-full tw:border-collapse tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600">
+    <table class="w-full border-collapse border border-secondary-200 dark:border-secondary-600">
       <thead>
-        <tr class="tw:border-b tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:bg-secondary-50 tw:dark:tw:bg-secondary-800/50">
-          <th class="tw:px-4 tw:py-2 tw:text-left"><%= t ".capability" %></th>
-          <th class="tw:px-4 tw:py-2 tw:text-left"><%= t ".versions" %></th>
-          <th class="tw:px-4 tw:py-2 tw:text-left"><%= t ".enable" %></th>
-          <th class="tw:px-4 tw:py-2 tw:text-left"><%= t ".disable" %></th>
+        <tr class="border-b border-secondary-200 dark:border-secondary-600 bg-secondary-50 dark:bg-secondary-800/50">
+          <th class="px-4 py-2 text-left"><%= t ".capability" %></th>
+          <th class="px-4 py-2 text-left"><%= t ".versions" %></th>
+          <th class="px-4 py-2 text-left"><%= t ".enable" %></th>
+          <th class="px-4 py-2 text-left"><%= t ".disable" %></th>
         </tr>
       </thead>
       <tbody>
       <% @provider.capabilities.each do |cap| %>
-        <tr class="tw:border-b tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:even:tw:bg-secondary-50 tw:dark:tw:even:tw:bg-secondary-800/30">
-          <td class="tw:px-4 tw:py-2"><code class="tw:px-1.5 tw:py-0.5 tw:rounded tw:bg-secondary-100 tw:dark:tw:bg-secondary-700 tw:text-sm"><%= cap["id"] %></code></td>
-          <td class="tw:px-4 tw:py-2"><%= cap["version"] %></td>
-          <td class="tw:px-4 tw:py-2"><%= button_to t(".enable"), @provider, method: :patch, params: {provider: {enable_capability: {id: cap["id"], version: cap["version"]}}}, class: "tw:inline-flex tw:items-center tw:px-3 tw:py-1.5 tw:rounded-lg tw:bg-success tw:text-white hover:tw:opacity-90 tw:text-sm" %></td>
-          <td class="tw:px-4 tw:py-2"><%= button_to t(".disable"), @provider, method: :patch, params: {provider: {disable_capability: {id: cap["id"], version: cap["version"]}}}, class: "tw:inline-flex tw:items-center tw:px-3 tw:py-1.5 tw:rounded-lg tw:bg-danger tw:text-white hover:tw:opacity-90 tw:text-sm" %></td>
+        <tr class="border-b border-secondary-200 dark:border-secondary-600 even:bg-secondary-50 dark:even:bg-secondary-800/30">
+          <td class="px-4 py-2"><code class="px-1.5 py-0.5 rounded bg-secondary-100 dark:bg-secondary-700 text-sm"><%= cap["id"] %></code></td>
+          <td class="px-4 py-2"><%= cap["version"] %></td>
+          <td class="px-4 py-2"><%= button_to t(".enable"), @provider, method: :patch, params: {provider: {enable_capability: {id: cap["id"], version: cap["version"]}}}, class: "inline-flex items-center px-3 py-1.5 rounded-lg bg-success text-white hover:opacity-90 text-sm" %></td>
+          <td class="px-4 py-2"><%= button_to t(".disable"), @provider, method: :patch, params: {provider: {disable_capability: {id: cap["id"], version: cap["version"]}}}, class: "inline-flex items-center px-3 py-1.5 rounded-lg bg-danger text-white hover:opacity-90 text-sm" %></td>
         </tr>
       <% end %>
       </tbody>
@@ -74,42 +74,42 @@
 </div>
 
 <% if @provider.approved? %>
-<div class="tw:mt-6">
-  <h3><%= t ".data_sharing" %></h3>
-  <h4><%= t ".event_subscriptions" %></h4>
-  <table class="tw:w-full tw:border-collapse tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:mb-4">
+<div class="mt-6">
+  <h3 class="<%= heading_classes(:subsection) %> mb-2"><%= t ".data_sharing" %></h3>
+  <h4 class="<%= heading_classes(:subsection) %> mb-2"><%= t ".event_subscriptions" %></h4>
+  <table class="w-full border-collapse border border-secondary-200 dark:border-secondary-600 mb-4">
     <thead>
-      <tr class="tw:border-b tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:bg-secondary-50 tw:dark:tw:bg-secondary-800/50">
-        <th class="tw:px-4 tw:py-2 tw:text-left"><%= t ".created" %></th>
-        <th class="tw:px-4 tw:py-2 tw:text-left"><%= t ".category" %></th>
-        <th class="tw:px-4 tw:py-2 tw:text-left"><%= t ".subscription_type" %></th>
+      <tr class="border-b border-secondary-200 dark:border-secondary-600 bg-secondary-50 dark:bg-secondary-800/50">
+        <th class="px-4 py-2 text-left"><%= t ".created" %></th>
+        <th class="px-4 py-2 text-left"><%= t ".category" %></th>
+        <th class="px-4 py-2 text-left"><%= t ".subscription_type" %></th>
       </tr>
     </thead>
     <tbody>
     <% @provider.fasp_client_event_subscriptions.each do |sub| %>
-      <tr class="tw:border-b tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:even:tw:bg-secondary-50 tw:dark:tw:even:tw:bg-secondary-800/30">
-        <td class="tw:px-4 tw:py-2"><%= sub.created_at %></td>
-        <td class="tw:px-4 tw:py-2"><%= sub.category %></td>
-        <td class="tw:px-4 tw:py-2"><%= sub.subscription_type %></td>
+      <tr class="border-b border-secondary-200 dark:border-secondary-600 even:bg-secondary-50 dark:even:bg-secondary-800/30">
+        <td class="px-4 py-2"><%= sub.created_at %></td>
+        <td class="px-4 py-2"><%= sub.category %></td>
+        <td class="px-4 py-2"><%= sub.subscription_type %></td>
       </tr>
     <% end %>
     </tbody>
   </table>
-  <h4><%= t ".backfill_requests" %></h4>
-  <table class="tw:w-full tw:border-collapse tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600">
+  <h4 class="<%= heading_classes(:subsection) %> mb-2"><%= t ".backfill_requests" %></h4>
+  <table class="w-full border-collapse border border-secondary-200 dark:border-secondary-600">
     <thead>
-      <tr class="tw:border-b tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:bg-secondary-50 tw:dark:tw:bg-secondary-800/50">
-        <th class="tw:px-4 tw:py-2 tw:text-left"><%= t ".created" %></th>
-        <th class="tw:px-4 tw:py-2 tw:text-left"><%= t ".category" %></th>
-        <th class="tw:px-4 tw:py-2 tw:text-left"><%= t ".max_count" %></th>
+      <tr class="border-b border-secondary-200 dark:border-secondary-600 bg-secondary-50 dark:bg-secondary-800/50">
+        <th class="px-4 py-2 text-left"><%= t ".created" %></th>
+        <th class="px-4 py-2 text-left"><%= t ".category" %></th>
+        <th class="px-4 py-2 text-left"><%= t ".max_count" %></th>
       </tr>
     </thead>
     <tbody>
     <% @provider.fasp_client_backfill_requests.each do |req| %>
-      <tr class="tw:border-b tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:even:tw:bg-secondary-50 tw:dark:tw:even:tw:bg-secondary-800/30">
-        <td class="tw:px-4 tw:py-2"><%= req.created_at %></td>
-        <td class="tw:px-4 tw:py-2"><%= req.category %></td>
-        <td class="tw:px-4 tw:py-2"><%= req.max_count %></td>
+      <tr class="border-b border-secondary-200 dark:border-secondary-600 even:bg-secondary-50 dark:even:bg-secondary-800/30">
+        <td class="px-4 py-2"><%= req.created_at %></td>
+        <td class="px-4 py-2"><%= req.category %></td>
+        <td class="px-4 py-2"><%= req.max_count %></td>
       </tr>
     <% end %>
     </tbody>

@@ -2,11 +2,11 @@
 
 class Components::CheckBoxInputRow < Components::InputRow
   def view_template
-    div(class: "tw:flex tw:items-center tw:gap-2") do
+    div(class: "flex items-center gap-2") do
       input_element
-      @form.label(@attribute, @label, class: "tw:text-sm tw:text-secondary-700 tw:dark:text-secondary-300 tw:cursor-pointer")
+      @form.label(@attribute, @label, class: "text-sm text-secondary-700 dark:text-secondary-300 cursor-pointer")
     end
-    div(class: "tw:mt-1") do
+    div(class: "mt-1") do
       errors_for(@form.object, @attribute_without_id)
       help
     end
@@ -16,7 +16,7 @@ class Components::CheckBoxInputRow < Components::InputRow
     @form.check_box(
       @attribute,
       {
-        class: "tw:rounded tw:border-secondary-300 tw:text-primary-600 tw:focus:ring-primary-500 tw:h-4 tw:w-4"
+        class: "rounded border-secondary-300 text-primary-600 focus:ring-2 focus:ring-primary-500 h-4 w-4"
       }.merge(@options)
     )
   end

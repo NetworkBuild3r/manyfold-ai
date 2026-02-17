@@ -12,18 +12,18 @@
 
 <%= content_for :items do %>
   <%= turbo_stream_from @collection %>
-  <div class="tw:rounded-xl tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:bg-white tw:dark:tw:bg-secondary-800 tw:shadow-sm tw:overflow-hidden tw:mb-4 <%= "remote-actor" if @collection.remote? %>">
-    <div class="tw:flex tw:flex-wrap tw:items-start tw:gap-4 tw:p-4">
-      <div class="tw:shrink-0">
-        <%= content_tag(:div, class: "tw:text-center") do %>
-          <h2 class="tw:text-xl tw:font-semibold tw:mb-2">
+  <div class="rounded-xl border border-secondary-200 dark:border-secondary-600 bg-surface dark:bg-surface-dark shadow-sm hover:shadow-md transition-shadow overflow-hidden mb-4 <%= "remote-actor" if @collection.remote? %>">
+    <div class="flex flex-wrap items-start gap-4 p-4">
+      <div class="shrink-0">
+        <%= content_tag(:div, class: "text-center") do %>
+          <h2 class="text-xl font-semibold text-secondary-900 dark:text-secondary-100 mb-2">
             <%= @collection.name %>
           </h2>
-          <p class="tw:mb-2">
+          <p class="mb-2">
             <% if @collection.remote? %>
-              <small class="tw:text-secondary-600 tw:dark:tw:text-secondary-400"><%= link_to @collection.federails_actor.at_address, @collection.federails_actor.profile_url, target: "new", class: "tw:text-primary-600 tw:dark:tw:text-primary-400 hover:tw:underline" %></small>
+              <small class="text-secondary-600 dark:text-secondary-400"><%= link_to @collection.federails_actor.at_address, @collection.federails_actor.profile_url, target: "new", class: "text-primary-600 dark:text-primary-400 hover:underline" %></small>
             <% elsif SiteSettings.federation_enabled? %>
-              <small class="tw:text-secondary-600 tw:dark:tw:text-secondary-400">
+              <small class="text-secondary-600 dark:text-secondary-400">
                 <%= CopyableText(text: @collection.federails_actor.at_address, label: t("general.copy_fediverse_handle")) %>
               </small>
             <% end %>
@@ -31,15 +31,15 @@
           <%= FollowButton(follower: current_user, target: @collection) %>
         <% end %>
       </div>
-      <div class="tw:flex-1 tw:min-w-0">
-        <%= content_tag(:p, class: "tw:text-lg tw:text-secondary-600 tw:dark:tw:text-secondary-400 tw:mb-2") { @collection.caption } if @collection.caption %>
-        <%= content_tag(:p, class: "tw:prose tw:dark:tw:prose-invert tw:mb-2") { markdownify @collection.notes } if @collection.notes %>
+      <div class="flex-1 min-w-0">
+        <%= content_tag(:p, class: "text-lg text-secondary-600 dark:text-secondary-400 mb-2") { @collection.caption } if @collection.caption %>
+        <%= content_tag(:p, class: "prose dark:prose-invert mb-2") { markdownify @collection.notes } if @collection.notes %>
         <% model_count = policy_scope(Model).where(collection: @collection).count %>
-        <p class="tw:mb-1"><%= "#{model_count} #{Model.model_name.human count: model_count}" %></p>
-        <%= content_tag(:p, class: "tw:mb-1") { t("general.followers", count: @collection.followers.count) } if SiteSettings.social_enabled? %>
+        <p class="mb-1"><%= "#{model_count} #{Model.model_name.human count: model_count}" %></p>
+        <%= content_tag(:p, class: "mb-1") { t("general.followers", count: @collection.followers.count) } if SiteSettings.social_enabled? %>
         <p><%= AccessIndicator(object: @collection, text: true) %></p>
       </div>
-      <div class="tw:shrink-0">
+      <div class="shrink-0">
         <%= render "attribution", collection: @collection %>
         <%= LinkList links: @collection.links %>
       </div>
@@ -48,7 +48,7 @@
 <% end %>
 
 <% content_for :actions do %>
-  <%= link_to safe_join([Icon(icon: "pencil", label: t(".edit")), t(".edit")], " "), edit_collection_path(@collection), class: "tw:inline-flex tw:items-center tw:gap-2 tw:px-4 tw:py-2 tw:rounded-lg tw:bg-primary-600 tw:text-white hover:tw:bg-primary-700 focus-visible:tw:ring-2 focus-visible:tw:ring-primary-500 tw:no-underline" if policy(@collection).edit? %>
+  <%= link_to safe_join([Icon(icon: "pencil", label: t(".edit")), t(".edit")], " "), edit_collection_path(@collection), class: "inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 no-underline" if policy(@collection).edit? %>
   <%= ReportButton(object: @collection, path: new_collection_report_path(@collection)) %>
 <% end %>
 

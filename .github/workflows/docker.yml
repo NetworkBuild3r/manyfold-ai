@@ -83,15 +83,28 @@ jobs:
       - name: Smoke test
         run: curl http://localhost:3214/health --fail-with-body
     services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: manyfold
+          POSTGRES_PASSWORD: manyfold
+          POSTGRES_DB: manyfold
+        options: >-
+          --health-cmd "pg_isready -U manyfold -d manyfold"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
       manyfold:
         image: ghcr.io/${{ github.repository_owner }}/manyfold-solo:sha-${{ github.sha }}
         env:
           SECRET_KEY_BASE: abc123
+          DATABASE_HOST: postgres
+          DATABASE_PASSWORD: manyfold
         options: >-
-          --health-cmd "cat tmp/pids/server.pid"
-          --health-start-period	1m
-          --health-interval 30s
-          --health-timeout 10s
+          --health-cmd "wget -q -O - http://localhost:3214/health || exit 1"
+          --health-start-period 90s
+          --health-interval 10s
+          --health-timeout 5s
           --health-retries 6
         ports:
           - 3214:3214

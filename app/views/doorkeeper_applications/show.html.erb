@@ -4,67 +4,67 @@
 
 <p><%= t ".oauth_help" %></p>
 
-<table class="tw:w-full tw:border-collapse tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 [&>tr:nth-child(even)]:tw:bg-secondary-50 [&>tr:nth-child(even)]:dark:tw:bg-secondary-800/50">
+<table class="w-full border-collapse border border-secondary-200 dark:border-secondary-600 [&>tr:nth-child(even)]:bg-secondary-50 [&>tr:nth-child(even)]:dark:bg-secondary-800/50">
   <tr>
-    <td class="tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:px-4 tw:py-2"><%= Doorkeeper::Application.human_attribute_name :name %></td>
-    <td class="tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:px-4 tw:py-2"><%= @application.name %></td>
+    <td class="border border-secondary-200 dark:border-secondary-600 px-4 py-2"><%= Doorkeeper::Application.human_attribute_name :name %></td>
+    <td class="border border-secondary-200 dark:border-secondary-600 px-4 py-2"><%= @application.name %></td>
   </tr>
   <tr>
-    <td class="tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:px-4 tw:py-2"><%= Doorkeeper::Application.human_attribute_name :uid %></td>
-    <td class="tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:px-4 tw:py-2"><%= CopyableText text: @application.uid %></td>
+    <td class="border border-secondary-200 dark:border-secondary-600 px-4 py-2"><%= Doorkeeper::Application.human_attribute_name :uid %></td>
+    <td class="border border-secondary-200 dark:border-secondary-600 px-4 py-2"><%= CopyableText text: @application.uid %></td>
   </tr>
   <tr>
-    <td class="tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:px-4 tw:py-2"><%= Doorkeeper::Application.human_attribute_name :secret %></td>
-    <td class="tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:px-4 tw:py-2"><%= CopyableText text: @application.secret, obfuscated: true %></td>
+    <td class="border border-secondary-200 dark:border-secondary-600 px-4 py-2"><%= Doorkeeper::Application.human_attribute_name :secret %></td>
+    <td class="border border-secondary-200 dark:border-secondary-600 px-4 py-2"><%= CopyableText text: @application.secret, obfuscated: true %></td>
   </tr>
   <tr>
-    <td class="tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:px-4 tw:py-2"><%= Doorkeeper::Application.human_attribute_name :confidential %></td>
-    <td class="tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:px-4 tw:py-2"><%= @application.confidential %></td>
+    <td class="border border-secondary-200 dark:border-secondary-600 px-4 py-2"><%= Doorkeeper::Application.human_attribute_name :confidential %></td>
+    <td class="border border-secondary-200 dark:border-secondary-600 px-4 py-2"><%= @application.confidential %></td>
   </tr>
   <tr>
-    <td class="tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:px-4 tw:py-2"><%= Doorkeeper::Application.human_attribute_name :scopes %></td>
-    <td class="tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:px-4 tw:py-2"><%= safe_join(@application.scopes.to_a.map { |it| content_tag(:code) { it } }, ", ") %></td>
+    <td class="border border-secondary-200 dark:border-secondary-600 px-4 py-2"><%= Doorkeeper::Application.human_attribute_name :scopes %></td>
+    <td class="border border-secondary-200 dark:border-secondary-600 px-4 py-2"><%= safe_join(@application.scopes.to_a.map { |it| content_tag(:code) { it } }, ", ") %></td>
   </tr>
   <tr>
-    <td class="tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:px-4 tw:py-2"><%= Doorkeeper::Application.human_attribute_name :redirect_uri %></td>
-    <td class="tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:px-4 tw:py-2"><code><%= @application.redirect_uri %></code></td>
+    <td class="border border-secondary-200 dark:border-secondary-600 px-4 py-2"><%= Doorkeeper::Application.human_attribute_name :redirect_uri %></td>
+    <td class="border border-secondary-200 dark:border-secondary-600 px-4 py-2"><code><%= @application.redirect_uri %></code></td>
   </tr>
 </table>
 
-<%= link_to t(".edit"), edit_doorkeeper_application_path(@application), class: "tw:inline-flex tw:items-center tw:gap-1.5 tw:px-3 tw:py-1.5 tw:text-sm tw:font-medium tw:rounded-lg tw:bg-primary-600 tw:text-white hover:tw:bg-primary-700 focus-visible:tw:ring-2 focus-visible:tw:ring-primary-500" %>
-<%= link_to t(".destroy"), doorkeeper_application_path(@application), method: :delete, class: "tw:inline-flex tw:items-center tw:gap-1.5 tw:px-3 tw:py-1.5 tw:text-sm tw:font-medium tw:rounded-lg tw:border tw:border-danger tw:text-danger tw:bg-transparent hover:tw:bg-danger/10 focus-visible:tw:ring-2 focus-visible:tw:ring-primary-500" %>
+<%= link_to t(".edit"), edit_doorkeeper_application_path(@application), class: "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500" %>
+<%= link_to t(".destroy"), doorkeeper_application_path(@application), method: :delete, class: "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border border-danger text-danger bg-transparent hover:bg-danger/10 focus-visible:ring-2 focus-visible:ring-primary-500" %>
 
-<hr>
+<hr class="<%= divider_classes %>">
 
-<h3><%= t ".tokens" %></h3>
+<h3 class="<%= heading_classes(:subsection) %> mb-2"><%= t ".tokens" %></h3>
 
 <p><%= t ".token_help" %></p>
 
-<table class="tw:w-full tw:border-collapse tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:mb-4 [&>tbody>tr:nth-child(even)]:tw:bg-secondary-50 [&>tbody>tr:nth-child(even)]:dark:tw:bg-secondary-800/50">
+<table class="w-full border-collapse border border-secondary-200 dark:border-secondary-600 mb-4 [&>tbody>tr:nth-child(even)]:bg-secondary-50 [&>tbody>tr:nth-child(even)]:dark:bg-secondary-800/50">
   <tr>
-    <th class="tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:px-4 tw:py-2 tw:text-left"><%= Doorkeeper::AccessToken.human_attribute_name(:fingerprint) %></th>
-    <th class="tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:px-4 tw:py-2 tw:text-left"><%= Doorkeeper::AccessToken.human_attribute_name(:created_at) %></th>
-    <th class="tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:px-4 tw:py-2 tw:text-left"><%= Doorkeeper::AccessToken.human_attribute_name(:expires_in) %></th>
-    <th class="tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:px-4 tw:py-2 tw:text-left"><%= Doorkeeper::AccessToken.human_attribute_name(:scopes) %></th>
-    <th class="tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:px-4 tw:py-2 tw:text-left"><%= Doorkeeper::AccessToken.human_attribute_name(:active) %></th>
-    <th class="tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:px-4 tw:py-2"></th>
+    <th class="border border-secondary-200 dark:border-secondary-600 px-4 py-2 text-left"><%= Doorkeeper::AccessToken.human_attribute_name(:fingerprint) %></th>
+    <th class="border border-secondary-200 dark:border-secondary-600 px-4 py-2 text-left"><%= Doorkeeper::AccessToken.human_attribute_name(:created_at) %></th>
+    <th class="border border-secondary-200 dark:border-secondary-600 px-4 py-2 text-left"><%= Doorkeeper::AccessToken.human_attribute_name(:expires_in) %></th>
+    <th class="border border-secondary-200 dark:border-secondary-600 px-4 py-2 text-left"><%= Doorkeeper::AccessToken.human_attribute_name(:scopes) %></th>
+    <th class="border border-secondary-200 dark:border-secondary-600 px-4 py-2 text-left"><%= Doorkeeper::AccessToken.human_attribute_name(:active) %></th>
+    <th class="border border-secondary-200 dark:border-secondary-600 px-4 py-2"></th>
   </tr>
   <% @access_tokens.each do |token| %>
     <tr>
-      <td class="tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:px-4 tw:py-2"><%= token_fingerprint(token) %></td>
-      <td class="tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:px-4 tw:py-2">
+      <td class="border border-secondary-200 dark:border-secondary-600 px-4 py-2"><%= token_fingerprint(token) %></td>
+      <td class="border border-secondary-200 dark:border-secondary-600 px-4 py-2">
         <span title="<%= token.created_at %>">
           <%= token.created_at.to_fs(:long_ordinal) %>
         </span>
       </td>
-      <td class="tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:px-4 tw:py-2">
+      <td class="border border-secondary-200 dark:border-secondary-600 px-4 py-2">
         <span title="<%= token.created_at + token.expires_in if token.expires_in %>">
           <%= token_expiry_string(token) %>
         </span>
       </td>
-      <td class="tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:px-4 tw:py-2"><%= token.scopes %></td>
-      <td class="tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:px-4 tw:py-2"><%= checkmark(token.accessible?) %></td>
-      <td class="tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:px-4 tw:py-2">
+      <td class="border border-secondary-200 dark:border-secondary-600 px-4 py-2"><%= token.scopes %></td>
+      <td class="border border-secondary-200 dark:border-secondary-600 px-4 py-2"><%= checkmark(token.accessible?) %></td>
+      <td class="border border-secondary-200 dark:border-secondary-600 px-4 py-2">
         <%= DoButton(icon: "trash", label: t(".revoke.label"), href: doorkeeper_application_doorkeeper_access_token_path(@application, token), method: :delete, variant: "outline-danger", confirm: translate(".revoke.confirm")) if token.accessible? %>
       </td>
     </tr>

@@ -311,6 +311,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_09_093000) do
     t.bigint "source_library_id", null: false
     t.string "source_path", null: false
     t.string "source_name", null: false
+    t.string "path_prefix"
     t.json "source_metadata", default: {}, null: false
     t.json "moved_files", default: [], null: false
     t.datetime "undone_at"

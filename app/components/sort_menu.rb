@@ -8,16 +8,16 @@ class Components::SortMenu < Components::Base
   end
 
   def view_template
-    div(class: "tw:relative", data: {controller: "dropdown"}) do
+    div(class: "relative", data: {controller: "dropdown"}) do
       button type: "button",
         data: {action: "click->dropdown#toggle"},
         aria: {expanded: "false", haspopup: "menu"},
-        class: "tw:inline-flex tw:items-center tw:gap-1.5 tw:px-3 tw:py-1.5 tw:text-sm tw:font-medium tw:rounded-lg tw:transition-colors tw:focus-visible:ring-2 tw:focus-visible:ring-primary-500 tw:focus-visible:ring-offset-2 tw:bg-white tw:border tw:border-secondary-300 tw:hover:bg-secondary-50 tw:dark:bg-secondary-800 tw:dark:border-secondary-600 tw:dark:hover:bg-secondary-700" do
+        class: "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 bg-white text-secondary-900 border border-secondary-300 hover:bg-secondary-50 dark:bg-secondary-700 dark:text-secondary-100 dark:border-secondary-500 dark:hover:bg-secondary-600" do
         Icon(icon: "sort-down")
         whitespace
         span { t "components.sort_menu.sort-by" }
       end
-      ul class: "tw:absolute tw:left-0 tw:mt-1 tw:min-w-[10rem] tw:py-1 tw:bg-white tw:dark:bg-secondary-800 tw:rounded-lg tw:shadow-lg tw:border tw:border-secondary-200 tw:dark:border-secondary-600 tw:z-50",
+      ul class: Components::DropdownMenu.panel_class(align: :left, direction: :down),
         data: {dropdown_target: "menu"},
         role: "menu" do
         item "sort-alpha-down", "name", "asc" # i18n-tasks-use t('components.sort_menu.name')

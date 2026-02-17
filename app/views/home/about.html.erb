@@ -1,12 +1,12 @@
-<div class="container">
+<div class="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
   <%= PageTitle title: site_name %>
 
-  <article>
+  <article class="prose prose-secondary dark:prose-invert max-w-none">
     <%= markdownify SiteSettings.about if SiteSettings.about.present? %>
 
     <% if SiteSettings.rules.present? %>
-      <h2><%= t("settings.appearance.rules.label") %></h2>
-      <div class="alert alert-warning">
+      <h2 class="<%= heading_classes(:section) %> mb-4"><%= t("settings.appearance.rules.label") %></h2>
+      <div class="px-4 py-3 rounded-lg bg-warning/10 text-warning dark:bg-warning/20 mb-4 prose prose-secondary dark:prose-invert max-w-none">
         <%= markdownify(SiteSettings.rules) %>
       </div>
     <% end %>

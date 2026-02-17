@@ -313,6 +313,7 @@ en:
       open_source_html: <a href="https://github.com/manyfold3d/manyfold" target="_blank" rel="noreferrer">Open Source</a> under the <a href="https://github.com/manyfold3d/manyfold/blob/main/LICENSE.md" target="_blank" rel="noreferrer" rel="license">MIT license</a>.
       powered_by_html: Powered by <a href="https://manyfold.app">%{name}</a>
       sponsor: Sponsor development
+      take_the_tour: Take the tour
       support: Support this instance
       version: Version
     link_fields:
@@ -763,6 +764,7 @@ en:
       title: The Fediverse
       users_v_creators: Unlike many Fediverse platforms, you don't just have one handle on Manyfold. Every model, creator and collection has its own handle for people to follow, as does the account you sign in with. This means you can manage more than one creator profile!
     index:
+      browse_models: Browse all models
       no_activities: There are no activities to display for now.
       open_search_help: Search syntax
       recent_activity: Recent Activity

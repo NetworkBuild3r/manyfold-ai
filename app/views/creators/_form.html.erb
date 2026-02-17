@@ -1,7 +1,7 @@
 <%- @creator.links.build if @creator.links.empty? # populate empty link %>
 <%- @creator.caber_relations.build if @creator.caber_relations.empty? %>
 
-<%= form_with model: @creator, class: "tw:max-w-2xl tw:mx-auto tabular-form" do |form| %>
+<%= form_with model: @creator, class: "max-w-2xl mx-auto tabular-form" do |form| %>
   <%= text_input_row form, :name %>
   <%= text_input_row form, :slug, help: t(".slug.help"), value: @attemped_slug || @creator.slug if @creator.slug.presence || !@creator.errors[:slug].empty? %>
   <%= render "links_form", form: form %>
@@ -12,10 +12,10 @@
   <%= file_input_row form, :avatar, help: "#{t(".avatar.help")} #{@creator.avatar ? t(".avatar.current", filename: @creator.avatar.metadata["filename"]) : t(".avatar.none")}", remove: @creator.avatar.present?, remove_label: t(".avatar.remove") %>
   <%= file_input_row form, :banner, help: "#{t(".banner.help")} #{@creator.banner ? t(".banner.current", filename: @creator.banner.metadata["filename"]) : t(".banner.none")}", remove: @creator.banner.present?, remove_label: t(".banner.remove") %>
   <%= render "caber_relations_form", form: form %>
-  <div class="tw:flex tw:flex-wrap tw:items-center tw:gap-2">
-    <%= form.submit translate("general.save"), class: "tw:inline-flex tw:items-center tw:px-4 tw:py-2 tw:rounded-lg tw:bg-primary-600 tw:text-white hover:tw:bg-primary-700 focus-visible:tw:ring-2 focus-visible:tw:ring-primary-500" %>
+  <div class="flex flex-wrap items-center gap-2">
+    <%= form.submit translate("general.save"), class: "inline-flex items-center px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500" %>
     <% if @creator.persisted? %>
-      <span class="tw:ml-auto">
+      <span class="ml-auto">
         <%= DoButton(icon: "trash", label: t("general.delete"), href: creator_path(@creator), method: :delete, variant: "outline-danger", confirm: translate("creators.destroy.confirm")) if policy(@creator).destroy? %>
       </span>
     <% end %>

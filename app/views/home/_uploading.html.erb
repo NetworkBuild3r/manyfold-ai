@@ -1,12 +1,12 @@
 <%- if current_user.has_quota? %>
-  <div class="tw:rounded-xl tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:bg-white tw:dark:tw:bg-secondary-800 tw:shadow-sm tw:overflow-hidden">
-    <h2 class="tw:px-4 tw:py-3 tw:bg-secondary-600 tw:text-white tw:m-0 tw:font-medium tw:flex tw:items-center tw:gap-2">
+  <div class="rounded-xl border border-secondary-200 dark:border-secondary-600 bg-white dark:bg-secondary-800 shadow-sm overflow-hidden">
+    <h2 class="px-4 py-3 bg-secondary-600 text-white m-0 font-medium flex items-center gap-2">
       <%= Icon icon: "upload" %>
       <%= t ".title" %>
     </h2>
 
-    <div class="tw:p-4">
-      <p class="tw:mb-0">
+    <div class="p-4">
+      <p class="mb-0">
         <%= t ".quota", quota: number_to_human_size(current_user.quota) %>
       </p>
     </div>

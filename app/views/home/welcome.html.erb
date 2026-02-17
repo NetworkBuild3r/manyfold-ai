@@ -1,16 +1,16 @@
-<div class="container">
+<div class="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
   <%= PageTitle title: t(".title", site_name: site_name) %>
 
-  <p class="tw:text-lg tw:text-secondary-600 tw:dark:text-secondary-400">
+  <p class="text-lg text-secondary-600 dark:text-secondary-400">
     <%= t ".lead" %>
   </p>
 
-  <div class="tw:grid tw:grid-cols-1 tw:md:grid-cols-2 tw:gap-4" data-masonry='{"percentPosition": true }'>
-    <%= content_tag(:article, class: "tw:mb-4") { render "browsing" } %>
-    <%= content_tag(:article, class: "tw:mb-4") { render "uploading" } if current_user&.is_contributor? %>
-    <%= content_tag(:article, class: "tw:mb-4") { render "publishing" } if current_user&.is_contributor? %>
-    <%= content_tag(:article, class: "tw:mb-4") { render "federation" } if SiteSettings.federation_enabled? %>
-    <%= content_tag(:article, class: "tw:mb-4") { render "support" } %>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4" data-masonry='{"percentPosition": true }'>
+    <%= content_tag(:article, class: "mb-4") { render "browsing" } %>
+    <%= content_tag(:article, class: "mb-4") { render "uploading" } if current_user&.is_contributor? %>
+    <%= content_tag(:article, class: "mb-4") { render "publishing" } if current_user&.is_contributor? %>
+    <%= content_tag(:article, class: "mb-4") { render "federation" } if SiteSettings.federation_enabled? %>
+    <%= content_tag(:article, class: "mb-4") { render "support" } %>
   </div>
 
 </div>

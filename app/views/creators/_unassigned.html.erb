@@ -1,11 +1,11 @@
-<div class="tw:mb-4">
-  <div class="tw:rounded-xl tw:border tw:border-warning-400 tw:dark:tw:border-warning-500 tw:bg-white tw:dark:tw:bg-secondary-800 tw:overflow-hidden tw:shadow-sm">
-    <div class="tw:p-4">
-      <div class="tw:font-medium tw:text-secondary-900 tw:dark:tw:text-secondary-100"><%= t(".name") %></div>
-      <span class="tw:block tw:mt-1 tw:text-sm tw:text-secondary-600 tw:dark:tw:text-secondary-400"><%= t(".caption") %></span>
+<div class="mb-4">
+  <div class="rounded-xl border border-warning-400 dark:border-warning-500 bg-surface dark:bg-surface-dark overflow-hidden shadow-sm">
+    <div class="p-4">
+      <div class="font-medium text-secondary-900 dark:text-secondary-100"><%= t(".name") %></div>
+      <span class="block mt-2 text-sm text-secondary-600 dark:text-secondary-400"><%= t(".caption") %></span>
     </div>
-    <div class="tw:px-4 tw:py-3 tw:border-t tw:border-secondary-200 tw:dark:tw:border-secondary-600">
-      <%= link_to "#{@unassigned_count} #{Model.model_name.human count: @unassigned_count}", models_path(creator: ""), class: "tw:inline-flex tw:items-center tw:px-4 tw:py-2 tw:rounded-lg tw:bg-primary-600 tw:text-white hover:tw:bg-primary-700 focus:tw:ring-2 focus:tw:ring-primary-500" %>
+    <div class="px-4 py-3 border-t border-secondary-200 dark:border-secondary-600">
+      <%= link_to "#{@unassigned_count} #{Model.model_name.human count: @unassigned_count}", models_path(creator: ""), class: "inline-flex items-center px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500" %>
     </div>
   </div>
 </div>

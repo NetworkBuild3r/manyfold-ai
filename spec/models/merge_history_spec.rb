@@ -32,4 +32,36 @@ RSpec.describe MergeHistory do
       expect(history.source_preview_filename).to be_nil
     end
   end
+
+  describe "#path_prefix" do
+    it "stores and returns path_prefix used during merge" do
+      target = create(:model, public_id: SecureRandom.hex(8))
+      history = described_class.create!(
+        target_model: target,
+        source_library_id: target.library_id,
+        source_path: "parent/child",
+        source_name: "Child",
+        path_prefix: "child",
+        source_metadata: {},
+        moved_files: []
+      )
+
+      expect(history.path_prefix).to eq("child")
+    end
+
+    it "allows nil path_prefix for backward compatibility" do
+      target = create(:model, public_id: SecureRandom.hex(8))
+      history = described_class.create!(
+        target_model: target,
+        source_library_id: target.library_id,
+        source_path: "parent/child",
+        source_name: "Child",
+        path_prefix: nil,
+        source_metadata: {},
+        moved_files: []
+      )
+
+      expect(history.path_prefix).to be_nil
+    end
+  end
 end

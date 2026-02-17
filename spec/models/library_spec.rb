@@ -18,8 +18,14 @@ RSpec.describe Library do
     end
 
     it "removes whitespace from paths" do
-      library = create(:library, path: " storage ")
-      expect(library.path).to eq Rails.root.join("storage").to_s
+      Dir.mktmpdir do |tmpdir|
+        storage_path = File.join(tmpdir, "storage")
+        FileUtils.mkdir_p(storage_path)
+        Dir.chdir(tmpdir) do
+          library = create(:library, path: " storage ")
+          expect(library.path).to eq File.realpath(storage_path)
+        end
+      end
     end
 
     it "is invalid if a bad path is specified" do # rubocop:todo RSpec/MultipleExpectations

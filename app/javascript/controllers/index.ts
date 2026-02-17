@@ -13,8 +13,10 @@ import CocoonedController from './cocooned_controller'
 import CopyTextController from './copy_text_controller'
 import DialogController from './dialog_controller'
 import DropdownController from './dropdown_controller'
+import FileListSelectionController from './file_list_selection_controller'
 import EditableController from './editable_controller'
 import I18nController from './i18n_controller'
+import InfiniteScrollRestoreController from './infinite_scroll_restore_controller'
 import ObfuscatedTextController from './obfuscated_text_controller'
 import RendererController from './renderer_controller'
 import SearchableSelectController from './searchable_select_controller'
@@ -33,8 +35,10 @@ application.register('cocooned', CocoonedController)
 application.register('copy-text', CopyTextController)
 application.register('dialog', DialogController)
 application.register('dropdown', DropdownController)
+application.register('file-list-selection', FileListSelectionController)
 application.register('editable', EditableController)
 application.register('i18n', I18nController)
+application.register('infinite-scroll-restore', InfiniteScrollRestoreController)
 application.register('obfuscated-text', ObfuscatedTextController)
 application.register('renderer', RendererController)
 application.register('searchable-select', SearchableSelectController)

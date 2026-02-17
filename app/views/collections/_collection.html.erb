@@ -1,32 +1,32 @@
-<div class="tw:mb-4">
-  <div class="tw:rounded-xl tw:border tw:bg-white tw:dark:tw:bg-secondary-800 tw:overflow-hidden tw:shadow-sm tw:relative">
+<div class="mb-4">
+  <div class="rounded-xl border border-secondary-200 dark:border-secondary-600 bg-surface dark:bg-surface-dark overflow-hidden shadow-sm relative">
     <% if collection.remote? %>
-      <div class="tw:absolute tw:inset-x-0 tw:top-0 tw:z-10 tw:px-3 tw:py-2 tw:bg-secondary-200/90 tw:dark:tw:bg-secondary-700/90 tw:text-secondary-800 tw:dark:tw:text-secondary-200">
+      <div class="absolute inset-x-0 top-0 z-10 px-3 py-2 bg-secondary-200/90 dark:bg-secondary-700/90 text-secondary-800 dark:text-secondary-200">
         <%= server_indicator collection %>
       </div>
     <% end %>
     <%= PreviewFrame(object: collection) %>
-    <div class="tw:p-4">
-      <div class="tw:flex tw:flex-wrap tw:items-start tw:gap-2">
-        <div class="tw:min-w-0 tw:flex-1">
-          <div class="tw:font-medium tw:text-secondary-900 tw:dark:tw:text-secondary-100">
+    <div class="p-4">
+      <div class="flex flex-wrap items-start gap-2">
+        <div class="min-w-0 flex-1">
+          <div class="font-medium text-secondary-900 dark:text-secondary-100">
             <%= collection.name.careful_titleize %>
             <%= AccessIndicator object: collection %>
           </div>
           <% if collection.caption %>
-            <span class="tw:block tw:mt-1 tw:text-sm tw:text-secondary-600 tw:dark:tw:text-secondary-400"><%= sanitize collection.caption %></span>
+            <span class="block mt-2 text-sm text-secondary-600 dark:text-secondary-400"><%= sanitize collection.caption %></span>
           <% end %>
           <%= LinkList links: collection.links %>
         </div>
-        <div class="tw:flex-shrink-0">
-          <small class="tw:text-secondary-600 tw:dark:tw:text-secondary-400">
+        <div class="flex-shrink-0">
+          <small class="text-secondary-600 dark:text-secondary-400">
             <%= render "attribution", collection: collection %>
           </small>
         </div>
       </div>
     </div>
-    <div class="tw:flex tw:flex-wrap tw:items-center tw:gap-2 tw:px-4 tw:py-3 tw:border-t tw:border-secondary-200 tw:dark:tw:border-secondary-600">
-      <div class="tw:flex tw:flex-wrap tw:items-center tw:gap-2 tw:min-w-0">
+    <div class="flex flex-wrap items-center gap-2 px-4 py-3 border-t border-secondary-200 dark:border-secondary-600">
+      <div class="flex flex-wrap items-center gap-2 min-w-0">
         <% model_count = policy_scope(collection.models).count %>
         <% collection_count = policy_scope(collection.collections).count %>
         <%= if policy(collection).show?
@@ -50,7 +50,7 @@
               )
             end %>
       </div>
-      <div class="tw:ml-auto">
+      <div class="ml-auto">
         <%= BurgerMenu do %>
           <%= DropdownItem(icon: "pencil", label: translate("general.edit"), path: edit_collection_path(collection), aria_label: translate(".edit_button.label", name: collection.name)) if policy(collection).edit? %>
           <%= DropdownItem(icon: "trash", label: translate("general.delete"), path: collection_path(collection), method: :delete, aria_label: translate(".delete_button.label", name: collection.name), confirm: t("collections.destroy.confirm")) if policy(collection).destroy? %>

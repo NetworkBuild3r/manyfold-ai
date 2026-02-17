@@ -11,9 +11,14 @@ RUN apk add --no-cache \
   imagemagick-webp \
   imagemagick-heic \
   assimp-dev \
+  su-exec \
   wget
 
+# Default non-root user for running the app (UID/GID 1000)
+RUN addgroup -g 1000 -S manyfold && adduser -u 1000 -S -G manyfold manyfold
+
 COPY . .
+RUN chmod +x bin/docker-entrypoint.sh
 COPY --from=build /usr/src/app/vendor/bundle vendor/bundle
 COPY --from=build /usr/src/app/public/assets public/assets
 
@@ -51,8 +56,8 @@ ENV NODE_ENV=production
 ENV RAILS_SERVE_STATIC_FILES=true
 ENV AWS_RESPONSE_CHECKSUM_VALIDATION=when_required
 ENV AWS_REQUEST_CHECKSUM_CALCULATION=when_required
-ENV PUID=0
-ENV PGID=0
+ENV PUID=1000
+ENV PGID=1000
 
 EXPOSE 3214
 ENTRYPOINT ["bin/docker-entrypoint.sh"]

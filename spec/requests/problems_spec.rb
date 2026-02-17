@@ -111,7 +111,7 @@ RSpec.describe "Problems" do
         allow_any_instance_of(Model).to receive(:delete_from_disk_and_destroy) do
           expect(Problem.exists?(problem_id)).to be false
         end
-        post problem_resolve_path(problem), params: {resolve: "1"}
+        post resolve_problem_path(problem), params: {resolve: "1"}
         expect(response).to have_http_status(:redirect)
       end
     end

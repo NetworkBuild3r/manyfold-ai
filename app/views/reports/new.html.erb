@@ -1,13 +1,13 @@
-<h3><%= t(".title", type: @reportable.model_name.human, name: @reportable.name) %></h3>
+<h3 class="<%= heading_classes(:section) %> mb-2"><%= t(".title", type: @reportable.model_name.human, name: @reportable.name) %></h3>
 
-<p class="tw:text-lg tw:text-secondary-600 tw:dark:text-secondary-400"><%= t ".description" %></p>
+<p class="text-lg text-secondary-600 dark:text-secondary-400"><%= t ".description" %></p>
 
 <%= form_with model: [@reportable, @report], class: "tabular-form" do |form| %>
 
   <%= text_input_row form, :content %>
 
   <div>
-    <%= form.submit translate(".submit"), class: "tw:inline-flex tw:items-center tw:px-4 tw:py-2 tw:rounded-lg tw:bg-primary-600 tw:text-white hover:tw:bg-primary-700 focus-visible:tw:ring-2 focus-visible:tw:ring-primary-500" %>
+    <%= form.submit translate(".submit"), class: "inline-flex items-center px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500" %>
   </div>
 
 <% end %>

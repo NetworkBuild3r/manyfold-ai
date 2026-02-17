@@ -1,11 +1,11 @@
-<h3><%= t(".title") %></h3>
+<h3 class="text-xl font-semibold text-secondary-900 dark:text-secondary-100 mb-2"><%= t(".title") %></h3>
 
 <%= form_with model: [:settings, @domain_block], class: "tabular-form" do |form| %>
 
   <%= text_input_row form, :domain %>
 
   <div>
-    <%= form.submit translate(".submit"), class: "tw:inline-flex tw:items-center tw:px-4 tw:py-2 tw:rounded-lg tw:bg-primary-600 tw:text-white hover:tw:bg-primary-700 focus-visible:tw:ring-2 focus-visible:tw:ring-primary-500" %>
+    <%= form.submit translate(".submit"), class: "inline-flex items-center px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500" %>
   </div>
 
 <% end %>

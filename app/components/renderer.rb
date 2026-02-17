@@ -17,9 +17,9 @@ class Components::Renderer < Components::Base
   end
 
   def view_template
-    div class: "tw:relative", data: {turbo_permanent: true} do
+    div class: "relative", data: {turbo_permanent: true} do
       canvas id: "preview-file-#{@file.to_param}",
-        class: "object-preview tw:relative tw:w-full tw:block",
+        class: "object-preview relative w-full block",
         tabindex: "0",
         data: {
           controller: "renderer",
@@ -36,13 +36,13 @@ class Components::Renderer < Components::Base
           render_style: @settings["render_style"],
           auto_load: ((@file.size || 9_999_999.megabytes) < (@settings["auto_load_max_size"] || 9_999_999).megabytes) ? "true" : "false"
         }
-      div class: "object-preview-progress tw:absolute tw:top-1/2 tw:left-1/2 tw:-translate-x-1/2 tw:-translate-y-1/2 tw:px-4 tw:py-2 tw:rounded-lg tw:bg-secondary-200 tw:dark:bg-secondary-700 tw:border tw:border-secondary-300 tw:dark:border-secondary-600",
+      div class: "object-preview-progress absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 px-4 py-2 rounded-lg bg-secondary-200 dark:bg-secondary-700 border border-secondary-300 dark:border-secondary-600",
         role: "presentation" do
-        div class: "progress-bar tw:h-2 tw:bg-primary-500 tw:rounded tw:overflow-hidden tw:mb-2",
+        div class: "progress-bar h-2 bg-primary-500 rounded overflow-hidden mb-2",
           role: "progressbar",
           style: "width: 0%",
           aria: {label: "Loading progress", valuenow: "0", valuemin: "0", valuemax: "100"}
-        span class: "progress-label tw:text-sm tw:font-medium tw:block", role: "button" do
+        span class: "progress-label text-sm font-medium block", role: "button" do
           span { t("renderer.load") }
           whitespace
           span { "(#{number_to_human_size @file.size, precision: 2})" }

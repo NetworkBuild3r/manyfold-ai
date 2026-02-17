@@ -2,75 +2,100 @@ import * as Comlink from 'comlink'
 import './comlink_event_handler'
 import type { OffscreenRenderer } from '../offscreen_renderer'
 
+export interface OffscreenRendererProxy {
+  handleEvent: (event: Event) => void
+  onResize: (width: number, height: number, pixelRatio: number) => void
+  load: (
+    cbComplete: () => void,
+    cbProgress: (percentage: number) => void,
+    cbError: () => void
+  ) => Promise<void>
+}
+
 export class ObjectPreview {
   progressBar: HTMLDivElement | null
   progressLabel: HTMLSpanElement | null
   canvas: HTMLCanvasElement
-  renderer: any
-  observer: IntersectionObserver | null
+  renderer: OffscreenRendererProxy | null = null
+  observer: IntersectionObserver | null = null
   loading: boolean = false
-  worker: Worker
+  worker: Worker | null = null
 
-  constructor (canvas) {
+  private readonly boundResize: () => void
+  private readonly boundPointer: (e: PointerEvent) => void
+  private readonly boundKey: (e: KeyboardEvent) => void
+  private readonly boundEvent: (e: Event) => void
+  private readonly boundIntersection: (entries: IntersectionObserverEntry[]) => void
+  private readonly boundLoad: () => void
+
+  constructor (canvas: HTMLCanvasElement) {
     this.canvas = canvas
-    this.progressBar = this.canvas.parentElement?.getElementsByClassName('progress-bar')[0] as HTMLDivElement
-    this.progressLabel = this.canvas.parentElement?.getElementsByClassName('progress-label')[0] as HTMLSpanElement
+    this.progressBar = this.canvas.parentElement?.getElementsByClassName('progress-bar')[0] as HTMLDivElement ?? null
+    this.progressLabel = this.canvas.parentElement?.getElementsByClassName('progress-label')[0] as HTMLSpanElement ?? null
+    this.boundResize = this.onResize.bind(this)
+    this.boundPointer = this.onPointerEvent.bind(this)
+    this.boundKey = this.onKeyEvent.bind(this)
+    this.boundEvent = this.onEvent.bind(this)
+    this.boundIntersection = this.onIntersectionChanged.bind(this)
+    this.boundLoad = this.load.bind(this)
   }
 
   async initializeOffscreenRenderer (): Promise<void> {
     if (this.canvas.dataset.workerUrl === undefined || this.canvas.dataset.workerUrl === null) {
-      console.log('ERROR: Could not load worker!')
+      console.error('[ObjectPreview] Could not load worker: workerUrl missing')
       return
     }
-    // Create offscreen renderer worker
-    const offscreenCanvas = this.canvas.transferControlToOffscreen()
-    this.worker = new Worker(this.canvas.dataset.workerUrl, { type: 'module' })
-    const RemoteOffscreenRenderer = await Comlink.wrap<typeof OffscreenRenderer>(this.worker)
-    this.renderer = await new RemoteOffscreenRenderer(
-      Comlink.transfer(offscreenCanvas as unknown as HTMLCanvasElement, [offscreenCanvas]), { ...this.canvas.dataset }
-    )
-    // Trigger resizing
-    this.onResize()
+    try {
+      const offscreenCanvas = this.canvas.transferControlToOffscreen()
+      this.worker = new Worker(this.canvas.dataset.workerUrl, { type: 'module' })
+      const RemoteOffscreenRenderer = await Comlink.wrap<typeof OffscreenRenderer>(this.worker)
+      this.renderer = await new RemoteOffscreenRenderer(
+        Comlink.transfer(offscreenCanvas as unknown as HTMLCanvasElement, [offscreenCanvas]), { ...this.canvas.dataset }
+      ) as unknown as OffscreenRendererProxy
+      this.onResize()
+    } catch (error) {
+      console.error('[ObjectPreview] Failed to initialize offscreen renderer:', error)
+    }
   }
 
   connect (): void {
-    // Handle resize events
-    window.addEventListener('resize', this.onResize.bind(this))
+    window.addEventListener('resize', this.boundResize)
     this.onResize()
-    // Handle interaction events
-    const pointerEvents = ['pointerdown', 'pointermove', 'pointerup']
-    pointerEvents.forEach((eventName) => {
-      this.canvas.addEventListener(eventName, this.onPointerEvent.bind(this))
-    })
-    const keyEvents = ['keydown', 'keyup']
-    keyEvents.forEach((eventName) => {
-      this.canvas.addEventListener(eventName, this.onKeyEvent.bind(this))
-    })
-    const otherEvents = ['wheel', 'contextmenu']
-    otherEvents.forEach((eventName) => {
-      this.canvas.addEventListener(eventName, this.onEvent.bind(this))
-    })
-    // Monitor visibility
-    this.observer = new window.IntersectionObserver(
-      this.onIntersectionChanged.bind(this), {}
-    )
+    const pointerEvents: Array<keyof HTMLElementEventMap> = ['pointerdown', 'pointermove', 'pointerup']
+    pointerEvents.forEach((name) => this.canvas.addEventListener(name, this.boundPointer as EventListener))
+    const keyEvents: Array<keyof HTMLElementEventMap> = ['keydown', 'keyup']
+    keyEvents.forEach((name) => this.canvas.addEventListener(name, this.boundKey as EventListener))
+    const otherEvents: Array<keyof HTMLElementEventMap> = ['wheel', 'contextmenu']
+    otherEvents.forEach((name) => this.canvas.addEventListener(name, this.boundEvent))
+    this.observer = new window.IntersectionObserver(this.boundIntersection, {})
     this.observer.observe(this.canvas)
-    // Monitor load button click
-    const loadButton = this.canvas.parentElement?.getElementsByClassName('object-preview-progress')[0] as HTMLDivElement
-    loadButton.addEventListener('click', this.load.bind(this))
+    const loadButton = this.canvas.parentElement?.getElementsByClassName('object-preview-progress')[0] as HTMLDivElement | undefined
+    if (loadButton != null) loadButton.addEventListener('click', this.boundLoad)
   }
 
   disconnect (): void {
-    this.worker.terminate()
+    window.removeEventListener('resize', this.boundResize)
+    const pointerEvents: Array<keyof HTMLElementEventMap> = ['pointerdown', 'pointermove', 'pointerup']
+    pointerEvents.forEach((name) => this.canvas.removeEventListener(name, this.boundPointer as EventListener))
+    const keyEvents: Array<keyof HTMLElementEventMap> = ['keydown', 'keyup']
+    keyEvents.forEach((name) => this.canvas.removeEventListener(name, this.boundKey as EventListener))
+    const otherEvents: Array<keyof HTMLElementEventMap> = ['wheel', 'contextmenu']
+    otherEvents.forEach((name) => this.canvas.removeEventListener(name, this.boundEvent))
+    this.observer?.disconnect()
+    this.observer = null
+    const loadButton = this.canvas.parentElement?.getElementsByClassName('object-preview-progress')[0] as HTMLDivElement | undefined
+    if (loadButton != null) loadButton.removeEventListener('click', this.boundLoad)
+    this.worker?.terminate()
+    this.worker = null
   }
 
-  onIntersectionChanged (entries, observer): void {
-    if ((this.canvas.dataset.autoLoad === 'true') && (entries[0].isIntersecting === true)) {
+  onIntersectionChanged (entries: IntersectionObserverEntry[]): void {
+    if ((this.canvas.dataset.autoLoad === 'true') && (entries[0]?.isIntersecting)) {
       void this.load()
     }
   }
 
-  onPointerEvent (event): void {
+  onPointerEvent (event: PointerEvent): void {
     if (event.type === 'pointerdown') {
       this.canvas.focus()
       this.canvas.setPointerCapture(event.pointerId)
@@ -78,7 +103,7 @@ export class ObjectPreview {
     this.onEvent(event)
   }
 
-  onKeyEvent (event): void {
+  onKeyEvent (event: KeyboardEvent): void {
     if ([
       'ArrowUp',
       'ArrowDown',
@@ -91,7 +116,7 @@ export class ObjectPreview {
     }
   }
 
-  onEvent (event): void {
+  onEvent (event: Event): void {
     event.preventDefault()
     this.renderer?.handleEvent(event)
   }
@@ -132,7 +157,7 @@ export class ObjectPreview {
     if (this.loading) { return }
     this.loading = true
     await this.initializeOffscreenRenderer()
-    this.renderer.load(
+    await this.renderer?.load(
       Comlink.proxy(this.onLoad.bind(this)),
       Comlink.proxy(this.onLoadProgress.bind(this)),
       Comlink.proxy(this.onLoadError.bind(this))

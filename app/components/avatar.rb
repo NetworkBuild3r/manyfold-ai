@@ -8,10 +8,10 @@ class Components::Avatar < Components::Base
 
   def view_template
     size_class = case @size
-    when :large then "tw:w-16 tw:h-16"
-    when :small then "tw:w-8 tw:h-8"
-    else "tw:w-10 tw:h-10"
+    when :large then "w-16 h-16"
+    when :small then "w-8 h-8"
+    else "w-10 h-10"
     end
-    img src: @url, class: "tw:rounded-full tw:object-cover #{size_class}"
+    img src: @url, class: "rounded-full object-cover #{size_class}"
   end
 end

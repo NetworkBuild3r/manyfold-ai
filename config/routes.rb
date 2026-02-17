@@ -5,7 +5,7 @@ require "federails"
 Rails.application.routes.draw do
   get "/altcha", to: "altcha#new"
   get ".well-known/change-password", to: redirect("/users/edit")
-  get "health" => "rails/health#show", :as => :rails_health_check
+  get "health" => "health#show", :as => :rails_health_check
   get "problems/index"
 
   devise_controllers = {
@@ -132,6 +132,8 @@ Rails.application.routes.draw do
       collection do
         get "bulk_edit"
         patch "bulk_update"
+        post "split"
+        post "bulk_edit_selected"
       end
     end
   end

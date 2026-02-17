@@ -1,33 +1,33 @@
-<div class="tw:mb-4">
-  <div class="tw:rounded-xl tw:border tw:bg-white tw:dark:tw:bg-secondary-800 tw:overflow-hidden tw:shadow-sm">
+<div class="mb-4">
+  <div class="rounded-xl border border-secondary-200 dark:border-secondary-600 bg-surface dark:bg-surface-dark overflow-hidden shadow-sm">
     <% if creator.remote? %>
-      <div class="tw:px-3 tw:py-2 tw:bg-secondary-200 tw:dark:tw:bg-secondary-700 tw:border-b tw:border-secondary-200 tw:dark:tw:border-secondary-600">
+      <div class="px-3 py-2 bg-secondary-200 dark:bg-secondary-700 border-b border-secondary-200 dark:border-secondary-600">
         <%= server_indicator creator %>
       </div>
     <% end %>
-    <div class="tw:p-4 <%= "tw:opacity-90" if creator.remote? %>">
-      <div class="tw:flex tw:flex-wrap tw:items-start tw:gap-3">
+    <div class="p-4 <%= "opacity-90" if creator.remote? %>">
+      <div class="flex flex-wrap items-start gap-3">
         <% if creator.avatar %>
-          <div class="tw:flex-shrink-0">
+          <div class="flex-shrink-0">
             <%= Avatar(url: avatar_creator_path(creator), size: :large) %>
           </div>
         <% end %>
-        <div class="tw:min-w-0 tw:flex-1">
-          <div class="tw:font-medium tw:text-secondary-900 tw:dark:tw:text-secondary-100">
+        <div class="min-w-0 flex-1">
+          <div class="font-medium text-secondary-900 dark:text-secondary-100">
             <%= creator.name %>
             <%= AccessIndicator object: creator %>
           </div>
           <% if creator.caption %>
-            <div class="tw:mt-1">
-              <span class="tw:text-sm tw:text-secondary-600 tw:dark:tw:text-secondary-400"><%= sanitize creator.caption %></span>
+            <div class="mt-1">
+              <span class="text-sm text-secondary-600 dark:text-secondary-400"><%= sanitize creator.caption %></span>
             </div>
           <% end %>
           <%= LinkList links: creator.links %>
         </div>
       </div>
     </div>
-    <div class="tw:flex tw:flex-wrap tw:items-center tw:gap-2 tw:px-4 tw:py-3 tw:border-t tw:border-secondary-200 tw:dark:tw:border-secondary-600">
-      <div class="tw:flex tw:flex-wrap tw:items-center tw:gap-2 tw:min-w-0">
+    <div class="flex flex-wrap items-center gap-2 px-4 py-3 border-t border-secondary-200 dark:border-secondary-600">
+      <div class="flex flex-wrap items-center gap-2 min-w-0">
         <% model_count = policy_scope(Model).where(creator: creator).count %>
         <% collection_count = policy_scope(Collection).where(creator: creator).count %>
         <%= if policy(creator).show?
@@ -51,7 +51,7 @@
               )
             end %>
       </div>
-      <div class="tw:ml-auto">
+      <div class="ml-auto">
         <%= BurgerMenu do %>
           <%= DropdownItem(icon: "pencil", label: translate("general.edit"), path: edit_creator_path(creator), aria_label: translate(".edit_button.label", name: creator.name)) if policy(creator).edit? %>
           <%= DropdownItem(icon: "trash", label: translate("general.delete"), path: creator_path(creator), method: :delete, aria_label: translate(".delete_button.label", name: creator.name), confirm: t("creators.destroy.confirm")) if policy(creator).destroy? %>

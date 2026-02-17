@@ -8,10 +8,10 @@ class Components::NumericInputRow < Components::InputRow
 
   def input_element
     input_class = Components::TextInputRow::INPUT_CLASS.dup
-    input_class += " tw:rounded-r-none" if @unit
+    input_class += " rounded-r-none" if @unit
     raw @form.number_field(@attribute, {class: input_class}.merge(@options)) # rubocop:disable Rails/OutputSafety
     if @unit
-      span(class: "tw:inline-flex tw:items-center tw:px-3 tw:py-2 tw:border tw:border-secondary-300 tw:border-l-0 tw:rounded-r-lg tw:bg-secondary-50 tw:dark:bg-secondary-800 tw:text-sm tw:text-secondary-600 tw:dark:text-secondary-400") { @unit }
+      span(class: "inline-flex items-center px-3 py-2 border border-secondary-300 border-l-0 rounded-r-lg bg-secondary-50 dark:bg-secondary-800 text-sm text-secondary-600 dark:text-secondary-400") { @unit }
     end
   end
 end

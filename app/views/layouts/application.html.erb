@@ -1,6 +1,16 @@
 <!DOCTYPE html>
-<html lang="<%= I18n.locale %>" class="<%= 'dark' if dark_theme? %>" data-controller="i18n">
+<html lang="<%= I18n.locale %>" class="<%= 'dark' if dark_theme? %>" data-theme="<%= SiteSettings.validated_theme %>" data-accent="<%= SiteSettings.validated_accent_color %>" data-controller="i18n">
   <head>
+    <script<%= content_security_policy_nonce ? " nonce=\"#{content_security_policy_nonce}\"".html_safe : "" %>>
+      (function() {
+        if (document.documentElement.getAttribute('data-theme') !== 'system') return;
+        var dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.classList.toggle('dark', dark);
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+          document.documentElement.classList.toggle('dark', e.matches);
+        });
+      })();
+    </script>
     <title><%= @title || site_name %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <%= csrf_meta_tags %>
@@ -15,25 +25,24 @@
     <%= yield :head %>
   </head>
 
-  <body data-controller="tour">
-    <%= skip_link "content", t(".skip_to_content") %>
+  <body class="bg-surface-alt dark:bg-secondary-950 text-secondary-900 dark:text-secondary-100" data-controller="tour">
     <%= render "application/navbar" %>
-    <main class="tw:max-w-screen-2xl tw:mx-auto tw:px-4 tw:sm:px-6 tw:lg:px-8" id="content">
+    <main class="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8" id="content">
       <div id="alerts" aria-live="polite">
         <% if notice %>
-          <p class="tw:flex tw:items-center tw:gap-2 tw:px-4 tw:py-3 tw:rounded-lg tw:bg-primary-50 tw:text-primary-800 tw:dark:bg-primary-900/30 tw:dark:text-primary-200 tw:mb-4">
+          <div class="flex items-center gap-2 px-4 py-3 rounded-lg bg-primary-50 text-primary-800 dark:bg-primary-900/30 dark:text-primary-200 mb-4" role="status">
             <%= Icon icon: "info-circle-fill", label: t(".alert.info") %>
             <%= notice %>
-          </p>
+          </div>
         <% end %>
         <% if alert %>
-          <p class="tw:flex tw:items-center tw:gap-2 tw:px-4 tw:py-3 tw:rounded-lg tw:bg-danger/10 tw:text-danger tw:dark:bg-danger/20 tw:mb-4">
+          <div class="flex items-center gap-2 px-4 py-3 rounded-lg bg-danger/10 text-danger dark:bg-danger/20 mb-4" role="status">
             <%= Icon icon: "x-octagon-fill", label: t(".alert.danger") %>
             <%= alert %>
-          </p>
+          </div>
         <% end %>
       </div>
-      <div>
+      <div class="py-4">
         <%= yield %>
       </div>
     </main>

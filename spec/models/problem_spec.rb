@@ -1,6 +1,7 @@
 require "rails_helper"
 
 RSpec.describe Problem do
+  include Rails.application.routes.url_helpers
   describe "querying visible scope" do
     let(:settings) do
       {

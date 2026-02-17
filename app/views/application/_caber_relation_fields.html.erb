@@ -1,6 +1,6 @@
-<%= cocooned_item class: "tw:flex tw:flex-wrap tw:items-center tw:gap-2 tw:mb-2" do %>
+<%= cocooned_item class: "flex flex-wrap items-center gap-2 mb-2" do %>
   <%- if f.object.persisted? %>
-    <span class="tw:shrink-0">
+    <span class="shrink-0">
       <%- case f.object.subject.class.name %>
       <%- when "User" %>
         <%= Icon icon: "person", label: f.object.subject.class.model_name.human %>
@@ -20,8 +20,8 @@
       <%- end %>
     </span>
   <%- else %>
-    <%= f.text_field :subject, class: "tw:block tw:rounded-lg tw:border tw:border-secondary-300 tw:px-3 tw:py-2 tw:shadow-sm tw:focus:ring-2 tw:focus:ring-primary-500 tw:dark:tw:border-secondary-600 tw:dark:tw:bg-secondary-800 tw:shrink-0", placeholder: translate(".subject.placeholder"), list: "caber-relations-role-list" %>
+    <%= f.text_field :subject, class: "block rounded-lg border border-secondary-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-primary-500 dark:border-secondary-600 dark:bg-secondary-800 shrink-0", placeholder: translate(".subject.placeholder"), list: "caber-relations-role-list" %>
   <%- end %>
-  <%= f.select :permission, Caber.configuration.permissions.map { |p| [translate(".permissions.%{perm}" % {perm: p}), p] }, {}, {class: "tw:block tw:rounded-lg tw:border tw:border-secondary-300 tw:px-3 tw:py-2 tw:shadow-sm tw:focus:ring-2 tw:focus:ring-primary-500 tw:dark:tw:border-secondary-600 tw:dark:tw:bg-secondary-800 tw:shrink-0", disabled: (f.object.subject == current_user)} %>
-  <%= cocooned_remove_item_button Icon(icon: "trash", label: translate(".delete")), f, class: "tw:inline-flex tw:items-center tw:px-3 tw:py-2 tw:rounded-lg tw:border tw:border-danger tw:text-danger hover:tw:bg-danger/10 tw:shrink-0" unless f.object.subject == current_user %>
+  <%= f.select :permission, Caber.configuration.permissions.map { |p| [translate(".permissions.%{perm}" % {perm: p}), p] }, {}, {class: "block rounded-lg border border-secondary-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-primary-500 dark:border-secondary-600 dark:bg-secondary-800 shrink-0", disabled: (f.object.subject == current_user)} %>
+  <%= cocooned_remove_item_button Icon(icon: "trash", label: translate(".delete")), f, class: "inline-flex items-center px-3 py-2 rounded-lg border border-danger text-danger hover:bg-danger/10 shrink-0" unless f.object.subject == current_user %>
 <% end %>

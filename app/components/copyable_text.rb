@@ -12,8 +12,8 @@ class Components::CopyableText < Components::Base
   end
 
   def view_template
-    btn_class = "tw:inline-flex tw:items-center tw:justify-center tw:px-2 tw:py-1 tw:text-sm tw:font-medium tw:rounded tw:border tw:border-secondary-300 tw:bg-white tw:dark:bg-secondary-800 tw:hover:bg-secondary-50 tw:dark:hover:bg-secondary-700 tw:focus-visible:ring-2 tw:focus-visible:ring-primary-500"
-    div(class: "tw:inline-flex tw:items-center tw:gap-1 tw:flex-wrap", data: {controller: "obfuscated-text"}) do
+    btn_class = "inline-flex items-center justify-center px-2 py-1 text-sm font-medium rounded border border-secondary-300 bg-white dark:bg-secondary-800 hover:bg-secondary-50 dark:hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-primary-500"
+    div(class: "inline-flex items-center gap-1 flex-wrap", data: {controller: "obfuscated-text"}) do
       span(class: (@obfuscated ? "obfuscated" : nil)) { @text }
       whitespace
       if @obfuscated

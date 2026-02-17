@@ -1,15 +1,15 @@
 <%= form.fields_for :file_list_settings do |file_list_settings_form| %>
-  <div class="tw:rounded-xl tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:bg-white tw:dark:tw:bg-secondary-800 tw:shadow-sm tw:mb-4 tw:overflow-hidden">
-    <h3 class="tw:px-4 tw:py-3 tw:bg-secondary-600 tw:text-white tw:m-0 tw:font-medium"><%= t(".heading") %></h3>
-    <div class="tw:p-4 tw:text-lg tw:text-secondary-600 tw:dark:tw:text-secondary-400">
+  <div class="rounded-xl border border-secondary-200 dark:border-secondary-600 bg-white dark:bg-secondary-800 shadow-sm mb-4 overflow-hidden">
+    <h3 class="px-4 py-3 bg-secondary-600 text-white m-0 font-medium"><%= t(".heading") %></h3>
+    <div class="p-4 text-lg text-secondary-600 dark:text-secondary-400">
       <%= t(".summary") %>
     </div>
-    <div class="tw:px-4 tw:pb-4 tabular-form">
+    <div class="px-4 pb-4 tabular-form">
       <div>
-        <%= file_list_settings_form.label :hide_presupported_versions, t(".hide_presupported_versions.label"), class: "tw:block tw:text-sm tw:font-medium tw:text-secondary-700 tw:dark:tw:text-secondary-300" %>
+        <%= file_list_settings_form.label :hide_presupported_versions, t(".hide_presupported_versions.label"), class: "block text-sm font-medium text-secondary-700 dark:text-secondary-300" %>
       </div>
-      <div class="tw:flex tw:items-center tw:gap-2">
-        <%= file_list_settings_form.check_box :hide_presupported_versions, checked: file_list_settings["hide_presupported_versions"], class: "tw:rounded tw:border-secondary-300 tw:text-primary-600 tw:focus:ring-primary-500 tw:h-4 tw:w-4" %>
+      <div class="flex items-center gap-2">
+        <%= file_list_settings_form.check_box :hide_presupported_versions, checked: file_list_settings["hide_presupported_versions"], class: "rounded border-secondary-300 text-primary-600 focus:ring-primary-500 h-4 w-4" %>
       </div>
     </div>
   </div>

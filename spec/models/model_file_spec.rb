@@ -31,14 +31,26 @@ RSpec.describe ModelFile do
   end
 
   context "with a real model" do
-    let(:library) { create(:library, path: Rails.root.join("spec/fixtures")) }
+    around do |ex|
+      Dir.mktmpdir("model_file_spec") do |tmpdir|
+        subdir = File.join(tmpdir, "model_file_spec")
+        FileUtils.mkdir_p(subdir)
+        example_obj = Rails.root.join("spec/fixtures/model_file_spec/example.obj")
+        FileUtils.cp(example_obj, subdir) if File.exist?(example_obj)
+        @library_path = tmpdir
+        ex.run
+      end
+    end
+
+    let(:library) { create(:library, path: @library_path) }
     let(:model) { create(:model, library: library, path: "model_file_spec") }
     let(:part) {
+      path = File.join(@library_path, "model_file_spec", "example.obj")
       create(
         :model_file,
         model: model,
         filename: "example.obj",
-        attachment: ModelFileUploader.upload(File.open("spec/fixtures/model_file_spec/example.obj"), :cache)
+        attachment: ModelFileUploader.upload(File.open(path), :cache)
       )
     }
 
@@ -68,31 +80,37 @@ RSpec.describe ModelFile do
   end
 
   it "finds duplicate files using digest" do # rubocop:todo RSpec/ExampleLength, RSpec/MultipleExpectations
-    library = create(:library, path: Rails.root.join("storage"))
-    model = create(:model, library: library, path: "model")
-    part1 = create(:model_file, model: model, filename: "same.obj", digest: "1234")
-    part2 = create(:model_file, model: model, filename: "same.stl", digest: "1234")
-    create(:model_file, model: model, filename: "different.stl", digest: "4321")
-    allow(part1).to receive(:size).and_return(123)
-    expect(part1.duplicate?).to be true
-    expect(part1.duplicates).to contain_exactly(part2)
+    Dir.mktmpdir("model_file_spec_dup") do |tmpdir|
+      library = create(:library, path: tmpdir)
+      model = create(:model, library: library, path: "model")
+      part1 = create(:model_file, model: model, filename: "same.obj", digest: "1234")
+      part2 = create(:model_file, model: model, filename: "same.stl", digest: "1234")
+      create(:model_file, model: model, filename: "different.stl", digest: "4321")
+      allow(part1).to receive(:size).and_return(123)
+      expect(part1.duplicate?).to be true
+      expect(part1.duplicates).to contain_exactly(part2)
+    end
   end
 
   it "does not flag duplicates for nil digests" do # rubocop:todo RSpec/ExampleLength
-    library = create(:library, path: Rails.root.join("storage"))
-    model = create(:model, library: library, path: "model1")
-    part1 = create(:model_file, model: model, filename: "nil.obj", digest: nil)
-    create(:model_file, model: model, filename: "nil.stl", digest: nil)
-    expect(part1.duplicate?).to be false
+    Dir.mktmpdir("model_file_spec_nil") do |tmpdir|
+      library = create(:library, path: tmpdir)
+      model = create(:model, library: library, path: "model1")
+      part1 = create(:model_file, model: model, filename: "nil.obj", digest: nil)
+      create(:model_file, model: model, filename: "nil.stl", digest: nil)
+      expect(part1.duplicate?).to be false
+    end
   end
 
   it "does not flag duplicates for zero-length files" do # rubocop:todo RSpec/ExampleLength
-    library = create(:library, path: Rails.root.join("storage"))
-    model = create(:model, library: library, path: "model1")
-    part1 = create(:model_file, model: model, filename: "same.obj", digest: "1234")
-    create(:model_file, model: model, filename: "same.stl", digest: "1234")
-    allow(part1).to receive(:size).and_return(0)
-    expect(part1.duplicate?).to be false
+    Dir.mktmpdir("model_file_spec_zero") do |tmpdir|
+      library = create(:library, path: tmpdir)
+      model = create(:model, library: library, path: "model1")
+      part1 = create(:model_file, model: model, filename: "same.obj", digest: "1234")
+      create(:model_file, model: model, filename: "same.stl", digest: "1234")
+      allow(part1).to receive(:size).and_return(0)
+      expect(part1.duplicate?).to be false
+    end
   end
 
   it "mtime reports attachment modified time" do

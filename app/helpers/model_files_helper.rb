@@ -40,7 +40,7 @@ module ModelFilesHelper
               t("model_files.download.%{app}" % {app: app})
             ].compact,
             " "
-          ), app_url(app, file), role: "menuitem", class: "tw:flex tw:items-center tw:gap-2 tw:px-3 tw:py-2 tw:text-inherit hover:tw:bg-secondary-100 tw:dark:hover:tw:bg-secondary-700 tw:no-underline", download: "download"
+          ), app_url(app, file), role: "menuitem", class: "flex items-center gap-2 px-3 py-2 text-inherit hover:bg-secondary-100 dark:hover:bg-secondary-700 no-underline", download: "download"
         }
       end
     )

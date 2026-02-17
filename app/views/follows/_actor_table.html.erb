@@ -1,22 +1,22 @@
-<table class="tw:w-full tw:border-collapse tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 [&>tbody>tr:nth-child(even)]:tw:bg-secondary-50 [&>tbody>tr:nth-child(even)]:dark:tw:bg-secondary-800/50">
+<table class="w-full border-collapse border border-secondary-200 dark:border-secondary-600 [&>tbody>tr:nth-child(even)]:bg-secondary-50 [&>tbody>tr:nth-child(even)]:dark:bg-secondary-800/50">
   <tr>
-    <th class="tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:px-4 tw:py-2 tw:text-left"></th>
-    <th class="tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:px-4 tw:py-2 tw:text-left"><%= t(".name") %></th>
-    <%= content_tag(:th, class: "tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:px-4 tw:py-2 tw:text-left") { t(".address") } if SiteSettings.federation_enabled? %>
-    <th class="tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:px-4 tw:py-2 tw:text-left"><%= t(".actions") %></th>
-    <th class="tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:px-4 tw:py-2 tw:text-left"></th>
+    <th class="border border-secondary-200 dark:border-secondary-600 px-4 py-2 text-left"></th>
+    <th class="border border-secondary-200 dark:border-secondary-600 px-4 py-2 text-left"><%= t(".name") %></th>
+    <%= content_tag(:th, class: "border border-secondary-200 dark:border-secondary-600 px-4 py-2 text-left") { t(".address") } if SiteSettings.federation_enabled? %>
+    <th class="border border-secondary-200 dark:border-secondary-600 px-4 py-2 text-left"><%= t(".actions") %></th>
+    <th class="border border-secondary-200 dark:border-secondary-600 px-4 py-2 text-left"></th>
   </tr>
   <% actors.each do |actor| %>
-    <tr class="tw:align-middle">
-      <td class="tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:px-4 tw:py-2">
-        <%= actor.entity ? Icon(icon: icon_for(actor.entity.class), label: actor.entity.class.model_name.human) : "⁂" %>
+    <tr class="align-middle">
+      <td class="border border-secondary-200 dark:border-secondary-600 px-4 py-2">
+        <%= actor.entity ? Icon(icon: icon_for(actor.entity.class), label: actor.entity.class.model_name.human) : "â‚" %>
       </td>
-      <td class="tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:px-4 tw:py-2"><%= link_to actor.name, actor.profile_url, class: "tw:text-primary-600 hover:tw:underline" %></td>
-      <%= content_tag(:td, class: "tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:px-4 tw:py-2") { actor.short_at_address } if SiteSettings.federation_enabled? %>
-      <td class="tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:px-4 tw:py-2"><%= FollowButton(follower: current_user, target: actor) %></td>
-      <td class="tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:px-4 tw:py-2">
+      <td class="border border-secondary-200 dark:border-secondary-600 px-4 py-2"><%= link_to actor.name, actor.profile_url, class: "text-primary-600 hover:underline" %></td>
+      <%= content_tag(:td, class: "border border-secondary-200 dark:border-secondary-600 px-4 py-2") { actor.short_at_address } if SiteSettings.federation_enabled? %>
+      <td class="border border-secondary-200 dark:border-secondary-600 px-4 py-2"><%= FollowButton(follower: current_user, target: actor) %></td>
+      <td class="border border-secondary-200 dark:border-secondary-600 px-4 py-2">
         <% if !actor.local? && actor.extensions&.dig("f3di:concreteType").nil? %>
-          <span class="tw:text-warning"><%= Icon(icon: "exclamation-triangle-fill", label: translate("components.actor_card.non_manyfold_account")) %></span>
+          <span class="text-warning"><%= Icon(icon: "exclamation-triangle-fill", label: translate("components.actor_card.non_manyfold_account")) %></span>
         <% end %>
       </td>
     </tr>

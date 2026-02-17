@@ -1,30 +1,30 @@
-<%= content_tag :nav, class: "tw:sticky tw:top-0 tw:z-40 tw:bg-primary-600 tw:dark:bg-primary-900 tw:border-b tw:border-primary-700/50 tw:dark:border-primary-800", id: "main-navbar",
+<%= content_tag :nav, class: "sticky top-0 z-40 bg-primary-600 dark:bg-primary-900 border-b border-primary-700/50 dark:border-primary-800", id: "main-navbar",
       data: tour_attributes(id: "main-navbar", title: t("tour.navbar.main.title", name: site_name), description: t("tour.navbar.main.description")) do %>
-  <div class="tw:max-w-screen-2xl tw:mx-auto tw:px-4 tw:sm:px-6 tw:lg:px-8 tw:flex tw:flex-wrap tw:items-center tw:justify-between tw:gap-2 tw:min-h-14" data-controller="collapse">
-    <a class="tw:flex tw:items-center tw:gap-2 tw:py-2 tw:text-white tw:no-underline hover:tw:opacity-90 focus-visible:tw:ring-2 focus-visible:tw:ring-white focus-visible:tw:ring-offset-2 focus-visible:tw:ring-offset-primary-600" href="<%= root_path %>" aria-label="<%= translate ".home" %>">
-      <%= image_tag site_icon, alt: site_name, height: "40px", class: "tw:h-10 tw:w-auto" %>
-      <span class="tw:md:hidden tw:font-medium"><%= site_name %></span>
+  <div class="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-wrap items-center justify-between gap-2 min-h-14" data-controller="collapse">
+    <a class="flex items-center gap-2 py-2 text-white no-underline hover:opacity-90 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary-600" href="<%= root_path %>" aria-label="<%= translate ".home" %>">
+      <%= image_tag site_icon, alt: site_name, class: "h-10 w-auto" %>
+      <span class="md:hidden font-medium"><%= site_name %></span>
     </a>
-    <button class="tw:md:hidden tw:flex tw:items-center tw:justify-center tw:w-10 tw:h-10 tw:rounded-lg tw:text-white hover:tw:bg-primary-500 focus-visible:tw:ring-2 focus-visible:tw:ring-white" type="button" data-action="click->collapse#toggle" aria-controls="navbar" aria-expanded="false" aria-label="<%= translate ".navbar.toggler.label" %>">
+    <button class="md:hidden flex items-center justify-center w-10 h-10 rounded-lg text-white hover:bg-primary-500 focus-visible:ring-2 focus-visible:ring-white" type="button" data-action="click->collapse#toggle" aria-controls="navbar" aria-expanded="false" aria-label="<%= translate ".navbar.toggler.label" %>">
       <%= Icon icon: "list", label: translate(".navbar.toggler.label") %>
     </button>
-    <div class="navbar-collapse tw:flex-col tw:flex tw:grow tw:basis-full tw:items-start tw:gap-2 tw:md:flex-row tw:md:basis-auto tw:md:grow-0 tw:mt-2 tw:md:mt-0" id="navbar" data-collapse-target="content">
-      <ul class="tw:flex tw:flex-col tw:md:flex-row tw:gap-1 tw:list-none tw:m-0 tw:p-0 tw:ps-4 tw:md:ps-0" role="presentation">
-        <li class="tw:flex" role="presentation">
-          <%= nav_link "box", Model.model_name.human(count: 100), models_path(@filter&.to_params), text_style: "tw:md:hidden tw:lg:inline", id: "nav-link-models",
+    <div class="navbar-content flex-col flex grow basis-full items-start gap-2 md:flex-row md:basis-auto md:grow-0 mt-2 md:mt-0" id="navbar" data-collapse-target="content">
+      <ul class="flex flex-col md:flex-row gap-1 list-none m-0 p-0 ps-4 md:ps-0" role="presentation">
+        <li class="flex" role="presentation">
+          <%= nav_link "box", Model.model_name.human(count: 100), models_path(@filter&.to_params), text_style: "md:hidden lg:inline", id: "nav-link-models",
                 data: tour_attributes(id: "nav-link-models", title: Model.model_name.human(count: 100), description: t("tour.navbar.models.description")) %>
         </li>
-        <li class="tw:flex" role="presentation">
-          <%= nav_link "people", Creator.model_name.human(count: 100), creators_path(@filter&.to_params(except: :creator)), text_style: "tw:md:hidden tw:lg:inline", id: "nav-link-creators",
+        <li class="flex" role="presentation">
+          <%= nav_link "people", Creator.model_name.human(count: 100), creators_path(@filter&.to_params(except: :creator)), text_style: "md:hidden lg:inline", id: "nav-link-creators",
                 data: tour_attributes(id: "nav-link-creators", title: Creator.model_name.human(count: 100), description: t("tour.navbar.creators.description")) %>
         </li>
-        <li class="tw:flex" role="presentation">
-          <%= nav_link "collection", Collection.model_name.human(count: 100), collections_path(@filter&.to_params(except: :collection)), text_style: "tw:md:hidden tw:lg:inline", id: "nav-link-collections",
+        <li class="flex" role="presentation">
+          <%= nav_link "collection", Collection.model_name.human(count: 100), collections_path(@filter&.to_params(except: :collection)), text_style: "md:hidden lg:inline", id: "nav-link-collections",
                 data: tour_attributes(id: "nav-link-collections", title: Collection.model_name.human(count: 100), description: t("tour.navbar.collections.description")) %>
         </li>
         <% if SiteSettings.show_libraries %>
           <% policy_scope(Library).find_each do |library| %>
-            <li class="tw:flex" role="presentation">
+            <li class="flex" role="presentation">
               <%= nav_link(
                     library.icon.presence || "boxes",
                     library.name,
@@ -35,14 +35,14 @@
           <% end %>
         <% end %>
       </ul>
-      <ul class="tw:flex tw:flex-col tw:md:flex-row tw:gap-1 tw:items-center tw:list-none tw:m-0 tw:p-0 tw:pe-4 tw:md:pe-0 tw:md:ml-auto" role="presentation">
-        <li class="tw:flex" role="presentation">
+      <ul class="flex flex-col md:flex-row gap-1 items-center list-none m-0 p-0 pe-4 md:pe-0 md:ml-auto" role="presentation">
+        <li class="flex" role="presentation">
           <% if policy(:upload).index? %>
-            <div class="tw:relative tw:inline-flex" data-controller="dropdown">
+            <div class="relative inline-flex" data-controller="dropdown">
               <%= content_tag :button,
                     type: "button",
                     id: "nav-link-upload",
-                    class: "tw:inline-flex tw:items-center tw:gap-1.5 tw:px-2 tw:py-1 tw:text-sm tw:font-medium tw:rounded-lg tw:bg-warning tw:text-secondary-900 tw:hover:opacity-90 tw:focus-visible:ring-2 tw:focus-visible:ring-primary-500 tw:mt-1 tw:me-1",
+                    class: "inline-flex items-center gap-1.5 px-2 py-1 text-sm font-medium rounded-lg bg-warning text-secondary-900 hover:opacity-90 focus-visible:ring-2 focus-visible:ring-primary-500 mt-1 me-1",
                     data: {
                       action: "click->dropdown#toggle"
                     }.merge(tour_attributes(
@@ -57,25 +57,25 @@
                     } do
                     safe_join [Icon(icon: "plus-circle"), t(".add_models")], " "
                   end %>
-              <ul class="tw:absolute tw:right-0 tw:mt-1 tw:min-w-[10rem] tw:py-1 tw:bg-white tw:dark:bg-secondary-800 tw:rounded-lg tw:shadow-lg tw:border tw:border-secondary-200 tw:dark:border-secondary-600 tw:z-50" role="menu" id="add-content-menu" data-dropdown-target="menu">
+              <ul class="absolute right-0 mt-1 min-w-[10rem] py-1 bg-white dark:bg-secondary-800 rounded-lg shadow-lg border border-secondary-200 dark:border-secondary-600 z-50" role="menu" id="add-content-menu" data-dropdown-target="menu">
                 <%= DropdownItem label: t(".upload"), path: new_model_path %>
                 <%= DropdownItem label: t(".import_url"), path: new_import_path %>
               </ul>
             </div>
           <% end %>
         </li>
-        <li class="tw:flex" role="presentation">
+        <li class="flex" role="presentation">
           <% if policy(:scan).create? %>
             <% if @scan_in_progress %>
-              <%= nav_link "", t(".scanning"), activity_path, nofollow: true, style: "tw:inline-flex tw:items-center tw:gap-1.5 tw:px-2 tw:py-1 tw:text-sm tw:font-medium tw:rounded-lg tw:border tw:border-warning tw:text-warning tw:bg-transparent tw:hover:bg-warning/10 tw:mt-1 tw:me-1", icon_style: "tw:animate-spin tw:inline-block tw:w-4 tw:h-4 tw:border-2 tw:border-current tw:border-t-transparent tw:rounded-full" %>
+              <%= nav_link "", t(".scanning"), activity_path, nofollow: true, style: "inline-flex items-center gap-1.5 px-2 py-1 text-sm font-medium rounded-lg border border-warning text-warning bg-transparent hover:bg-warning/10 mt-1 me-1", icon_style: "animate-spin inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full" %>
             <% else %>
-              <div class="tw:relative tw:inline-flex" data-controller="dropdown">
+              <div class="relative inline-flex" data-controller="dropdown">
                 <button type="button" data-action="click->dropdown#toggle" aria-expanded="false" aria-haspopup="menu"
-                  class="tw:inline-flex tw:items-center tw:gap-1.5 tw:px-2 tw:py-1 tw:text-sm tw:font-medium tw:rounded-lg tw:bg-warning tw:text-secondary-900 tw:hover:opacity-90 tw:focus-visible:ring-2 tw:focus-visible:ring-primary-500 tw:mt-1 tw:me-1">
+                  class="inline-flex items-center gap-1.5 px-2 py-1 text-sm font-medium rounded-lg bg-warning text-secondary-900 hover:opacity-90 focus-visible:ring-2 focus-visible:ring-primary-500 mt-1 me-1">
                   <%= Icon(icon: "radar") %>
                   <%= t ".scan" %>
                 </button>
-                <ul class="tw:absolute tw:right-0 tw:mt-1 tw:min-w-[10rem] tw:py-1 tw:bg-white tw:dark:bg-secondary-800 tw:rounded-lg tw:shadow-lg tw:border tw:border-secondary-200 tw:dark:border-secondary-600 tw:z-50" data-dropdown-target="menu" role="menu">
+                <ul class="absolute right-0 mt-1 min-w-[10rem] py-1 bg-white dark:bg-secondary-800 rounded-lg shadow-lg border border-secondary-200 dark:border-secondary-600 z-50" data-dropdown-target="menu" role="menu">
                   <%= DropdownItem label: t(".scan_changes.label"), path: scans_path, method: :post, confirm: translate(".scan_changes.confirm") %>
                   <%= DropdownItem label: t(".check_existing.label"), path: scans_path(type: :check), method: :post, confirm: translate(".check_existing.confirm") %>
                   <%= DropdownItem label: t(".check_results.label"), path: scans_path({type: :check}.merge(@filter.to_params)), method: :post, confirm: translate(".check_results.confirm") if @filter&.any? %>
@@ -86,44 +86,44 @@
         </li>
         <%- if current_user %>
           <% if policy(Problem).index? && Problem.visible(problem_settings).exists? %>
-            <li class="tw:flex" role="presentation">
+            <li class="flex" role="presentation">
               <% severity = max_problem_severity(policy_scope(Problem).all) %>
               <%= nav_link problem_icon(severity),
                     Problem.model_name.human(count: 100),
                     problems_path,
                     title: translate("problems.severities.#{severity}"), # rubocop:todo I18n/RailsI18n/DecorateStringFormattingUsingInterpolation
                     icon_style: "link-#{severity}",
-                    text_style: "tw:md:hidden",
+                    text_style: "md:hidden",
                     aria_label: Problem.model_name.human(count: 100) %>
             </li>
           <% end %>
           <% if policy(:activity).index? %>
-            <li class="tw:flex" role="presentation">
-              <%= nav_link "activity", t(".activity"), activity_path, nofollow: true, text_style: "tw:md:hidden" %>
+            <li class="flex" role="presentation">
+              <%= nav_link "activity", t(".activity"), activity_path, nofollow: true, text_style: "md:hidden" %>
             </li>
           <% end %>
           <% if policy(:settings).index? %>
-            <li class="tw:flex" role="presentation">
-              <%= nav_link "gear", t(".settings"), settings_path, nofollow: true, text_style: "tw:md:hidden" %>
+            <li class="flex" role="presentation">
+              <%= nav_link "gear", t(".settings"), settings_path, nofollow: true, text_style: "md:hidden" %>
             </li>
           <% end %>
           <% if policy(:user).index? and not policy(:settings).index? %>
-            <li class="tw:flex" role="presentation">
-              <%= nav_link "people", t(".moderator_settings"), settings_users_path, nofollow: true, text_style: "tw:md:hidden" %>
+            <li class="flex" role="presentation">
+              <%= nav_link "people", t(".moderator_settings"), settings_users_path, nofollow: true, text_style: "md:hidden" %>
             </li>
           <% end %>
         <% end %>
         <%- unless current_page?(root_path) %>
-          <li id="nav-search" class="tw:flex tw:ms-1 tw:me-3" data-turbo-permanent>
+          <li id="nav-search" class="flex ms-1 me-3" data-turbo-permanent>
             <%= form_with url: models_path, method: :get, role: "search" do |f| %>
-              <%= f.search_field :q, class: "tw:block tw:w-full tw:max-w-xs tw:rounded-lg tw:border tw:border-primary-500/50 tw:bg-white/10 tw:px-3 tw:py-1.5 tw:text-sm tw:text-white tw:placeholder-primary-200 focus:tw:ring-2 focus:tw:ring-white focus:tw:border-white tw:dark:bg-white/5 tw:dark:placeholder-primary-400", placeholder: translate(".search"), aria_label: translate(".search"), aria_describedby: "button-search", value: @query || params[:q] %>
+              <%= f.search_field :q, class: "block w-full max-w-xs rounded-lg border border-primary-500/50 bg-white/10 px-3 py-1.5 text-sm text-white placeholder-primary-200 focus:ring-2 focus:ring-white focus:border-white dark:bg-white/5 dark:placeholder-primary-400", placeholder: translate(".search"), aria_label: translate(".search"), aria_describedby: "button-search", value: @query || params[:q] %>
             <% end %>
           </li>
         <% end %>
         <%- if current_user %>
           <%- if SiteSettings.multiuser_enabled? %>
-            <li class="tw:flex" role="presentation" data-controller="dropdown">
-              <%= content_tag :button, id: "nav-link-preferences", title: t(".account"), class: "tw:inline-flex tw:items-center tw:justify-center tw:w-9 tw:h-9 tw:rounded-lg tw:bg-white/20 tw:text-white tw:hover:bg-white/30 focus-visible:tw:ring-2 focus-visible:tw:ring-white tw:mt-1",
+            <li class="flex" role="presentation" data-controller="dropdown">
+              <%= content_tag :button, id: "nav-link-preferences", title: t(".account"), class: "inline-flex items-center justify-center w-9 h-9 rounded-lg bg-white/20 text-white hover:bg-white/30 focus-visible:ring-2 focus-visible:ring-white mt-1",
                     data: {action: "click->dropdown#toggle"}.merge(
                       tour_attributes(id: "nav-link-preferences", title: t(".account"), description: t("tour.navbar.account.description"))
                     ),
@@ -134,7 +134,7 @@
                     } do %>
                 <%= Icon(icon: "person", label: t(".account")) %>
               <% end %>
-              <ul class="tw:absolute tw:right-0 tw:left-auto tw:mt-1 tw:min-w-[10rem] tw:py-1 tw:bg-white tw:dark:bg-secondary-800 tw:rounded-lg tw:shadow-lg tw:border tw:border-secondary-200 tw:dark:border-secondary-600 tw:z-50" id="preferences-menu" data-dropdown-target="menu" role="menu">
+              <ul class="absolute right-0 left-auto mt-1 min-w-[10rem] py-1 bg-white dark:bg-secondary-800 rounded-lg shadow-lg border border-secondary-200 dark:border-secondary-600 z-50" id="preferences-menu" data-dropdown-target="menu" role="menu">
                 <%= DropdownItem label: t("devise.registrations.edit.title"), path: edit_user_registration_path %>
                 <%= DropdownDivider() %>
                 <%= DropdownHeader text: t(".my_stuff") %>
@@ -156,15 +156,15 @@
               </ul>
             </li>
           <% else %>
-            <li class="tw:flex" role="presentation">
-              <%= nav_link "person", t("devise.registrations.edit.title"), edit_user_registration_path, nofollow: true, text_style: "tw:md:hidden", id: "nav-link-preferences",
+            <li class="flex" role="presentation">
+              <%= nav_link "person", t("devise.registrations.edit.title"), edit_user_registration_path, nofollow: true, text_style: "md:hidden", id: "nav-link-preferences",
                     data: tour_attributes(id: "nav-link-preferences", title: t(".account"), description: t("tour.navbar.account.description")) %>
             </li>
           <% end %>
         <% end %>
         <%- if SiteSettings.multiuser_enabled? && current_user.nil? %>
-          <li class="tw:flex" role="presentation">
-            <%= nav_link "box-arrow-in-right", t(".log_in"), new_user_session_path, title: translate(".log_in"), nofollow: true, style: "tw:inline-flex tw:items-center tw:gap-1.5 tw:px-3 tw:py-1.5 tw:text-sm tw:font-medium tw:rounded-lg tw:bg-white/20 tw:text-white tw:hover:bg-white/30 focus-visible:tw:ring-2 focus-visible:tw:ring-white" %>
+          <li class="flex" role="presentation">
+            <%= nav_link "box-arrow-in-right", t(".log_in"), new_user_session_path, title: translate(".log_in"), nofollow: true, style: "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-white/20 text-white hover:bg-white/30 focus-visible:ring-2 focus-visible:ring-white" %>
           </li>
         <%- end %>
       </ul>

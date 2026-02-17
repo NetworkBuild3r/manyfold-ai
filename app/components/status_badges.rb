@@ -17,7 +17,7 @@ class Components::StatusBadges < Components::Base
   def view_template
     span class: "status-badges" do
       if @model.new?
-        span class: "tw:text-warning" do
+        span class: "text-warning" do
           Icon(icon: "stars", label: t("general.new"))
         end
         whitespace

@@ -1,16 +1,16 @@
 <% if @filter.any? %>
   <%= card :secondary, t(".title") do %>
     <% active_filters_list(@filter).each do |entry| %>
-      <div class="tw:flex tw:items-center tw:gap-2 tw:py-2 tw:border-b tw:border-secondary-200 tw:dark:border-secondary-600 last:tw:border-0">
-        <span class="tw:flex-shrink-0" aria-hidden="true"><%= Icon icon: entry[:icon], label: entry[:type_label] %></span>
-        <div class="tw:min-w-0 tw:flex-1" aria-label="<%= entry[:type_label] %>">
+      <div class="flex items-center gap-2 py-2 border-b border-secondary-200 dark:border-secondary-500 last:border-0 text-secondary-900 dark:text-secondary-100">
+        <span class="flex-shrink-0" aria-hidden="true"><%= Icon icon: entry[:icon], label: entry[:type_label] %></span>
+        <div class="min-w-0 flex-1" aria-label="<%= entry[:type_label] %>">
           <% if entry[:key] == :tag %>
-            <span class="tw:pe-none"><%= render "tag_list", tags: @filter.tags, filter: @filter %></span>
+            <span class="pe-none"><%= render "tag_list", tags: @filter.tags, filter: @filter %></span>
           <% else %>
             <%= entry[:value_html] %>
           <% end %>
         </div>
-        <span class="tw:flex-shrink-0"><%= link_to Icon(icon: "trash", label: entry[:aria_remove]), entry[:remove_url], class: "tw:text-danger hover:tw:underline", aria: { label: entry[:aria_remove] } %></span>
+        <span class="flex-shrink-0"><%= link_to Icon(icon: "trash", label: entry[:aria_remove]), entry[:remove_url], class: "text-danger hover:underline focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none", aria: { label: entry[:aria_remove] } %></span>
       </div>
     <% end %>
   <% end %>

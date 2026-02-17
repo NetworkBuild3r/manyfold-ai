@@ -83,7 +83,14 @@ class ProblemsController < ApplicationController
     if params[:from] == "model" && params[:model_id].present?
       model = Model.find_by(id: params[:model_id])
       if model && policy(:problem).show?
-        streams << turbo_stream.replace("model-problems-card", partial: "models/problems_card", locals: {model: model, problems: model.problems.visible(helpers.problem_settings)})
+        streams << turbo_stream.replace("model-problems-card", partial: "application/problems_card", locals: {
+          problematic: model,
+          problems: model.problems.visible(helpers.problem_settings),
+          show_when_empty: true,
+          card_id: "model-problems-card",
+          from_model: model,
+          nesting_models: (model.contained_models if model.contains_other_models?)
+        })
       end
     end
     streams

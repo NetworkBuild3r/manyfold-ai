@@ -82,7 +82,7 @@ class ApplicationPolicy
 
   class UpdateScope < Scope
     def resolve
-      return scope.local if user&.is_moderator? || !scope.respond_to?(:granted_to)
+      return scope.mergeable if user&.is_moderator? || !scope.respond_to?(:granted_to)
 
       result = scope.granted_to(STANDARD_EDIT_PERMISSIONS, [user, nil])
       result = result.or(scope.granted_to(STANDARD_EDIT_PERMISSIONS, user.roles)) if user

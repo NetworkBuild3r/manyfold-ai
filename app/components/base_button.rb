@@ -3,17 +3,17 @@
 class Components::BaseButton < Components::Base
   include Phlex::Rails::Helpers::ButtonTo
 
-  BASE_CLASSES = "tw:inline-flex tw:items-center tw:gap-1.5 tw:px-3 tw:py-1.5 tw:text-sm tw:font-medium tw:rounded-lg tw:transition-colors tw:focus-visible:ring-2 tw:focus-visible:ring-primary-500 tw:focus-visible:ring-offset-2".freeze
+  BASE_CLASSES = "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2".freeze
 
   VARIANT_CLASSES = {
-    "primary" => "tw:bg-primary-600 tw:text-white tw:hover:bg-primary-700",
-    "secondary" => "tw:bg-white tw:border tw:border-secondary-300 tw:hover:bg-secondary-50 tw:dark:bg-secondary-800 tw:dark:border-secondary-600 tw:dark:hover:bg-secondary-700",
-    "danger" => "tw:bg-danger tw:text-white tw:hover:opacity-90",
-    "warning" => "tw:bg-warning tw:text-secondary-900 tw:hover:opacity-90",
-    "outline-primary" => "tw:bg-transparent tw:border tw:border-primary-600 tw:text-primary-600 tw:hover:bg-primary-50 tw:dark:hover:bg-primary-900/30",
-    "outline-secondary" => "tw:bg-transparent tw:border tw:border-secondary-300 tw:text-secondary-700 tw:hover:bg-secondary-50 tw:dark:border-secondary-600 tw:dark:text-secondary-300 tw:dark:hover:bg-secondary-800",
-    "outline-danger" => "tw:bg-transparent tw:border tw:border-danger tw:text-danger tw:hover:bg-danger/10",
-    "outline-warning" => "tw:bg-transparent tw:border tw:border-warning tw:text-warning tw:hover:bg-warning/10"
+    "primary" => "bg-primary-600 text-white hover:bg-primary-700",
+    "secondary" => "bg-white border border-secondary-300 hover:bg-secondary-50 dark:bg-secondary-800 dark:border-secondary-600 dark:hover:bg-secondary-700",
+    "danger" => "bg-danger text-white hover:opacity-90",
+    "warning" => "bg-warning text-secondary-900 hover:opacity-90",
+    "outline-primary" => "bg-transparent border border-primary-600 text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/30",
+    "outline-secondary" => "bg-transparent border border-secondary-300 text-secondary-700 hover:bg-secondary-50 dark:border-secondary-600 dark:text-secondary-300 dark:hover:bg-secondary-800",
+    "outline-danger" => "bg-transparent border border-danger text-danger hover:bg-danger/10",
+    "outline-warning" => "bg-transparent border border-warning text-warning hover:bg-warning/10"
   }.freeze
 
   def initialize(label:, href:, variant:, icon: nil, method: nil, icon_only: false, aria_label: nil, confirm: nil, data: {}, nofollow: nil, target: nil)
@@ -44,7 +44,7 @@ class Components::BaseButton < Components::Base
         Icon(icon: @icon, label: @label)
         whitespace
       end
-      span(class: (@icon_only ? "tw:sr-only" : nil)) { @label }
+      span(class: (@icon_only ? "sr-only" : nil)) { @label }
     end
   end
 

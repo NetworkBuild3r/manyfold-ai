@@ -32,11 +32,11 @@ class Components::PreviewFrame < Components::Base
   end
 
   def preview_container_class
-    "tw:block tw:w-full tw:aspect-[4/3] tw:bg-secondary-100 tw:dark:bg-secondary-800"
+    "block w-full aspect-[4/3] bg-secondary-100 dark:bg-secondary-800"
   end
 
   def image_class
-    "tw:w-full tw:h-full tw:object-cover" + (needs_hiding? ? " sensitive" : "")
+    "w-full h-full object-cover" + (needs_hiding? ? " sensitive" : "")
   end
 
   def render_local
@@ -79,7 +79,7 @@ class Components::PreviewFrame < Components::Base
             "</body></html>"
           ].join),
           title: sanitize(preview_data["summary"]),
-          class: "tw:w-full tw:h-full tw:object-cover"
+          class: "w-full h-full object-cover"
         )
       end
     else
@@ -100,8 +100,8 @@ class Components::PreviewFrame < Components::Base
   end
 
   def empty
-    div(class: "tw:flex tw:items-center tw:justify-center tw:block tw:w-full tw:aspect-[4/3] tw:bg-secondary-100 tw:dark:bg-secondary-800 tw:text-secondary-400") do
-      p(class: "tw:text-sm") { t("components.model_card.no_preview") }
+    div(class: "flex items-center justify-center block w-full aspect-[4/3] bg-secondary-100 dark:bg-secondary-800 text-secondary-400") do
+      p(class: "text-sm") { t("components.model_card.no_preview") }
     end
   end
 end

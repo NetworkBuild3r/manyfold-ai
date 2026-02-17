@@ -8,7 +8,8 @@ module DataPackage
         notes: @object["description"]
       }
       begin
-        route_options = Rails.application.routes.recognize_path(@object["path"])
+        path = URI.parse(@object["path"]).path
+        route_options = Rails.application.routes.recognize_path(path)
         if route_options[:controller] == "creators"
           attributes[:id] = Creator.find_param(route_options[:id]).id
         end

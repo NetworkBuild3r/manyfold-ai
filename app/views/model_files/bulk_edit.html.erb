@@ -3,44 +3,44 @@
       @model.name => model_path(@model)
     } %>
 
-<p class="tw:text-lg tw:text-secondary-600 tw:dark:tw:text-secondary-400"><%= t(".description") %></p>
+<p class="text-lg text-secondary-600 dark:text-secondary-400"><%= t(".description") %></p>
 
 <%= form_with url: bulk_update_model_model_files_path(@model), method: :patch do |form| %>
 
-  <table class="tw:w-full tw:border-collapse tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600" data-controller="bulk-edit" data-action="change->bulk-edit#handleCheckboxChange">
+  <table class="w-full border-collapse border border-secondary-200 dark:border-secondary-600" data-controller="bulk-edit" data-action="change->bulk-edit#handleCheckboxChange">
     <thead>
-      <tr class="tw:border-b tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:bg-secondary-50 tw:dark:tw:bg-secondary-800/50">
-        <th class="tw:px-4 tw:py-2 tw:text-left"><input type="checkbox" aria-label="<%= translate ".select_all" %>" value="0" name="bulk-select-all"></th>
-        <th class="tw:px-4 tw:py-2 tw:text-left"><%= ModelFile.human_attribute_name(:name) %></th>
-        <th class="tw:px-4 tw:py-2 tw:text-left"><%= ModelFile.human_attribute_name(:filename) %></th>
-        <th class="tw:px-4 tw:py-2 tw:text-left"><%= ModelFile.human_attribute_name(:printed) %></th>
-        <th class="tw:px-4 tw:py-2 tw:text-left"><%= ModelFile.human_attribute_name(:presupported) %></th>
-        <th class="tw:px-4 tw:py-2 tw:text-left"><%= ModelFile.human_attribute_name(:y_up) %></th>
-        <th class="tw:px-4 tw:py-2 tw:text-left"><%= ModelFile.human_attribute_name(:previewable) %></th>
+      <tr class="border-b border-secondary-200 dark:border-secondary-600 bg-secondary-50 dark:bg-secondary-800/50">
+        <th class="px-4 py-2 text-left"><input type="checkbox" aria-label="<%= translate ".select_all" %>" value="0" name="bulk-select-all"></th>
+        <th class="px-4 py-2 text-left"><%= ModelFile.human_attribute_name(:name) %></th>
+        <th class="px-4 py-2 text-left"><%= ModelFile.human_attribute_name(:filename) %></th>
+        <th class="px-4 py-2 text-left"><%= ModelFile.human_attribute_name(:printed) %></th>
+        <th class="px-4 py-2 text-left"><%= ModelFile.human_attribute_name(:presupported) %></th>
+        <th class="px-4 py-2 text-left"><%= ModelFile.human_attribute_name(:y_up) %></th>
+        <th class="px-4 py-2 text-left"><%= ModelFile.human_attribute_name(:previewable) %></th>
       </tr>
     </thead>
     <tbody>
     <% @files.each do |file| %>
-      <tr class="tw:border-b tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:even:tw:bg-secondary-50 tw:dark:tw:even:tw:bg-secondary-800/30">
-        <td class="tw:px-4 tw:py-2"><%= form.check_box "model_files[#{file.to_param}]", data: {bulk_item: file.to_param}, "aria-label": translate(".select", name: file.name), class: "tw:rounded tw:border-secondary-300 tw:text-primary-600 tw:focus:ring-primary-500 tw:h-4 tw:w-4" %></td>
-        <td class="tw:px-4 tw:py-2"><%= link_to file.name, [@model, file], title: file.filename, class: "tw:text-primary-600 tw:dark:tw:text-primary-400 hover:tw:underline" %></td>
-        <td class="tw:px-4 tw:py-2"><code class="tw:px-1.5 tw:py-0.5 tw:rounded tw:bg-secondary-100 tw:dark:tw:bg-secondary-700 tw:text-sm"><%= file.filename %></code></td>
-        <td class="tw:px-4 tw:py-2"><%= Icon icon: "check-circle-fill", label: ModelFile.human_attribute_name(:printed) if current_user.printed?(file) %></td>
-        <td class="tw:px-4 tw:py-2"><%= Icon icon: "check-circle-fill", label: ModelFile.human_attribute_name(:presupported) if file.presupported %></td>
-        <td class="tw:px-4 tw:py-2"><%= Icon icon: "check-circle-fill", label: ModelFile.human_attribute_name(:y_up) if file.y_up %></td>
-        <td class="tw:px-4 tw:py-2"><%= Icon icon: "check-circle-fill", label: ModelFile.human_attribute_name(:previewable) if file.previewable %></td>
+      <tr class="border-b border-secondary-200 dark:border-secondary-600 even:bg-secondary-50 dark:even:bg-secondary-800/30">
+        <td class="px-4 py-2"><%= form.check_box "model_files[#{file.to_param}]", { data: { bulk_item: file.to_param }, "aria-label": translate(".select", name: file.name), class: "rounded border-secondary-300 text-primary-600 focus:ring-primary-500 h-4 w-4", checked: @preselected_file_ids.include?(file.to_param) } %></td>
+        <td class="px-4 py-2"><%= link_to file.name, [@model, file], title: file.filename, class: "text-primary-600 dark:text-primary-400 hover:underline" %></td>
+        <td class="px-4 py-2"><code class="px-1.5 py-0.5 rounded bg-secondary-100 dark:bg-secondary-700 text-sm"><%= file.filename %></code></td>
+        <td class="px-4 py-2"><%= Icon icon: "check-circle-fill", label: ModelFile.human_attribute_name(:printed) if current_user.printed?(file) %></td>
+        <td class="px-4 py-2"><%= Icon icon: "check-circle-fill", label: ModelFile.human_attribute_name(:presupported) if file.presupported %></td>
+        <td class="px-4 py-2"><%= Icon icon: "check-circle-fill", label: ModelFile.human_attribute_name(:y_up) if file.y_up %></td>
+        <td class="px-4 py-2"><%= Icon icon: "check-circle-fill", label: ModelFile.human_attribute_name(:previewable) if file.previewable %></td>
       </tr>
     <% end %>
     </tbody>
   </table>
 
-  <p class="tw:text-lg tw:text-secondary-600 tw:dark:tw:text-secondary-400 tw:mt-4"><%= t ".form_subtitle" %></p>
+  <p class="text-lg text-secondary-600 dark:text-secondary-400 mt-4"><%= t ".form_subtitle" %></p>
 
-  <div class="tabular-form tw:mt-4">
+  <div class="tabular-form mt-4">
     <div>
       <%= t(".rename") %>
     </div>
-    <div class="tw:rounded-lg tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:p-4 tabular-form">
+    <div class="rounded-lg border border-secondary-200 dark:border-secondary-600 p-4 tabular-form">
       <%= text_input_row form, :pattern, label: t(".pattern") %>
       <%= text_input_row form, :replacement, label: t(".replacement") %>
     </div>
@@ -48,9 +48,9 @@
     <%= checkbox_input_row form, :presupported, label: ModelFile.human_attribute_name(:presupported) %>
     <%= checkbox_input_row form, :y_up, label: ModelFile.human_attribute_name(:y_up) %>
     <%= checkbox_input_row form, :previewable, label: ModelFile.human_attribute_name(:previewable) %>
-    <div class="tw:flex tw:flex-wrap tw:gap-2">
-      <%= form.submit translate(".submit"), class: "tw:inline-flex tw:items-center tw:px-4 tw:py-2 tw:rounded-lg tw:bg-primary-600 tw:text-white hover:tw:bg-primary-700 focus-visible:tw:ring-2 focus-visible:tw:ring-primary-500" %>
-      <%= form.submit translate(".split"), name: "split", class: "tw:inline-flex tw:items-center tw:px-4 tw:py-2 tw:rounded-lg tw:border tw:border-warning tw:text-warning hover:tw:bg-warning/10 focus-visible:tw:ring-2 focus-visible:tw:ring-primary-500" %>
+    <div class="flex flex-wrap gap-2">
+      <%= form.submit translate(".submit"), class: "inline-flex items-center px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500" %>
+      <%= form.submit translate(".split"), name: "split", class: "inline-flex items-center px-4 py-2 rounded-lg border border-warning text-warning hover:bg-warning/10 focus-visible:ring-2 focus-visible:ring-primary-500" %>
     </div>
   </div>
 

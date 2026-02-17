@@ -33,7 +33,8 @@ RSpec.describe Upgrade::FixStaleAttachmentDataJob do
     end
 
     it "fixes storage key" do
-      expect { job.perform_now }.to change { bad.reload.attachment.storage_key }.from(:cache).to(:library_1)
+      expected_storage = bad.model.library.storage_key
+      expect { job.perform_now }.to change { bad.reload.attachment.storage_key }.from(:cache).to(expected_storage)
     end
 
     it "fixes attachment id" do

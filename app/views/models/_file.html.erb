@@ -1,16 +1,20 @@
-<div class="tw:mb-4">
-  <div class="tw:rounded-xl tw:border tw:bg-white tw:dark:tw:bg-secondary-800 tw:overflow-hidden tw:shadow-sm <%= (file === @model.preview_file) ? "tw:border-primary-500" : "tw:border-secondary-200 tw:dark:tw:border-secondary-600" %>">
+<div class="mb-4 <%= 'file-card relative' if policy(@model).edit? %>">
+  <% if policy(@model).edit? %>
+    <button type="button" class="file-list-selection-bubble absolute top-2 left-2 z-10 w-6 h-6 rounded-full border-2 border-white dark:border-secondary-300 bg-white/40 dark:bg-secondary-500/70 shadow cursor-pointer flex items-center justify-center outline-none focus-visible:ring-2 focus-visible:ring-primary-500 transition-opacity" data-file-list-selection-target="bubble" data-file-id="<%= file.to_param %>" data-action="click->file-list-selection#toggle" aria-pressed="false" aria-label="<%= t('models.show.file_selection.select_file', name: file.name) %>">
+      <i class="bi bi-check-lg file-list-selection-check text-sm opacity-0 transition-opacity pointer-events-none font-bold" aria-hidden="true"></i>
+    </button>
+  <% end %>
+  <div class="rounded-xl border bg-surface dark:bg-surface-dark overflow-hidden shadow-sm <%= (file === @model.preview_file) ? "border-primary-500" : "border-secondary-200 dark:border-secondary-600" %>">
     <% if file.is_image? %>
-      <%= content_tag :div, nil, class: "tw:block tw:w-full tw:aspect-square tw:bg-cover tw:bg-center", style: "background-image: url(#{model_model_file_path(@model, file, format: file.extension)})" %>
-      <%= image_tag model_model_file_path(@model, file, format: file.extension), class: "tw:block tw:w-full tw:aspect-square tw:object-cover", alt: file.name %>
+      <%= image_tag model_model_file_path(@model, file, format: file.extension), class: "block w-full aspect-square object-cover", alt: file.name %>
     <% elsif file.is_renderable? %>
-      <div class="tw:block tw:w-full tw:aspect-square">
+      <div class="block w-full aspect-square">
         <%= Renderer(file: file) %>
       </div>
     <% else %>
-      <%= content_tag :div, nil, class: "tw:block tw:w-full tw:aspect-square" do %>
-        <svg class="tw:block tw:w-full tw:h-full" viewBox="0 0 100 100">
-          <path stroke="currentColor" stroke-linecap="round" stroke-width="0.5" fill="white" d="
+      <%= content_tag :div, nil, class: "block w-full aspect-square text-secondary-800 dark:text-secondary-200" do %>
+        <svg class="block w-full h-full" viewBox="0 0 100 100">
+          <path stroke="currentColor" stroke-linecap="round" stroke-width="0.5" fill="currentColor" d="
             M60,15
             h-30
             q-5,0 -5,5
@@ -31,32 +35,32 @@
         </svg>
       <% end %>
     <% end %>
-    <div class="tw:p-4">
-      <div class="tw:font-medium tw:text-secondary-900 tw:dark:tw:text-secondary-100">
+    <div class="p-4">
+      <div class="font-medium text-secondary-900 dark:text-secondary-100">
         <%= file.name %>
       </div>
-      <div class="tw:text-sm tw:text-secondary-600 tw:dark:tw:text-secondary-400">
+      <div class="text-sm text-secondary-600 dark:text-secondary-400">
         <% if file.caption %>
           <p><%= sanitize file.caption %></p>
         <% end %>
-        <small><code class="tw:text-xs"><%= sanitize file.filename %></code></small>
+        <small><code class="text-xs"><%= sanitize file.filename %></code></small>
       </div>
-      <div class="tw:flex tw:flex-wrap tw:items-center tw:gap-2 tw:mt-2">
-        <div class="tw:flex tw:flex-wrap tw:items-center tw:gap-2 tw:min-w-0">
-          <%= link_to t(".open_button.text"), model_model_file_path(@model, file), {class: "tw:inline-flex tw:items-center tw:gap-1.5 tw:px-3 tw:py-1.5 tw:text-sm tw:rounded-lg tw:bg-primary-600 tw:text-white hover:tw:bg-primary-700", "aria-label": translate(".open_button.label", name: file.name)} %>
-          <%= link_to Icon(icon: "cloud-download-fill", label: t("general.download")), model_model_file_path(@model, file, file.extension&.to_sym, download: "true"), {class: "tw:inline-flex tw:items-center tw:gap-1.5 tw:px-3 tw:py-1.5 tw:text-sm tw:rounded-lg tw:border tw:border-secondary-300 tw:dark:border-secondary-500 tw:bg-white tw:dark:tw:bg-secondary-800 hover:tw:bg-secondary-50 tw:dark:hover:tw:bg-secondary-700", download: "download"} %>
+      <div class="flex flex-wrap items-center gap-2 mt-2">
+        <div class="flex flex-wrap items-center gap-2 min-w-0">
+          <%= link_to t(".open_button.text"), model_model_file_path(@model, file), {class: "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 outline-none", "aria-label": translate(".open_button.label", name: file.name)} %>
+          <%= link_to Icon(icon: "cloud-download-fill", label: t("general.download")), model_model_file_path(@model, file, file.extension&.to_sym, download: "true"), {class: "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border border-secondary-300 dark:border-secondary-500 bg-white dark:bg-secondary-800 hover:bg-secondary-50 dark:hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-primary-500 outline-none", download: "download"} %>
           <% if file.presupported || file.presupported_version %>
             <%= Icon icon: "bar-chart-line-fill", label: ModelFile.human_attribute_name(:presupported) %>
           <% end %>
           <%= problem_icon_tag(file.problems) if policy(Problem).show? %>
         </div>
-        <div class="tw:ml-auto">
+        <div class="ml-auto">
           <%= BurgerMenu(direction: :up) do %>
             <%= app_links(file) %>
             <%= DropdownDivider() %>
             <% if file.presupported_version %>
               <%= DropdownHeader text: t(".presupported") %>
-              <%= link_to t("general.download"), model_model_file_path(@model, file.presupported_version, file.presupported_version.extension&.to_sym, download: "true"), {class: "tw:block tw:px-4 tw:py-2 tw:text-sm tw:text-secondary-700 tw:dark:tw:text-secondary-200 hover:tw:bg-secondary-100 tw:dark:hover:tw:bg-secondary-700", download: "download"} %>
+              <%= link_to t("general.download"), model_model_file_path(@model, file.presupported_version, file.presupported_version.extension&.to_sym, download: "true"), {class: "block px-4 py-2 text-sm text-secondary-700 dark:text-secondary-200 hover:bg-secondary-100 dark:hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none", download: "download"} %>
               <%= app_links(file.presupported_version) %>
               <%= DropdownDivider() %>
             <% end %>

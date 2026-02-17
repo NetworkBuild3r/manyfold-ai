@@ -1,4 +1,4 @@
-# Main CI pipeline: lint first (fast feedback), then test. DRY via composite actions.
+# Main CI pipeline: lint first (fast feedback), then test. Runs inside a container.
 # Trigger manually via Actions → CI → Run workflow for agent or local verification.
 name: CI
 
@@ -9,6 +9,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
+env:
+  CI_IMAGE: manyfold-ci
+
 jobs:
   lint:
     if: github.triggering_actor != 'allcontributors[bot]'
@@ -17,8 +20,38 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v6
-      - uses: ./.github/actions/setup
-      - uses: ./.github/actions/lint
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build CI image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.ci
+          load: true
+          tags: ${{ env.CI_IMAGE }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          push: false
+
+      - name: Run lint in container
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/workspace" \
+            -w /workspace \
+            ${{ env.CI_IMAGE }}:latest \
+            bash -c "
+              corepack enable
+              bundle config set --local path vendor/bundle
+              bundle install
+              yarn install
+              yarn build:css:tailwind
+              bundle exec rake rubocop
+              bundle exec erb_lint --lint-all
+              yarn run lint:ts
+              yarn typecheck
+            "
 
   test:
     if: github.triggering_actor != 'allcontributors[bot]'
@@ -36,15 +69,49 @@ jobs:
     env:
       RAILS_ENV: test
       DATABASE_URL: ${{ matrix.database_url }}
+      REDIS_URL: redis://localhost:6379/0
     steps:
       - uses: actions/checkout@v6
-      - uses: ./.github/actions/setup
-      - uses: ./.github/actions/run-tests
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build CI image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.ci
+          load: true
+          tags: ${{ env.CI_IMAGE }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          push: false
+
+      - name: Run tests in container
+        run: |
+          docker run --rm --network host \
+            -v "${{ github.workspace }}:/workspace" \
+            -w /workspace \
+            -e RAILS_ENV=test \
+            -e DATABASE_URL="${{ env.DATABASE_URL }}" \
+            -e REDIS_URL="${{ env.REDIS_URL }}" \
+            ${{ env.CI_IMAGE }}:latest \
+            bash -c "
+              corepack enable
+              bundle config set --local path vendor/bundle
+              bundle install
+              yarn install
+              bundle exec rails db:prepare:with_data
+              bundle exec rails assets:precompile
+              bundle exec rspec --fail-fast
+            "
+
       - name: Upload coverage
         if: secrets.CODACY_PROJECT_TOKEN != ''
         env:
           CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }}
         run: bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r coverage/coverage.xml
+
     services:
       postgres:
         image: postgres:16

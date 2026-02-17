@@ -1,16 +1,16 @@
 <%= PageTitle title: t(".heading", site_name: site_name), heading: false %>
 
-<div class="tw:max-w-4xl tw:mx-auto tw:px-4">
-  <h1><%= t(".heading", site_name: site_name) %></h1>
+<div class="max-w-4xl mx-auto px-4">
+  <h1 class="<%= heading_classes(:page) %> mb-4"><%= t(".heading", site_name: site_name) %></h1>
   <% if @deserializer %>
     <p><%= t(".import_type_html", url: @url, object_type: @deserializer.capabilities[:class].model_name.human) %></p>
 
-    <table class="tw:w-full tw:border-collapse tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:mb-4">
+    <table class="w-full border-collapse border border-secondary-200 dark:border-secondary-600 mb-4">
       <tbody>
       <% @deserializer.capabilities.except(:class).each_pair do |key, value| %>
-        <tr class="tw:border-b tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:even:tw:bg-secondary-50 tw:dark:tw:even:tw:bg-secondary-800/30">
-          <td class="tw:px-4 tw:py-2"><%= @deserializer.capabilities[:class].human_attribute_name(key) %></td>
-          <td class="tw:px-4 tw:py-2"><%= value ? "✅" : "❌" %></td>
+        <tr class="border-b border-secondary-200 dark:border-secondary-600 even:bg-secondary-50 dark:even:bg-secondary-800/30">
+          <td class="px-4 py-2"><%= @deserializer.capabilities[:class].human_attribute_name(key) %></td>
+          <td class="px-4 py-2"><%= value ? "âœ…" : "âŒ" %></td>
         </tr>
       <% end %>
       </tbody>
@@ -19,26 +19,26 @@
     <%= DoButton icon: "download", label: t(".import"), href: imports_path(url: @url), method: :post, variant: "primary" %>
   <% else %>
 
-    <div class="tw:grid tw:grid-cols-1 tw:md:grid-cols-[1fr_auto] tw:gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-6">
       <div>
-        <p class="tw:text-lg tw:text-secondary-600 tw:dark:tw:text-secondary-400"><%= t(".description") %></p>
+        <p class="text-lg text-secondary-600 dark:text-secondary-400"><%= t(".description") %></p>
         <p><%= t(".import_capabilities") %></p>
-        <%= form_with url: new_import_path, method: :get, class: "tw:mt-4" do |f| %>
-          <div class="tw:flex tw:rounded-lg tw:overflow-hidden tw:border tw:border-secondary-300 tw:dark:tw:border-secondary-600 tw:mb-4">
-            <%= f.url_field :url, class: "tw:flex-1 tw:block tw:w-full tw:rounded-none tw:border-0 tw:px-3 tw:py-2 tw:shadow-sm focus:tw:ring-2 focus:tw:ring-primary-500 tw:dark:tw:bg-secondary-800", placeholder: translate(".placeholder"), aria_label: translate(".submit"), value: @url %>
-            <%= f.submit translate(".submit"), class: "tw:inline-flex tw:items-center tw:px-4 tw:py-2 tw:bg-primary-600 tw:text-white hover:tw:bg-primary-700 focus-visible:tw:ring-2 focus-visible:tw:ring-primary-500", name: nil %>
+        <%= form_with url: new_import_path, method: :get, class: "mt-4" do |f| %>
+          <div class="flex rounded-lg overflow-hidden border border-secondary-300 dark:border-secondary-600 mb-4">
+            <%= f.url_field :url, class: "flex-1 block w-full rounded-none border-0 px-3 py-2 shadow-sm focus:ring-2 focus:ring-primary-500 dark:bg-secondary-800", placeholder: translate(".placeholder"), aria_label: translate(".submit"), value: @url %>
+            <%= f.submit translate(".submit"), class: "inline-flex items-center px-4 py-2 bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500", name: nil %>
           </div>
         <% end %>
       </div>
-      <div class="tw:shrink-0">
-        <div class="tw:rounded-xl tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:bg-white tw:dark:tw:bg-secondary-800 tw:shadow-sm tw:p-4">
-          <h5 class="tw:text-lg tw:font-medium tw:mb-2"><%= t ".supported_sites" %></h5>
-          <ul class="tw:list-none tw:pl-0 tw:space-y-1">
-            <li><%= ((SiteSettings.cults3d_api_key.present? && SiteSettings.cults3d_api_username.present?) ? "✅" : "❌") %> <%= t "sites.cults3d" %></li>
-            <li><%= (SiteSettings.myminifactory_api_key.present? ? "✅" : "❌") %> <%= t "sites.myminifactory" %></li>
-            <li><%= (SiteSettings.thingiverse_api_key.present? ? "✅" : "❌") %> <%= t "sites.thingiverse" %></li>
+      <div class="shrink-0">
+        <div class="rounded-xl border border-secondary-200 dark:border-secondary-600 bg-surface dark:bg-surface-dark shadow-sm p-4">
+          <h5 class="text-lg font-medium mb-2"><%= t ".supported_sites" %></h5>
+          <ul class="list-none pl-0 space-y-1">
+            <li><%= ((SiteSettings.cults3d_api_key.present? && SiteSettings.cults3d_api_username.present?) ? "âœ…" : "âŒ") %> <%= t "sites.cults3d" %></li>
+            <li><%= (SiteSettings.myminifactory_api_key.present? ? "âœ…" : "âŒ") %> <%= t "sites.myminifactory" %></li>
+            <li><%= (SiteSettings.thingiverse_api_key.present? ? "âœ…" : "âŒ") %> <%= t "sites.thingiverse" %></li>
           </ul>
-          <%= link_to t(".integration_settings"), integrations_settings_path, class: "tw:text-primary-600 tw:dark:tw:text-primary-400 hover:tw:underline tw:mt-2 tw:inline-block" if policy(:settings).index? %>
+          <%= link_to t(".integration_settings"), integrations_settings_path, class: "text-primary-600 dark:text-primary-400 hover:underline mt-2 inline-block" if policy(:settings).index? %>
         </div>
       </div>
     </div>

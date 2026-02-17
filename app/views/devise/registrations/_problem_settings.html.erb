@@ -1,22 +1,22 @@
 <%= form.fields_for :problem_settings do |problem_settings_form| %>
-  <div class="tw:rounded-xl tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:bg-white tw:dark:tw:bg-secondary-800 tw:shadow-sm tw:mb-4 tw:overflow-hidden">
-    <h3 class="tw:px-4 tw:py-3 tw:bg-secondary-600 tw:text-white tw:m-0 tw:font-medium"><%= t(".title") %></h3>
-    <div class="tw:p-4 tw:text-lg tw:text-secondary-600 tw:dark:tw:text-secondary-400">
+  <div class="rounded-xl border border-secondary-200 dark:border-secondary-600 bg-white dark:bg-secondary-800 shadow-sm mb-4 overflow-hidden">
+    <h3 class="px-4 py-3 bg-secondary-600 text-white m-0 font-medium"><%= t(".title") %></h3>
+    <div class="p-4 text-lg text-secondary-600 dark:text-secondary-400">
       <%= t(".description") %>
     </div>
-    <div class="tw:px-4 tw:pb-4 tabular-form">
+    <div class="px-4 pb-4 tabular-form">
       <% Problem::CATEGORIES.each do |category| %>
         <% next if Problem::DEFAULT_SEVERITIES[category].nil? # Skip deprecated categories; they don't appear in the defaults list %>
         <div>
           <%= problem_settings_form.label nil, t("problems.categories.%{c}" % {c: category}),
                 for: category,
-                class: "tw:block tw:text-sm tw:font-medium tw:text-secondary-700 tw:dark:tw:text-secondary-300" %>
+                class: "block text-sm font-medium text-secondary-700 dark:text-secondary-300" %>
         </div>
         <div>
           <%= problem_settings_form.select category,
                 Problem::SEVERITIES.map { |s| [t("problems.severities.%{s}" % {s: s}), s] },
                 {selected: @user.problem_severity(category)},
-                class: "tw:block tw:w-full tw:rounded-lg tw:border tw:border-secondary-300 tw:px-3 tw:py-2 tw:shadow-sm tw:focus:ring-2 tw:focus:ring-primary-500 tw:dark:tw:border-secondary-600 tw:dark:tw:bg-secondary-800" %>
+                class: "block w-full rounded-lg border border-secondary-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-primary-500 dark:border-secondary-600 dark:bg-secondary-800" %>
         </div>
       <% end %>
     </div>

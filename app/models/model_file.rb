@@ -10,7 +10,7 @@ class ModelFile < ApplicationRecord
 
   SPECIAL_FILES = [].freeze
 
-  belongs_to :model
+  belongs_to :model, touch: true
 
   after_create :attach_existing_file!
 

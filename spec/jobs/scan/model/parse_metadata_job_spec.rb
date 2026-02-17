@@ -15,9 +15,9 @@ RSpec.describe Scan::Model::ParseMetadataJob do
         .to change { model.reload.preview_file&.filename }.to("part_2.obj")
     end
 
-    it "queues up check for model problems once complete" do
-      expect { described_class.perform_now(model.id) }
-        .to have_enqueued_job(Scan::Model::CheckForProblemsJob).with(model.id).once
+    it "enqueues FinalizeScanBatchJob when scan_batch_id is provided (which runs CheckForProblemsJob)" do
+      expect { described_class.perform_now(model.id, scan_batch_id: "batch-123") }
+        .to have_enqueued_job(Scan::Model::FinalizeScanBatchJob).with(model.id, scan_batch_id: "batch-123").once
     end
   end
 

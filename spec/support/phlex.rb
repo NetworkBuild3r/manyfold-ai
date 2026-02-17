@@ -1,3 +1,8 @@
+# Controller for component specs - includes Pundit so policy helper exists
+class ComponentSpecController < ActionView::TestCase::TestController
+  include Pundit::Authorization
+end
+
 module PhlexTestHelpers
   def render(...)
     view_context.render(...)
@@ -6,7 +11,7 @@ module PhlexTestHelpers
   delegate :view_context, to: :controller
 
   def controller
-    @controller ||= ActionView::TestCase::TestController.new
+    @controller ||= ComponentSpecController.new
   end
 
   def sign_in(user)

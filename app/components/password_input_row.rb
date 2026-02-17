@@ -7,7 +7,7 @@ class Components::PasswordInputRow < Components::InputRow
   end
 
   def input_group
-    div(class: "tw:flex") do
+    div(class: "flex") do
       raw @form.password_field(@attribute, @field_options) # rubocop:disable Rails/OutputSafety
     end
   end

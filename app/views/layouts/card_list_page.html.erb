@@ -1,10 +1,10 @@
 <%= yield :page_header %>
 
-<div class="tw:grid tw:grid-cols-1 tw:lg:grid-cols-[1fr_280px] tw:gap-6 tw:mt-4">
-  <div class="tw:min-w-0" id="item_list">
+<div class="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6 mt-6">
+  <div class="min-w-0" id="item_list">
     <%= yield :items %>
   </div>
-  <aside class="tw:space-y-4" id="sidebar">
+  <aside class="space-y-4" id="sidebar">
     <% action_content = yield :actions %>
     <%= card(:secondary, t(".actions_heading"), class: "action-card") { action_content } if action_content.present? %>
     <%= yield :sidebar %>

@@ -1,6 +1,8 @@
 module ModelListable
   extend ActiveSupport::Concern
 
+  MAX_RESTORE_PAGES = 50
+
   included do
     include TagListable
     include Filterable
@@ -17,11 +19,20 @@ module ModelListable
     @tags, @kv_tags = split_key_value_tags(@tags)
     @unrelated_tag_count = nil unless @filter.any?
 
+    per_page = helpers.pagination_settings["per_page"]
     page = params[:page] || 1
-    @models = @models.page(page).per(helpers.pagination_settings["per_page"])
 
-    # Load extra data
-    @models = @models.includes [:creator, :collection]
-    @models = @models.preload [:model_files, :preview_file] # Use preload query to avoid joining JSON fields
+    # Restore mode: full-page request with ?page=N > 1 — preload pages 1..N (capped) for back-button scroll restoration
+    if !turbo_frame_request? && page.to_i > 1
+      restore_page = [page.to_i, MAX_RESTORE_PAGES].min
+      @models = @models.page(1).per(per_page * restore_page)
+      @models = @models.includes [:creator, :collection]
+      @models = @models.preload [:model_files, :preview_file]
+      @models = ModelListRestoreWrapper.new(@models, restore_page: restore_page, per_page: per_page)
+    else
+      @models = @models.page(page).per(per_page)
+      @models = @models.includes [:creator, :collection]
+      @models = @models.preload [:model_files, :preview_file]
+    end
   end
 end

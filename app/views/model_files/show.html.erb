@@ -10,26 +10,26 @@
       @file.model.name => model_path(@file.model)
     } %>
 
-<div class="tw:grid tw:grid-cols-1 tw:lg:grid-cols-[1fr_320px] tw:gap-6">
-  <div class="tw:min-w-0">
+<div class="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
+  <div class="min-w-0">
     <% if @file.is_image? %>
-      <%= image_tag model_model_file_path(@model, @file, format: @file.extension), alt: @file.name, class: "tw:w-full tw:h-auto" %>
+      <%= image_tag model_model_file_path(@model, @file, format: @file.extension), alt: @file.name, class: "w-full h-auto" %>
     <% elsif @file.is_video? %>
-      <%= video_tag model_model_file_path(@model, @file, format: @file.extension), alt: @file.name, class: "tw:w-full", controls: true %>
+      <%= video_tag model_model_file_path(@model, @file, format: @file.extension), alt: @file.name, class: "w-full", controls: true %>
     <% elsif @file.is_document? %>
-      <%= tag.iframe src: model_model_file_path(@model, @file, format: @file.extension), alt: @file.name, class: "tw:w-full tw:aspect-[0.707]" %>
+      <%= tag.iframe src: model_model_file_path(@model, @file, format: @file.extension), alt: @file.name, class: "w-full aspect-[0.707]" %>
     <% elsif @file.is_renderable? %>
       <% if @file.presupported_version || @file.unsupported_version %>
-        <div class="tw:flex tw:border-b tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:mb-2" role="tablist">
+        <div class="flex border-b border-secondary-200 dark:border-secondary-600 mb-2" role="tablist">
           <% if @file.unsupported_version %>
-            <%= link_to Model.human_attribute_name(:unsupported_version), [@model, @file.unsupported_version], class: "tw:px-4 tw:py-2 tw:text-sm tw:font-medium tw:border-b-2 tw:border-primary-600 tw:text-primary-600 tw:dark:tw:text-primary-400" %>
+            <%= link_to Model.human_attribute_name(:unsupported_version), [@model, @file.unsupported_version], class: "px-4 py-2 text-sm font-medium border-b-2 border-primary-600 text-primary-600 dark:text-primary-400" %>
           <% else %>
-            <span class="tw:px-4 tw:py-2 tw:text-sm tw:font-medium tw:border-b-2 tw:border-primary-600 tw:text-primary-600 tw:dark:tw:text-primary-400" aria-current="page"><%= Model.human_attribute_name :unsupported_version %></span>
+            <span class="px-4 py-2 text-sm font-medium border-b-2 border-primary-600 text-primary-600 dark:text-primary-400" aria-current="page"><%= Model.human_attribute_name :unsupported_version %></span>
           <% end %>
           <% if @file.presupported_version %>
-            <%= link_to Model.human_attribute_name(:presupported_version), [@model, @file.presupported_version], class: "tw:px-4 tw:py-2 tw:text-sm tw:font-medium tw:border-b-2 tw:border-transparent tw:text-secondary-600 tw:dark:tw:text-secondary-400 hover:tw:text-secondary-900 tw:dark:hover:tw:text-secondary-100" %>
+            <%= link_to Model.human_attribute_name(:presupported_version), [@model, @file.presupported_version], class: "px-4 py-2 text-sm font-medium border-b-2 border-transparent text-secondary-600 dark:text-secondary-400 hover:text-secondary-900 dark:hover:text-secondary-100" %>
           <% else %>
-            <span class="tw:px-4 tw:py-2 tw:text-sm tw:font-medium tw:border-b-2 tw:border-primary-600 tw:text-primary-600 tw:dark:tw:text-primary-400" aria-current="page"><%= Model.human_attribute_name :presupported_version %></span>
+            <span class="px-4 py-2 text-sm font-medium border-b-2 border-primary-600 text-primary-600 dark:text-primary-400" aria-current="page"><%= Model.human_attribute_name :presupported_version %></span>
           <% end %>
         </div>
       <% end %>
@@ -37,33 +37,33 @@
     <% end %>
     <% if @file.notes %>
       <%= card(:secondary, t(".notes_heading")) do %>
-        <div class="tw:text-secondary-700 tw:dark:tw:text-secondary-300 tw:prose tw:dark:tw:prose-invert tw:max-w-none"><%= markdownify @file.notes %></div>
+        <div class="text-secondary-700 dark:text-secondary-300 prose dark:prose-invert max-w-none"><%= markdownify @file.notes %></div>
       <% end %>
     <% end %>
   </div>
 
-  <div class="tw:min-w-0">
+  <div class="min-w-0">
     <%= card :secondary, t(".details_heading") do %>
       <% if @file.caption %>
-        <p class="tw:text-lg tw:text-secondary-700 tw:dark:tw:text-secondary-300 tw:mb-3"><%= @file.caption %></p>
+        <p class="text-lg text-secondary-700 dark:text-secondary-300 mb-3"><%= @file.caption %></p>
       <% end %>
-      <div class="tw:grid tw:grid-cols-[min-content_1fr] tw:gap-x-4 tw:gap-y-2 tw:items-baseline">
-        <span class="tw:text-secondary-600 tw:dark:tw:text-secondary-400"><%= ModelFile.human_attribute_name :filename %></span>
-        <code class="tw:text-sm tw:break-all"><%= @file.filename %></code>
+      <div class="grid grid-cols-[min-content_1fr] gap-x-4 gap-y-2 items-baseline">
+        <span class="text-secondary-600 dark:text-secondary-400"><%= ModelFile.human_attribute_name :filename %></span>
+        <code class="text-sm break-all"><%= @file.filename %></code>
         <% if @file.digest %>
-          <span class="tw:text-secondary-600 tw:dark:tw:text-secondary-400"><%= ModelFile.human_attribute_name :digest %></span>
-          <code class="tw:text-sm"><%= @file.digest.slice(0, 16) %></code>
+          <span class="text-secondary-600 dark:text-secondary-400"><%= ModelFile.human_attribute_name :digest %></span>
+          <code class="text-sm"><%= @file.digest.slice(0, 16) %></code>
         <% end %>
         <% if @file.size %>
-          <span class="tw:text-secondary-600 tw:dark:tw:text-secondary-400"><%= ModelFile.human_attribute_name :size %></span>
-          <code class="tw:text-sm"><%= number_to_human_size @file.size, precision: 2 %></code>
+          <span class="text-secondary-600 dark:text-secondary-400"><%= ModelFile.human_attribute_name :size %></span>
+          <code class="text-sm"><%= number_to_human_size @file.size, precision: 2 %></code>
         <% end %>
         <% if @file.dimensions %>
-          <span class="tw:text-secondary-600 tw:dark:tw:text-secondary-400"><%= ModelFile.human_attribute_name :dimensions %></span>
-          <span class="tw:text-sm">
-            𝒙 <code><%= format("%g", @file.dimensions.x.round(1)) %></code>
-            𝒚 <code><%= format("%g", @file.dimensions.y.round(1)) %></code>
-            𝒛 <code><%= format("%g", @file.dimensions.z.round(1)) %></code>
+          <span class="text-secondary-600 dark:text-secondary-400"><%= ModelFile.human_attribute_name :dimensions %></span>
+          <span class="text-sm">
+            ð’™ <code><%= format("%g", @file.dimensions.x.round(1)) %></code>
+            ð’š <code><%= format("%g", @file.dimensions.y.round(1)) %></code>
+            ð’› <code><%= format("%g", @file.dimensions.z.round(1)) %></code>
           </span>
         <% end %>
       </div>
@@ -71,19 +71,19 @@
   </div>
 </div>
 
-<div class="tw:flex tw:flex-wrap tw:items-center tw:gap-3 tw:mt-6 tw:mb-6" role="toolbar" aria-label="File actions">
-  <div class="tw:relative tw:flex tw:items-center tw:rounded-lg tw:overflow-visible tw:border tw:border-secondary-300 tw:dark:tw:border-secondary-500" data-controller="dropdown">
-    <%= link_to safe_join([Icon(icon: "cloud-download-fill", label: t("general.download")), t("general.download")], " "), model_model_file_path(@model, @file, @file.extension&.to_sym, download: "true"), class: "tw:inline-flex tw:items-center tw:gap-2 tw:px-4 tw:py-2 tw:bg-primary-600 tw:text-white hover:tw:bg-primary-700", download: "download" %>
-    <button type="button" class="tw:inline-flex tw:items-center tw:px-2 tw:py-2 tw:bg-primary-600 tw:text-white hover:tw:bg-primary-700 tw:border-l tw:border-primary-500" data-action="click->dropdown#toggle" aria-expanded="false" aria-haspopup="menu">
-      <span class="tw:sr-only">Download options</span>
+<div class="flex flex-wrap items-center gap-3 mt-6 mb-6" role="toolbar" aria-label="File actions">
+  <div class="relative flex items-center rounded-lg overflow-visible border border-secondary-300 dark:border-secondary-500" data-controller="dropdown">
+    <%= link_to safe_join([Icon(icon: "cloud-download-fill", label: t("general.download")), t("general.download")], " "), model_model_file_path(@model, @file, @file.extension&.to_sym, download: "true"), class: "inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white hover:bg-primary-700", download: "download" %>
+    <button type="button" class="inline-flex items-center px-2 py-2 bg-primary-600 text-white hover:bg-primary-700 border-l border-primary-500" data-action="click->dropdown#toggle" aria-expanded="false" aria-haspopup="menu">
+      <span class="sr-only">Download options</span>
       <%= Icon icon: "chevron-down", label: "" %>
     </button>
-    <ul class="tw:absolute tw:left-0 tw:top-full tw:z-20 tw:mt-1 tw:py-1 tw:min-w-[12rem] tw:rounded-lg tw:bg-white tw:dark:tw:bg-secondary-800 tw:shadow-lg tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:list-none tw:m-0 tw:p-0" data-dropdown-target="menu" role="menu">
+    <ul class="absolute left-0 top-full z-20 mt-1 py-1 min-w-[12rem] rounded-lg bg-white dark:bg-secondary-800 shadow-lg border border-secondary-200 dark:border-secondary-600 list-none m-0 p-0" data-dropdown-target="menu" role="menu">
       <%= DropdownHeader text: t(".download.menu_header") %>
       <%= app_links @file %>
     </ul>
   </div>
-  <div class="tw:ml-auto">
+  <div class="ml-auto">
     <%= BurgerMenu do %>
       <%= DropdownItem(icon: "pencil", label: translate("general.edit"), path: edit_model_model_file_path(@model, @file)) if policy(@model).edit? %>
       <%= DropdownItem(icon: "trash", label: translate("general.delete"), path: model_model_file_path(@model, @file), method: :delete, confirm: t("model_files.destroy.confirm")) if policy(@file).destroy? %>
@@ -91,4 +91,4 @@
   </div>
 </div>
 
-<%= render partial: "problems_card", locals: {problems: @file.problems.visible(problem_settings)} %>
+<%= render "application/problems_card", problematic: @file, problems: @file.problems.visible(problem_settings), duplicates: @duplicates %>

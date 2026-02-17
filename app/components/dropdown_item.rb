@@ -35,8 +35,8 @@ class Components::DropdownItem < Components::Base
   private
 
   def dropdown_item_class
-    base = "tw:block tw:w-full tw:px-3 tw:py-2 tw:text-left tw:text-sm tw:text-secondary-700 tw:dark:text-secondary-200 tw:hover:bg-secondary-100 tw:dark:hover:bg-secondary-700 tw:focus-visible:ring-2 tw:focus-visible:ring-primary-500 tw:no-underline"
-    base += " tw:bg-primary-50 tw:dark:bg-primary-900/30 tw:font-medium" if @active
+    base = "block w-full px-3 py-2 text-left text-sm text-secondary-700 dark:text-secondary-200 hover:bg-secondary-100 dark:hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-primary-500 no-underline"
+    base += " bg-primary-50 dark:bg-primary-900/30 font-medium" if @active
     base
   end
 end

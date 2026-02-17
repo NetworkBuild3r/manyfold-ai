@@ -18,7 +18,7 @@ export default class extends Controller {
     document.addEventListener('click', this.boundCloseOnClickOutside, true)
     document.addEventListener('keydown', this.boundCloseOnEscape)
     const trigger = this.element.querySelector<HTMLElement>('[aria-haspopup="menu"]')
-    if (trigger) {
+    if (trigger != null) {
       trigger.addEventListener('keydown', this.boundTriggerKeydown)
     }
   }
@@ -27,7 +27,7 @@ export default class extends Controller {
     document.removeEventListener('click', this.boundCloseOnClickOutside, true)
     document.removeEventListener('keydown', this.boundCloseOnEscape)
     const trigger = this.element.querySelector<HTMLElement>('[aria-haspopup="menu"]')
-    if (trigger) {
+    if (trigger != null) {
       trigger.removeEventListener('keydown', this.boundTriggerKeydown)
     }
     if (this.hasMenuTarget) {
@@ -51,7 +51,7 @@ export default class extends Controller {
   }
 
   close (): void {
-    if (this.hasMenuTarget) {
+    if (this.hasMenuTarget && this.menuTarget.classList.contains('show')) {
       this.menuTarget.classList.remove('show')
       this.menuTarget.removeEventListener('keydown', this.boundMenuKeydown)
       this.syncAriaExpanded(false)
@@ -88,7 +88,7 @@ export default class extends Controller {
     const items = this.getFocusableMenuitems()
     if (items.length === 0) return
     const current = document.activeElement as HTMLElement | null
-    const currentIndex = current ? items.indexOf(current) : -1
+    const currentIndex = (current != null) ? items.indexOf(current) : -1
     switch (event.key) {
       case 'ArrowDown':
         event.preventDefault()
@@ -138,7 +138,7 @@ export default class extends Controller {
 
   private returnFocusToTrigger (): void {
     const trigger = this.element.querySelector<HTMLElement>('[aria-haspopup="menu"]')
-    if (trigger) {
+    if (trigger != null) {
       trigger.focus()
     }
   }

@@ -1,8 +1,10 @@
-declare module 'WindowExtensions' {
-  global {
-    interface Window {
-      i18n
-      Stimulus
-    }
+import type { Application } from '@hotwired/stimulus'
+
+declare global {
+  interface Window {
+    i18n: { t: (key: string) => string, locale: string }
+    Stimulus: Application
   }
 }
+
+export {}

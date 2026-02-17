@@ -1,20 +1,20 @@
-<div class="tw:max-w-md tw:mx-auto tw:px-4">
+<div class="max-w-md mx-auto px-4">
   <%= PageTitle title: t("devise.registrations.new.sign_up") %>
 
   <% if SiteSettings.rules.presence %>
-    <h2><%= t("devise.registrations.new.rules") %></h2>
-    <div class="tw:px-4 tw:py-3 tw:rounded-lg tw:bg-warning/10 tw:text-warning tw:mb-4">
+    <h2 class="<%= heading_classes(:section) %> mb-2"><%= t("devise.registrations.new.rules") %></h2>
+    <div class="px-4 py-3 rounded-lg bg-warning/10 text-warning mb-4">
       <%= markdownify(SiteSettings.rules) %>
     </div>
-    <p class="tw:mb-4">
+    <p class="mb-4">
       <%= t("devise.registrations.new.rules_agree") %>
     </p>
   <% end %>
 
-  <h2><%= t("devise.registrations.new.details") %></h2>
+  <h2 class="<%= heading_classes(:page) %> mb-4"><%= t("devise.registrations.new.details") %></h2>
 
   <%= form_for(resource, as: resource_name, url: invitation_path(resource_name), html: {method: :put}) do |form| %>
-    <div class="tabular-form tw:mb-4">
+    <div class="tabular-form mb-4">
       <%= form.hidden_field :invitation_token, readonly: true %>
 
       <%= text_input_row form, :username, autocomplete: "username", help: t("devise.registrations.new.username.help"), value: nil, required: true %>
@@ -24,13 +24,13 @@
         <%= password_input_row form, :password_confirmation, autocomplete: "new-password" %>
       <% end %>
 
-      <div class="tw:flex tw:flex-wrap tw:items-center tw:gap-2">
-        <%= form.submit translate("devise.registrations.new.sign_up"), class: "tw:inline-flex tw:items-center tw:px-4 tw:py-2 tw:rounded-lg tw:bg-primary-600 tw:text-white hover:tw:bg-primary-700 focus-visible:tw:ring-2 focus-visible:tw:ring-primary-500" %>
-        <div class="tw:ml-auto">
+      <div class="flex flex-wrap items-center gap-2">
+        <%= form.submit translate("devise.registrations.new.sign_up"), class: "inline-flex items-center px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500" %>
+        <div class="ml-auto">
           <%= AltchaWidget() %>
         </div>
       </div>
     </div>
-    <%= content_tag :div, t("devise.registrations.new.approval_help"), class: "tw:px-4 tw:py-3 tw:rounded-lg tw:bg-info/10 tw:text-info tw:mb-4" if SiteSettings.approve_signups %>
+    <%= content_tag :div, t("devise.registrations.new.approval_help"), class: "px-4 py-3 rounded-lg bg-info/10 text-info mb-4" if SiteSettings.approve_signups %>
   <% end %>
 </div>

@@ -1,6 +1,6 @@
-<h3><%= t(".stats") %></h3>
+<h3 class="text-xl font-semibold text-secondary-900 dark:text-secondary-100 mb-2"><%= t(".stats") %></h3>
 
-<div class="tw:flex tw:flex-wrap tw:gap-4">
+<div class="flex flex-wrap gap-4">
   <%= StatBlock(title: Model, value: model_count) %>
   <%= StatBlock(title: ModelFile, value: model_file_count) %>
   <%= StatBlock(title: Creator, value: creator_count) %>
@@ -10,14 +10,14 @@
   <%= StatBlock(title: t(".total_file_size"), value: number_to_human_size(total_file_size, precision: 2)) %>
 </div>
 
-<hr>
+<hr class="<%= divider_classes %>">
 
 <%= form_with url: settings_path, method: :patch, class: "tabular-form" do |form| %>
 
   <%= render "folder_settings", form: form %>
-  <hr>
+  <hr class="<%= divider_classes %>">
   <%= render "file_settings", form: form %>
-  <hr>
+  <hr class="<%= divider_classes %>">
   <%= render "tag_settings", form: form %>
 
   <%= render "submit", form: form %>

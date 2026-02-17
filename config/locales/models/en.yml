@@ -20,6 +20,7 @@ en:
     bulk_update:
       success: Models updated successfully.
     configure_merge:
+      forbidden: One or more selected models could not be found or you don't have permission to merge them.
       common_root:
         description: The models will be combined into a single one in the shared root folder
         title: New model in common root folder
@@ -56,7 +57,9 @@ en:
         bulk_edit: Bulk edit
         clear: Clear selection
         edit: Edit
+        merge: Merge
         select: Select model
+        toolbar_label: Model selection actions
       no_results_html: Sorry, we couldn't find anything to show you! Try changing your filters or search terms, or uploading some models.
       no_results_signed_out_html: Sorry, we couldn't find anything to show you! There might be more to see if you <a href="%{link}">sign in</a>.
       search:
@@ -97,6 +100,12 @@ en:
       download_preparing: Download is being prepared, please wait.
       download_requested: Download requested and will be ready soon, please wait.
       files: Files
+      file_selection:
+        bulk_edit: Bulk edit
+        clear: Clear selection
+        select_file: Select %{name}
+        split_out: Split out
+        toolbar_label: File selection actions
       files_card:
         bulk_edit: Edit all files
         heading: Files

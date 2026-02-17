@@ -1,58 +1,58 @@
-<h3><%= t(".heading") %></h3>
-<div class="tw:flex tw:flex-wrap tw:items-center tw:gap-2 tw:mb-4">
-  <%= link_to t("libraries.general.new"), new_library_path, class: "tw:inline-flex tw:items-center tw:px-4 tw:py-2 tw:rounded-lg tw:border tw:border-secondary-300 tw:dark:border-secondary-500 tw:bg-white tw:dark:tw:bg-secondary-800 hover:tw:bg-secondary-50 tw:dark:hover:tw:bg-secondary-700 focus:tw:ring-2 focus:tw:ring-primary-500 tw:ml-auto" if policy(:library).new? %>
+<h2 class="text-xl font-semibold text-secondary-900 dark:text-secondary-100 mb-2"><%= t(".heading") %></h2>
+<div class="flex flex-wrap items-center gap-2 mb-4">
+  <%= link_to t("libraries.general.new"), new_library_path, class: "inline-flex items-center px-4 py-2 rounded-lg border border-secondary-300 dark:border-secondary-500 bg-white dark:bg-secondary-800 hover:bg-secondary-50 dark:hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-primary-500 ml-auto" if policy(:library).new? %>
 </div>
-<p class="tw:text-lg tw:text-secondary-700 tw:dark:tw:text-secondary-300 tw:mb-6">
+<p class="text-lg text-secondary-700 dark:text-secondary-300 mb-6">
   <%= t(".description") %>
 </p>
-<div class="tw:grid tw:grid-cols-1 tw:md:grid-cols-2 tw:gap-6">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
   <% Library.find_each do |library| %>
-    <div class="tw:rounded-xl tw:border tw:bg-white tw:dark:tw:bg-secondary-800 tw:overflow-hidden tw:shadow-sm <%= "tw:border-info" if library.default? %>">
-      <div class="tw:flex tw:flex-wrap tw:items-center tw:gap-2 tw:px-4 tw:py-3 tw:border-b tw:border-secondary-200 tw:dark:tw:border-secondary-600">
+    <div class="rounded-xl border border-secondary-200 dark:border-secondary-600 bg-surface dark:bg-surface-dark overflow-hidden shadow-sm <%= "border-info" if library.default? %>">
+      <div class="flex flex-wrap items-center gap-2 px-4 py-3 border-b border-secondary-200 dark:border-secondary-600">
         <%= Icon(icon: library.icon, label: library.icon) if library.icon %>
-        <span class="tw:font-medium tw:text-secondary-900 tw:dark:tw:text-secondary-100"><%= library.name %></span>
-        <%= content_tag(:small, class: "tw:text-info tw:ml-auto") { t("activerecord.attributes.library.default") } if library.default? %>
-        <div class="tw:flex tw:gap-2 tw:ml-auto">
+        <span class="font-medium text-secondary-900 dark:text-secondary-100"><%= library.name %></span>
+        <%= content_tag(:small, class: "text-info ml-auto") { t("activerecord.attributes.library.default") } if library.default? %>
+        <div class="flex gap-2 ml-auto">
           <%= GoButton(icon: "box", icon_only: true, label: Model.model_name.human.pluralize, href: models_path(library: library.to_param), variant: "outline-secondary") %>
           <%= DoButton(icon: "radar", icon_only: true, label: t("application.navbar.scan_changes.label"), href: scans_path(library: library.to_param), method: :post, variant: "outline-warning", confirm: translate(".scan_changes.confirm")) if policy(:scan).create? %>
           <%= GoButton(icon: "pencil", label: t("general.edit"), href: edit_library_path(library), variant: :secondary) %>
         </div>
       </div>
-      <div class="tw:p-4">
+      <div class="p-4">
         <% if library.notes.present? %>
-          <div class="tw:mb-4 tw:prose tw:prose-sm tw:dark:tw:prose-invert tw:max-w-none"><%= markdownify(library.notes) %></div>
+          <div class="mb-4 prose prose-sm dark:prose-invert max-w-none"><%= markdownify(library.notes) %></div>
         <% end %>
-        <div class="tw:grid tw:grid-cols-[min-content_1fr] tw:gap-x-4 tw:gap-y-2 tw:items-baseline">
-          <span class="tw:text-secondary-600 tw:dark:tw:text-secondary-400"><%= t("activerecord.attributes.library.storage_service") %></span>
+        <div class="grid grid-cols-[min-content_1fr] gap-x-4 gap-y-2 items-baseline">
+          <span class="text-secondary-600 dark:text-secondary-400"><%= t("activerecord.attributes.library.storage_service") %></span>
           <span><%= t("libraries.storage_services.%{service}" % {service: library.storage_service}) %></span>
           <% if library.storage_service == "filesystem" %>
-            <span class="tw:text-secondary-600 tw:dark:tw:text-secondary-400"><%= t("activerecord.attributes.library.path") %></span>
-            <code class="tw:text-sm tw:break-all"><%= library.path %></code>
+            <span class="text-secondary-600 dark:text-secondary-400"><%= t("activerecord.attributes.library.path") %></span>
+            <code class="text-sm break-all"><%= library.path %></code>
           <% end %>
           <% if library.storage_service == "s3" %>
-            <span class="tw:text-secondary-600 tw:dark:tw:text-secondary-400"><%= t("activerecord.attributes.library.s3_endpoint") %></span>
+            <span class="text-secondary-600 dark:text-secondary-400"><%= t("activerecord.attributes.library.s3_endpoint") %></span>
             <span><%= library.s3_endpoint %></span>
-            <span class="tw:text-secondary-600 tw:dark:tw:text-secondary-400"><%= t("activerecord.attributes.library.s3_bucket") %></span>
+            <span class="text-secondary-600 dark:text-secondary-400"><%= t("activerecord.attributes.library.s3_bucket") %></span>
             <span><%= library.s3_bucket %></span>
-            <span class="tw:text-secondary-600 tw:dark:tw:text-secondary-400"><%= t("activerecord.attributes.library.s3_region") %></span>
+            <span class="text-secondary-600 dark:text-secondary-400"><%= t("activerecord.attributes.library.s3_region") %></span>
             <span><%= library.s3_region %></span>
           <% end %>
           <% if library.free_space %>
-            <span class="tw:text-secondary-600 tw:dark:tw:text-secondary-400"><%= t(".free_space.label") %></span>
+            <span class="text-secondary-600 dark:text-secondary-400"><%= t(".free_space.label") %></span>
             <span><%= number_to_human_size(library.free_space, precision: 2) %></span>
           <% end %>
-          <span class="tw:text-secondary-600 tw:dark:tw:text-secondary-400"><%= t("activerecord.attributes.library.caption") %></span>
+          <span class="text-secondary-600 dark:text-secondary-400"><%= t("activerecord.attributes.library.caption") %></span>
           <span><%= library.caption %></span>
-          <span class="tw:text-secondary-600 tw:dark:tw:text-secondary-400"><%= t("activerecord.attributes.library.tag_regex") %></span>
-          <div class="tw:flex tw:flex-wrap tw:gap-2 tw:min-w-0">
+          <span class="text-secondary-600 dark:text-secondary-400"><%= t("activerecord.attributes.library.tag_regex") %></span>
+          <div class="flex flex-wrap gap-2 min-w-0">
             <% library.tag_regex.each do |reg| %>
-              <%= link_to t(".tag_regex.check"), models_path(library: library, missingtag: reg), class: "tw:inline-flex tw:items-center tw:px-3 tw:py-1.5 tw:text-sm tw:rounded-lg tw:border tw:border-secondary-300 tw:dark:border-secondary-500 tw:bg-white tw:dark:tw:bg-secondary-800 hover:tw:bg-secondary-50 tw:dark:hover:tw:bg-secondary-700" %>
-              <code class="tw:text-sm"><%= reg %></code>
+              <%= link_to t(".tag_regex.check"), models_path(library: library, missingtag: reg), class: "inline-flex items-center px-3 py-1.5 text-sm rounded-lg border border-secondary-300 dark:border-secondary-500 bg-white dark:bg-secondary-800 hover:bg-secondary-50 dark:hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none" %>
+              <code class="text-sm"><%= reg %></code>
             <% end %>
-            <%= link_to t(".tag_regex.search_missing"), models_path(library: library, missingtag: ""), class: "tw:inline-flex tw:items-center tw:px-3 tw:py-1.5 tw:text-sm tw:rounded-lg tw:border tw:border-secondary-300 tw:dark:border-secondary-500 tw:bg-white tw:dark:tw:bg-secondary-800 hover:tw:bg-secondary-50 tw:dark:hover:tw:bg-secondary-700" if library.tag_regex.any? %>
+            <%= link_to t(".tag_regex.search_missing"), models_path(library: library, missingtag: ""), class: "inline-flex items-center px-3 py-1.5 text-sm rounded-lg border border-secondary-300 dark:border-secondary-500 bg-white dark:bg-secondary-800 hover:bg-secondary-50 dark:hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none" if library.tag_regex.any? %>
           </div>
         </div>
-        <div class="tw:flex tw:flex-wrap tw:gap-2 tw:mt-4">
+        <div class="flex flex-wrap gap-2 mt-4">
           <%= StatBlock(title: Model, value: model_count(library: library)) %>
           <%= StatBlock(title: ModelFile, value: model_file_count(library: library)) %>
           <%= StatBlock(title: t("settings.show.total_file_size"), value: number_to_human_size(total_file_size(library: library), precision: 2)) %>
@@ -62,8 +62,8 @@
   <% end %>
 </div>
 
-<hr class="tw:my-8 tw:border-secondary-200 tw:dark:tw:border-secondary-600">
-<h4 class="tw:mb-4"><%= t(".settings") %></h4>
+<hr class="my-8 border-secondary-200 dark:border-secondary-600">
+<h3 class="text-lg font-medium text-secondary-900 dark:text-secondary-100 mb-4"><%= t(".settings") %></h3>
 
 <%= form_with url: settings_path, method: :patch, class: "tabular-form" do |form| %>
   <%= checkbox_input_row form, "libraries[show]",

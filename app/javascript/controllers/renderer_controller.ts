@@ -6,7 +6,7 @@ export default class extends Controller {
   preview: ObjectPreview
 
   connect (): void {
-    this.preview = new ObjectPreview(this.element)
+    this.preview = new ObjectPreview(this.element as HTMLCanvasElement)
     this.preview.connect()
   }
 

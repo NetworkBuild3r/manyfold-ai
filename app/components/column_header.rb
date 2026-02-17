@@ -32,7 +32,7 @@ class Components::ColumnHeader < Components::Base
           Icon(icon: "caret-down-fill", label: t("components.column_header.current_sort"))
         else
           a href: url_for(request.params.merge(@sort_param_name => @sort_option)),
-            class: "tw:text-inherit tw:no-underline hover:tw:underline tw:focus-visible:ring-2 tw:focus-visible:ring-primary-500",
+            class: "text-inherit no-underline hover:underline focus-visible:ring-2 focus-visible:ring-primary-500",
             aria: {role: "button"} do
             span { @label }
             whitespace

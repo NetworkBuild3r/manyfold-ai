@@ -22,7 +22,8 @@ class SiteSettings < RailsSettings::Base
   field :default_signup_role, type: :string, default: "member"
   field :autocreate_creator_for_new_users, type: :boolean, default: false
   field :approve_signups, type: :boolean, default: true
-  field :theme, type: :string, default: "default"
+  field :theme, type: :string, default: "system"
+  field :accent_color, type: :string, default: "indigo"
   field :default_library, type: :integer, default: nil
   field :show_libraries, type: :boolean, default: false
   field :registration_enabled, type: :boolean, default: (ENV.fetch("REGISTRATION", nil) == "enabled")
@@ -100,7 +101,8 @@ class SiteSettings < RailsSettings::Base
     federation_enabled? && FaspClient::Provider.any? { |it| it.has_capability? :account_search }
   end
 
-  AVAILABLE_THEMES = %w[light dark].freeze
+  AVAILABLE_THEMES = %w[light dark system].freeze
+  AVAILABLE_ACCENTS = %w[indigo green purple amber rose].freeze
 
   LEGACY_DARK_THEMES = %w[cyborg darkly slate solar superhero vapor].freeze
 
@@ -108,6 +110,11 @@ class SiteSettings < RailsSettings::Base
     return theme if AVAILABLE_THEMES.include?(theme)
     return "dark" if LEGACY_DARK_THEMES.include?(theme)
     "light"
+  end
+
+  def self.validated_accent_color
+    return accent_color if AVAILABLE_ACCENTS.include?(accent_color)
+    "indigo"
   end
 
   module UserDefaults

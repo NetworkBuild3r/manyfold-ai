@@ -30,8 +30,12 @@ de:
         help: Ein Link zu einem Ort, an dem deine Besucher die Instanz finanziell unterstützen können (z. B. OpenCollective, Patreon). Wird in der Fußzeile angezeigt.
         label: Support-Link
       theme:
-        help_html: Betrifft alle Accounts. Besuche <a href="https://bootswatch.com">Bootswatch</a>, um eine Vorschau zu sehen.
+        help_html: Betrifft alle Accounts. "System" übernimmt die Helligkeitseinstellung deines Geräts.
         label: Aussehen
+        options:
+          light: Hell
+          dark: Dunkel
+          system: System (Geräteeinstellung)
     discovery:
       allow_ai_bots:
         help: Sofern deaktiviert sind KI-Bots in der robots.txt vollständig verboten. Diese Option zu aktivieren kann eine hohe Serverlast verursachen.

@@ -57,8 +57,9 @@ Lint with Ruby explicitly: `ruby bin/bundle exec rake rubocop`, then `ruby bin/b
 
 ## Pipeline layout (DRY)
 
-- **`.github/workflows/ci.yml`** – Single entry: runs **lint** then **test** (test needs lint). `workflow_dispatch` enables on-demand runs.
-- **`.github/actions/setup/`** – Ruby, Node, gems, yarn (used by CI and other workflows).
+- **`.github/workflows/ci.yml`** – Runs **lint** then **test** inside a container. Builds `docker/Dockerfile.ci`, then runs lint and test via `docker run` with the workspace mounted. `workflow_dispatch` enables on-demand runs.
+- **`docker/Dockerfile.ci`** – CI image (Ruby 3.4, Node 24, Yarn, system deps). Used so CI does not depend on the host’s Ruby/Node; same checks can be run locally via Docker.
+- **`.github/actions/setup/`** – Ruby, Node, gems, yarn (used by other workflows that do not use the CI container).
 - **`.github/actions/lint/`** – Ruby (Rubocop), ERB, TypeScript lint and typecheck.
 - **`.github/actions/run-tests/`** – DB prepare, assets, RSpec (caller provides `DATABASE_URL` and services).
 

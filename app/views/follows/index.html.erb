@@ -2,17 +2,21 @@
 
 <% if SiteSettings.federation_enabled? %>
   <%= render "search_form", query: @query %>
-  <p><%= t(".explore_html", link: new_follow_path) %></p>
-  <hr>
+  <p class="mb-4"><%= t(".explore_html", link: new_follow_path) %></p>
+  <hr class="border-secondary-200 dark:border-secondary-600 my-4">
 <% end %>
 
-<div class="row">
-  <div class="col">
-    <h3><%= t(".following") %> <span class="badge bg-primary"><%= @followings.count %></span></h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+  <div>
+    <h3 class="text-lg font-semibold text-secondary-900 dark:text-secondary-100 mb-2">
+      <%= t(".following") %> <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-600 text-white"><%= @followings.count %></span>
+    </h3>
     <%= render "actor_table", actors: @followings %>
   </div>
-  <div class="col">
-    <h3><%= t(".followers") %> <span class="badge bg-primary"><%= @followers.count %></span></h3>
+  <div>
+    <h3 class="text-lg font-semibold text-secondary-900 dark:text-secondary-100 mb-2">
+      <%= t(".followers") %> <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-600 text-white"><%= @followers.count %></span>
+    </h3>
     <%= render "actor_table", actors: @followers %>
   </div>
 </div>

@@ -1,26 +1,19 @@
 /*
- * Manyfold Tailwind CSS entrypoint (Phase 8: Tailwind only).
- * Prefix: all utilities are tw:*.
+ * Manyfold — Tailwind CSS entrypoint
  */
-
-@layer theme, base, components, utilities;
-@import "tailwindcss/theme.css" layer(theme) prefix(tw);
-@import "tailwindcss/utilities.css" layer(utilities) prefix(tw);
-
-/* Dark mode: class strategy on <html> element */
+@layer theme, base, components, vendor, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* Content sources (relative to this file) */
 @source "../../views";
 @source "../../components";
 @source "../../helpers";
 @source "../../javascript";
 
-/* ============================================
-   Design Tokens
-   ============================================ */
+/* ——— Theme ——— */
 @theme {
-  /* --- Primary (Indigo) --- */
+  /* Primary (indigo) */
   --color-primary-50: oklch(0.962 0.018 272.314);
   --color-primary-100: oklch(0.930 0.034 272.788);
   --color-primary-200: oklch(0.870 0.065 274.039);
@@ -33,7 +26,7 @@
   --color-primary-900: oklch(0.359 0.144 278.697);
   --color-primary-950: oklch(0.257 0.09 281.288);
 
-  /* --- Secondary (Slate) --- */
+  /* Secondary (slate) */
   --color-secondary-50: oklch(0.984 0.003 247.858);
   --color-secondary-100: oklch(0.968 0.007 247.896);
   --color-secondary-200: oklch(0.929 0.013 255.508);
@@ -46,7 +39,7 @@
   --color-secondary-900: oklch(0.208 0.042 265.755);
   --color-secondary-950: oklch(0.129 0.042 264.695);
 
-  /* --- Accent (CSS custom properties, swappable) --- */
+  /* Accent (defaults to primary; overridden by data-accent) */
   --color-accent-50: var(--accent-50, var(--color-primary-50));
   --color-accent-100: var(--accent-100, var(--color-primary-100));
   --color-accent-200: var(--accent-200, var(--color-primary-200));
@@ -59,21 +52,14 @@
   --color-accent-900: var(--accent-900, var(--color-primary-900));
   --color-accent-950: var(--accent-950, var(--color-primary-950));
 
-  /* --- Semantic Colors --- */
   --color-success: oklch(0.627 0.194 149.214);
   --color-warning: oklch(0.666 0.179 58.318);
   --color-danger: oklch(0.577 0.245 27.325);
   --color-info: oklch(0.546 0.245 262.881);
-
-  /* --- Surface Colors (for cards, backgrounds) --- */
   --color-surface: oklch(1 0 0);
   --color-surface-alt: oklch(0.985 0.002 247);
   --color-surface-dark: oklch(0.205 0.042 265.755);
-
-  /* --- Typography --- */
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
-
-  /* --- Border Radius --- */
   --radius-sm: 0.25rem;
   --radius-md: 0.375rem;
   --radius-lg: 0.5rem;
@@ -86,10 +72,7 @@
   --brand-primary-hover: var(--color-primary-700);
 }
 
-/* ============================================
-   Accent Color Palettes (swapped via data-accent on <html>)
-   Default = primary (indigo), no override needed.
-   ============================================ */
+/* Accent palettes (data-accent on <html>) */
 :root[data-accent="green"] {
   --accent-50: oklch(0.962 0.044 156.743);
   --accent-100: oklch(0.923 0.096 155.995);
@@ -103,7 +86,6 @@
   --accent-900: oklch(0.327 0.078 150.069);
   --accent-950: oklch(0.216 0.058 152.036);
 }
-
 :root[data-accent="purple"] {
   --accent-50: oklch(0.977 0.014 308.299);
   --accent-100: oklch(0.946 0.033 307.174);
@@ -117,7 +99,6 @@
   --accent-900: oklch(0.381 0.176 304.987);
   --accent-950: oklch(0.291 0.149 302.717);
 }
-
 :root[data-accent="amber"] {
   --accent-50: oklch(0.987 0.022 95.277);
   --accent-100: oklch(0.962 0.059 95.617);
@@ -131,7 +112,6 @@
   --accent-900: oklch(0.414 0.112 45.904);
   --accent-950: oklch(0.279 0.077 45.635);
 }
-
 :root[data-accent="rose"] {
   --accent-50: oklch(0.969 0.015 12.422);
   --accent-100: oklch(0.941 0.030 12.58);
@@ -146,7 +126,15 @@
   --accent-950: oklch(0.271 0.105 12.094);
 }
 
-/* Native <dialog> used as modal */
+/* ——— Third-party (in vendor layer so Tailwind utilities can override) ——— */
+@import "../../../node_modules/bootstrap-icons/font/bootstrap-icons.css" layer(vendor);
+@import "../../../node_modules/@infinizhen/rpg-awesome-continued/css/rpg-awesome-continued.min.css" layer(vendor);
+@import "../../../node_modules/tom-select/dist/css/tom-select.css" layer(vendor);
+@import "../../../node_modules/@uppy/core/dist/style.min.css" layer(vendor);
+@import "../../../node_modules/@uppy/dashboard/dist/style.min.css" layer(vendor);
+@import "../../../node_modules/driver.js/dist/driver.css" layer(vendor);
+
+/* ——— Base / layout ——— */
 dialog.modal {
   border: none;
   padding: 0;
@@ -155,40 +143,48 @@ dialog.modal::backdrop {
   background: rgba(0, 0, 0, 0.5);
 }
 
-/* ============================================
-   Phase 3: Visibility contracts for Stimulus
-   (dropdown, collapse, carousel). Raw CSS so
-   we don't depend on @apply with prefix.
-   ============================================ */
-[data-dropdown-target="menu"] {
-  display: none;
+.skip-link {
+  position: absolute;
+  width: 100%;
+  z-index: 9999999;
+  transform: translateY(-100%);
+  transition: transform 0.2s ease-out;
 }
-[data-dropdown-target="menu"].show {
-  display: block;
+.skip-link:focus-within {
+  transform: translateY(0);
 }
-[data-collapse-target="content"] {
-  display: none;
+.skip-link-container {
+  overflow-y: hidden;
+  position: relative;
 }
-[data-collapse-target="content"].show {
-  display: block;
-}
+
+/* Stimulus visibility: .show toggles display */
+[data-dropdown-target="menu"],
+[data-collapse-target="content"],
 .storage-collapse {
   display: none;
 }
+[data-dropdown-target="menu"].show,
+[data-collapse-target="content"].show,
 .storage-collapse.show {
   display: block;
 }
+@media (min-width: 768px) {
+  [data-collapse-target="content"].collapse-md {
+    display: block;
+  }
+}
 
-/* Problems index: row background by severity */
-.problem-severity-error,
-.problem-severity-danger {
-  background: color-mix(in oklch, var(--color-danger), transparent 90%);
+#navbar.navbar-content {
+  display: none;
 }
-.problem-severity-warning {
-  background: color-mix(in oklch, var(--color-warning), transparent 90%);
+#navbar.navbar-content.show {
+  display: flex;
 }
-.problem-severity-info {
-  background: color-mix(in oklch, var(--color-info), transparent 90%);
+@media (min-width: 768px) {
+  #navbar.navbar-content {
+    display: flex !important;
+  }
 }
 
 .carousel-item {
@@ -201,117 +197,107 @@ dialog.modal::backdrop {
   background-color: white;
 }
 
-/* Card helper: when collapse is "md", content is visible on md+ without .show */
-@media (min-width: 768px) {
-  [data-collapse-target="content"].collapse-md {
-    display: block;
-  }
-}
-
-/* Navbar: collapse content always visible on md+, toggled by .show on small */
-#navbar.navbar-collapse {
-  display: none;
-}
-#navbar.navbar-collapse.show {
-  display: flex;
-}
-@media (min-width: 768px) {
-  #navbar.navbar-collapse {
-    display: flex !important;
-  }
-}
-
-/* Phase 5: Model card grid — turbo-frames inside the grid must not take a grid cell */
-#model-card-grid turbo-frame {
+/* Infinite scroll: empty frame needs dimensions so IntersectionObserver fires */
+#model-card-grid turbo-frame:not(:empty) {
   display: contents;
 }
 
-/* ============================================
-   Third-party: icons, tom-select, uppy, driver
-   (paths relative to this file; Tailwind CLI resolves from project)
-   ============================================ */
-@import "../../../node_modules/bootstrap-icons/font/bootstrap-icons.css";
-@import "../../../node_modules/@infinizhen/rpg-awesome-continued/css/rpg-awesome-continued.min.css";
-@import "../../../node_modules/tom-select/dist/css/tom-select.css";
-@import "../../../node_modules/@uppy/core/dist/style.min.css";
-@import "../../../node_modules/@uppy/dashboard/dist/style.min.css";
-@import "../../../node_modules/driver.js/dist/driver.css";
-
-/* ============================================
-   Migrated app rules (from removed SCSS)
-   ============================================ */
-
-/* Skip-link (layout) */
-.skip-link {
-  position: absolute;
+#model-card-grid turbo-frame:empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
   width: 100%;
-  z-index: 9999999;
-  transform: translateY(-100%);
-  transition: transform 0.2s ease-out;
-}
-.skip-link:focus-within {
-  transform: translateY(0%);
-}
-.skip-link-container {
-  overflow-y: hidden;
-  position: relative;
+  grid-column: 1 / -1;
 }
 
-/* Tabular form grid (forms) */
+#model-card-grid turbo-frame:empty::after,
+#model-card-grid turbo-frame[aria-busy="true"]::after {
+  content: "";
+  width: 2rem;
+  height: 2rem;
+  border: 3px solid var(--color-secondary-300);
+  border-top-color: var(--color-primary-500);
+  border-radius: 50%;
+  animation: model-grid-spin 0.8s linear infinite;
+}
+
+@keyframes model-grid-spin {
+  to { transform: rotate(360deg); }
+}
+
+#model-card-grid turbo-frame[aria-busy="true"] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  width: 100%;
+  grid-column: 1 / -1;
+}
+
+/* ——— Components ——— */
+.problem-severity-error,
+.problem-severity-danger {
+  background: color-mix(in oklch, var(--color-danger), transparent 90%);
+}
+.problem-severity-warning {
+  background: color-mix(in oklch, var(--color-warning), transparent 90%);
+}
+.problem-severity-info {
+  background: color-mix(in oklch, var(--color-info), transparent 90%);
+}
+
 .tabular-form {
   display: grid;
-  grid-template-columns: minmax(min-content, max-content) auto;
-  gap: 1em;
+  grid-template-columns: 1fr;
+  gap: 0.75em;
 }
-.tabular-form div:has(input[type=submit]),
-.tabular-form div:has(button[type=submit]) {
-  grid-column: 2;
-}
-.tabular-form table,
-.tabular-form hr,
-.tabular-form h1, .tabular-form h2, .tabular-form h3, .tabular-form h4, .tabular-form h5, .tabular-form h6,
-.tabular-form p, .tabular-form ul {
-  grid-column: span 2;
+@media (min-width: 640px) {
+  .tabular-form {
+    grid-template-columns: minmax(min-content, max-content) auto;
+    gap: 1em;
+  }
+  .tabular-form div:has(input[type=submit]),
+  .tabular-form div:has(button[type=submit]) {
+    grid-column: 2;
+  }
+  .tabular-form table,
+  .tabular-form hr,
+  .tabular-form h1, .tabular-form h2, .tabular-form h3, .tabular-form h4, .tabular-form h5, .tabular-form h6,
+  .tabular-form p, .tabular-form ul {
+    grid-column: span 2;
+  }
 }
 
-/* Libraries: badge link */
 a.badge {
   text-decoration: none;
 }
 
-/* Effects: icon animations */
 .icon-flip::before {
   animation: flip 5s ease-in-out infinite;
 }
 @keyframes flip {
-  0% { transform: rotate(0deg); }
-  10% { transform: rotate(180deg); }
-  50% { transform: rotate(180deg); }
-  60% { transform: rotate(360deg); }
-  100% { transform: rotate(360deg); }
+  from { transform: rotate(0deg); }
+  10%, 50% { transform: rotate(180deg); }
+  60%, to { transform: rotate(360deg); }
 }
 .icon-spin::before {
   animation: spin 5s linear infinite;
 }
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  50% { transform: rotate(180deg); }
-  100% { transform: rotate(360deg); }
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
-/* Avatars */
 img.avatar {
   width: 4rem;
   object-fit: cover;
   aspect-ratio: 1;
   clip-path: circle();
 }
-img.avatar.avatar-sm {
-  width: 2rem;
-}
-img.avatar.avatar-lg {
-  width: 6rem;
-}
+img.avatar.avatar-sm { width: 2rem; }
+img.avatar.avatar-lg { width: 6rem; }
+
 div.with-background {
   text-shadow:
     0 -1px 0 oklch(0.985 0.002 247),
@@ -323,17 +309,58 @@ div.with-background {
     -1px -1px 0 oklch(0.985 0.002 247),
     1px -1px 0 oklch(0.985 0.002 247);
 }
+.dark div.with-background {
+  text-shadow:
+    0 -1px 0 var(--color-secondary-950),
+    0 1px 0 var(--color-secondary-950),
+    1px 0 0 var(--color-secondary-950),
+    -1px 0 0 var(--color-secondary-950),
+    1px 1px 0 var(--color-secondary-950),
+    -1px 1px 0 var(--color-secondary-950),
+    -1px -1px 0 var(--color-secondary-950),
+    1px -1px 0 var(--color-secondary-950);
+}
 
-/* Model card selection bubble selected state */
-.model-card-selection-bubble.model-card-selection-selected {
+/* Selection bubbles: hidden until card hover or selected; selected = solid primary + white check.
+   Uses !important so selected state overrides Tailwind utilities in light and dark theme. */
+
+.model-card-selection-bubble,
+.file-list-selection-bubble {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.model-card:hover .model-card-selection-bubble,
+.model-card-selection-bubble.model-card-selection-selected,
+.model-card-selection-bubble:focus-visible {
+  opacity: 1;
+}
+.file-card:hover .file-list-selection-bubble,
+.file-list-selection-bubble.file-list-selection-selected,
+.file-list-selection-bubble:focus-visible {
+  opacity: 1;
+}
+.model-card-selection-bubble.model-card-selection-selected,
+.file-list-selection-bubble.file-list-selection-selected {
   background: var(--color-primary-600) !important;
+  border-color: var(--color-primary-600) !important;
+  color: white;
+}
+.model-card-selection-bubble.model-card-selection-selected .model-card-selection-check,
+.file-list-selection-bubble.file-list-selection-selected .file-list-selection-check {
+  opacity: 1 !important;
   color: white;
 }
 
-/* Application one-offs */
-.creator-card {
-  height: 100%;
+.object-preview {
+  aspect-ratio: 1;
+  width: 100%;
+  touch-action: none;
 }
+.app-icon {
+  height: 1.2rem;
+}
+
+/* ——— Overrides & one-offs ——— */
 .ts-control {
   padding: 1px;
 }
@@ -352,17 +379,26 @@ span.deobfuscated {
   -webkit-text-security: none;
 }
 
-/* Object preview / model files (minimal) */
-.object-preview {
-  aspect-ratio: 1;
-  width: 100%;
-  touch-action: none;
+.altcha-wrapper {
+  border: 1px solid var(--color-secondary-300);
+  border-radius: var(--radius-md);
+  padding: 0.25rem;
 }
-.app-icon {
-  height: 1.2rem;
+.altcha-wrapper:has(div.altcha[data-state="verifying"]) {
+  border-color: var(--color-secondary-500);
+  background: color-mix(in oklch, var(--color-secondary-200), transparent 50%);
+}
+.altcha-wrapper:has(div.altcha[data-state="verified"]) {
+  border-color: var(--color-success);
+  background: color-mix(in oklch, var(--color-success), transparent 90%);
+}
+.altcha-wrapper div.altcha {
+  display: inline-block;
+}
+.altcha-wrapper .altcha-checkbox {
+  display: none;
 }
 
-/* Tom-select dark mode (class strategy) */
 .dark .ts-control,
 .dark .ts-wrapper.single.input-active .ts-control {
   background-color: var(--color-secondary-800);
@@ -386,23 +422,65 @@ span.deobfuscated {
   color: var(--color-secondary-200);
 }
 
-/* Altcha (replacement for Bootstrap @extend) */
-.altcha-wrapper {
-  border: 1px solid var(--color-secondary-300);
-  border-radius: var(--radius-md);
-  padding: 0.25rem;
+/* Dark mode: driver.js tour */
+.dark .driver-popover {
+  background-color: var(--color-secondary-800);
+  color: var(--color-secondary-200);
+  border: 1px solid var(--color-secondary-600);
 }
-.altcha-wrapper:has(div.altcha[data-state="verifying"]) {
-  border-color: var(--color-secondary-500);
-  background: color-mix(in oklch, var(--color-secondary-200), transparent 50%);
+.dark .driver-popover * {
+  color: inherit;
 }
-.altcha-wrapper:has(div.altcha[data-state="verified"]) {
-  border-color: var(--color-success);
-  background: color-mix(in oklch, var(--color-success), transparent 90%);
+.dark .driver-popover-title {
+  color: var(--color-secondary-100);
 }
-.altcha-wrapper div.altcha {
-  display: inline-block;
+.dark .driver-popover-close-btn {
+  color: var(--color-secondary-400);
 }
-.altcha-wrapper .altcha-checkbox {
-  display: none;
+.dark .driver-popover-close-btn:hover,
+.dark .driver-popover-close-btn:focus {
+  color: var(--color-secondary-200);
+}
+.dark .driver-popover-description {
+  color: var(--color-secondary-300);
+}
+.dark .driver-popover-progress-text {
+  color: var(--color-secondary-400);
+}
+.dark .driver-popover-footer button {
+  background-color: var(--color-secondary-700);
+  color: var(--color-secondary-200);
+  border-color: var(--color-secondary-600);
+  text-shadow: none;
+}
+.dark .driver-popover-footer button:hover,
+.dark .driver-popover-footer button:focus {
+  background-color: var(--color-secondary-600);
+}
+.dark .driver-popover-arrow {
+  border-color: var(--color-secondary-800);
+}
+
+/* Dark mode: Uppy dashboard */
+.dark .uppy-Dashboard {
+  background-color: var(--color-secondary-800);
+  color: var(--color-secondary-200);
+}
+.dark .uppy-Dashboard-inner {
+  background-color: var(--color-secondary-800);
+  border-color: var(--color-secondary-600);
+}
+.dark .uppy-StatusBar {
+  background-color: var(--color-secondary-800);
+  border-color: var(--color-secondary-600);
+  color: var(--color-secondary-200);
+}
+.dark .uppy-DashboardContent-panel {
+  background-color: var(--color-secondary-800);
+  color: var(--color-secondary-200);
+}
+.dark .uppy-DashboardContent-bar {
+  background-color: var(--color-secondary-700);
+  border-color: var(--color-secondary-600);
+  color: var(--color-secondary-200);
 }

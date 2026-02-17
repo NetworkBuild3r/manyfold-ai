@@ -2,8 +2,8 @@
 
 class Components::SearchHelp < Components::Base
   def view_template
-    div(class: "tw:text-left", data: {controller: "dialog"}) do
-      a class: "tw:text-primary-600 tw:hover:underline tw:focus-visible:ring-2 tw:focus-visible:ring-primary-500 tw:rounded tw:no-underline",
+    div(class: "text-left", data: {controller: "dialog"}) do
+      a class: "text-primary-600 hover:underline focus-visible:ring-2 focus-visible:ring-primary-500 rounded no-underline",
         aria: {haspopup: "dialog"},
         data: {action: "click->dialog#open"},
         tabindex: 0, href: "#" do
@@ -26,36 +26,36 @@ class Components::SearchHelp < Components::Base
   end
 
   def help_table
-    table(class: "tw:w-full tw:text-sm tw:border-collapse") do
+    table(class: "w-full text-sm border-collapse") do
       tr do
-        td(class: "tw:border-b tw:border-secondary-200 tw:dark:border-secondary-600 tw:py-2 tw:pr-4") { code(class: "tw:bg-secondary-100 tw:dark:bg-secondary-700 tw:px-1 tw:py-0.5 tw:rounded") { "cat hat" } }
-        td(class: "tw:border-b tw:border-secondary-200 tw:dark:border-secondary-600 tw:py-2") { t("components.search_help.simple") }
+        td(class: "border-b border-secondary-200 dark:border-secondary-600 py-2 pr-4") { code(class: "bg-secondary-100 dark:bg-secondary-700 px-1 py-0.5 rounded") { "cat hat" } }
+        td(class: "border-b border-secondary-200 dark:border-secondary-600 py-2") { t("components.search_help.simple") }
       end
-      tr(class: "tw:even:bg-secondary-50 tw:dark:even:bg-secondary-800/50") do
-        td(class: "tw:border-b tw:border-secondary-200 tw:dark:border-secondary-600 tw:py-2 tw:pr-4") { code(class: "tw:bg-secondary-100 tw:dark:bg-secondary-700 tw:px-1 tw:py-0.5 tw:rounded") { "cat or hat" } }
-        td(class: "tw:border-b tw:border-secondary-200 tw:dark:border-secondary-600 tw:py-2") { t("components.search_help.boolean") }
+      tr(class: "even:bg-secondary-50 dark:even:bg-secondary-800/50") do
+        td(class: "border-b border-secondary-200 dark:border-secondary-600 py-2 pr-4") { code(class: "bg-secondary-100 dark:bg-secondary-700 px-1 py-0.5 rounded") { "cat or hat" } }
+        td(class: "border-b border-secondary-200 dark:border-secondary-600 py-2") { t("components.search_help.boolean") }
       end
       negation
-      tr(class: "tw:even:bg-secondary-50 tw:dark:even:bg-secondary-800/50") do
-        td(class: "tw:border-b tw:border-secondary-200 tw:dark:border-secondary-600 tw:py-2 tw:pr-4") { code(class: "tw:bg-secondary-100 tw:dark:bg-secondary-700 tw:px-1 tw:py-0.5 tw:rounded") { '"cat hat"' } }
-        td(class: "tw:border-b tw:border-secondary-200 tw:dark:border-secondary-600 tw:py-2") { t("components.search_help.quotes") }
+      tr(class: "even:bg-secondary-50 dark:even:bg-secondary-800/50") do
+        td(class: "border-b border-secondary-200 dark:border-secondary-600 py-2 pr-4") { code(class: "bg-secondary-100 dark:bg-secondary-700 px-1 py-0.5 rounded") { '"cat hat"' } }
+        td(class: "border-b border-secondary-200 dark:border-secondary-600 py-2") { t("components.search_help.quotes") }
       end
       tr do
-        td(class: "tw:border-b tw:border-secondary-200 tw:dark:border-secondary-600 tw:py-2 tw:pr-4") { code(class: "tw:bg-secondary-100 tw:dark:bg-secondary-700 tw:px-1 tw:py-0.5 tw:rounded") { "(cat or hat) and not bat" } }
-        td(class: "tw:border-b tw:border-secondary-200 tw:dark:border-secondary-600 tw:py-2") { t("components.search_help.parentheses") }
+        td(class: "border-b border-secondary-200 dark:border-secondary-600 py-2 pr-4") { code(class: "bg-secondary-100 dark:bg-secondary-700 px-1 py-0.5 rounded") { "(cat or hat) and not bat" } }
+        td(class: "border-b border-secondary-200 dark:border-secondary-600 py-2") { t("components.search_help.parentheses") }
       end
-      tr(class: "tw:even:bg-secondary-50 tw:dark:even:bg-secondary-800/50") do
-        td(class: "tw:border-b tw:border-secondary-200 tw:dark:border-secondary-600 tw:py-2 tw:pr-4") { code(class: "tw:bg-secondary-100 tw:dark:bg-secondary-700 tw:px-1 tw:py-0.5 tw:rounded") { "tag = cat" } }
-        td(class: "tw:border-b tw:border-secondary-200 tw:dark:border-secondary-600 tw:py-2") { t("components.search_help.tag") }
+      tr(class: "even:bg-secondary-50 dark:even:bg-secondary-800/50") do
+        td(class: "border-b border-secondary-200 dark:border-secondary-600 py-2 pr-4") { code(class: "bg-secondary-100 dark:bg-secondary-700 px-1 py-0.5 rounded") { "tag = cat" } }
+        td(class: "border-b border-secondary-200 dark:border-secondary-600 py-2") { t("components.search_help.tag") }
       end
       tr do
-        td(class: "tw:border-b tw:border-secondary-200 tw:dark:border-secondary-600 tw:py-2 tw:pr-4") { code(class: "tw:bg-secondary-100 tw:dark:bg-secondary-700 tw:px-1 tw:py-0.5 tw:rounded") { "!tag = cat" } }
-        td(class: "tw:border-b tw:border-secondary-200 tw:dark:border-secondary-600 tw:py-2") { t("components.search_help.without_tag") }
+        td(class: "border-b border-secondary-200 dark:border-secondary-600 py-2 pr-4") { code(class: "bg-secondary-100 dark:bg-secondary-700 px-1 py-0.5 rounded") { "!tag = cat" } }
+        td(class: "border-b border-secondary-200 dark:border-secondary-600 py-2") { t("components.search_help.without_tag") }
       end
       specific_fields
-      tr(class: "tw:even:bg-secondary-50 tw:dark:even:bg-secondary-800/50") do
-        td(class: "tw:border-b tw:border-secondary-200 tw:dark:border-secondary-600 tw:py-2 tw:pr-4") { code(class: "tw:bg-secondary-100 tw:dark:bg-secondary-700 tw:px-1 tw:py-0.5 tw:rounded") { "not set? tag" } }
-        td(class: "tw:border-b tw:border-secondary-200 tw:dark:border-secondary-600 tw:py-2") { t("components.search_help.unset") }
+      tr(class: "even:bg-secondary-50 dark:even:bg-secondary-800/50") do
+        td(class: "border-b border-secondary-200 dark:border-secondary-600 py-2 pr-4") { code(class: "bg-secondary-100 dark:bg-secondary-700 px-1 py-0.5 rounded") { "not set? tag" } }
+        td(class: "border-b border-secondary-200 dark:border-secondary-600 py-2") { t("components.search_help.unset") }
       end
       path
       filenames
@@ -64,64 +64,64 @@ class Components::SearchHelp < Components::Base
   end
 
   def path
-    tr(class: "tw:even:bg-secondary-50 tw:dark:even:bg-secondary-800/50") do
-      td(class: "tw:border-b tw:border-secondary-200 tw:dark:border-secondary-600 tw:py-2 tw:pr-4") do
-        code(class: "tw:bg-secondary-100 tw:dark:bg-secondary-700 tw:px-1 tw:py-0.5 tw:rounded") { "path ~ tools" }
+    tr(class: "even:bg-secondary-50 dark:even:bg-secondary-800/50") do
+      td(class: "border-b border-secondary-200 dark:border-secondary-600 py-2 pr-4") do
+        code(class: "bg-secondary-100 dark:bg-secondary-700 px-1 py-0.5 rounded") { "path ~ tools" }
       end
-      td(class: "tw:border-b tw:border-secondary-200 tw:dark:border-secondary-600 tw:py-2") { t("components.search_help.path") }
+      td(class: "border-b border-secondary-200 dark:border-secondary-600 py-2") { t("components.search_help.path") }
       end
   end
 
   def filenames
     tr do
-      td(class: "tw:border-b tw:border-secondary-200 tw:dark:border-secondary-600 tw:py-2 tw:pr-4") do
-        code(class: "tw:bg-secondary-100 tw:dark:bg-secondary-700 tw:px-1 tw:py-0.5 tw:rounded") { "filename = cat.stl" }
+      td(class: "border-b border-secondary-200 dark:border-secondary-600 py-2 pr-4") do
+        code(class: "bg-secondary-100 dark:bg-secondary-700 px-1 py-0.5 rounded") { "filename = cat.stl" }
         br
-        code(class: "tw:bg-secondary-100 tw:dark:bg-secondary-700 tw:px-1 tw:py-0.5 tw:rounded") { "filename ~ cat" }
+        code(class: "bg-secondary-100 dark:bg-secondary-700 px-1 py-0.5 rounded") { "filename ~ cat" }
       end
-      td(class: "tw:border-b tw:border-secondary-200 tw:dark:border-secondary-600 tw:py-2") { t("components.search_help.filename") }
+      td(class: "border-b border-secondary-200 dark:border-secondary-600 py-2") { t("components.search_help.filename") }
     end
   end
 
   def specific_fields
     tr do
-      td(class: "tw:border-b tw:border-secondary-200 tw:dark:border-secondary-600 tw:py-2 tw:pr-4") do
-        code(class: "tw:bg-secondary-100 tw:dark:bg-secondary-700 tw:px-1 tw:py-0.5 tw:rounded") { "creator ~ cat" }
+      td(class: "border-b border-secondary-200 dark:border-secondary-600 py-2 pr-4") do
+        code(class: "bg-secondary-100 dark:bg-secondary-700 px-1 py-0.5 rounded") { "creator ~ cat" }
         br
-        code(class: "tw:bg-secondary-100 tw:dark:bg-secondary-700 tw:px-1 tw:py-0.5 tw:rounded") { "collection ~ cat" }
+        code(class: "bg-secondary-100 dark:bg-secondary-700 px-1 py-0.5 rounded") { "collection ~ cat" }
         br
-        code(class: "tw:bg-secondary-100 tw:dark:bg-secondary-700 tw:px-1 tw:py-0.5 tw:rounded") { "caption ~ cat" }
+        code(class: "bg-secondary-100 dark:bg-secondary-700 px-1 py-0.5 rounded") { "caption ~ cat" }
         br
-        code(class: "tw:bg-secondary-100 tw:dark:bg-secondary-700 tw:px-1 tw:py-0.5 tw:rounded") { "description ~ cat" }
+        code(class: "bg-secondary-100 dark:bg-secondary-700 px-1 py-0.5 rounded") { "description ~ cat" }
         if SiteSettings.show_libraries?
           br
-          code(class: "tw:bg-secondary-100 tw:dark:bg-secondary-700 tw:px-1 tw:py-0.5 tw:rounded") { "library = #{Library.first.name}" }
+          code(class: "bg-secondary-100 dark:bg-secondary-700 px-1 py-0.5 rounded") { "library = #{Library.first.name}" }
         end
       end
-      td(class: "tw:border-b tw:border-secondary-200 tw:dark:border-secondary-600 tw:py-2") { t("components.search_help.specific_fields") }
+      td(class: "border-b border-secondary-200 dark:border-secondary-600 py-2") { t("components.search_help.specific_fields") }
     end
   end
 
   def negation
     tr do
-      td(class: "tw:border-b tw:border-secondary-200 tw:dark:border-secondary-600 tw:py-2 tw:pr-4") do
-        code(class: "tw:bg-secondary-100 tw:dark:bg-secondary-700 tw:px-1 tw:py-0.5 tw:rounded") { "cat -hat" }
+      td(class: "border-b border-secondary-200 dark:border-secondary-600 py-2 pr-4") do
+        code(class: "bg-secondary-100 dark:bg-secondary-700 px-1 py-0.5 rounded") { "cat -hat" }
         br
-        code(class: "tw:bg-secondary-100 tw:dark:bg-secondary-700 tw:px-1 tw:py-0.5 tw:rounded") { "cat !hat" }
+        code(class: "bg-secondary-100 dark:bg-secondary-700 px-1 py-0.5 rounded") { "cat !hat" }
         br
-        code(class: "tw:bg-secondary-100 tw:dark:bg-secondary-700 tw:px-1 tw:py-0.5 tw:rounded") { "cat not hat" }
+        code(class: "bg-secondary-100 dark:bg-secondary-700 px-1 py-0.5 rounded") { "cat not hat" }
       end
-      td(class: "tw:border-b tw:border-secondary-200 tw:dark:border-secondary-600 tw:py-2") { t("components.search_help.negation") }
+      td(class: "border-b border-secondary-200 dark:border-secondary-600 py-2") { t("components.search_help.negation") }
     end
   end
 
   def federation
     return unless SiteSettings.federation_enabled?
-    tr(class: "tw:even:bg-secondary-50 tw:dark:even:bg-secondary-800/50") do
-      td(class: "tw:border-b tw:border-secondary-200 tw:dark:border-secondary-600 tw:py-2 tw:pr-4") do
-        code(class: "tw:bg-secondary-100 tw:dark:bg-secondary-700 tw:px-1 tw:py-0.5 tw:rounded") { "@manyfold@3dp.chat" }
+    tr(class: "even:bg-secondary-50 dark:even:bg-secondary-800/50") do
+      td(class: "border-b border-secondary-200 dark:border-secondary-600 py-2 pr-4") do
+        code(class: "bg-secondary-100 dark:bg-secondary-700 px-1 py-0.5 rounded") { "@manyfold@3dp.chat" }
       end
-      td(class: "tw:border-b tw:border-secondary-200 tw:dark:border-secondary-600 tw:py-2") { t("components.search_help.federation") }
+      td(class: "border-b border-secondary-200 dark:border-secondary-600 py-2") { t("components.search_help.federation") }
     end
   end
 end

@@ -1,20 +1,20 @@
-<div class="tw:rounded-xl tw:border tw:border-secondary-200 tw:dark:tw:border-secondary-600 tw:bg-white tw:dark:tw:bg-secondary-800 tw:shadow-sm tw:mb-4 tw:overflow-hidden">
-  <h3 class="tw:px-4 tw:py-3 tw:bg-secondary-600 tw:text-white tw:m-0 tw:font-medium"><%= t(".heading") %></h3>
-  <div class="tw:p-4 tabular-form">
+<div class="rounded-xl border border-secondary-200 dark:border-secondary-600 bg-white dark:bg-secondary-800 shadow-sm mb-4 overflow-hidden">
+  <h3 class="px-4 py-3 bg-secondary-600 text-white m-0 font-medium"><%= t(".heading") %></h3>
+  <div class="p-4 tabular-form">
 
     <div>
-      <%= form.label :interface_language, t(".interface_language.label"), class: "tw:block tw:text-sm tw:font-medium tw:text-secondary-700 tw:dark:tw:text-secondary-300" %>
+      <%= form.label :interface_language, t(".interface_language.label"), class: "block text-sm font-medium text-secondary-700 dark:text-secondary-300" %>
     </div>
     <div>
       <%= form.select :interface_language,
             @languages,
             {selected: @user.interface_language},
-            {class: "tw:block tw:w-full tw:rounded-lg tw:border tw:border-secondary-300 tw:px-3 tw:py-2 tw:shadow-sm tw:focus:ring-2 tw:focus:ring-primary-500 tw:dark:tw:border-secondary-600 tw:dark:tw:bg-secondary-800"} %>
-      <small class="tw:text-sm tw:text-secondary-500 tw:dark:tw:text-secondary-400 tw:block tw:mt-1"><%= t ".interface_language.help" %></small>
+            {class: "block w-full rounded-lg border border-secondary-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-primary-500 dark:border-secondary-600 dark:bg-secondary-800"} %>
+      <small class="text-sm text-secondary-500 dark:text-secondary-400 block mt-1"><%= t ".interface_language.help" %></small>
     </div>
 
     <div>
-      <%= form.label :sensitive_content_handling, t(".sensitive_content.label"), class: "tw:block tw:text-sm tw:font-medium tw:text-secondary-700 tw:dark:tw:text-secondary-300" %>
+      <%= form.label :sensitive_content_handling, t(".sensitive_content.label"), class: "block text-sm font-medium text-secondary-700 dark:text-secondary-300" %>
     </div>
     <div>
       <%= form.select :sensitive_content_handling,
@@ -24,8 +24,8 @@
               [t(".sensitive_content.hide"), "hide"]
             ],
             {selected: @user.sensitive_content_handling},
-            {class: "tw:block tw:w-full tw:rounded-lg tw:border tw:border-secondary-300 tw:px-3 tw:py-2 tw:shadow-sm tw:focus:ring-2 tw:focus:ring-primary-500 tw:dark:tw:border-secondary-600 tw:dark:tw:bg-secondary-800"} %>
-      <small class="tw:text-sm tw:text-secondary-500 tw:dark:tw:text-secondary-400 tw:block tw:mt-1"><%= t ".sensitive_content.help" %></small>
+            {class: "block w-full rounded-lg border border-secondary-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-primary-500 dark:border-secondary-600 dark:bg-secondary-800"} %>
+      <small class="text-sm text-secondary-500 dark:text-secondary-400 block mt-1"><%= t ".sensitive_content.help" %></small>
     </div>
 
   </div>
