@@ -4,9 +4,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, redesign/data-management]
   pull_request:
-    branches: [main]
+    branches: [main, redesign/data-management]
   workflow_dispatch:
 
 env:
