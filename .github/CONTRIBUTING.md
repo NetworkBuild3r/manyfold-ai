@@ -2,6 +2,8 @@
 
 We welcome pull requests. By participating in this project, you agree to be respectful and constructive.
 
+**Maintainers:** Keep `main` protected so nothing is merged without passing CI. See [Branch protection for main](docs/branch-protection.md).
+
 Fork, then clone the repo:
 
     git clone <url-of-this-repository>
