@@ -15,7 +15,7 @@ class MovePrintedToFavorites < ActiveRecord::Migration[7.0]
     safe_model_each(ModelFile) do |file|
       user.favorite(file, scope: :printed) if file.respond_to?(:printed) && file.printed
     end
-  rescue StandardError => e
+  rescue => e
     Rails.logger.warn "[DataMigration] #{self.class.name} skipped: #{e.message}"
   end
 

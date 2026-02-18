@@ -2,6 +2,18 @@
 
 This doc describes how to run the same checks as CI locally and how to trigger CI on demand so code stays bug-free before merge.
 
+## Before you push (avoid failed CI)
+
+To run **the same lint steps as the CI workflow** (actionlint + rubocop + erb_lint + TypeScript), use the script that uses the CI image:
+
+**Windows (PowerShell, from repo root):**
+
+```powershell
+.\script\ci-lint.ps1
+```
+
+This runs actionlint, builds `docker/Dockerfile.ci`, then runs rubocop, erb_lint, `yarn run lint:ts`, and `yarn typecheck` inside that image. If it passes, the **lint** job on GitHub will pass. Run tests separately (e.g. `docker compose --profile test run --rm test`) or rely on CI for the test matrix.
+
 ## Triggering CI from GitHub
 
 - **Automatic**: Push or open a PR targeting `main`. The **CI** workflow runs (lint first, then test).
@@ -55,9 +67,24 @@ ruby bin/bundle exec rspec --fail-fast
 
 Lint with Ruby explicitly: `ruby bin/bundle exec rake rubocop`, then `ruby bin/bundle exec erb_lint --lint-all`, then `yarn run lint:ts`, `yarn typecheck`.
 
+## Why local CI can miss things
+
+Local commands above cover **Ruby, ERB, TypeScript, and RSpec** only. They do **not** run:
+
+- **Workflow validation** — `.github/workflows/*.yml` are not checked locally. Errors like invalid `${{ }}` expressions (e.g. `secrets` in an `if` condition, which GitHub rejects) only appear when the workflow runs on GitHub. **CI now runs [actionlint](https://github.com/rhysd/actionlint)** in the lint job so workflow syntax and expression semantics are validated before lint/test. When you change any workflow file, run actionlint locally to catch issues early:
+  ```bash
+  # Install once: go install github.com/rhysd/actionlint/cmd/actionlint@latest
+  actionlint
+  ```
+  Or use the [online playground](https://rhysd.github.io/actionlint/).
+- **Multiple databases** — CI runs the test matrix against PostgreSQL, MySQL, and SQLite. Local runs often use a single DB (e.g. SQLite). To approximate CI, run tests with the same `DATABASE_URL` values as in `ci.yml`, or run the full suite in Docker: `docker compose --profile test run --rm test`.
+- **Other workflows** — `docker.yml`, `codeql.yml`, `i18n_health.yml`, `openapi.yml`, `translation.yml`, `auto_merge.yml` are not exercised by the local lint/test commands. Changing them should be validated with actionlint and by triggering the corresponding workflow manually (Actions → workflow name → Run workflow).
+
+Before pushing, run lint and tests as in [Local commands](#local-commands-match-ci); if you changed any file under `.github/workflows/`, run `actionlint` as well.
+
 ## Pipeline layout (DRY)
 
-- **`.github/workflows/ci.yml`** – Runs **lint** then **test** inside a container. Builds `docker/Dockerfile.ci`, then runs lint and test via `docker run` with the workspace mounted. `workflow_dispatch` enables on-demand runs.
+- **`.github/workflows/ci.yml`** – Runs **workflow lint (actionlint)** then **lint** then **test** inside a container. Builds `docker/Dockerfile.ci`, then runs actionlint, then lint and test via `docker run` with the workspace mounted. `workflow_dispatch` enables on-demand runs.
 - **`docker/Dockerfile.ci`** – CI image (Ruby 3.4, Node 24, Yarn, system deps). Used so CI does not depend on the host’s Ruby/Node; same checks can be run locally via Docker.
 - **`.github/actions/setup/`** – Ruby, Node, gems, yarn (used by other workflows that do not use the CI container).
 - **`.github/actions/lint/`** – Ruby (Rubocop), ERB, TypeScript lint and typecheck.

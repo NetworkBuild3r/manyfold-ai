@@ -14,7 +14,7 @@ class SetAdminPasswordResetToken < ActiveRecord::Migration[7.0]
       u.reset_password_token = "first_use"
       u.save validate: false
     end
-  rescue StandardError => e
+  rescue => e
     Rails.logger.warn "[DataMigration] #{self.class.name} skipped: #{e.message}"
   end
 

@@ -17,20 +17,20 @@ class HealthChecker
   def self.check_database
     ActiveRecord::Base.connection.execute("SELECT 1")
     true
-  rescue StandardError
+  rescue
     false
   end
 
   def self.check_redis
     Sidekiq.redis { |conn| conn.ping == "PONG" }
-  rescue StandardError
+  rescue
     false
   end
 
   def self.check_sidekiq
     require "sidekiq/api"
     Sidekiq::ProcessSet.new.size > 0
-  rescue StandardError
+  rescue
     false
   end
 end

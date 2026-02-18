@@ -87,7 +87,7 @@ module ApplicationHelper
     tag.div class: card_class, data: card_data, id: id do
       safe_join([
         if title.present?
-          header_bg = style.to_s == "primary" ? "bg-primary-600 dark:bg-primary-600" : "bg-secondary-600 dark:bg-secondary-500"
+          header_bg = (style.to_s == "primary") ? "bg-primary-600 dark:bg-primary-600" : "bg-secondary-600 dark:bg-secondary-500"
           tag.div(class: "px-4 py-3 text-white rounded-t-xl #{header_bg} relative") do
             if options[:collapse]
               safe_join([
@@ -112,7 +112,7 @@ module ApplicationHelper
         tag.div(
           class: ["p-4", ("collapse-md" if options[:collapse] == "md")].compact.join(" "),
           id: "#{id}-collapse",
-          data: (options[:collapse] ? { collapse_target: "content" } : {})
+          data: (options[:collapse] ? {collapse_target: "content"} : {})
         ) do
           tag.div do
             yield
@@ -220,7 +220,7 @@ module ApplicationHelper
       base
     end
     aria = {label: options[:aria_label]}
-    aria[:current] = "page" if !options[:style].present? && current_page?(path)
+    aria[:current] = "page" if options[:style].blank? && current_page?(path)
     link_to(
       safe_join(
         [
@@ -291,7 +291,7 @@ module ApplicationHelper
   end
 
   def active_filter_icon(key)
-    { q: "search", collection: "collection", library: "boxes", creator: "person", owner: "person", tag: "tag", missingtag: "tag" }[key]
+    {q: "search", collection: "collection", library: "boxes", creator: "person", owner: "person", tag: "tag", missingtag: "tag"}[key]
   end
 
   def active_filter_label_and_value(filter, key)

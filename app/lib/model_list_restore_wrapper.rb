@@ -21,15 +21,9 @@ class ModelListRestoreWrapper
     relation.each(&block)
   end
 
-  def empty?
-    relation.empty?
-  end
+  delegate :empty?, to: :relation
 
-  def any?
-    relation.any?
-  end
+  delegate :any?, to: :relation
 
-  def count
-    relation.count
-  end
+  delegate :count, to: :relation
 end

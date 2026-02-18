@@ -9,8 +9,7 @@ RSpec.describe HealthChecker do
     end
 
     it "includes database in reasons when DB check fails" do
-      allow(described_class).to receive(:check_database).and_return(false)
-      allow(described_class).to receive(:check_redis).and_return(true)
+      allow(described_class).to receive_messages(check_database: false, check_redis: true)
 
       ok, reasons = described_class.run(sidekiq_required: false)
       expect(ok).to be false
@@ -18,8 +17,7 @@ RSpec.describe HealthChecker do
     end
 
     it "includes redis in reasons when Redis check fails" do
-      allow(described_class).to receive(:check_database).and_return(true)
-      allow(described_class).to receive(:check_redis).and_return(false)
+      allow(described_class).to receive_messages(check_database: true, check_redis: false)
 
       ok, reasons = described_class.run(sidekiq_required: false)
       expect(ok).to be false
@@ -27,9 +25,7 @@ RSpec.describe HealthChecker do
     end
 
     it "includes sidekiq in reasons when Sidekiq required and no workers" do
-      allow(described_class).to receive(:check_database).and_return(true)
-      allow(described_class).to receive(:check_redis).and_return(true)
-      allow(described_class).to receive(:check_sidekiq).and_return(false)
+      allow(described_class).to receive_messages(check_database: true, check_redis: true, check_sidekiq: false)
 
       ok, reasons = described_class.run(sidekiq_required: true)
       expect(ok).to be false

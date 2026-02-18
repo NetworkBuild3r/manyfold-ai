@@ -35,7 +35,7 @@ class Components::ImageCarousel < Components::Base
           live: "off"
         } do
         @images.each_with_index do |image, index|
-          div class: (index == 0 ? "carousel-item active absolute inset-0 w-full h-full" : "carousel-item absolute inset-0 w-full h-full"),
+          div class: ((index == 0) ? "carousel-item active absolute inset-0 w-full h-full" : "carousel-item absolute inset-0 w-full h-full"),
             data: {carousel_target: "slide"},
             role: "group",
             aria: {
@@ -45,7 +45,7 @@ class Components::ImageCarousel < Components::Base
             img src: model_model_file_path(image.model, image, format: image.extension, derivative: "carousel"),
               alt: image.name,
               class: "block w-full h-full object-contain bg-secondary-900 dark:bg-secondary-950",
-              loading: (index <= 1 ? "eager" : "lazy"),
+              loading: ((index <= 1) ? "eager" : "lazy"),
               decoding: "async"
             button_overlay(image)
           end
@@ -74,7 +74,7 @@ class Components::ImageCarousel < Components::Base
       aria: {label: translate("components.image_carousel.select_slide")} do
       @images.each_with_index do |image, index|
         button type: "button",
-          class: "w-2 h-2 rounded-full bg-white/50 hover:bg-white/80 dark:bg-secondary-400/80 dark:hover:bg-secondary-300 transition-colors #{'active' if index == 0}",
+          class: "w-2 h-2 rounded-full bg-white/50 hover:bg-white/80 dark:bg-secondary-400/80 dark:hover:bg-secondary-300 transition-colors #{"active" if index == 0}",
           data: {
             carousel_target: "indicator",
             action: "click->carousel#goTo",

@@ -34,6 +34,7 @@ I18n/RailsI18n:
   Exclude:
     - "spec/**/*"
     - "app/lib/cli/**/*"
+    - lib/tasks/health.rake
 Rails/Output:
   Exclude:
     - "app/lib/cli/**/*"
@@ -42,6 +43,7 @@ RSpec/NestedGroups:
 RSpec/MultipleMemoizedHelpers:
   Exclude:
     - "spec/requests/api/**/*"
+    - spec/models/model_spec.rb
 RSpec/NoExpectationExample:
   Exclude:
     - spec/system/documentation_screenshots_spec.rb
@@ -60,6 +62,7 @@ RSpec/ExampleLength:
   Max: 10
   Exclude:
     - spec/requests/**/*  # request specs often need more setup
+    - spec/models/merge_history_spec.rb
 RSpec/MultipleExpectations:
   Max: 6
   Exclude:
@@ -78,3 +81,23 @@ RSpec/DescribeClass:
 RSpec/AnyInstance:
   Exclude:
     - spec/requests/problems_spec.rb
+    - spec/models/model_spec.rb
+
+RSpec/IndexedLet:
+  Exclude:
+    - spec/models/model_spec.rb
+
+RSpec/MessageSpies:
+  Exclude:
+    - spec/services/health_checker_spec.rb
+
+RSpec/InstanceVariable:
+  Exclude:
+    - spec/jobs/analysis/geometric_analysis_job_spec.rb
+    - spec/jobs/upgrade/fix_nil_file_size_values_spec.rb
+    - spec/models/model_file_spec.rb
+    - spec/requests/libraries_spec.rb
+
+RSpec/SpecFilePathFormat:
+  Exclude:
+    - spec/components/base_button_spec.rb

@@ -15,7 +15,7 @@ module DataMigrationHelpers
 
     klass.reset_column_information
     klass.find_each(&block)
-  rescue StandardError => e
+  rescue => e
     Rails.logger.warn "[DataMigration] Skipped #{klass}: #{e.message}"
   end
 end

@@ -14,7 +14,7 @@ class AddNewDefaultsToRendererSettings < ActiveRecord::Migration[7.0]
         renderer_settings: SiteSettings::UserDefaults::RENDERER.merge(user.renderer_settings)
       )
     end
-  rescue StandardError => e
+  rescue => e
     Rails.logger.warn "[DataMigration] #{self.class.name} skipped: #{e.message}"
   end
 

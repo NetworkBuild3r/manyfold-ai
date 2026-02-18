@@ -9,22 +9,22 @@
     <ul class="list-none m-0 p-0 space-y-0.5">
       <% if policy(:settings).index? %>
         <li>
-          <%= link_to t(".organization"), settings_path, class: settings_nav_link_class(settings_path), aria: (current_page?(settings_path) ? { current: "page" } : {}) %>
+          <%= link_to t(".organization"), settings_path, class: settings_nav_link_class(settings_path), aria: (current_page?(settings_path) ? {current: "page"} : {}) %>
         </li>
         <li>
-          <%= link_to t(".libraries"), settings_libraries_path, class: settings_nav_link_class(settings_libraries_path), aria: (current_page?(settings_libraries_path) ? { current: "page" } : {}) %>
+          <%= link_to t(".libraries"), settings_libraries_path, class: settings_nav_link_class(settings_libraries_path), aria: (current_page?(settings_libraries_path) ? {current: "page"} : {}) %>
         </li>
         <li>
-          <%= link_to t(".downloads"), downloads_settings_path, class: settings_nav_link_class(downloads_settings_path), aria: (current_page?(downloads_settings_path) ? { current: "page" } : {}) %>
+          <%= link_to t(".downloads"), downloads_settings_path, class: settings_nav_link_class(downloads_settings_path), aria: (current_page?(downloads_settings_path) ? {current: "page"} : {}) %>
         </li>
         <li>
-          <%= link_to t(".appearance"), appearance_settings_path, class: settings_nav_link_class(appearance_settings_path), aria: (current_page?(appearance_settings_path) ? { current: "page" } : {}) %>
+          <%= link_to t(".appearance"), appearance_settings_path, class: settings_nav_link_class(appearance_settings_path), aria: (current_page?(appearance_settings_path) ? {current: "page"} : {}) %>
         </li>
         <li>
-          <%= link_to t("settings.analysis.heading"), analysis_settings_path, class: settings_nav_link_class(analysis_settings_path), aria: (current_page?(analysis_settings_path) ? { current: "page" } : {}) %>
+          <%= link_to t("settings.analysis.heading"), analysis_settings_path, class: settings_nav_link_class(analysis_settings_path), aria: (current_page?(analysis_settings_path) ? {current: "page"} : {}) %>
         </li>
         <li>
-          <%= link_to t("settings.multiuser.heading"), multiuser_settings_path, class: settings_nav_link_class(multiuser_settings_path), aria: (current_page?(multiuser_settings_path) ? { current: "page" } : {}) %>
+          <%= link_to t("settings.multiuser.heading"), multiuser_settings_path, class: settings_nav_link_class(multiuser_settings_path), aria: (current_page?(multiuser_settings_path) ? {current: "page"} : {}) %>
         </li>
       <% end %>
     </ul>
@@ -33,14 +33,14 @@
       <h5 class="text-xs font-semibold uppercase text-secondary-500 dark:text-secondary-400 mt-4 mb-2 first:mt-0"><%= t(".moderation_heading") %></h5>
       <ul class="list-none m-0 p-0 space-y-0.5">
         <li>
-          <%= link_to t("settings.users.index.title"), settings_users_path, class: settings_nav_link_class(settings_users_path), aria: (current_page?(settings_users_path) ? { current: "page" } : {}) %>
+          <%= link_to t("settings.users.index.title"), settings_users_path, class: settings_nav_link_class(settings_users_path), aria: (current_page?(settings_users_path) ? {current: "page"} : {}) %>
         </li>
         <li>
-          <%= link_to t("settings.reports.index.title"), settings_reports_path, class: settings_nav_link_class(settings_reports_path), aria: (current_page?(settings_reports_path) ? { current: "page" } : {}) %>
+          <%= link_to t("settings.reports.index.title"), settings_reports_path, class: settings_nav_link_class(settings_reports_path), aria: (current_page?(settings_reports_path) ? {current: "page"} : {}) %>
         </li>
         <% if SiteSettings.federation_enabled? %>
           <li>
-            <%= link_to t("settings.domain_blocks.index.title"), settings_domain_blocks_path, class: settings_nav_link_class(settings_domain_blocks_path), aria: (current_page?(settings_domain_blocks_path) ? { current: "page" } : {}) %>
+            <%= link_to t("settings.domain_blocks.index.title"), settings_domain_blocks_path, class: settings_nav_link_class(settings_domain_blocks_path), aria: (current_page?(settings_domain_blocks_path) ? {current: "page"} : {}) %>
           </li>
         <% end %>
       </ul>
@@ -50,11 +50,11 @@
       <h5 class="text-xs font-semibold uppercase text-secondary-500 dark:text-secondary-400 mt-4 mb-2 first:mt-0"><%= t(".search_heading") %></h5>
       <ul class="list-none m-0 p-0 space-y-0.5">
         <li>
-          <%= link_to t("settings.discovery.heading"), discovery_settings_path, class: settings_nav_link_class(discovery_settings_path), aria: (current_page?(discovery_settings_path) ? { current: "page" } : {}) %>
+          <%= link_to t("settings.discovery.heading"), discovery_settings_path, class: settings_nav_link_class(discovery_settings_path), aria: (current_page?(discovery_settings_path) ? {current: "page"} : {}) %>
         </li>
         <% if SiteSettings.federation_enabled? %>
           <li>
-            <%= link_to t("fasp_client.providers.index.heading"), fasp_client.providers_path, class: settings_nav_link_class(fasp_client.providers_path), aria: (current_page?(fasp_client.providers_path) ? { current: "page" } : {}) %>
+            <%= link_to t("fasp_client.providers.index.heading"), fasp_client.providers_path, class: settings_nav_link_class(fasp_client.providers_path), aria: (current_page?(fasp_client.providers_path) ? {current: "page"} : {}) %>
           </li>
         <% end %>
       </ul>
@@ -64,10 +64,10 @@
       <h5 class="text-xs font-semibold uppercase text-secondary-500 dark:text-secondary-400 mt-4 mb-2 first:mt-0"><%= t(".integrations_heading") %></h5>
       <ul class="list-none m-0 p-0 space-y-0.5">
         <li>
-          <%= link_to t("doorkeeper_applications.index.title"), doorkeeper_applications_path, class: settings_nav_link_class(doorkeeper_applications_path), aria: (current_page?(doorkeeper_applications_path) ? { current: "page" } : {}) %>
+          <%= link_to t("doorkeeper_applications.index.title"), doorkeeper_applications_path, class: settings_nav_link_class(doorkeeper_applications_path), aria: (current_page?(doorkeeper_applications_path) ? {current: "page"} : {}) %>
         </li>
         <li>
-          <%= link_to t("settings.integrations.heading"), integrations_settings_path, class: settings_nav_link_class(integrations_settings_path), aria: (current_page?(integrations_settings_path) ? { current: "page" } : {}) %>
+          <%= link_to t("settings.integrations.heading"), integrations_settings_path, class: settings_nav_link_class(integrations_settings_path), aria: (current_page?(integrations_settings_path) ? {current: "page"} : {}) %>
         </li>
       </ul>
     <% end %>
@@ -76,19 +76,19 @@
       <h5 class="text-xs font-semibold uppercase text-secondary-500 dark:text-secondary-400 mt-4 mb-2 first:mt-0"><%= t(".tools_heading") %></h5>
       <ul class="list-none m-0 p-0 space-y-0.5">
         <li>
-          <%= link_to t("settings.reporting.heading"), reporting_settings_path, class: settings_nav_link_class(reporting_settings_path), aria: (current_page?(reporting_settings_path) ? { current: "page" } : {}) %>
+          <%= link_to t("settings.reporting.heading"), reporting_settings_path, class: settings_nav_link_class(reporting_settings_path), aria: (current_page?(reporting_settings_path) ? {current: "page"} : {}) %>
         </li>
         <% unless Rails.env.test? %>
           <li>
-            <%= link_to t(".performance"), rails_performance_path, class: settings_nav_link_class(rails_performance_path), aria: (current_page?(rails_performance_path) ? { current: "page" } : {}) %>
+            <%= link_to t(".performance"), rails_performance_path, class: settings_nav_link_class(rails_performance_path), aria: (current_page?(rails_performance_path) ? {current: "page"} : {}) %>
           </li>
         <% end %>
         <li>
-          <%= link_to t(".sidekiq"), sidekiq_web_path, class: settings_nav_link_class(sidekiq_web_path), aria: (current_page?(sidekiq_web_path) ? { current: "page" } : {}) %>
+          <%= link_to t(".sidekiq"), sidekiq_web_path, class: settings_nav_link_class(sidekiq_web_path), aria: (current_page?(sidekiq_web_path) ? {current: "page"} : {}) %>
         </li>
         <% if DatabaseDetector.is_postgres? %>
           <li>
-            <%= link_to t(".pghero"), pg_hero_path, class: settings_nav_link_class(pg_hero_path), aria: (current_page?(pg_hero_path) ? { current: "page" } : {}) %>
+            <%= link_to t(".pghero"), pg_hero_path, class: settings_nav_link_class(pg_hero_path), aria: (current_page?(pg_hero_path) ? {current: "page"} : {}) %>
           </li>
         <% end %>
       </ul>

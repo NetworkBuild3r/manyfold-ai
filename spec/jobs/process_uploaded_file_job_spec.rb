@@ -120,7 +120,7 @@ RSpec.describe ProcessUploadedFileJob do
 
     it "promotes the file to proper storage" do
       job.perform(library.id, file, model: model)
-      expect(model.model_files.last.attachment.storage_key).to eq "library_#{library.id}".to_sym
+      expect(model.model_files.last.attachment.storage_key).to eq :"library_#{library.id}"
     end
 
     it "queues up file metadata parsing" do

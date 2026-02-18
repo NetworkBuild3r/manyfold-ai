@@ -7,7 +7,7 @@ class MoveFileDataIntoShrine < ActiveRecord::Migration[7.0]
 
   def up
     safe_model_each(ModelFile) { |it| it.attach_existing_file!(refresh: false, skip_validations: true) }
-  rescue StandardError => e
+  rescue => e
     Rails.logger.warn "[DataMigration] #{self.class.name} skipped: #{e.message}"
   end
 

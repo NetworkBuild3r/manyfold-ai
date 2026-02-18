@@ -18,7 +18,7 @@ class GeneratePublicIDsForModels < ActiveRecord::Migration[7.1]
       end
     end
     backfill_problem_public_ids
-  rescue StandardError => e
+  rescue => e
     Rails.logger.warn "[DataMigration] #{self.class.name} skipped: #{e.message}"
   end
 

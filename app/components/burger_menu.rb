@@ -12,8 +12,8 @@ class Components::BurgerMenu < Components::Base
     trigger_class = "inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 bg-white border border-secondary-300 hover:bg-secondary-50 dark:bg-secondary-800 dark:border-secondary-600 dark:hover:bg-secondary-700 min-w-[44px] min-h-[44px]"
     trigger_class += " px-2 py-1" if @small
     div id: @id,
-        data: @data.merge(controller: "dropdown"),
-        class: "relative" do
+      data: @data.merge(controller: "dropdown"),
+      class: "relative" do
       a id: "#{@id}-anchor",
         href: "#",
         data: {action: "click->dropdown#toggle"},

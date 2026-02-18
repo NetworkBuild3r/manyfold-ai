@@ -5,7 +5,7 @@ class ClearStuckProblems < ActiveRecord::Migration[7.2]
     return unless connection.table_exists?(:problems) && connection.column_exists?(:problems, :in_progress)
 
     connection.execute("UPDATE problems SET in_progress = false")
-  rescue StandardError => e
+  rescue => e
     Rails.logger.warn "[DataMigration] #{self.class.name} skipped: #{e.message}"
   end
 

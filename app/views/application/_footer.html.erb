@@ -24,7 +24,7 @@
         <% if SiteSettings.support_link.presence %>
           <a href="<%= SiteSettings.support_link %>" target="_blank" rel="noreferrer" class="text-sm text-secondary-600 dark:text-secondary-400 no-underline hover:underline"><%= t ".support" %></a>
         <% end %>
-        <button type="button" data-action="click->tour#start" class="text-sm text-secondary-600 dark:text-secondary-400 no-underline hover:underline bg-transparent border-0 cursor-pointer p-0 font-inherit" aria-label="<%= t '.take_the_tour' %>"><%= t ".take_the_tour" %></button>
+        <button type="button" data-action="click->tour#start" class="text-sm text-secondary-600 dark:text-secondary-400 no-underline hover:underline bg-transparent border-0 cursor-pointer p-0 font-inherit" aria-label="<%= t ".take_the_tour" %>"><%= t ".take_the_tour" %></button>
       </div>
       <div class="flex flex-wrap items-center gap-x-4 gap-y-1">
         <span class="text-xs font-semibold uppercase text-secondary-500 dark:text-secondary-400"><%= t "application.title" %></span>

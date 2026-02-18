@@ -13,7 +13,7 @@ namespace :health do
       puts "OK"
       exit 0
     else
-      warn "Service Unavailable: #{reasons.join(', ')}"
+      warn "Service Unavailable: #{reasons.join(", ")}"
       exit 1
     end
   end

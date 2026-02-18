@@ -3,7 +3,7 @@
 class Components::BaseButton < Components::Base
   include Phlex::Rails::Helpers::ButtonTo
 
-  BASE_CLASSES = "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2".freeze
+  BASE_CLASSES = "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
 
   VARIANT_CLASSES = {
     "primary" => "bg-primary-600 text-white hover:bg-primary-700",

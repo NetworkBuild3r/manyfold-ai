@@ -3,7 +3,7 @@
 class Components::Tag < Components::Base
   include Phlex::Rails::Helpers::LinkTo
 
-  CLASSES = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary-200 text-secondary-800 dark:bg-secondary-600 dark:text-secondary-200 no-underline hover:opacity-90".freeze
+  CLASSES = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary-200 text-secondary-800 dark:bg-secondary-600 dark:text-secondary-200 no-underline hover:opacity-90"
 
   def initialize(tag:, show_count: false, filters: {}, html_options: {}, filter_in_place: false)
     @tag = tag

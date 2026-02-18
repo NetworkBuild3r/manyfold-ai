@@ -42,10 +42,10 @@
         <div class="flex flex-wrap items-center gap-3 mb-6" role="toolbar" aria-label="Model actions">
           <%= DownloadButton(model: @model) %>
           <% if policy(@model).edit? %>
-            <%= link_to Icon(icon: "pencil", label: translate("general.edit")), edit_model_path(@model), class: "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border border-secondary-300 dark:border-secondary-500 bg-white dark:bg-secondary-800 hover:bg-secondary-50 dark:hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-primary-500 outline-none", aria: { label: translate("components.model_card.edit_button.label", name: @model.name) } %>
+            <%= link_to Icon(icon: "pencil", label: translate("general.edit")), edit_model_path(@model), class: "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border border-secondary-300 dark:border-secondary-500 bg-white dark:bg-secondary-800 hover:bg-secondary-50 dark:hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-primary-500 outline-none", aria: {label: translate("components.model_card.edit_button.label", name: @model.name)} %>
           <% end %>
           <% if policy(@model).destroy? %>
-            <%= link_to Icon(icon: "trash", label: translate("general.delete")), model_path(@model), method: :delete, data: { confirm: t("models.destroy.confirm") }, class: "hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border border-secondary-300 dark:border-secondary-500 bg-white dark:bg-secondary-800 hover:bg-secondary-50 dark:hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-primary-500 outline-none", aria: { label: translate("components.model_card.delete_button.label", name: @model.name) } %>
+            <%= link_to Icon(icon: "trash", label: translate("general.delete")), model_path(@model), method: :delete, data: {confirm: t("models.destroy.confirm")}, class: "hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border border-secondary-300 dark:border-secondary-500 bg-white dark:bg-secondary-800 hover:bg-secondary-50 dark:hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-primary-500 outline-none", aria: {label: translate("components.model_card.delete_button.label", name: @model.name)} %>
           <% end %>
           <% if policy(@model).scan? %>
             <%= link_to Icon(icon: "radar", label: t(".rescan")), scan_model_path(@model), method: :post, class: "hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border border-secondary-300 dark:border-secondary-500 bg-white dark:bg-secondary-800 hover:bg-secondary-50 dark:hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-primary-500 outline-none" %>
@@ -57,7 +57,7 @@
             <%= link_to Icon(icon: "pencil", label: t(".files_card.bulk_edit")), bulk_edit_model_model_files_path(@model), class: "hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border border-secondary-300 dark:border-secondary-500 bg-white dark:bg-secondary-800 hover:bg-secondary-50 dark:hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-primary-500 outline-none" %>
           <% end %>
           <div class="lg:hidden relative" data-controller="dropdown">
-            <button type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border border-secondary-300 dark:border-secondary-500 bg-white dark:bg-secondary-800 hover:bg-secondary-50 dark:hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-primary-500 outline-none min-w-[44px] min-h-[44px]" data-action="click->dropdown#toggle" aria-expanded="false" aria-haspopup="menu" aria-label="<%= t('general.menu') %>">
+            <button type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border border-secondary-300 dark:border-secondary-500 bg-white dark:bg-secondary-800 hover:bg-secondary-50 dark:hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-primary-500 outline-none min-w-[44px] min-h-[44px]" data-action="click->dropdown#toggle" aria-expanded="false" aria-haspopup="menu" aria-label="<%= t("general.menu") %>">
               <%= Icon(icon: "list", label: t("general.menu")) %>
             </button>
             <ul class="absolute right-0 mt-1 min-w-[10rem] py-1 bg-white dark:bg-secondary-800 rounded-lg shadow-lg border border-secondary-200 dark:border-secondary-600 z-50 list-none m-0 p-0" data-dropdown-target="menu" role="menu">
@@ -72,13 +72,13 @@
         <% if @num_files > 0 %>
           <% if policy(@model).edit? %>
             <div data-controller="file-list-selection" data-file-list-selection-model-id-value="<%= @model.public_id %>">
-              <div data-file-list-selection-target="toolbar" hidden role="toolbar" aria-label="<%= t('.file_selection.toolbar_label') %>" class="fixed top-14 left-0 right-0 z-30 py-2 px-4 sm:px-6 lg:px-8 bg-white/95 dark:bg-secondary-900/95 backdrop-blur-sm border-b border-secondary-200 dark:border-secondary-700 shadow-sm dark:shadow-md">
+              <div data-file-list-selection-target="toolbar" hidden role="toolbar" aria-label="<%= t(".file_selection.toolbar_label") %>" class="fixed top-14 left-0 right-0 z-30 py-2 px-4 sm:px-6 lg:px-8 bg-white/95 dark:bg-secondary-900/95 backdrop-blur-sm border-b border-secondary-200 dark:border-secondary-700 shadow-sm dark:shadow-md">
                 <div class="max-w-screen-2xl mx-auto flex flex-wrap items-center gap-2">
-                  <%= form_with url: bulk_edit_selected_model_model_files_path(@model), method: :post, local: true, data: { turbo: false, file_list_selection_target: "bulkEditForm", action: "submit->file-list-selection#clearOnSubmit" }, class: "inline" do %>
+                  <%= form_with url: bulk_edit_selected_model_model_files_path(@model), method: :post, local: true, data: {turbo: false, file_list_selection_target: "bulkEditForm", action: "submit->file-list-selection#clearOnSubmit"}, class: "inline" do %>
                     <div data-file-list-selection-target="bulkEditIdsContainer"></div>
                     <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg bg-secondary-600 text-white hover:bg-secondary-700 dark:bg-secondary-500 dark:text-white dark:hover:bg-secondary-400 focus-visible:ring-2 focus-visible:ring-secondary-500 mr-2"><%= t(".file_selection.bulk_edit") %></button>
                   <% end %>
-                  <%= form_with url: split_model_model_files_path(@model), method: :post, local: true, data: { turbo: false, file_list_selection_target: "splitForm", action: "submit->file-list-selection#clearOnSubmit" }, class: "inline" do %>
+                  <%= form_with url: split_model_model_files_path(@model), method: :post, local: true, data: {turbo: false, file_list_selection_target: "splitForm", action: "submit->file-list-selection#clearOnSubmit"}, class: "inline" do %>
                     <div data-file-list-selection-target="splitIdsContainer"></div>
                     <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border border-secondary-300 dark:border-secondary-500 text-secondary-800 dark:text-secondary-100 bg-white dark:bg-secondary-800 hover:bg-secondary-100 dark:hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-secondary-500 mr-2"><%= t(".file_selection.split_out") %></button>
                   <% end %>

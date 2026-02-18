@@ -200,7 +200,7 @@ class Model < ApplicationRecord
 
     ActiveRecord::Base.transaction do
       Current.set(skip_problem_checks: true) do
-        library = Library.find(history.source_library_id)
+        library = Library.find(history.source_library_id) # rubocop:disable Pundit/UsePolicyScope -- internal unmerge, not controller
         source_meta = history.source_metadata || {}
 
         new_path = history.source_path

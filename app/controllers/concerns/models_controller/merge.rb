@@ -62,7 +62,7 @@ module ModelsController::Merge
       skip_authorization
       skip_policy_scope
       redirect_to models_path, alert: t("models.configure_merge.forbidden")
-      return
+      nil
     end
   end
 end

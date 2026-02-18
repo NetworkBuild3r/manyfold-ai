@@ -69,7 +69,7 @@ class Components::SearchHelp < Components::Base
         code(class: "bg-secondary-100 dark:bg-secondary-700 px-1 py-0.5 rounded") { "path ~ tools" }
       end
       td(class: "border-b border-secondary-200 dark:border-secondary-600 py-2") { t("components.search_help.path") }
-      end
+    end
   end
 
   def filenames

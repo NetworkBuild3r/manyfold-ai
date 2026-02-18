@@ -13,7 +13,7 @@
     </div>
   <% else %>
     <div data-controller="model-list-selection" class="skip-link-container">
-      <div data-model-list-selection-target="toolbar" hidden role="toolbar" aria-label="<%= t('.selection.toolbar_label') %>" class="fixed top-14 left-0 right-0 z-30 py-2 px-4 sm:px-6 lg:px-8 bg-white/95 dark:bg-secondary-900/95 backdrop-blur-sm border-b border-secondary-200 dark:border-secondary-700 shadow-sm dark:shadow-md">
+      <div data-model-list-selection-target="toolbar" hidden role="toolbar" aria-label="<%= t(".selection.toolbar_label") %>" class="fixed top-14 left-0 right-0 z-30 py-2 px-4 sm:px-6 lg:px-8 bg-white/95 dark:bg-secondary-900/95 backdrop-blur-sm border-b border-secondary-200 dark:border-secondary-700 shadow-sm dark:shadow-md">
         <div class="max-w-screen-2xl mx-auto flex flex-wrap items-center gap-2">
           <%= link_to t(".selection.edit"), "#", data: {model_list_selection_target: "editLink", base_href: edit_model_path("__ID__")}, class: "inline-flex items-center px-3 py-1.5 text-sm rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500" %>
           <% if policy(:model).bulk_edit? %>
@@ -39,12 +39,12 @@
           <% active_filters_list(@filter).each do |entry| %>
             <span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-secondary-200 dark:bg-secondary-600 text-secondary-800 dark:text-secondary-100 text-sm">
               <span class="truncate max-w-[200px]"><%= entry[:pill_label] %></span>
-              <%= link_to "Ã—", entry[:remove_url], class: "flex-shrink-0 rounded-full p-0.5 hover:bg-secondary-300 dark:hover:bg-secondary-500 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none", aria: { label: entry[:aria_remove] } %>
+              <%= link_to "Ã—", entry[:remove_url], class: "flex-shrink-0 rounded-full p-0.5 hover:bg-secondary-300 dark:hover:bg-secondary-500 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none", aria: {label: entry[:aria_remove]} %>
             </span>
           <% end %>
         </div>
       <% end %>
-      <div class="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4 mb-4" id="model-card-grid" role="list" aria-label="Models" data-controller="infinite-scroll-restore" data-infinite-scroll-restore-per-page-value="<%= pagination_settings['per_page'] %>">
+      <div class="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4 mb-4" id="model-card-grid" role="list" aria-label="Models" data-controller="infinite-scroll-restore" data-infinite-scroll-restore-per-page-value="<%= pagination_settings["per_page"] %>">
         <div id="models_page_1" class="hidden" aria-hidden="true"></div>
         <%= render_component_collection Components::ModelCard, :model, @models %>
         <% if @models.next_page %>

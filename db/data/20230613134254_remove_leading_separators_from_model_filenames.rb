@@ -12,7 +12,7 @@ class RemoveLeadingSeparatorsFromModelFilenames < ActiveRecord::Migration[7.0]
     rescue ActiveRecord::RecordInvalid
       model.destroy!
     end
-  rescue StandardError => e
+  rescue => e
     Rails.logger.warn "[DataMigration] #{self.class.name} skipped: #{e.message}"
   end
 

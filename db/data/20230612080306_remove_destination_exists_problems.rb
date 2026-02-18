@@ -8,7 +8,7 @@ class RemoveDestinationExistsProblems < ActiveRecord::Migration[7.0]
     return unless connection.table_exists?(:problems) && connection.column_exists?(:problems, :category)
 
     connection.execute("DELETE FROM problems WHERE category = #{DESTINATION_EXISTS_CATEGORY}")
-  rescue StandardError => e
+  rescue => e
     Rails.logger.warn "[DataMigration] #{self.class.name} skipped: #{e.message}"
   end
 

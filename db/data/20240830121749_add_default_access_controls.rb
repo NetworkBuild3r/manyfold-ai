@@ -10,7 +10,7 @@ class AddDefaultAccessControls < ActiveRecord::Migration[7.1]
       safe_model_each(klass, &:set_owner)
       safe_model_each(klass, &:set_permissions_from_preset)
     end
-  rescue StandardError => e
+  rescue => e
     Rails.logger.warn "[DataMigration] #{self.class.name} skipped: #{e.message}"
   end
 

@@ -21,6 +21,11 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Lint workflow files
+        uses: eifinger/actionlint-action@v1
+        with:
+          version: "v1.7.1"
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -107,10 +112,13 @@ jobs:
             "
 
       - name: Upload coverage
-        if: secrets.CODACY_PROJECT_TOKEN != ''
+        if: success()
         env:
           CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }}
-        run: bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r coverage/coverage.xml
+        run: |
+          if [ -n "$CODACY_PROJECT_TOKEN" ]; then
+            bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r coverage/coverage.xml
+          fi
 
     services:
       postgres:

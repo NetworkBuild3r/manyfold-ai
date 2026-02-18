@@ -8,10 +8,10 @@ class Components::Modal < Components::Base
 
   def view_template
     dialog class: "relative max-w-2xl w-full max-h-[90vh] overflow-auto rounded-xl bg-white dark:bg-secondary-800 shadow-xl p-0 border-0",
-           id: @id,
-           "aria-labelledby": "#{@id}-label",
-           "aria-modal": "true",
-           data: {dialog_target: "dialog"} do
+      id: @id,
+      "aria-labelledby": "#{@id}-label",
+      "aria-modal": "true",
+      data: {dialog_target: "dialog"} do
       div(class: "p-4 sm:p-6") do
         div(class: "flex items-center justify-between gap-4 mb-4") do
           h1(class: "text-lg font-semibold text-secondary-900 dark:text-secondary-100 m-0", id: "#{@id}-label") { @title }

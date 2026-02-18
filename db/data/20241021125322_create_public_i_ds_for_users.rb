@@ -12,7 +12,7 @@ class CreatePublicIDsForUsers < ActiveRecord::Migration[7.1]
     User.find_each do |u|
       u.save if u.valid?
     end
-  rescue StandardError => e
+  rescue => e
     Rails.logger.warn "[DataMigration] #{self.class.name} skipped: #{e.message}"
   end
 

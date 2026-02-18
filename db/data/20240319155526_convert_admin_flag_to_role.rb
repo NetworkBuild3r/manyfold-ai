@@ -10,7 +10,7 @@ class ConvertAdminFlagToRole < ActiveRecord::Migration[7.0]
 
     User.reset_column_information
     User.where(admin: true).find_each { |u| u.add_role :administrator }
-  rescue StandardError => e
+  rescue => e
     Rails.logger.warn "[DataMigration] #{self.class.name} skipped: #{e.message}"
   end
 

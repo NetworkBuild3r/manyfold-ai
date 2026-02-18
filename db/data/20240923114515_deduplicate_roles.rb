@@ -11,7 +11,7 @@ class DeduplicateRoles < ActiveRecord::Migration[7.1]
 
     Role.reset_column_information
     Role.merge_duplicates!
-  rescue StandardError => e
+  rescue => e
     Rails.logger.warn "[DataMigration] #{self.class.name} skipped: #{e.message}"
   end
 

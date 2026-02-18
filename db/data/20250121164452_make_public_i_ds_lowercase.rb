@@ -16,7 +16,7 @@ class MakePublicIDsLowercase < ActiveRecord::Migration[7.2]
     return unless connection.table_exists?(:problems) && connection.column_exists?(:problems, :public_id)
 
     connection.execute("UPDATE problems SET public_id = lower(public_id)")
-  rescue StandardError => e
+  rescue => e
     Rails.logger.warn "[DataMigration] #{self.class.name} skipped: #{e.message}"
   end
 

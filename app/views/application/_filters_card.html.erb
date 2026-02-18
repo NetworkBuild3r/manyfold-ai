@@ -10,7 +10,7 @@
             <%= entry[:value_html] %>
           <% end %>
         </div>
-        <span class="flex-shrink-0"><%= link_to Icon(icon: "trash", label: entry[:aria_remove]), entry[:remove_url], class: "text-danger hover:underline focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none", aria: { label: entry[:aria_remove] } %></span>
+        <span class="flex-shrink-0"><%= link_to Icon(icon: "trash", label: entry[:aria_remove]), entry[:remove_url], class: "text-danger hover:underline focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none", aria: {label: entry[:aria_remove]} %></span>
       </div>
     <% end %>
   <% end %>

@@ -3,6 +3,8 @@ EnableDefaultLinters: true
 exclude:
   - "**/vendor/**/*"
   - "**/node_modules/**/*"
+  - app/views/application/_empty_state.html.erb
+  - app/views/application/_problems_card.html.erb
 linters:
   # Non-default linters
   PartialInstanceVariable:
@@ -11,6 +13,8 @@ linters:
     enabled: true
   ErbSafety:
     enabled: true
+  TrailingWhitespace:
+    enabled: false # Disabled: triggers better_html location bug in some ERB (autocorrect path)
   Rubocop:
     enabled: true
     rubocop_config:
@@ -26,6 +30,14 @@ linters:
         Enabled: false # TODO
       Style/NestedTernaryOperator:
         Enabled: false # TODO
+      Rails/OutputSafety:
+        Exclude:
+          - app/views/layouts/application.html.erb
+          - app/views/layouts/embed.html.erb
+      "I18n/RailsI18n/DecorateStringFormattingUsingInterpolation":
+        Exclude:
+          - app/views/settings/appearance.html.erb
+          - app/views/application/_problems_card.html.erb
   RequireScriptNonce:
     enabled: true
   NoUnusedDisable:

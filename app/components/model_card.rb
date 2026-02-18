@@ -91,5 +91,4 @@ class Components::ModelCard < Components::Base
       end
     end
   end
-
 end

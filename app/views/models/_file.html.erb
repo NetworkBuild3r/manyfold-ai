@@ -1,6 +1,6 @@
-<div class="mb-4 <%= 'file-card relative' if policy(@model).edit? %>">
+<div class="mb-4 <%= "file-card relative" if policy(@model).edit? %>">
   <% if policy(@model).edit? %>
-    <button type="button" class="file-list-selection-bubble absolute top-2 left-2 z-10 w-6 h-6 rounded-full border-2 border-white dark:border-secondary-300 bg-white/40 dark:bg-secondary-500/70 shadow cursor-pointer flex items-center justify-center outline-none focus-visible:ring-2 focus-visible:ring-primary-500 transition-opacity" data-file-list-selection-target="bubble" data-file-id="<%= file.to_param %>" data-action="click->file-list-selection#toggle" aria-pressed="false" aria-label="<%= t('models.show.file_selection.select_file', name: file.name) %>">
+    <button type="button" class="file-list-selection-bubble absolute top-2 left-2 z-10 w-6 h-6 rounded-full border-2 border-white dark:border-secondary-300 bg-white/40 dark:bg-secondary-500/70 shadow cursor-pointer flex items-center justify-center outline-none focus-visible:ring-2 focus-visible:ring-primary-500 transition-opacity" data-file-list-selection-target="bubble" data-file-id="<%= file.to_param %>" data-action="click->file-list-selection#toggle" aria-pressed="false" aria-label="<%= t("models.show.file_selection.select_file", name: file.name) %>">
       <i class="bi bi-check-lg file-list-selection-check text-sm opacity-0 transition-opacity pointer-events-none font-bold" aria-hidden="true"></i>
     </button>
   <% end %>
