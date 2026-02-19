@@ -15,7 +15,7 @@ try {
 
     $ws = $root -replace '\\', '/'
     Write-Host "`n=== 3. Run lint in CI image (rubocop, erb_lint, yarn) ==="
-    $lintCmd = "corepack enable && bundle config set --local path vendor/bundle && bundle install --quiet && yarn install --silent && yarn build:css:tailwind && bundle exec rake rubocop && bundle exec erb_lint --lint-all && yarn run lint:ts && yarn typecheck"
+    $lintCmd = "corepack enable && bundle config set --local path vendor/bundle && bundle install --quiet && yarn install --silent && yarn build:css:tailwind && bundle exec rake rubocop && bundle exec erb_lint --lint-all && yarn run lint:ts && yarn typecheck && bundle exec i18n-tasks health -l en"
     docker run --rm -v "${ws}:/workspace" -w /workspace manyfold-ci:latest bash -c $lintCmd
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     Write-Host "`nCI lint passed. Push should pass the lint job."

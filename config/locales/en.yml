@@ -313,8 +313,8 @@ en:
       open_source_html: <a href="https://github.com/manyfold3d/manyfold" target="_blank" rel="noreferrer">Open Source</a> under the <a href="https://github.com/manyfold3d/manyfold/blob/main/LICENSE.md" target="_blank" rel="noreferrer" rel="license">MIT license</a>.
       powered_by_html: Powered by <a href="https://manyfold.app">%{name}</a>
       sponsor: Sponsor development
-      take_the_tour: Take the tour
       support: Support this instance
+      take_the_tour: Take the tour
       version: Version
     link_fields:
       url:
@@ -700,6 +700,8 @@ en:
     unfollow_remote_actor:
       unfollowed: Unfollowed %{actor}
   general:
+    are_you_sure: Are you sure?
+    collapse: Collapse
     copy_fediverse_handle: Copy Fediverse handle to clipboard
     delete: Delete
     download: Download

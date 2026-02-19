@@ -16,15 +16,15 @@ en:
         label: Update All %{count} Models
     bulk_edit_selected:
       no_selection: No models selected.
-      success: '%{count} model(s) selected for bulk edit.'
+      success: "%{count} model(s) selected for bulk edit."
     bulk_update:
       success: Models updated successfully.
     configure_merge:
-      forbidden: One or more selected models could not be found or you don't have permission to merge them.
       common_root:
         description: The models will be combined into a single one in the shared root folder
         title: New model in common root folder
       description: Select one of the models to merge the others into, or create a new one.
+      forbidden: One or more selected models could not be found or you don't have permission to merge them.
       heading: Merge models
       new_model:
         description: A new model will be created from the combined data, and automatically organised on disk.
@@ -53,6 +53,11 @@ en:
     list:
       bulk_edit: Edit All Models
       clear_filters: Clear filters
+      no_results_html: Sorry, we couldn't find anything to show you! Try changing your filters or search terms, or uploading some models.
+      no_results_signed_out_html: Sorry, we couldn't find anything to show you! There might be more to see if you <a href="%{link}">sign in</a>.
+      search:
+        or_other_sites: 'Or, try searching elsewhere:'
+        other_sites: 'Can''t find what you want? Try searching elsewhere:'
       selection:
         bulk_edit: Bulk edit
         clear: Clear selection
@@ -60,11 +65,6 @@ en:
         merge: Merge
         select: Select model
         toolbar_label: Model selection actions
-      no_results_html: Sorry, we couldn't find anything to show you! Try changing your filters or search terms, or uploading some models.
-      no_results_signed_out_html: Sorry, we couldn't find anything to show you! There might be more to see if you <a href="%{link}">sign in</a>.
-      search:
-        or_other_sites: 'Or, try searching elsewhere:'
-        other_sites: 'Can''t find what you want? Try searching elsewhere:'
       skip_models: Skip model list
     merge:
       success: Models merged successfully.
@@ -99,22 +99,18 @@ en:
     show:
       download_preparing: Download is being prepared, please wait.
       download_requested: Download requested and will be ready soon, please wait.
-      files: Files
       file_selection:
         bulk_edit: Bulk edit
         clear: Clear selection
         select_file: Select %{name}
         split_out: Split out
         toolbar_label: File selection actions
+      files: Files
       files_card:
         bulk_edit: Edit all files
         heading: Files
       followers: Followers
       license: License
-      merge_history:
-        heading: Merge history
-        undo_button: Undo merge
-        window_notice: Undo is available for %{days} days.
       menu:
         tour:
           description: This menu contains extra functions like editing or deleting the model, or editing multiple files at once.
@@ -123,9 +119,17 @@ en:
         heading: Merge
         warning: Merging moves all files from this model to the target, and removes this model. File metadata is preserved, but any model metadata will be lost!
         with: Merge with
+      merge_history:
+        heading: Merge history
+        undo_button: Undo merge
+        window_notice: Undo is available for %{days} days.
       model_details: Model Details
       path: Path
       preview: This is just a preview of the complete model, which contains %{count} more files. Contact the model owner to get full access.
+      problems_card:
+        tour:
+          description: This card shows any problems that were detected on this model. You can change problem visibility settings in your account preferences.
+          title: Problems
       rescan: Rescan files
       scan_in_progress: Scan in progress...
       search: Search the Internet for models with this name
@@ -133,8 +137,8 @@ en:
       tags: Tags
       upload_card:
         heading: Upload
-    update:
-      success: Model details saved.
     unmerge:
       missing: Merge history entry not found.
       success: Merge undone.
+    update:
+      success: Model details saved.

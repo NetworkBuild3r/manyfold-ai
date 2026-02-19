@@ -61,6 +61,7 @@ jobs:
               bundle exec erb_lint --lint-all
               yarn run lint:ts
               yarn typecheck
+              bundle exec i18n-tasks health -l en
             "
 
   test:
@@ -71,6 +72,8 @@ jobs:
       matrix:
         database_url:
           - postgresql://manyfold:manyfold@localhost:5432/manyfold
+          - mysql2://manyfold:manyfold@127.0.0.1:3306/manyfold
+          - sqlite3:/tmp/test.db
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -137,6 +140,20 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
+      mariadb:
+        image: mariadb:11
+        env:
+          MARIADB_USER: manyfold
+          MARIADB_PASSWORD: manyfold
+          MARIADB_DATABASE: manyfold
+          MARIADB_ROOT_PASSWORD: verysecret
+        options: >-
+          --health-cmd "healthcheck.sh --connect --innodb_initialized"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 3306:3306
       redis:
         image: redis:7
         options: >-

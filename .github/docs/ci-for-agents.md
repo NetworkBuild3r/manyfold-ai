@@ -12,7 +12,7 @@ To run **the same lint steps as the CI workflow** (actionlint + rubocop + erb_li
 .\script\ci-lint.ps1
 ```
 
-This runs actionlint, builds `docker/Dockerfile.ci`, then runs rubocop, erb_lint, `yarn run lint:ts`, and `yarn typecheck` inside that image. If it passes, the **lint** job on GitHub will pass. Run tests separately (e.g. `docker compose --profile test run --rm test`) or rely on CI for the test matrix.
+This runs actionlint, builds `docker/Dockerfile.ci`, then runs rubocop, erb_lint, `yarn run lint:ts`, `yarn typecheck`, and `bundle exec i18n-tasks health -l en` inside that image. If it passes, the **lint** job on GitHub will pass. Run tests separately (e.g. `docker compose --profile test run --rm test`) or rely on CI for the test matrix.
 
 ## Triggering CI from GitHub
 
@@ -32,6 +32,7 @@ bundle exec rake rubocop
 bundle exec erb_lint --lint-all
 yarn run lint:ts
 yarn typecheck
+bundle exec i18n-tasks health -l en
 ```
 
 **Test (needs DB and Redis):**
@@ -65,7 +66,7 @@ ruby bin/rails assets:precompile
 ruby bin/bundle exec rspec --fail-fast
 ```
 
-Lint with Ruby explicitly: `ruby bin/bundle exec rake rubocop`, then `ruby bin/bundle exec erb_lint --lint-all`, then `yarn run lint:ts`, `yarn typecheck`.
+Lint with Ruby explicitly: `ruby bin/bundle exec rake rubocop`, then `ruby bin/bundle exec erb_lint --lint-all`, then `yarn run lint:ts`, `yarn typecheck`, then `ruby bin/bundle exec i18n-tasks health -l en`.
 
 ## Why local CI can miss things
 
@@ -78,7 +79,7 @@ Local commands above cover **Ruby, ERB, TypeScript, and RSpec** only. They do **
   ```
   Or use the [online playground](https://rhysd.github.io/actionlint/).
 - **Multiple databases** — CI runs the test matrix against PostgreSQL, MySQL, and SQLite. Local runs often use a single DB (e.g. SQLite). To approximate CI, run tests with the same `DATABASE_URL` values as in `ci.yml`, or run the full suite in Docker: `docker compose --profile test run --rm test`.
-- **Other workflows** — `docker.yml`, `codeql.yml`, `i18n_health.yml`, `openapi.yml`, `translation.yml`, `auto_merge.yml` are not exercised by the local lint/test commands. Changing them should be validated with actionlint and by triggering the corresponding workflow manually (Actions → workflow name → Run workflow).
+- **Other workflows** — `docker.yml`, `codeql.yml`, `i18n_health.yml`, `openapi.yml`, `translation.yml`, `auto_merge.yml` are not exercised by the local lint/test commands. The main **CI** workflow now includes `i18n-tasks health -l en` in the lint job, so translation issues are caught before merge; the separate **Check translations** workflow still runs on PRs to `main`. Changing other workflows should be validated with actionlint and by triggering the corresponding workflow manually (Actions → workflow name → Run workflow).
 
 Before pushing, run lint and tests as in [Local commands](#local-commands-match-ci); if you changed any file under `.github/workflows/`, run `actionlint` as well.
 
