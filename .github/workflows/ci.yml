@@ -116,7 +116,8 @@ jobs:
                 bundle exec rails db:prepare:with_data
               else
                 bundle exec rails db:create
-                bundle exec rails db:migrate:with_data
+                bundle exec rails db:migrate
+                bundle exec rails db:data:migrate
               fi
               bundle exec rails assets:precompile
               bundle exec rspec --fail-fast
