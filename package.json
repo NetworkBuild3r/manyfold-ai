@@ -8,7 +8,7 @@
     "build:css:tailwind": "npx @tailwindcss/cli -i app/assets/stylesheets/tailwind.css -o app/assets/builds/tailwind.css --minify",
     "watch:css": "nodemon --watch ./app/assets/stylesheets/tailwind.css --exec \"yarn build:css\"",
     "watch:tailwind": "npx @tailwindcss/cli -i app/assets/stylesheets/tailwind.css -o app/assets/builds/tailwind.css --watch",
-    "typecheck": "bundle exec i18n export --config=./config/i18n-js.yml && tsc --project tsconfig.json"
+    "typecheck": "bundle exec i18n export --config=./config/i18n-js.yml --require=./config/i18n_export_require.rb && tsc --project tsconfig.json"
   },
   "dependencies": {
     "@hotwired/stimulus": "^3.2.2",
