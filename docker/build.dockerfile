@@ -16,7 +16,6 @@ RUN apk add --no-cache \
   nodejs=~24.13.0 \
   npm \
   postgresql-dev \
-  mariadb-dev \
   libarchive \
   imagemagick \
   imagemagick-jpeg \

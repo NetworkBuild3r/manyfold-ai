@@ -6,19 +6,16 @@ FROM ruby:3.4.8-bookworm
 
 WORKDIR /workspace
 
-# System deps: Node 24, assimp (for native gems), DB clients for pg/mysql2/sqlite3
 # System deps (excluding Node; installed via NodeSource below)
 RUN apt-get update -qq && apt-get install -y --no-install-recommends \
   build-essential \
   ca-certificates \
   curl \
-  default-libmysqlclient-dev \
   git \
   gnupg \
   libarchive-dev \
   libassimp-dev \
   libpq-dev \
-  libsqlite3-dev \
   libvips-dev \
   pkg-config \
   && rm -rf /var/lib/apt/lists/*

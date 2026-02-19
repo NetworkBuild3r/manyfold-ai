@@ -27,13 +27,13 @@ After the first successful run of the CI workflow on a PR, GitHub will list avai
 - **lint** (from the `lint` job in `ci.yml`)
 - **test** (from the `test` job in `ci.yml`)
 
-If you use a matrix (e.g. multiple DBs), you may see **test (postgresql)**, **test (mysql2)**, **test (sqlite3)**. Require all of them, or require the single **test** job if GitHub groups them.
+The test job runs against PostgreSQL only (single job, no matrix).
 
 ## Quick checklist
 
 - [ ] Branch protection rule exists for `main`
 - [ ] “Require a pull request before merging” is on
-- [ ] “Require status checks to pass” is on, with **lint** and **test** (and any matrix variants) selected
+- [ ] “Require status checks to pass” is on, with **lint** and **test** selected
 - [ ] “Require branches to be up to date before merging” is on
 - [ ] No one can push directly to `main` without going through a protected PR
 

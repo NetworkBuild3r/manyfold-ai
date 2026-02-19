@@ -13,12 +13,10 @@ RUN apk add --no-cache \
   ca-certificates \
   gmp-dev \
   libffi-dev \
-  mariadb-dev \
   postgresql-dev \
   yaml-dev \
   nodejs \
   npm \
-  sqlite-dev \
   libarchive \
   imagemagick \
   imagemagick-jpeg \

@@ -25,7 +25,6 @@ COPY --from=build /usr/src/app/public/assets public/assets
 # Copy only the dynamic libraries we need from the build image
 # It would be better to statically link the gems during build, if we can
 COPY --from=build \
-  /usr/lib/libmariadb.so.* \
   /usr/lib/libarchive.so.* \
   /usr/lib/libacl.so.*\
   /usr/lib/libexpat.so.* \

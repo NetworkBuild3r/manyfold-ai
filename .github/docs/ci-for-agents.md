@@ -12,7 +12,7 @@ To run **the same lint steps as the CI workflow** (actionlint + rubocop + erb_li
 .\script\ci-lint.ps1
 ```
 
-This runs actionlint, builds `docker/Dockerfile.ci`, then runs rubocop, erb_lint, `yarn run lint:ts`, `yarn typecheck`, and `bundle exec i18n-tasks health -l en` inside that image. If it passes, the **lint** job on GitHub will pass. Run tests separately (e.g. `docker compose --profile test run --rm test`) or rely on CI for the test matrix.
+This runs actionlint, builds `docker/Dockerfile.ci`, then runs rubocop, erb_lint, `yarn run lint:ts`, `yarn typecheck`, and `bundle exec i18n-tasks health -l en` inside that image. If it passes, the **lint** job on GitHub will pass. Run tests separately (e.g. `docker compose --profile test run --rm test`) or rely on CI for the test job.
 
 ## Triggering CI from GitHub
 
@@ -23,7 +23,7 @@ Required status checks for merging are the **lint** and **test** jobs from the C
 
 ## Local commands (match CI)
 
-Run these after `bundle install` and `yarn install` (or use the setup composite’s equivalent). Order matches CI: lint first, then test.
+Run these after `bundle install` and `yarn install` (or use the setup composite's equivalent). Order matches CI: lint first, then test.
 
 **Lint (fast, run first):**
 
@@ -35,17 +35,17 @@ yarn typecheck
 bundle exec i18n-tasks health -l en
 ```
 
-**Test (needs DB and Redis):**
+**Test (needs PostgreSQL and Redis):**
 
 ```bash
 export RAILS_ENV=test
-# Set DATABASE_URL for your DB (e.g. postgresql://... or sqlite3:/tmp/test.db)
+export DATABASE_URL=postgresql://manyfold:manyfold@localhost:5432/manyfold_test
 bundle exec rails db:prepare:with_data
 bundle exec rails assets:precompile
 bundle exec rspec --fail-fast
 ```
 
-CI runs the test suite against **PostgreSQL only**. The app’s `db/schema.rb` is generated from PostgreSQL; MySQL and SQLite are in the Gemfile for local use but are not exercised in CI.
+The app uses **PostgreSQL only**. `db/schema.rb` is PostgreSQL-specific; no other database adapters are supported.
 
 Or use the default dev DB for a quick run: `bundle exec rspec --fail-fast` (ensure DB is created and migrated).
 
@@ -80,7 +80,7 @@ Local commands above cover **Ruby, ERB, TypeScript, and RSpec** only. They do **
   actionlint
   ```
   Or use the [online playground](https://rhysd.github.io/actionlint/).
-- **Database** — CI runs tests against PostgreSQL only. To match CI locally, use PostgreSQL (e.g. `docker compose --profile test run --rm test`) or set `DATABASE_URL` to the same postgres URL as in `ci.yml`.
+- **Database** — CI tests against PostgreSQL. To match CI locally, use PostgreSQL (e.g. `docker compose --profile test run --rm test`) or set `DATABASE_URL` to the same postgres URL as in `ci.yml`.
 - **Other workflows** — `docker.yml`, `codeql.yml`, `i18n_health.yml`, `openapi.yml`, `translation.yml`, `auto_merge.yml` are not exercised by the local lint/test commands. The main **CI** workflow now includes `i18n-tasks health -l en` in the lint job, so translation issues are caught before merge; the separate **Check translations** workflow still runs on PRs to `main`. Changing other workflows should be validated with actionlint and by triggering the corresponding workflow manually (Actions → workflow name → Run workflow).
 
 Before pushing, run lint and tests as in [Local commands](#local-commands-match-ci); if you changed any file under `.github/workflows/`, run `actionlint` as well.
@@ -88,7 +88,7 @@ Before pushing, run lint and tests as in [Local commands](#local-commands-match-
 ## Pipeline layout (DRY)
 
 - **`.github/workflows/ci.yml`** – Runs **workflow lint (actionlint)** then **lint** then **test** inside a container. Builds `docker/Dockerfile.ci`, then runs actionlint, then lint and test via `docker run` with the workspace mounted. `workflow_dispatch` enables on-demand runs.
-- **`docker/Dockerfile.ci`** – CI image (Ruby 3.4, Node 24, Yarn, system deps). Used so CI does not depend on the host’s Ruby/Node; same checks can be run locally via Docker.
+- **`docker/Dockerfile.ci`** – CI image (Ruby 3.4, Node 24, Yarn, system deps). Used so CI does not depend on the host's Ruby/Node; same checks can be run locally via Docker.
 - **`.github/actions/setup/`** – Ruby, Node, gems, yarn (used by other workflows that do not use the CI container).
 - **`.github/actions/lint/`** – Ruby (Rubocop), ERB, TypeScript lint and typecheck.
 - **`.github/actions/run-tests/`** – DB prepare, assets, RSpec (caller provides `DATABASE_URL` and services).

@@ -30,12 +30,9 @@ gem "ffi-libarchive", "~> 1.1"
 # Reduces boot times through caching; required in config/boot.rb
 gem "bootsnap", "~> 1.22", require: false
 
-# Database adapters (PostgreSQL default; MySQL and SQLite for CI/test)
 gem "pg", "~> 1.6"
-gem "mysql2", "~> 0.5"
 
 group :development, :test do
-  gem "sqlite3", "~> 2.0"
   # Call 'byebug' anywhere in the code to stop execution and get a debugger console
   gem "byebug", platforms: [:mri, :mingw, :x64_mingw]
   gem "rspec-rails"

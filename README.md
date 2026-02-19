@@ -46,7 +46,7 @@ This fork diverges from [manyfold3d/manyfold](https://github.com/manyfold3d/many
 | Data management | Basic merge | **Merge with history** and time-limited unmerge; path prefix tracking; `db_integrity.rake` for integrity constraints. |
 | Components | ViewComponent + ERB | **Phlex**-based components in `app/components/`; shared `_problems_card.html.erb`; model card refactored (ModelCardActions, ModelCardPreview, DropdownMenu). |
 | Selection/browsing | — | **Base and file-list selection** Stimulus controllers; infinite scroll restore; `ModelListRestoreWrapper`. |
-| CI | Single-DB | **Multi-DB CI** (PostgreSQL, MySQL, SQLite); lint (StandardRB, Rubocop, erb_lint, TypeScript, Tailwind) then RSpec. |
+| CI | Single-DB | **PostgreSQL-only CI**; lint (StandardRB, Rubocop, erb_lint, TypeScript, i18n-tasks) then RSpec. |
 | Docker | `docker/default.dockerfile` | `docker/manyfold.dockerfile`; Windows one-command: `.\script\start-docker.ps1`. |
 | Docs | Links to manyfold.app | **Fork-first README**; `.cursor/rules/` and `.cursor/skills/` for AI-assisted development. |
 
@@ -62,7 +62,7 @@ This fork diverges from [manyfold3d/manyfold](https://github.com/manyfold3d/many
 - **Sidekiq** — Background jobs: scan, analysis, default, performance, upgrade queues (`config/workers/`, `app/jobs/README.md`).
 - **Tailwind CSS 4** — Single entrypoint: `app/assets/stylesheets/tailwind.css`; utilities prefixed `tw:*`.
 - **3D** — THREE.js (TypeScript) in browser; Mittsu (Ruby) on server.
-- **Database** — PostgreSQL in production; SQLite in dev/test; MySQL in CI.
+- **Database** — PostgreSQL only (production, dev, test, and CI).
 - **Problems** — `Problem` model, `Problems::Registry`, category classes in `app/models/problems/`. Resolution only via `Problem.resolve_batch`; creation/clearing only via `Problem.create_or_clear` and Registry detectors.
 
 ### Key files and locations
@@ -120,7 +120,7 @@ VS Code → Remote - Containers → Reopen in Container. Requires Docker and Rem
 | TypeScript | `yarn run lint:ts`, `yarn typecheck` |
 | Tests | `bundle exec rspec` (or `bundle exec rake`) |
 
-CI runs on push/PR to `main`: lint first, then test matrix (PostgreSQL, MySQL, SQLite).
+CI runs on push/PR to `main`: lint first, then test (PostgreSQL).
 
 Doc screenshots: `DOC_SCREENSHOT=true bundle exec rspec` or `-t @documentation`.
 
