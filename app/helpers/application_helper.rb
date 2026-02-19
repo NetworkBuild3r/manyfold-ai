@@ -7,9 +7,9 @@ module ApplicationHelper
   def settings_nav_link_class(path)
     base = "block px-3 py-2 text-sm rounded-lg no-underline"
     if current_page?(path)
-      "#{base} bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-200 font-medium"
+      "#{base} bg-primary-100 text-primary-700 dark:bg-primary-600 dark:text-white font-medium"
     else
-      "#{base} text-secondary-700 dark:text-secondary-300 hover:bg-secondary-100 dark:hover:bg-secondary-800"
+      "#{base} text-secondary-700 dark:text-secondary-200 hover:bg-secondary-100 dark:hover:bg-secondary-700"
     end
   end
 

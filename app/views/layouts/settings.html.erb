@@ -5,7 +5,7 @@
   <%= PageTitle title: t(".moderation_settings_title") %>
 <% end %>
 <div class="flex flex-nowrap gap-6 mt-4">
-  <nav class="sticky top-16 self-start w-64 flex-shrink-0 border-r border-secondary-200 dark:border-secondary-600 pr-6" id="sidebar" aria-label="Settings">
+  <nav class="sticky top-16 self-start w-64 flex-shrink-0 border-r border-secondary-200 dark:border-secondary-500 pr-6" id="sidebar" aria-label="Settings">
     <ul class="list-none m-0 p-0 space-y-0.5">
       <% if policy(:settings).index? %>
         <li>
@@ -29,8 +29,8 @@
       <% end %>
     </ul>
     <% if SiteSettings.multiuser_enabled? %>
-      <hr class="my-3 border-secondary-200 dark:border-secondary-600">
-      <h5 class="text-xs font-semibold uppercase text-secondary-500 dark:text-secondary-400 mt-4 mb-2 first:mt-0"><%= t(".moderation_heading") %></h5>
+      <hr class="my-3 border-secondary-200 dark:border-secondary-500">
+      <h5 class="text-xs font-semibold uppercase text-secondary-500 dark:text-secondary-300 mt-4 mb-2 first:mt-0"><%= t(".moderation_heading") %></h5>
       <ul class="list-none m-0 p-0 space-y-0.5">
         <li>
           <%= link_to t("settings.users.index.title"), settings_users_path, class: settings_nav_link_class(settings_users_path), aria: (current_page?(settings_users_path) ? {current: "page"} : {}) %>
@@ -46,8 +46,8 @@
       </ul>
     <% end %>
     <% if policy(:settings).index? && current_user.is_administrator? %>
-      <hr class="my-3 border-secondary-200 dark:border-secondary-600">
-      <h5 class="text-xs font-semibold uppercase text-secondary-500 dark:text-secondary-400 mt-4 mb-2 first:mt-0"><%= t(".search_heading") %></h5>
+      <hr class="my-3 border-secondary-200 dark:border-secondary-500">
+      <h5 class="text-xs font-semibold uppercase text-secondary-500 dark:text-secondary-300 mt-4 mb-2 first:mt-0"><%= t(".search_heading") %></h5>
       <ul class="list-none m-0 p-0 space-y-0.5">
         <li>
           <%= link_to t("settings.discovery.heading"), discovery_settings_path, class: settings_nav_link_class(discovery_settings_path), aria: (current_page?(discovery_settings_path) ? {current: "page"} : {}) %>
@@ -60,8 +60,8 @@
       </ul>
     <% end %>
     <% if policy(:settings).index? and not SiteSettings.demo_mode_enabled? %>
-      <hr class="my-3 border-secondary-200 dark:border-secondary-600">
-      <h5 class="text-xs font-semibold uppercase text-secondary-500 dark:text-secondary-400 mt-4 mb-2 first:mt-0"><%= t(".integrations_heading") %></h5>
+      <hr class="my-3 border-secondary-200 dark:border-secondary-500">
+      <h5 class="text-xs font-semibold uppercase text-secondary-500 dark:text-secondary-300 mt-4 mb-2 first:mt-0"><%= t(".integrations_heading") %></h5>
       <ul class="list-none m-0 p-0 space-y-0.5">
         <li>
           <%= link_to t("doorkeeper_applications.index.title"), doorkeeper_applications_path, class: settings_nav_link_class(doorkeeper_applications_path), aria: (current_page?(doorkeeper_applications_path) ? {current: "page"} : {}) %>
@@ -72,8 +72,8 @@
       </ul>
     <% end %>
     <% if policy(:settings).index? and not SiteSettings.demo_mode_enabled? %>
-      <hr class="my-3 border-secondary-200 dark:border-secondary-600">
-      <h5 class="text-xs font-semibold uppercase text-secondary-500 dark:text-secondary-400 mt-4 mb-2 first:mt-0"><%= t(".tools_heading") %></h5>
+      <hr class="my-3 border-secondary-200 dark:border-secondary-500">
+      <h5 class="text-xs font-semibold uppercase text-secondary-500 dark:text-secondary-300 mt-4 mb-2 first:mt-0"><%= t(".tools_heading") %></h5>
       <ul class="list-none m-0 p-0 space-y-0.5">
         <li>
           <%= link_to t("settings.reporting.heading"), reporting_settings_path, class: settings_nav_link_class(reporting_settings_path), aria: (current_page?(reporting_settings_path) ? {current: "page"} : {}) %>

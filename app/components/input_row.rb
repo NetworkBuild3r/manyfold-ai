@@ -22,7 +22,7 @@ class Components::InputRow < Components::Base
   end
 
   def label_class
-    "block text-sm font-medium text-secondary-700 dark:text-secondary-300"
+    "block text-sm font-medium text-secondary-700 dark:text-secondary-200"
   end
 
   def input_group
@@ -36,7 +36,7 @@ class Components::InputRow < Components::Base
   end
 
   def help
-    span(class: "text-sm text-secondary-500 dark:text-secondary-400 mt-1 block") { @help } if @help
+    span(class: "text-sm text-secondary-500 dark:text-secondary-300 mt-1 block") { @help } if @help
   end
 
   def errors_for(object, attribute)

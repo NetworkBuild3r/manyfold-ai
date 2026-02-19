@@ -72,8 +72,12 @@ if (-not (Test-Path "db/schema.rb")) {
 }
 
 Write-Host "Building web and worker images (if needed)..." -ForegroundColor Cyan
+$prevErrorAction = $ErrorActionPreference
+$ErrorActionPreference = "Continue"
 docker compose build web worker 2>&1 | Out-Host
-if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+$buildExit = $LASTEXITCODE
+$ErrorActionPreference = $prevErrorAction
+if ($buildExit -ne 0) { exit $buildExit }
 
 Write-Host "Starting web and worker..." -ForegroundColor Cyan
 docker compose up -d web worker

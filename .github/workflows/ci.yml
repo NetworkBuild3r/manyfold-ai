@@ -24,7 +24,7 @@ jobs:
       - name: Lint workflow files
         uses: eifinger/actionlint-action@v1
         with:
-          version: "v1.7.1"
+          version: "1.7.10"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
