@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
 let focusedElementBeforeMorph: { id?: string, name?: string, tagName: string } | null = null
 document.addEventListener('turbo:before-render', () => {
   const el = document.activeElement as HTMLElement | null
-  if (el != null && el.matches('input:not([type="hidden"]), textarea, select')) {
+  if (el?.matches('input:not([type="hidden"]), textarea, select') === true) {
     const inputEl = el as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
     const idVal = el.id
     const nameVal = inputEl.name
@@ -51,7 +51,7 @@ document.addEventListener('turbo:render', (event: Event) => {
       `${focusedElementBeforeMorph.tagName.toLowerCase()}[name="${CSS.escape(nameVal)}"]`
     )
   }
-  if (target != null && target.matches('input:not([type="hidden"]), textarea, select')) {
+  if (target?.matches('input:not([type="hidden"]), textarea, select') === true) {
     target.focus()
   }
   focusedElementBeforeMorph = null
