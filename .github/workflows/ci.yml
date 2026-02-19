@@ -41,8 +41,13 @@ jobs:
           push: false
 
       - name: Run lint in container
+        env:
+          RAILS_ENV: test
+          DATABASE_URL: "nulldb://user:pass@localhost/db"
         run: |
           docker run --rm \
+            -e RAILS_ENV \
+            -e DATABASE_URL \
             -v "${{ github.workspace }}:/workspace" \
             -w /workspace \
             ${{ env.CI_IMAGE }}:latest \
