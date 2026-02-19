@@ -21,7 +21,7 @@ class Components::LinkList < Components::Base
             link_to t("sites.%{site}" % {site: link.site}, default: "%{site}" % {site: link.site}), link.url, rel: "noreferrer", class: "no-underline hover:underline"
             if link.deserializer.present? && policy(link.linkable).sync?
               whitespace
-              link_to({action: "sync", id: link.linkable, link: link.id}, {method: :post}, class: "text-secondary-700 dark:text-secondary-300") do
+              link_to({action: "sync", id: link.linkable, link: link.id}, {method: :post, class: "text-secondary-700 dark:text-secondary-300"}) do
                 Icon(icon: "arrow-repeat", label: t("components.link_list.sync"))
               end
               span(class: "text-secondary-700 dark:text-secondary-300") { Icon(icon: "exclamation-triangle-fill", label: "") } if link.problems.exists?

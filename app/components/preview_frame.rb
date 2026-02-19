@@ -42,7 +42,7 @@ class Components::PreviewFrame < Components::Base
   def render_local
     if @file.is_image?
       div(class: preview_container_class) do
-        image_tag model_model_file_path(@file.model, @file, format: @file.extension, derivative: "carousel"),
+        image_tag model_model_file_path(@file.model, @file, format: @file.extension, derivative: "preview"),
           class: image_class,
           alt: @file.name,
           loading: "lazy",

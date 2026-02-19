@@ -22,8 +22,9 @@ module ModelListable
     per_page = helpers.pagination_settings["per_page"]
     page = params[:page] || 1
 
-    # Restore mode: full-page request with ?page=N > 1 — preload pages 1..N (capped) for back-button scroll restoration
-    if !turbo_frame_request? && page.to_i > 1
+    # Restore mode only applies to HTML full-page requests (back-button scroll restoration).
+    # API requests always get a standard paginated relation.
+    if request.format.html? && !turbo_frame_request? && page.to_i > 1
       restore_page = [page.to_i, MAX_RESTORE_PAGES].min
       @models = @models.page(1).per(per_page * restore_page)
       @models = @models.includes [:creator, :collection]

@@ -57,7 +57,7 @@ class Components::ResolveButton < Components::Base
   def resolve_url
     opts = {resolve: true, format: :turbo_stream}
     opts[:from] = "model" if @from_model
-    opts[:model_id] = @from_model.id if @from_model
+    opts[:model_id] = @from_model.public_id if @from_model
     resolve_problem_path(@problem, opts)
   end
 

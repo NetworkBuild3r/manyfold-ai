@@ -81,7 +81,7 @@ class ProblemsController < ApplicationController
     streams = ids_to_remove.map { |id| turbo_stream.remove("problem-#{id}") }
     # When resolving from the model page, replace the problems card so the count updates.
     if params[:from] == "model" && params[:model_id].present?
-      model = Model.find_by(id: params[:model_id])
+      model = Model.find_by(public_id: params[:model_id])
       if model && policy(:problem).show?
         streams << turbo_stream.replace("model-problems-card", partial: "application/problems_card", locals: {
           problematic: model,
