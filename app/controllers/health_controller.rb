@@ -6,18 +6,18 @@
 # for "fully operational" mode. Set to 0 for DB+Redis only.
 class HealthController < ApplicationController
   skip_forgery_protection
-  before_action :skip_all_app_filters
+  skip_before_action :authenticate_user!, raise: false
+  skip_before_action :check_for_first_use, raise: false
+  skip_before_action :show_security_alerts, raise: false
+  skip_before_action :check_scan_status, raise: false
+  skip_before_action :restore_failed_search, raise: false
+  skip_after_action :verify_authorized, raise: false
+  skip_after_action :verify_policy_scoped, raise: false
 
   def show
     ok, reasons = HealthChecker.run
     status = ok ? 200 : 503
     message = ok ? "OK" : "Service Unavailable: #{reasons.join(", ")}"
     render plain: message, status: status, content_type: "text/plain"
-  end
-
-  private
-
-  def skip_all_app_filters
-    # Ensure no auth, CSP, or other filters run for this endpoint
   end
 end
