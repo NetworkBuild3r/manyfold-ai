@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_02_09_093000) do
+ActiveRecord::Schema[8.0].define(version: 2026_02_14_240000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -280,6 +280,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_09_093000) do
     t.string "s3_secret_access_key"
     t.string "public_id"
     t.boolean "s3_path_style", default: true, null: false
+    t.index ["path"], name: "index_libraries_on_path", unique: true
     t.index ["public_id"], name: "index_libraries_on_public_id"
   end
 
@@ -308,7 +309,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_09_093000) do
 
   create_table "merge_histories", force: :cascade do |t|
     t.bigint "target_model_id", null: false
-    t.bigint "source_library_id", null: false
+    t.bigint "source_library_id"
     t.string "source_path", null: false
     t.string "source_name", null: false
     t.string "path_prefix"
@@ -317,6 +318,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_09_093000) do
     t.datetime "undone_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["source_library_id"], name: "index_merge_histories_on_source_library_id"
     t.index ["target_model_id", "created_at"], name: "index_merge_histories_on_target_model_id_and_created_at"
     t.index ["target_model_id"], name: "index_merge_histories_on_target_model_id"
   end
@@ -565,15 +567,21 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_09_093000) do
   add_foreign_key "federails_followings", "federails_actors", column: "target_actor_id"
   add_foreign_key "federails_moderation_reports", "federails_actors"
   add_foreign_key "groups", "creators"
+  add_foreign_key "memberships", "groups", on_delete: :cascade
+  add_foreign_key "memberships", "users", on_delete: :cascade
+  add_foreign_key "merge_histories", "libraries", column: "source_library_id", on_delete: :nullify
   add_foreign_key "merge_histories", "models", column: "target_model_id"
   add_foreign_key "model_files", "model_files", column: "presupported_version_id"
   add_foreign_key "model_files", "models"
   add_foreign_key "models", "collections"
   add_foreign_key "models", "creators"
   add_foreign_key "models", "libraries"
+  add_foreign_key "models", "model_files", column: "preview_file_id", on_delete: :nullify
   add_foreign_key "oauth_access_grants", "oauth_applications", column: "application_id"
   add_foreign_key "oauth_access_grants", "users", column: "resource_owner_id"
   add_foreign_key "oauth_access_tokens", "oauth_applications", column: "application_id"
   add_foreign_key "oauth_access_tokens", "users", column: "resource_owner_id"
   add_foreign_key "taggings", "tags"
+  add_foreign_key "users_roles", "roles", column: "role_id", on_delete: :cascade
+  add_foreign_key "users_roles", "users", column: "user_id", on_delete: :cascade
 end
