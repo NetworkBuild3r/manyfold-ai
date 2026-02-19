@@ -45,6 +45,8 @@ bundle exec rails assets:precompile
 bundle exec rspec --fail-fast
 ```
 
+For **MySQL or SQLite** (e.g. in CI matrix), use `db:create` then `db:migrate:with_data` instead of `db:prepare:with_data`, because `db/schema.rb` is generated from PostgreSQL and cannot be loaded on other adapters.
+
 Or use the default dev DB for a quick run: `bundle exec rspec --fail-fast` (ensure DB is created and migrated).
 
 ### Windows (PowerShell)

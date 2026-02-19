@@ -112,7 +112,12 @@ jobs:
               bundle config set --local path vendor/bundle
               bundle install
               yarn install
-              bundle exec rails db:prepare:with_data
+              if [[ \"\$DATABASE_URL\" == postgresql* ]]; then
+                bundle exec rails db:prepare:with_data
+              else
+                bundle exec rails db:create
+                bundle exec rails db:migrate:with_data
+              fi
               bundle exec rails assets:precompile
               bundle exec rspec --fail-fast
             "
