@@ -147,6 +147,11 @@ ignore_unused:
 - 'doorkeeper.*' # Used deep down
 - 'renderer.errors.*' # Used client side via i18n-js
 - 'renderer.processing' # Used client side via i18n-js
+- 'application.filters_card.remove_*' # Used in filter card UI
+- 'application.tags_card.skip_tags' # Used in tags card
+- 'layouts.application.skip_to_content' # Accessibility link
+- 'models.problems_card.tour.*' # Used in problems card tour (also under show)
+- 'models.show.menu.tour.*' # Used in model show menu tour
 
 # - '{devise,kaminari,will_paginate}.*'
 # - 'simple_form.{yes,no}'
