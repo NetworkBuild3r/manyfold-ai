@@ -30,7 +30,8 @@ export default class extends BaseSelectionController {
   declare modelIdValue: string
 
   get storageKey (): string {
-    return STORAGE_KEY_PREFIX + (this.modelIdValue || 'default')
+    const v = this.modelIdValue
+    return STORAGE_KEY_PREFIX + ((v != null && v !== '') ? v : 'default')
   }
 
   get idDataAttribute (): string {

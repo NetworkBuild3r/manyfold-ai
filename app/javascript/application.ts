@@ -24,10 +24,13 @@ document.addEventListener('DOMContentLoaded', () => {
 let focusedElementBeforeMorph: { id?: string, name?: string, tagName: string } | null = null
 document.addEventListener('turbo:before-render', () => {
   const el = document.activeElement as HTMLElement | null
-  if (el?.matches('input:not([type="hidden"]), textarea, select')) {
+  if (el != null && el.matches('input:not([type="hidden"]), textarea, select')) {
+    const inputEl = el as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    const idVal = el.id
+    const nameVal = inputEl.name
     focusedElementBeforeMorph = {
-      id: el.id || undefined,
-      name: (el as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement).name || undefined,
+      id: (idVal != null && idVal !== '') ? idVal : undefined,
+      name: (nameVal != null && nameVal !== '') ? nameVal : undefined,
       tagName: el.tagName
     }
   } else {
@@ -38,15 +41,17 @@ document.addEventListener('turbo:render', (event: Event) => {
   const e = event as CustomEvent<{ renderMethod?: string }>
   if (e.detail?.renderMethod !== 'morph' || (focusedElementBeforeMorph == null)) return
   let target: HTMLElement | null = null
-  if (focusedElementBeforeMorph.id) {
-    target = document.getElementById(focusedElementBeforeMorph.id)
+  const idVal = focusedElementBeforeMorph.id
+  if (idVal != null && idVal !== '') {
+    target = document.getElementById(idVal)
   }
-  if ((target == null) && focusedElementBeforeMorph.name) {
+  const nameVal = focusedElementBeforeMorph.name
+  if ((target == null) && (nameVal != null && nameVal !== '')) {
     target = document.querySelector(
-      `${focusedElementBeforeMorph.tagName.toLowerCase()}[name="${CSS.escape(focusedElementBeforeMorph.name)}"]`
+      `${focusedElementBeforeMorph.tagName.toLowerCase()}[name="${CSS.escape(nameVal)}"]`
     )
   }
-  if (target?.matches('input:not([type="hidden"]), textarea, select')) {
+  if (target != null && target.matches('input:not([type="hidden"]), textarea, select')) {
     target.focus()
   }
   focusedElementBeforeMorph = null

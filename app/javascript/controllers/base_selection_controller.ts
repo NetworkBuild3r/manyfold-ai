@@ -55,7 +55,7 @@ export default abstract class BaseSelectionController extends Controller {
   protected loadStored (): string[] {
     try {
       const raw = sessionStorage.getItem(this.storageKey)
-      if (raw) {
+      if (raw != null && raw !== '') {
         const parsed = JSON.parse(raw) as unknown
         return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === 'string') : []
       }

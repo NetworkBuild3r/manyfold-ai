@@ -59,7 +59,7 @@ export default class extends BaseSelectionController {
         if (count >= 2) {
           const base = this.mergeLinkTarget.dataset.baseHref ?? ''
           const query = [...this.selectedIds].map((id) => 'models[]=' + encodeURIComponent(id)).join('&')
-          this.mergeLinkTarget.href = query ? base + '?' + query : base
+          this.mergeLinkTarget.href = query !== '' ? base + '?' + query : base
           this.mergeLinkTarget.hidden = false
         } else {
           this.mergeLinkTarget.hidden = true
