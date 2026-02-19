@@ -45,7 +45,7 @@ bundle exec rails assets:precompile
 bundle exec rspec --fail-fast
 ```
 
-For **MySQL or SQLite** (e.g. in CI matrix), use `db:create`, `db:migrate`, and `db:data:migrate` (not `db:prepare:with_data` or `db:migrate:with_data`), because `db/schema.rb` is PostgreSQL-specific and must not be loaded on other adapters.
+CI runs the test suite against **PostgreSQL only**. The app’s `db/schema.rb` is generated from PostgreSQL; MySQL and SQLite are in the Gemfile for local use but are not exercised in CI.
 
 Or use the default dev DB for a quick run: `bundle exec rspec --fail-fast` (ensure DB is created and migrated).
 
@@ -80,7 +80,7 @@ Local commands above cover **Ruby, ERB, TypeScript, and RSpec** only. They do **
   actionlint
   ```
   Or use the [online playground](https://rhysd.github.io/actionlint/).
-- **Multiple databases** — CI runs the test matrix against PostgreSQL, MySQL, and SQLite. Local runs often use a single DB (e.g. SQLite). To approximate CI, run tests with the same `DATABASE_URL` values as in `ci.yml`, or run the full suite in Docker: `docker compose --profile test run --rm test`.
+- **Database** — CI runs tests against PostgreSQL only. To match CI locally, use PostgreSQL (e.g. `docker compose --profile test run --rm test`) or set `DATABASE_URL` to the same postgres URL as in `ci.yml`.
 - **Other workflows** — `docker.yml`, `codeql.yml`, `i18n_health.yml`, `openapi.yml`, `translation.yml`, `auto_merge.yml` are not exercised by the local lint/test commands. The main **CI** workflow now includes `i18n-tasks health -l en` in the lint job, so translation issues are caught before merge; the separate **Check translations** workflow still runs on PRs to `main`. Changing other workflows should be validated with actionlint and by triggering the corresponding workflow manually (Actions → workflow name → Run workflow).
 
 Before pushing, run lint and tests as in [Local commands](#local-commands-match-ci); if you changed any file under `.github/workflows/`, run `actionlint` as well.

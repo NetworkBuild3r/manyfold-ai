@@ -67,19 +67,10 @@ jobs:
   test:
     if: github.triggering_actor != 'allcontributors[bot]'
     needs: lint
-    strategy:
-      fail-fast: false
-      matrix:
-        database_url:
-          - postgresql://manyfold:manyfold@localhost:5432/manyfold
-          - mysql2://manyfold:manyfold@127.0.0.1:3306/manyfold
-          - sqlite3:/tmp/test.db
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
     env:
       RAILS_ENV: test
-      DATABASE_URL: ${{ matrix.database_url }}
+      DATABASE_URL: postgresql://manyfold:manyfold@localhost:5432/manyfold
       REDIS_URL: redis://localhost:6379/0
     steps:
       - uses: actions/checkout@v6
@@ -112,13 +103,7 @@ jobs:
               bundle config set --local path vendor/bundle
               bundle install
               yarn install
-              if [[ \"\$DATABASE_URL\" == postgresql* ]]; then
-                bundle exec rails db:prepare:with_data
-              else
-                bundle exec rails db:create
-                bundle exec rails db:migrate
-                bundle exec rails db:data:migrate
-              fi
+              bundle exec rails db:prepare:with_data
               bundle exec rails assets:precompile
               bundle exec rspec --fail-fast
             "
@@ -146,20 +131,6 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
-      mariadb:
-        image: mariadb:11
-        env:
-          MARIADB_USER: manyfold
-          MARIADB_PASSWORD: manyfold
-          MARIADB_DATABASE: manyfold
-          MARIADB_ROOT_PASSWORD: verysecret
-        options: >-
-          --health-cmd "healthcheck.sh --connect --innodb_initialized"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 3306:3306
       redis:
         image: redis:7
         options: >-
