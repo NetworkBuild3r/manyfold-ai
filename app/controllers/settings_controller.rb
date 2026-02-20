@@ -37,7 +37,9 @@ class SettingsController < ApplicationController
     SiteSettings.site_name = settings[:site_name]
     SiteSettings.site_tagline = settings[:site_tagline]
     SiteSettings.theme = settings[:theme]
-    SiteSettings.accent_color = settings[:accent_color] if settings[:accent_color].present?
+    if settings[:accent_color].present? && SiteSettings::AVAILABLE_ACCENTS.include?(settings[:accent_color])
+      SiteSettings.accent_color = settings[:accent_color]
+    end
     SiteSettings.about = settings[:about]
     SiteSettings.rules = settings[:rules]
     SiteSettings.support_link = settings[:support_link]

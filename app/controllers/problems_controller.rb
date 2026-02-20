@@ -25,7 +25,6 @@ class ProblemsController < ApplicationController
     query = query.where(problematic_type: params[:type].map(&:classify)) if params[:type]
     # Don't show types ignored in user settings
     query = query.visible(helpers.problem_settings)
-    @counts_by_category = query.group(:category).count
     query = query.includes([:problematic])
     @problems = query.page(page).per(params[:per_page]&.to_i || 50).order([:category, :problematic_type]).includes(problematic: [:library, :model])
     # Do we have any filters at all?

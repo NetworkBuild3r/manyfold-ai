@@ -354,12 +354,14 @@ class Model < ApplicationRecord
 
   def split!(files: [])
     preview_file_will_move = files.include?(preview_file)
-    new_model = Model.create_from(self, link_preview_file: preview_file_will_move)
-    # Clear preview file if it was moved
-    update!(preview_file: nil) if preview_file_will_move
-    # Move files
-    files.each { |it| new_model.adopt_file(it) }
-    # Done!
+    new_model = nil
+    ActiveRecord::Base.transaction do
+      new_model = Model.create_from(self, link_preview_file: preview_file_will_move)
+      # Clear preview file if it was moved
+      update!(preview_file: nil) if preview_file_will_move
+      # Move files
+      files.each { |it| new_model.adopt_file(it) }
+    end
     new_model
   end
 
