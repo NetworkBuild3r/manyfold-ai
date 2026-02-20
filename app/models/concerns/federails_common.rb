@@ -3,8 +3,10 @@ module FederailsCommon
   include Federails::ActorEntity
 
   included do
-    scope :local, -> { includes(:federails_actor).where("federails_actor.local": true) }
-    scope :remote, -> { includes(:federails_actor).where("federails_actor.local": false) }
+    scope :local, -> { joins(:federails_actor).where("federails_actors.local": true) }
+    scope :remote, -> { joins(:federails_actor).where("federails_actors.local": false) }
+    # Includes local models and those without federails_actor (treated as local). Used for merge/bulk edit.
+    scope :mergeable, -> { left_joins(:federails_actor).where("federails_actors.local IS NOT FALSE OR federails_actors.id IS NULL") }
   end
 
   # Listed in increasing order of priority

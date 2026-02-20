@@ -37,7 +37,7 @@ RSpec.describe Scan::Model::AddNewFilesJob do
 
     it "queues up metadata parsing" do
       expect { described_class.perform_now(model.id) }
-        .to have_enqueued_job(Scan::Model::ParseMetadataJob).with(model.id).once
+        .to have_enqueued_job(Scan::Model::ParseMetadataJob).with(model.id, scan_batch_id: nil).once
     end
   end
 
@@ -222,8 +222,8 @@ RSpec.describe Scan::Model::AddNewFilesJob do
     end
 
     it "detects model files" do # rubocop:todo RSpec/MultipleExpectations
-      expect { described_class.perform_now(model.id) }.to change { model.model_files.count }.to(2)
-      expect(model.model_files.map(&:filename)).to contain_exactly("model.stl", "datapackage.json")
+      expect { described_class.perform_now(model.id) }.to change { model.model_files.count }.to(1)
+      expect(model.model_files.map(&:filename)).to contain_exactly("model.stl")
     end
   end
 

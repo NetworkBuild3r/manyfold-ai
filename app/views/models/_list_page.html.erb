@@ -1,0 +1,6 @@
+<%= turbo_frame_tag "models_page_#{@models.current_page}" do %>
+  <%= render_component_collection Components::ModelCard, :model, @models %>
+  <% if @models.next_page %>
+    <%= turbo_frame_tag "models_page_#{@models.next_page}", src: models_page_url(@models.next_page, @filter), loading: :lazy %>
+  <% end %>
+<% end %>

@@ -1,12 +1,12 @@
 <%= form.fields_for :renderer_settings do |renderer_settings_form| %>
-  <div class="card mb-2">
-    <h3 class="card-header"><%= t(".heading") %></h3>
-    <div class="card-body lead">
+  <div class="rounded-xl border border-secondary-200 dark:border-secondary-600 bg-white dark:bg-secondary-800 shadow-sm mb-4 overflow-hidden">
+    <h3 class="px-4 py-3 bg-secondary-600 text-white m-0 font-medium"><%= t(".heading") %></h3>
+    <div class="p-4 text-lg text-secondary-600 dark:text-secondary-400">
       <%= t(".description") %>
     </div>
-    <div class="card-body tabular-form">
+    <div class="px-4 pb-4 tabular-form">
       <div>
-        <%= renderer_settings_form.label :auto_load_max_size, t(".auto_load_max_size.label"), class: "col-form-label" %>
+        <%= renderer_settings_form.label :auto_load_max_size, t(".auto_load_max_size.label"), class: "block text-sm font-medium text-secondary-700 dark:text-secondary-300" %>
       </div>
       <div>
         <%= renderer_settings_form.select :auto_load_max_size,
@@ -25,34 +25,34 @@
                 [t(".auto_load_max_size.always"), 9_999_999]
               ],
               {selected: renderer_settings["auto_load_max_size"] || 9_999_999},
-              {class: "form-select"} %>
+              {class: "block w-full rounded-lg border border-secondary-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-primary-500 dark:border-secondary-600 dark:bg-secondary-800"} %>
       </div>
       <div>
-        <%= renderer_settings_form.label :show_grid, t(".show_grid.label") %>
+        <%= renderer_settings_form.label :show_grid, t(".show_grid.label"), class: "block text-sm font-medium text-secondary-700 dark:text-secondary-300" %>
       </div>
-      <div class="col form-check form-switch">
-        <%= renderer_settings_form.check_box :show_grid, checked: renderer_settings["show_grid"], class: "form-check-input" %>
-      </div>
-      <div>
-        <%= renderer_settings_form.label :grid_width, t(".grid_width.label"), class: "col-form-label" %>
+      <div class="flex items-center gap-2">
+        <%= renderer_settings_form.check_box :show_grid, checked: renderer_settings["show_grid"], class: "rounded border-secondary-300 text-primary-600 focus:ring-primary-500 h-4 w-4" %>
       </div>
       <div>
-        <%= renderer_settings_form.number_field :grid_width, value: renderer_settings["grid_width"], class: "form-control" %>
+        <%= renderer_settings_form.label :grid_width, t(".grid_width.label"), class: "block text-sm font-medium text-secondary-700 dark:text-secondary-300" %>
       </div>
       <div>
-        <%= renderer_settings_form.label :enable_pan_zoom, t(".enable_pan_zoom.label"), class: "col-form-label" %>
-      </div>
-      <div class="form-check form-switch">
-        <%= renderer_settings_form.check_box :enable_pan_zoom, checked: renderer_settings["enable_pan_zoom"], class: "form-check-input" %>
+        <%= renderer_settings_form.number_field :grid_width, value: renderer_settings["grid_width"], class: "block w-full rounded-lg border border-secondary-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-primary-500 dark:border-secondary-600 dark:bg-secondary-800" %>
       </div>
       <div>
-        <%= renderer_settings_form.label :background_colour, t(".background_colour.label") %>
+        <%= renderer_settings_form.label :enable_pan_zoom, t(".enable_pan_zoom.label"), class: "block text-sm font-medium text-secondary-700 dark:text-secondary-300" %>
+      </div>
+      <div class="flex items-center gap-2">
+        <%= renderer_settings_form.check_box :enable_pan_zoom, checked: renderer_settings["enable_pan_zoom"], class: "rounded border-secondary-300 text-primary-600 focus:ring-primary-500 h-4 w-4" %>
       </div>
       <div>
-        <%= renderer_settings_form.color_field :background_colour, value: renderer_settings["background_colour"], class: "form-control" %>
+        <%= renderer_settings_form.label :background_colour, t(".background_colour.label"), class: "block text-sm font-medium text-secondary-700 dark:text-secondary-300" %>
       </div>
       <div>
-        <%= renderer_settings_form.label :render_style, t(".render_style.label"), class: "col-form-label" %>
+        <%= renderer_settings_form.color_field :background_colour, value: renderer_settings["background_colour"], class: "block w-full rounded-lg border border-secondary-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-primary-500 dark:border-secondary-600 dark:bg-secondary-800 h-10" %>
+      </div>
+      <div>
+        <%= renderer_settings_form.label :render_style, t(".render_style.label"), class: "block text-sm font-medium text-secondary-700 dark:text-secondary-300" %>
       </div>
       <div>
         <%= renderer_settings_form.select :render_style, [
@@ -60,13 +60,13 @@
               [t(".render_style.normals"), "normals"],
               [t(".render_style.lambert"), "lambert"],
               [t(".render_style.shadowed"), "shadowed"]
-            ], {selected: renderer_settings["render_style"]}, {class: "form-select"} %>
+            ], {selected: renderer_settings["render_style"]}, {class: "block w-full rounded-lg border border-secondary-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-primary-500 dark:border-secondary-600 dark:bg-secondary-800"} %>
       </div>
       <div>
-        <%= renderer_settings_form.label :object_colour, t(".object_colour.label") %>
+        <%= renderer_settings_form.label :object_colour, t(".object_colour.label"), class: "block text-sm font-medium text-secondary-700 dark:text-secondary-300" %>
       </div>
       <div>
-        <%= renderer_settings_form.color_field :object_colour, value: renderer_settings["object_colour"], class: "form-control" %>
+        <%= renderer_settings_form.color_field :object_colour, value: renderer_settings["object_colour"], class: "block w-full rounded-lg border border-secondary-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-primary-500 dark:border-secondary-600 dark:bg-secondary-800 h-10" %>
       </div>
     </div>
   </div>

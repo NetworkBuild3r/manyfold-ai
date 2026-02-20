@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Components::AccessIndicator < Components::Base
   # @param object The object to show the access details for; must include the CaberSubject concern
   # @param icon Whether or not to show an indicator icon

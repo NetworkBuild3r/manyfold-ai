@@ -1,10 +1,10 @@
 <% if f.object.user.nil? || f.object&.user&.active? == true %>
-  <%= cocooned_item class: "mb-2 input-group" do %>
+  <%= cocooned_item class: "mb-2 flex gap-2" do %>
     <%= f.text_field :user_id,
-          class: "form-control",
+          class: "block flex-1 rounded-lg border border-secondary-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-primary-500 dark:border-secondary-600 dark:bg-secondary-800",
           placeholder: translate(".user_id.placeholder"),
           value: f.object&.user&.username,
           disabled: f.object.persisted? %>
-    <%= cocooned_remove_item_button Icon(icon: "trash", label: translate(".user_id.delete")), f, class: "btn btn-outline-danger" %>
+    <%= cocooned_remove_item_button Icon(icon: "trash", label: translate(".user_id.delete")), f, class: "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border border-danger text-danger bg-transparent hover:bg-danger/10 focus-visible:ring-2 focus-visible:ring-primary-500" %>
   <% end %>
 <% end %>

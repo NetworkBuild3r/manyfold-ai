@@ -39,6 +39,9 @@ en:
       download:
         menu_header: Download options
       notes_heading: Notes
+    split:
+      no_selection: No files selected.
+      success: Files moved to new model.
     update:
       failure: An error occurred and file details could not be saved.
       success: File details saved.

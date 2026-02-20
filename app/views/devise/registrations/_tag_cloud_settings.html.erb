@@ -1,33 +1,33 @@
 <%= form.fields_for :tag_cloud_settings do |tag_cloud_settings_form| %>
-  <div class="card mb-2">
-    <h3 class="card-header"><%= t(".heading") %></h3>
-    <div class="card-body tabular-form">
+  <div class="rounded-xl border border-secondary-200 dark:border-secondary-600 bg-white dark:bg-secondary-800 shadow-sm mb-4 overflow-hidden">
+    <h3 class="px-4 py-3 bg-secondary-600 text-white m-0 font-medium"><%= t(".heading") %></h3>
+    <div class="p-4 tabular-form">
       <div>
-        <%= tag_cloud_settings_form.label :threshold, t(".threshold.label"), class: "col-form-label" %>
+        <%= tag_cloud_settings_form.label :threshold, t(".threshold.label"), class: "block text-sm font-medium text-secondary-700 dark:text-secondary-300" %>
       </div>
       <div>
-        <%= tag_cloud_settings_form.number_field :threshold, value: tag_cloud_settings["threshold"], class: "form-control" %>
+        <%= tag_cloud_settings_form.number_field :threshold, value: tag_cloud_settings["threshold"], class: "block w-full rounded-lg border border-secondary-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-primary-500 dark:border-secondary-600 dark:bg-secondary-800" %>
       </div>
       <div>
-        <%= tag_cloud_settings_form.label :heatmap, t(".heatmap.label") %>
+        <%= tag_cloud_settings_form.label :heatmap, t(".heatmap.label"), class: "block text-sm font-medium text-secondary-700 dark:text-secondary-300" %>
       </div>
-      <div class="form-check form-switch">
-        <%= tag_cloud_settings_form.check_box :heatmap, checked: tag_cloud_settings["heatmap"], class: "form-check-input" %>
+      <div class="flex items-center gap-2">
+        <%= tag_cloud_settings_form.check_box :heatmap, checked: tag_cloud_settings["heatmap"], class: "rounded border-secondary-300 text-primary-600 focus:ring-primary-500 h-4 w-4" %>
       </div>
       <div>
-        <%= tag_cloud_settings_form.label :sorting, t(".sorting.label"), class: "col-form-label" %>
+        <%= tag_cloud_settings_form.label :sorting, t(".sorting.label"), class: "block text-sm font-medium text-secondary-700 dark:text-secondary-300" %>
       </div>
       <div>
         <%= tag_cloud_settings_form.select :sorting,
               [[t(".sorting.frequency"), nil], [t(".sorting.alphabetical"), "alphabetical"]],
               {selected: tag_cloud_settings["sorting"]},
-              class: "form-select" %>
+              {class: "block w-full rounded-lg border border-secondary-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-primary-500 dark:border-secondary-600 dark:bg-secondary-800"} %>
       </div>
       <div>
-        <%= tag_cloud_settings_form.label :keypair, t(".keypair.label") %>
+        <%= tag_cloud_settings_form.label :keypair, t(".keypair.label"), class: "block text-sm font-medium text-secondary-700 dark:text-secondary-300" %>
       </div>
-      <div class="form-check form-switch">
-        <%= tag_cloud_settings_form.check_box :keypair, checked: tag_cloud_settings["keypair"], class: "form-check-input" %>
+      <div class="flex items-center gap-2">
+        <%= tag_cloud_settings_form.check_box :keypair, checked: tag_cloud_settings["keypair"], class: "rounded border-secondary-300 text-primary-600 focus:ring-primary-500 h-4 w-4" %>
       </div>
     </div>
   </div>

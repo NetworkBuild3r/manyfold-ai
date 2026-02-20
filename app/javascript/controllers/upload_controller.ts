@@ -97,15 +97,15 @@ export default class extends Controller {
   setMultiModelMode (): void {
     if (this.nameLabel != null) { this.nameLabel.style.display = 'none' }
     if (this.nameField != null) { this.nameField.style.display = 'none' }
-    if (this.multiMessage != null) { this.multiMessage.style.display = 'block' }
-    if (this.singleMessage != null) { this.singleMessage.style.display = 'none' }
+    if (this.multiMessage != null) { this.multiMessage.classList.remove('hidden') }
+    if (this.singleMessage != null) { this.singleMessage.classList.add('hidden') }
   }
 
   setSingleModelMode (): void {
     if (this.nameLabel != null) { this.nameLabel.style.display = 'block' }
     if (this.nameField != null) { this.nameField.style.display = 'block' }
-    if (this.multiMessage != null) { this.multiMessage.style.display = 'none' }
-    if (this.singleMessage != null) { this.singleMessage.style.display = 'block' }
+    if (this.multiMessage != null) { this.multiMessage.classList.add('hidden') }
+    if (this.singleMessage != null) { this.singleMessage.classList.remove('hidden') }
   }
 
   sweepLocalStorage (): void {

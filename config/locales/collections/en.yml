@@ -27,6 +27,8 @@ en:
     get_collection:
       unknown: Unknown
     index:
+      clear_filters: Clear filters
+      no_results_html: No collections match your filters. Try clearing filters or creating a new collection.
       skip_collections: Skip collection list
     show:
       edit: Edit Collection

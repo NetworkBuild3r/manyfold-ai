@@ -11,6 +11,15 @@ en:
       about:
         help_html: Shown on the about page; You can use <a href="https://www.markdownguide.org/cheat-sheet/" target="markdown">Markdown</a>.
         label: About this instance
+      accent:
+        help: Accent color for buttons and links.
+        label: Accent color
+        options:
+          amber: Amber
+          green: Green
+          indigo: Indigo
+          purple: Purple
+          rose: Rose
       heading: Appearance
       information: Information
       rules:
@@ -30,8 +39,12 @@ en:
         help: A link to a place where visitors can support the instance financially (e.g. OpenCollective, Patreon). Shown in footer.
         label: Support link
       theme:
-        help_html: Affects all accounts. Visit <a href="https://bootswatch.com">Bootswatch</a> to see previews.
+        help_html: Affects all accounts. "System" follows your device's light or dark preference.
         label: Theme
+        options:
+          dark: Dark
+          light: Light
+          system: System (use device setting)
     discovery:
       allow_ai_bots:
         help: Unless turned on, AI bots are completely prohibited in robots.txt. Enabling this can cause a lot of server load.

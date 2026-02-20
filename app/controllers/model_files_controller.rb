@@ -4,8 +4,8 @@ class ModelFilesController < ApplicationController
   rate_limit to: 10, within: 3.minutes, only: :create
 
   before_action :get_model
-  before_action :get_file, except: [:create, :bulk_edit, :bulk_update]
-  before_action -> { set_indexable @file }, except: [:create, :bulk_edit, :bulk_update]
+  before_action :get_file, except: [:create, :bulk_edit, :bulk_update, :split, :bulk_edit_selected]
+  before_action -> { set_indexable @file }, except: [:create, :bulk_edit, :bulk_update, :split, :bulk_edit_selected]
 
   skip_after_action :verify_authorized, only: [:bulk_edit, :bulk_update]
   after_action :verify_policy_scoped, only: [:bulk_edit, :bulk_update]
@@ -83,8 +83,34 @@ class ModelFilesController < ApplicationController
     end
   end
 
+  def split
+    authorize @model, :edit?
+    ids = Array(params[:ids]).compact_blank
+    files = policy_scope(@model.model_files).where(public_id: ids)
+    if files.empty?
+      redirect_to model_path(@model), alert: t(".no_selection")
+      return
+    end
+    new_model = @model.split!(files: files.to_a)
+    redirect_to model_path(new_model), notice: t(".success")
+  end
+
+  def bulk_edit_selected
+    authorize @model, :edit?
+    session[:bulk_edit_file_ids] = Array(params[:ids]).compact_blank
+    redirect_to bulk_edit_model_model_files_path(@model)
+  end
+
   def bulk_edit
-    @files = policy_scope(@model.model_files.without_special)
+    scope = policy_scope(@model.model_files.without_special)
+    if session[:bulk_edit_file_ids].present?
+      ids = session.delete(:bulk_edit_file_ids)
+      @files = scope.where(public_id: ids)
+      @preselected_file_ids = Set.new(ids)
+    else
+      @files = scope
+      @preselected_file_ids = Set.new
+    end
   end
 
   def bulk_update

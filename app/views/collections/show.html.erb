@@ -12,18 +12,18 @@
 
 <%= content_for :items do %>
   <%= turbo_stream_from @collection %>
-  <div class="card mb-3 <%= "remote-actor" if @collection.remote? %>">
-    <div class="card-body row">
-      <div class="col col-auto">
+  <div class="rounded-xl border border-secondary-200 dark:border-secondary-600 bg-surface dark:bg-surface-dark shadow-sm hover:shadow-md transition-shadow overflow-hidden mb-4 <%= "remote-actor" if @collection.remote? %>">
+    <div class="flex flex-wrap items-start gap-4 p-4">
+      <div class="shrink-0">
         <%= content_tag(:div, class: "text-center") do %>
-          <h2>
+          <h2 class="text-xl font-semibold text-secondary-900 dark:text-secondary-100 mb-2">
             <%= @collection.name %>
           </h2>
-          <p>
+          <p class="mb-2">
             <% if @collection.remote? %>
-              <small class="text-secondary"><%= link_to @collection.federails_actor.at_address, @collection.federails_actor.profile_url, target: "new" %></small>
+              <small class="text-secondary-600 dark:text-secondary-400"><%= link_to @collection.federails_actor.at_address, @collection.federails_actor.profile_url, target: "new", class: "text-primary-600 dark:text-primary-400 hover:underline" %></small>
             <% elsif SiteSettings.federation_enabled? %>
-              <small class="text-secondary">
+              <small class="text-secondary-600 dark:text-secondary-400">
                 <%= CopyableText(text: @collection.federails_actor.at_address, label: t("general.copy_fediverse_handle")) %>
               </small>
             <% end %>
@@ -31,15 +31,15 @@
           <%= FollowButton(follower: current_user, target: @collection) %>
         <% end %>
       </div>
-      <div class="col">
-        <%= content_tag(:p, class: "lead") { @collection.caption } if @collection.caption %>
-        <%= content_tag(:p, class: "card-text") { markdownify @collection.notes } if @collection.notes %>
+      <div class="flex-1 min-w-0">
+        <%= content_tag(:p, class: "text-lg text-secondary-600 dark:text-secondary-400 mb-2") { @collection.caption } if @collection.caption %>
+        <%= content_tag(:p, class: "prose dark:prose-invert mb-2") { markdownify @collection.notes } if @collection.notes %>
         <% model_count = policy_scope(Model).where(collection: @collection).count %>
-        <p><%= "#{model_count} #{Model.model_name.human count: model_count}" %></p>
-        <%= content_tag(:p) { t("general.followers", count: @collection.followers.count) } if SiteSettings.social_enabled? %>
+        <p class="mb-1"><%= "#{model_count} #{Model.model_name.human count: model_count}" %></p>
+        <%= content_tag(:p, class: "mb-1") { t("general.followers", count: @collection.followers.count) } if SiteSettings.social_enabled? %>
         <p><%= AccessIndicator(object: @collection, text: true) %></p>
       </div>
-      <div class="col col-auto">
+      <div class="shrink-0">
         <%= render "attribution", collection: @collection %>
         <%= LinkList links: @collection.links %>
       </div>
@@ -48,7 +48,7 @@
 <% end %>
 
 <% content_for :actions do %>
-  <%= link_to safe_join([Icon(icon: "pencil", label: t(".edit")), t(".edit")], " "), edit_collection_path(@collection), class: "btn btn-primary" if policy(@collection).edit? %>
+  <%= link_to safe_join([Icon(icon: "pencil", label: t(".edit")), t(".edit")], " "), edit_collection_path(@collection), class: "inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 no-underline" if policy(@collection).edit? %>
   <%= ReportButton(object: @collection, path: new_collection_report_path(@collection)) %>
 <% end %>
 

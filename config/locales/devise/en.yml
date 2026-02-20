@@ -143,6 +143,8 @@ en:
         username:
           help: A short username for your personal account; if later you make a creator profile for publishing your models, it will need a different account name.
       pagination_settings:
+        grid_columns:
+          label: Model grid columns
         heading: List pages
         per_page:
           label: Items per page

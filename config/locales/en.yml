@@ -314,6 +314,7 @@ en:
       powered_by_html: Powered by <a href="https://manyfold.app">%{name}</a>
       sponsor: Sponsor development
       support: Support this instance
+      take_the_tour: Take the tour
       version: Version
     link_fields:
       url:
@@ -699,6 +700,8 @@ en:
     unfollow_remote_actor:
       unfollowed: Unfollowed %{actor}
   general:
+    are_you_sure: Are you sure?
+    collapse: Collapse
     copy_fediverse_handle: Copy Fediverse handle to clipboard
     delete: Delete
     download: Download
@@ -763,6 +766,7 @@ en:
       title: The Fediverse
       users_v_creators: Unlike many Fediverse platforms, you don't just have one handle on Manyfold. Every model, creator and collection has its own handle for people to follow, as does the account you sign in with. This means you can manage more than one creator profile!
     index:
+      browse_models: Browse all models
       no_activities: There are no activities to display for now.
       open_search_help: Search syntax
       recent_activity: Recent Activity

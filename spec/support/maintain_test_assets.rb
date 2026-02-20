@@ -48,13 +48,15 @@ class MaintainTestAssets
   #
   EXPECTED_ASSETS = %w[
     application.js
-    themes/default.css
+    tailwind.css
   ]
 
   # Call this method somewhere at test startup, e.g. in "spec_helper.rb" before
   # tests are actually run (just above "RSpec.configure..." works reasonably).
   #
   def self.maintain!
+    return if ENV["MANYFOLD_SKIP_ASSET_BUILD"].present?
+
     newest_mtime = 100.years.ago
 
     # Find the newest modificaftion time across all source files of any type -

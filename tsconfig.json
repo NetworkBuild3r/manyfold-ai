@@ -3,11 +3,7 @@
     "declaration": false,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "lib": [
-      "es2022",
-      "dom",
-      "dom.iterable"
-    ],
+    "lib": ["es2022", "dom", "dom.iterable"],
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "baseUrl": ".",
@@ -15,6 +11,7 @@
     "strictNullChecks": true,
     "target": "es2022",
     "noEmit": true,
+    "skipLibCheck": true,
     "types": [
       "./app/javascript/src/window_extensions",
       "node",
@@ -22,17 +19,11 @@
       "three",
       "jquery",
       "tom-select",
-      "i18n-js",
-      "bootstrap"
+      "i18n-js"
     ],
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true
   },
-  "exclude": [
-    "**/*.spec.ts",
-    "node_modules",
-    "vendor",
-    "public"
-  ],
+  "exclude": ["**/*.spec.ts", "node_modules", "vendor", "public"],
   "compileOnSave": false
 }

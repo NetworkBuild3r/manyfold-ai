@@ -36,6 +36,8 @@
 /public/packs-test
 /node_modules
 /yarn-error.log
+.idea/
+nul
 yarn-debug.log*
 .yarn-integrity
 
@@ -69,9 +71,15 @@ dump.rdb
 
 .yarn
 
-# Ignore schema file, it's database-dependent and Manyfold shouldn't be
-db/schema.rb
+# Ignore data_migrate schema dump (database-dependent)
 db/data_schema.rb
 
 .yardoc
 doc
+/.cursor/
+
+# Local dev artifacts
+rspec_full.txt
+rspec_output.txt
+web_logs.txt
+script/start-and-capture-logs.ps1

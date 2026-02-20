@@ -11,7 +11,8 @@ class SiteSettings < RailsSettings::Base
   field :model_ignored_files, type: :array, default: [
     /^\.[^.]+/, # Hidden files starting with .
     /.*\/@eaDir\/.*/, # Synology temp files
-    /__MACOSX/ # MACOS resource forks
+    /__MACOSX/, # MACOS resource forks
+    /^datapackage\.json$/i # Manyfold metadata import/export file
   ]
   field :parse_metadata_from_path, type: :boolean, default: true
   field :safe_folder_names, type: :boolean, default: true
@@ -21,7 +22,8 @@ class SiteSettings < RailsSettings::Base
   field :default_signup_role, type: :string, default: "member"
   field :autocreate_creator_for_new_users, type: :boolean, default: false
   field :approve_signups, type: :boolean, default: true
-  field :theme, type: :string, default: "default"
+  field :theme, type: :string, default: "system"
+  field :accent_color, type: :string, default: "indigo"
   field :default_library, type: :integer, default: nil
   field :show_libraries, type: :boolean, default: false
   field :registration_enabled, type: :boolean, default: (ENV.fetch("REGISTRATION", nil) == "enabled")
@@ -99,36 +101,20 @@ class SiteSettings < RailsSettings::Base
     federation_enabled? && FaspClient::Provider.any? { |it| it.has_capability? :account_search }
   end
 
-  AVAILABLE_THEMES = [
-    "brite",
-    "cerulean",
-    "cosmo",
-    "cyborg",
-    "darkly",
-    "default",
-    "flatly",
-    "journal",
-    "litera",
-    "lumen",
-    "materia",
-    "minty",
-    "pulse",
-    "quartz",
-    "sandstone",
-    "simplex",
-    "sketchy",
-    "slate",
-    "solar",
-    "spacelab",
-    "superhero",
-    "united",
-    "vapor",
-    "yeti",
-    "zephyr"
-  ]
+  AVAILABLE_THEMES = %w[light dark system].freeze
+  AVAILABLE_ACCENTS = %w[indigo green purple amber rose].freeze
+
+  LEGACY_DARK_THEMES = %w[cyborg darkly slate solar superhero vapor].freeze
 
   def self.validated_theme
-    AVAILABLE_THEMES.include?(theme) ? theme : "default"
+    return theme if AVAILABLE_THEMES.include?(theme)
+    return "dark" if LEGACY_DARK_THEMES.include?(theme)
+    "light"
+  end
+
+  def self.validated_accent_color
+    return accent_color if AVAILABLE_ACCENTS.include?(accent_color)
+    "indigo"
   end
 
   module UserDefaults
@@ -143,7 +129,8 @@ class SiteSettings < RailsSettings::Base
     )
 
     PAGINATION = ActiveSupport::HashWithIndifferentAccess.new(
-      per_page: 12
+      per_page: 12,
+      grid_columns: 3
     )
 
     TAG_CLOUD = ActiveSupport::HashWithIndifferentAccess.new(

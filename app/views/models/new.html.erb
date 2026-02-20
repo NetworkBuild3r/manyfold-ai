@@ -8,23 +8,23 @@
   <li><%= t ".non-archives" %></li>
 </ul>
 
-<%= form_with model: @model, id: "upload-form", class: "container-md tabular-form" do |form| %>
+<%= form_with model: @model, id: "upload-form", class: "max-w-2xl mx-auto tabular-form" do |form| %>
 
   <% if SiteSettings.show_libraries %>
     <div>
-      <%= form.label :library, Library.model_name.human %>
+      <%= form.label :library, Library.model_name.human, class: "block text-sm font-medium text-secondary-700 dark:text-secondary-300" %>
     </div>
     <div>
       <%= form.select :library,
             policy_scope(Library).all.map { |lib| [library_select_title(lib), lib.to_param] },
             {selected: Library.default.to_param},
-            {class: "form-control form-select"} %>
-      <span class="form-text"><%= t ".library.help" %></span>
+            {class: "block w-full rounded-lg border border-secondary-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-primary-500 dark:border-secondary-600 dark:bg-secondary-800"} %>
+      <span class="text-sm text-secondary-500 dark:text-secondary-400 block mt-1"><%= t ".library.help" %></span>
     </div>
   <% end %>
 
   <div>
-    <%= form.label :files, t(".files.label"), class: "col-sm-2 col-form-label" %>
+    <%= form.label :files, t(".files.label"), class: "block text-sm font-medium text-secondary-700 dark:text-secondary-300" %>
   </div>
   <div>
     <%= content_tag :div, nil, data: {
@@ -37,12 +37,12 @@
           upload_endpoint: upload_path
         } %>
 
-    <div class="alert alert-info" id="multi-model-message" style="display: none">
+    <div class="flex items-center gap-2 px-4 py-3 rounded-lg bg-info/10 text-info mt-2 hidden" id="multi-model-message">
       <%= Icon(icon: "boxes", role: "presentation") %>
       <%= t(".multi_model") %>
     </div>
 
-    <div class="alert alert-info" id="single-model-message" style="display: none">
+    <div class="flex items-center gap-2 px-4 py-3 rounded-lg bg-info/10 text-info mt-2 hidden" id="single-model-message">
       <%= Icon(icon: "box", role: "presentation") %>
       <%= t(".single_model") %>
     </div>
@@ -55,7 +55,7 @@
   <%= render "tags_edit", form: form, name: "model[tag_list]", selected: SiteSettings.model_tags_auto_tag_new, label: ActsAsTaggableOn::Tag.model_name.human(count: 100), tags: @available_tags || [] %>
 
   <div>
-    <%= form.label translate(".permission_preset"), for: :permission_preset %>
+    <%= form.label translate(".permission_preset"), for: :permission_preset, class: "block text-sm font-medium text-secondary-700 dark:text-secondary-300" %>
   </div>
   <div>
     <%= form.select :permission_preset, [
@@ -64,12 +64,10 @@
           [translate("settings.multiuser.default_viewer_role.options.public"), "public"]
         ],
           {selected: SiteSettings.default_viewer_role},
-          {class: "form-control col-auto form-select"} %>
+          {class: "block w-full rounded-lg border border-secondary-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-primary-500 dark:border-secondary-600 dark:bg-secondary-800"} %>
   </div>
 
-  <div class="row mb-3 input-group">
-    <div class='offset-sm-2 col-sm-10 ps-0'>
-      <%= submit_tag translate(".submit"), class: "btn btn-primary" %>
-    </div>
+  <div class="mt-4">
+    <%= submit_tag translate(".submit"), class: "inline-flex items-center px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500" %>
   </div>
 <% end %>

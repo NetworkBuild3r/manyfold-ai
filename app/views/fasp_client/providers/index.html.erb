@@ -1,6 +1,6 @@
-<h3><%= t(".heading") %></h3>
+<h3 class="<%= heading_classes(:section) %> mb-2"><%= t(".heading") %></h3>
 
-<p class='lead'>
+<p class="text-lg text-secondary-600 dark:text-secondary-400">
   <%= t(".description_html") %>
 </p>
 <p>
@@ -8,40 +8,40 @@
 </p>
 
 <% if @providers.none? { |it| it.base_url == "https://search.3dprint.social/fasp"} %>
-  <div class="alert alert-info">
+  <div class="px-4 py-3 rounded-lg bg-info/10 text-info mb-4">
     <%= t(".search_3dprint_social_html") %>
   </div>
 <% end %>
 
 <% if @providers.any? %>
-  <h4><%= t(".provider_list_title") %></h4>
+  <h4 class="<%= heading_classes(:subsection) %> mb-2"><%= t(".provider_list_title") %></h4>
 <% end %>
-<div class="row">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
   <% @providers.find_each do |provider| %>
-    <div class="col-md-6">
-      <div class="card">
-        <div class="card-header">
-          <%= provider.name %>
+    <div class="rounded-xl border border-secondary-200 dark:border-secondary-600 bg-surface dark:bg-surface-dark shadow-sm overflow-hidden">
+      <div class="px-4 py-3 bg-secondary-600 text-white font-medium">
+        <%= provider.name %>
+      </div>
+      <div class="p-4">
+        <div class="mb-3 text-right">
+          <%= GoButton(icon: "pencil", label: t("general.edit"), href: edit_provider_path(provider), variant: :secondary) %>
         </div>
-        <div class="card-body">
-          <div class="float-end">
-            <%= GoButton(icon: "pencil", label: t("general.edit"), href: edit_provider_path(provider), variant: :secondary) %>
-          </div>
-          <table class="table">
-            <tr>
-              <td><%= t(".url") %></td>
-              <td><%= link_to provider.base_url, provider.base_url, rel: "noopener" %></td>
+        <table class="w-full border-collapse">
+          <tbody>
+            <tr class="border-b border-secondary-200 dark:border-secondary-600">
+              <td class="px-0 py-2 font-medium align-top"><%= t(".url") %></td>
+              <td class="px-0 py-2 pl-4"><%= link_to provider.base_url, provider.base_url, rel: "noopener", class: "text-primary-600 dark:text-primary-400 hover:underline" %></td>
+            </tr>
+            <tr class="border-b border-secondary-200 dark:border-secondary-600">
+              <td class="px-0 py-2 font-medium"><%= t(".registered_at") %></td>
+              <td class="px-0 py-2 pl-4"><%= provider.created_at %></td>
             </tr>
             <tr>
-              <td><%= t(".registered_at") %></td>
-              <td><%= provider.created_at %></td>
+              <td class="px-0 py-2 font-medium"><%= t(".status") %></td>
+              <td class="px-0 py-2 pl-4"><%= provider.status %></td>
             </tr>
-            <tr>
-              <td><%= t(".status") %></td>
-              <td><%= provider.status %></td>
-            </tr>
-          </table>
-        </div>
+          </tbody>
+        </table>
       </div>
     </div>
   <% end %>

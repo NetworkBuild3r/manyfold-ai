@@ -1,22 +1,22 @@
 <%= form.fields_for :problem_settings do |problem_settings_form| %>
-  <div class="card mb-2">
-    <h3 class="card-header"><%= t(".title") %></h3>
-    <div class="card-body lead">
+  <div class="rounded-xl border border-secondary-200 dark:border-secondary-600 bg-white dark:bg-secondary-800 shadow-sm mb-4 overflow-hidden">
+    <h3 class="px-4 py-3 bg-secondary-600 text-white m-0 font-medium"><%= t(".title") %></h3>
+    <div class="p-4 text-lg text-secondary-600 dark:text-secondary-400">
       <%= t(".description") %>
     </div>
-    <div class="card-body tabular-form">
+    <div class="px-4 pb-4 tabular-form">
       <% Problem::CATEGORIES.each do |category| %>
         <% next if Problem::DEFAULT_SEVERITIES[category].nil? # Skip deprecated categories; they don't appear in the defaults list %>
         <div>
           <%= problem_settings_form.label nil, t("problems.categories.%{c}" % {c: category}),
                 for: category,
-                class: "col-form-label" %>
+                class: "block text-sm font-medium text-secondary-700 dark:text-secondary-300" %>
         </div>
         <div>
           <%= problem_settings_form.select category,
                 Problem::SEVERITIES.map { |s| [t("problems.severities.%{s}" % {s: s}), s] },
                 {selected: @user.problem_severity(category)},
-                class: "form-select" %>
+                class: "block w-full rounded-lg border border-secondary-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-primary-500 dark:border-secondary-600 dark:bg-secondary-800" %>
         </div>
       <% end %>
     </div>

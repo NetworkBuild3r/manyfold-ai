@@ -1,32 +1,60 @@
 <% content_for :items do %>
   <% if @models.empty? %>
-    <div class="alert alert-info">
+    <div class="flex flex-col items-center justify-center py-12 px-4 text-center rounded-xl bg-surface-alt dark:bg-secondary-800/50 border border-secondary-200 dark:border-secondary-600" role="status" aria-live="polite">
       <%= Icon icon: "person-arms-up", label: "" %>
-      <%= signed_in? ? t(".no_results_html") : t(".no_results_signed_out_html", link: new_user_session_path) %>
+      <p class="mt-4 text-secondary-700 dark:text-secondary-300"><%= signed_in? ? t(".no_results_html") : t(".no_results_signed_out_html", link: new_user_session_path) %></p>
+      <% if @filter.any? %>
+        <p class="mt-2"><%= link_to t(".clear_filters"), models_path, class: "inline-flex items-center px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2" %></p>
+      <% end %>
       <% if @search %>
-        <%= t ".search.or_other_sites" %>
-        <%= render "search_links" %>
+        <p class="mt-4 text-sm text-secondary-600 dark:text-secondary-400"><%= t ".search.or_other_sites" %></p>
+        <div class="mt-2"><%= render "search_links" %></div>
       <% end %>
     </div>
   <% else %>
-    <div class="skip-link-container">
-      <div class="row">
-        <%= skip_link "sidebar", t(".skip_models") %>
-        <div class="col">
-          <%= paginate @models %>
+    <div data-controller="model-list-selection" class="skip-link-container">
+      <div data-model-list-selection-target="toolbar" hidden role="toolbar" aria-label="<%= t(".selection.toolbar_label") %>" class="fixed top-14 left-0 right-0 z-30 py-2 px-4 sm:px-6 lg:px-8 bg-white/95 dark:bg-secondary-900/95 backdrop-blur-sm border-b border-secondary-200 dark:border-secondary-700 shadow-sm dark:shadow-md">
+        <div class="max-w-screen-2xl mx-auto flex flex-wrap items-center gap-2">
+          <%= link_to t(".selection.edit"), "#", data: {model_list_selection_target: "editLink", base_href: edit_model_path("__ID__")}, class: "inline-flex items-center px-3 py-1.5 text-sm rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500" %>
+          <% if policy(:model).bulk_edit? %>
+            <%= form_with url: bulk_edit_selected_models_path, method: :post, local: true, data: {model_list_selection_target: "bulkEditForm", action: "submit->model-list-selection#clearOnSubmit"}, class: "inline" do %>
+              <div data-model-list-selection-target="idsContainer"></div>
+              <button type="submit" class="inline-flex items-center px-3 py-1.5 text-sm rounded-lg bg-secondary-600 text-white hover:bg-secondary-700 dark:bg-secondary-500 dark:text-white dark:hover:bg-secondary-400 focus-visible:ring-2 focus-visible:ring-secondary-500 mr-2"><%= t(".selection.bulk_edit") %></button>
+            <% end %>
+          <% end %>
+          <% if policy(:model).merge? %>
+            <%= link_to t(".selection.merge"), "#", data: {model_list_selection_target: "mergeLink", base_href: configure_merge_models_path}, class: "inline-flex items-center px-3 py-1.5 text-sm rounded-lg border border-secondary-300 dark:border-secondary-500 text-secondary-800 dark:text-secondary-100 bg-white dark:bg-secondary-800 hover:bg-secondary-100 dark:hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-secondary-500 no-underline", hidden: true %>
+          <% end %>
+          <button type="button" data-model-list-selection-target="clearButton" data-action="click->model-list-selection#clear" class="inline-flex items-center px-3 py-1.5 text-sm rounded-lg border border-secondary-300 dark:border-secondary-500 text-secondary-800 dark:text-secondary-100 bg-white dark:bg-secondary-800 hover:bg-secondary-100 dark:hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-secondary-500"><%= t(".selection.clear") %></button>
         </div>
-        <div class="col col-auto">
+      </div>
+      <div class="flex flex-wrap items-center gap-2 mb-4">
+        <%= skip_link "sidebar", t(".skip_models") %>
+        <div class="ml-auto">
           <%= SortMenu(filter: @filter) %>
         </div>
       </div>
-      <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 mb-4">
+      <% if @filter.any? %>
+        <div class="flex flex-wrap gap-2 mb-4" role="group" aria-label="Active filters">
+          <% active_filters_list(@filter).each do |entry| %>
+            <span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-secondary-200 dark:bg-secondary-600 text-secondary-800 dark:text-secondary-100 text-sm">
+              <span class="truncate max-w-[200px]"><%= entry[:pill_label] %></span>
+              <%= link_to "Ã—", entry[:remove_url], class: "flex-shrink-0 rounded-full p-0.5 hover:bg-secondary-300 dark:hover:bg-secondary-500 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none", aria: {label: entry[:aria_remove]} %>
+            </span>
+          <% end %>
+        </div>
+      <% end %>
+      <div class="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4 mb-4" id="model-card-grid" role="list" aria-label="Models" data-controller="infinite-scroll-restore" data-infinite-scroll-restore-per-page-value="<%= pagination_settings["per_page"] %>">
+        <div id="models_page_1" class="hidden" aria-hidden="true"></div>
         <%= render_component_collection Components::ModelCard, :model, @models %>
+        <% if @models.next_page %>
+          <%= turbo_frame_tag "models_page_#{@models.next_page}", src: models_page_url(@models.next_page, @filter), loading: :lazy %>
+        <% end %>
       </div>
-      <%= paginate @models %>
       <% if @search %>
-        <div class="alert alert-info">
+        <div class="flex items-center gap-2 mt-4 py-3 px-4 rounded-lg bg-secondary-100 dark:bg-secondary-800 text-secondary-700 dark:text-secondary-300">
           <%= Icon icon: "search", label: "" %>
-          <%= t ".search.other_sites" %>
+          <span><%= t ".search.other_sites" %></span>
           <%= render "search_links" %>
         </div>
       <% end %>
@@ -35,7 +63,7 @@
 <% end %>
 
 <% content_for :actions do %>
-  <%= link_to t(".bulk_edit"), edit_models_path((@additional_filters || {}).merge(@filter&.to_params)), class: "btn btn-secondary" if policy(:model).edit? %>
+  <%= link_to t(".bulk_edit"), edit_models_path((@additional_filters || {}).merge(@filter&.to_params)), class: "inline-flex items-center px-4 py-2 rounded-lg bg-secondary-600 text-white hover:bg-secondary-700 dark:bg-secondary-500 dark:text-white dark:hover:bg-secondary-400 focus-visible:ring-2 focus-visible:ring-secondary-500" if policy(:model).edit? %>
 <% end %>
 
 <% content_for :sidebar do %>

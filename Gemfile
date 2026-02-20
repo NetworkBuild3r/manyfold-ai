@@ -30,12 +30,7 @@ gem "ffi-libarchive", "~> 1.1"
 # Reduces boot times through caching; required in config/boot.rb
 gem "bootsnap", "~> 1.22", require: false
 
-# Database adapters
-gem "activerecord-enhancedsqlite3-adapter", "~> 0.8"
-group :production do
-  gem "mysql2", "~> 0.5"
-  gem "pg", "~> 1.6"
-end
+gem "pg", "~> 1.6"
 
 group :development, :test do
   # Call 'byebug' anywhere in the code to stop execution and get a debugger console
@@ -100,8 +95,6 @@ gem "kaminari", "~> 1.2"
 gem "lograge", "~> 0.14"
 
 gem "acts_as_favoritor", "~> 6.0"
-
-gem "sqlite3_ar_regexp", "~> 3.0"
 
 gem "mittsu", "~> 0.5"
 gem "mittsu-mesh_analysis"

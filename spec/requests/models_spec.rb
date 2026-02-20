@@ -346,7 +346,8 @@ RSpec.describe "Models" do
 
           it "is denied if the user doesn't have update permission on the models", :as_contributor do
             merge_post
-            expect(response).to have_http_status(:forbidden)
+            expect(response).to redirect_to(models_path)
+            expect(flash[:alert]).to be_present
           end
 
           it "is denied if the user doesn't have update permission on the target"
@@ -475,8 +476,8 @@ RSpec.describe "Models" do
       end
 
       describe "GET /models/merge", :as_moderator do # rubocop:todo RSpec/MultipleMemoizedHelpers
-        let(:model_one) { create(:model) }
-        let(:model_two) { create(:model) }
+        let(:model_one) { create(:model, library: library) }
+        let(:model_two) { create(:model, library: library) }
         let(:configure_merge) {
           get "/models/merge", params: {
             models: [model_one.to_param, model_two.to_param]
@@ -493,7 +494,7 @@ RSpec.describe "Models" do
       describe "POST /models/:id/scan" do
         it "schedules a scan job", :as_moderator do
           expect { post "/models/#{library.models.first.to_param}/scan" }.to(
-            have_enqueued_job(Scan::CheckModelJob).with(library.models.first.id).once
+            have_enqueued_job(Scan::CheckModelJob).with(library.models.first.id, hash_including(:scan_batch_id)).once
           )
         end
 

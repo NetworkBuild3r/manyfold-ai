@@ -13,6 +13,7 @@
 /public/packs
 /public/packs-test
 /node_modules
+/vendor
 /yarn-error.log
 /yarn-debug.log*
 /.yarn-integrity

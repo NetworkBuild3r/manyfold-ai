@@ -1,11 +1,11 @@
-<div class="col-sm-8 offset-sm-2 col-md-6 offset-md-3">
+<div class="max-w-md mx-auto px-4">
   <%= PageTitle title: t(".sign_in") %>
 
   <% if ENV.fetch("FORCE_OIDC", nil) == "enabled" %>
 
     <%- if devise_mapping.omniauthable? %>
       <%- resource_class.omniauth_providers.each do |provider| %>
-        <%= button_to t("devise.shared.links.sign_in_with_provider", provider: ENV.fetch("OIDC_NAME", OmniAuth::Utils.camelize(provider))), omniauth_authorize_path(resource_name, provider), method: :post, class: "btn btn-primary", data: {turbo: false} %>
+        <%= button_to t("devise.shared.links.sign_in_with_provider", provider: ENV.fetch("OIDC_NAME", OmniAuth::Utils.camelize(provider))), omniauth_authorize_path(resource_name, provider), method: :post, class: "inline-flex items-center px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2", data: {turbo: false} %>
       <% end %>
     <% end %>
 
@@ -17,7 +17,7 @@
         <%= password_input_row form, :password, autocomplete: "current-password" %>
         <%= checkbox_input_row form, :remember_me if devise_mapping.rememberable? %>
         <div>
-          <%= form.submit translate(".sign_in"), class: "btn btn-primary" %>
+          <%= form.submit translate(".sign_in"), class: "inline-flex items-center px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2" %>
         </div>
       </div>
     <% end %>

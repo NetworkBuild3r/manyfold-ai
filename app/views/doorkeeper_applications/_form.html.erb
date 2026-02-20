@@ -1,4 +1,4 @@
-<%= form_with model: @application, class: "container-md tabular-form" do |form| %>
+<%= form_with model: @application, class: "max-w-2xl mx-auto px-4 tabular-form" do |form| %>
   <%= text_input_row form, :name, autofocus: true %>
   <%= text_input_row form, :redirect_uri, help: t(".redirect_uri.help") %>
   <%= select_input_row form, :scopes,
@@ -7,6 +7,6 @@
         multiple: true %>
   <%= checkbox_input_row form, :confidential, help: t(".confidential.help") %>
   <div>
-    <%= form.submit translate(".submit"), class: "btn btn-primary" %>
+    <%= form.submit translate(".submit"), class: "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500" %>
   </div>
 <% end %>

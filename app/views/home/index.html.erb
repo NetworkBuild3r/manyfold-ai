@@ -1,32 +1,33 @@
-<div class="row pt-3 mb-3 text-center">
-  <h1 class="d-none d-md-block"><%= site_name %></h1>
-  <p class='lead'><%= site_tagline %></p>
+<div class="pt-4 pb-4 text-center">
+  <h1 class="hidden md:block text-2xl font-bold text-secondary-900 dark:text-secondary-100"><%= site_name %></h1>
+  <p class="text-lg text-secondary-600 dark:text-secondary-400"><%= site_tagline %></p>
   <% if SiteSettings.demo_mode_enabled? %>
-    <div class="alert alert-info">
+    <div class="px-4 py-3 rounded-lg bg-info/10 text-info dark:bg-info/20 inline-block mt-2">
       <%= t "application.demo_mode" %>
     </div>
   <% end %>
-  <div id="home-search" class="col-8 offset-md-2 mt-3 mb-3" data-turbo-permanent>
+  <div id="home-search" class="max-w-2xl mx-auto mt-4 mb-4" data-turbo-permanent>
     <%= form_with url: models_path, method: :get do |f| %>
-      <div class="input-group">
-        <%= f.text_field :q, class: "form-control", placeholder: translate(".search.placeholder"), aria_label: translate(".search.submit"), aria_describedby: "button-search", value: @query, role: "search" %>
-        <%= f.submit translate(".search.submit"), class: "btn btn-primary", name: nil %>
+      <div class="flex rounded-lg overflow-hidden border border-secondary-300 dark:border-secondary-600">
+        <%= f.text_field :q, class: "flex-1 block w-full rounded-none border-0 px-3 py-2 shadow-sm focus-visible:ring-2 focus-visible:ring-primary-500 dark:bg-secondary-800", placeholder: translate(".search.placeholder"), aria_label: translate(".search.submit"), aria_describedby: "button-search", value: @query, role: "search" %>
+        <%= f.submit translate(".search.submit"), class: "inline-flex items-center px-4 py-2 bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500", name: nil, id: "button-search" %>
       </div>
       <%= SearchHelp do %>
-        <small class="ms-3"><%= t(".open_search_help") %></small>
+        <small class="inline-block mt-3 ms-3 text-secondary-600 dark:text-secondary-400"><%= t(".open_search_help") %></small>
       <% end %>
     <% end %>
   </div>
+  <p class="mt-2 text-center">
+    <%= link_to t(".browse_models"), models_path, class: "inline-flex items-center gap-1.5 px-4 py-2 text-sm rounded-lg border border-secondary-300 dark:border-secondary-500 bg-white dark:bg-secondary-800 text-secondary-700 dark:text-secondary-200 hover:bg-secondary-50 dark:hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-primary-500 no-underline" %>
+  </p>
 </div>
-<div class="row row-cols-2">
-  <div class="col-8 offset-md-2">
-    <% if !@feed.empty? %>
-      <p class="lead"><%= t(".recent_activity") %></p>
-      <%= render partial: "activity", collection: @feed %>
-    <% else %>
-      <div class="alert alert-info">
-        <%= t(".no_activities") %>
-      </div>
+<div class="max-w-2xl mx-auto mt-8">
+  <% if !@feed.empty? %>
+    <h2 class="<%= heading_classes(:section) %> mb-6"><%= t(".recent_activity") %></h2>
+    <%= render partial: "activity", collection: @feed %>
+  <% else %>
+    <%= render "application/empty_state", message: t(".no_activities"), icon: "inbox" do %>
+      <p><%= link_to t(".browse_models"), models_path, class: "inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 no-underline" %></p>
     <% end %>
-  </div>
+  <% end %>
 </div>

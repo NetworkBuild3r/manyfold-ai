@@ -1,9 +1,9 @@
 <form action="<%= problems_path %>" method="GET">
   <%= Accordion(title: safe_join([Icon(icon: "filter", label: t(".title")), t(".title")], " "), id: "filters", open: @filters_applied) do %>
-    <div class="row mb-2">
-      <div class="col col-sm-6 col-md-4">
-        <label><%= Problem.human_attribute_name :category %></label>
-        <select name="category[]" class="form-select" multiple=true>
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+      <div>
+        <label class="block text-sm font-medium text-secondary-700 dark:text-secondary-300 mb-1"><%= Problem.human_attribute_name :category %></label>
+        <select name="category[]" class="block w-full rounded-lg border border-secondary-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-primary-500 dark:border-secondary-600 dark:bg-secondary-800" multiple=true>
           <% Problem::CATEGORIES # rubocop:disable Pundit/UsePolicyScope
                .select { |it| Problem::DEFAULT_SEVERITIES[it].present? }
                .select { |it| current_user.problem_severity(it) != :silent }
@@ -14,9 +14,9 @@
           <% end %>
         </select>
       </div>
-      <div class="col col-sm-auto col-md-4">
-        <label><%= Problem.human_attribute_name :severity %></label>
-        <select name="severity[]" class="form-select" multiple=true>
+      <div>
+        <label class="block text-sm font-medium text-secondary-700 dark:text-secondary-300 mb-1"><%= Problem.human_attribute_name :severity %></label>
+        <select name="severity[]" class="block w-full rounded-lg border border-secondary-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-primary-500 dark:border-secondary-600 dark:bg-secondary-800" multiple=true>
           <% (Problem::SEVERITIES - [:silent]).each do |sev| %>
             <option
               value="<%= sev %>"
@@ -24,9 +24,9 @@
           <% end %>
         </select>
       </div>
-      <div class="col col-sm-auto col-md-4">
-        <label><%= Problem.human_attribute_name :problematic_type %></label>
-        <select name="type[]" class="form-select" multiple=true>
+      <div>
+        <label class="block text-sm font-medium text-secondary-700 dark:text-secondary-300 mb-1"><%= Problem.human_attribute_name :problematic_type %></label>
+        <select name="type[]" class="block w-full rounded-lg border border-secondary-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-primary-500 dark:border-secondary-600 dark:bg-secondary-800" multiple=true>
           <option value="<%= Model.model_name.param_key %>"
             <%= "selected" if params[:type]&.include?(Model.model_name.param_key) %>><%= Model.model_name.human %></option>
           <option value="<%= ModelFile.model_name.param_key %>"
@@ -36,19 +36,18 @@
         </select>
       </div>
     </div>
-    <div class="row">
-      <div class="col">
-        <div class="form-check form-switch">
-          <input class="form-check-input" type="checkbox" name="show_ignored" value="true"
-            <%= "checked" if params[:show_ignored] == "true" %>>
-          <label class="form-check-label" for="show_ignored">
-            <%= t(".show_ignored") %>
-          </label>
-        </div>
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-2">
+        <input type="checkbox" name="show_ignored" value="true" id="show_ignored"
+          <%= "checked" if params[:show_ignored] == "true" %>
+          class="rounded border-secondary-300 text-primary-600 focus:ring-primary-500 h-4 w-4">
+        <label for="show_ignored" class="text-sm text-secondary-700 dark:text-secondary-300 cursor-pointer">
+          <%= t(".show_ignored") %>
+        </label>
       </div>
-      <div class="col text-end">
-        <button type="submit" class="btn btn-primary"><%= t ".apply_filters" %></button>
-        <a href='/problems' class="btn btn-secondary"><%= t ".clear_filters" %></a>
+      <div class="flex gap-2">
+        <button type="submit" class="inline-flex items-center px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500"><%= t ".apply_filters" %></button>
+        <a href='/problems' class="inline-flex items-center px-4 py-2 rounded-lg border border-secondary-300 dark:border-secondary-600 bg-white dark:bg-secondary-800 text-secondary-700 hover:bg-secondary-50 dark:hover:bg-secondary-700 no-underline"><%= t ".clear_filters" %></a>
       </div>
     </div>
   <% end %>

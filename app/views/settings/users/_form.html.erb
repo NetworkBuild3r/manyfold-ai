@@ -6,7 +6,7 @@
   <% if !user.persisted? %>
     <% if SiteSettings.email_configured? %>
       <div></div>
-      <div class="alert alert-info">
+      <div class="px-4 py-3 rounded-lg bg-info/10 text-info dark:bg-info/20">
         <%= t(".password_reset_help") %>
       </div>
     <% else %>
@@ -16,19 +16,19 @@
   <% end %>
 
   <div>
-    <%= form.label :roles, class: "col-auto col-form-label" %>
+    <%= form.label :roles, class: "block text-sm font-medium text-secondary-700 dark:text-secondary-300" %>
   </div>
-  <div>
+  <div class="flex flex-wrap gap-4 items-center">
     <%= form.collection_check_boxes :role_ids, @available_roles, :id, :name do |b| # rubocop:disable Pundit/UsePolicyScope
-          content_tag :div, class: "form-check" do
-            b.check_box(class: "form-check-input") +
-              b.label(class: "form-check-label")
+          content_tag :div, class: "flex items-center gap-2" do
+            b.check_box(class: "rounded border-secondary-300 text-primary-600 focus:ring-primary-500 h-4 w-4") +
+              b.label(class: "text-sm text-secondary-700 dark:text-secondary-300 cursor-pointer")
           end
         end %>
   </div>
 
   <% if SiteSettings.enable_user_quota %>
-    <h3><%= t("settings.users.quota.title") %></h3>
+    <h3 class="text-xl font-semibold text-secondary-900 dark:text-secondary-100 mt-4 mb-2"><%= t("settings.users.quota.title") %></h3>
     <%= checkbox_input_row form, :quota_use_site_default, label: t("settings.users.quota.using_site_default") %>
     <%= numeric_input_row form, :quota,
           label: t("settings.users.quota.current_quota"),
@@ -38,7 +38,7 @@
   <% end %>
 
   <div>
-    <%= form.submit translate(".submit"), class: "btn btn-primary" %>
+    <%= form.submit translate(".submit"), class: "inline-flex items-center px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500" %>
   </div>
 
 <% end %>

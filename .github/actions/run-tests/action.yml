@@ -1,0 +1,15 @@
+# Reusable test steps. Use after setup; caller must set RAILS_ENV and DATABASE_URL and provide DB/Redis services.
+name: Run tests
+description: Prepare DB, compile assets, run RSpec
+runs:
+  using: composite
+  steps:
+    - name: Set up database
+      run: bundle exec rails db:prepare:with_data
+      shell: bash
+    - name: Compile assets
+      run: bundle exec rails assets:precompile
+      shell: bash
+    - name: Run tests
+      run: bundle exec rspec --fail-fast
+      shell: bash

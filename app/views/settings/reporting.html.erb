@@ -1,7 +1,7 @@
-<h3><%= t(".heading") %></h3>
-<p class="lead"><%= t(".summary") %></p>
+<h3 class="text-xl font-semibold text-secondary-900 dark:text-secondary-100 mb-2"><%= t(".heading") %></h3>
+<p class="text-lg text-secondary-600 dark:text-secondary-400"><%= t(".summary") %></p>
 <p><%= t(".description_html", endpoint: UsageReport.endpoint) %></p>
-<div class='alert'>
+<div class="px-4 py-3 rounded-lg bg-secondary-50 dark:bg-secondary-800 border border-secondary-200 dark:border-secondary-600 font-mono text-sm">
   <code><%= UsageReport.generate %></code>
 </div>
 <p><%= t(".use_of_data") %></p>

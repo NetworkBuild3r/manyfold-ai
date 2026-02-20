@@ -34,7 +34,12 @@ RSpec.describe "Libraries" do
     end
 
     describe "POST /libraries/" do
-      before { post "/libraries", params: {library: {name: "new", path: "."}} }
+      before do
+        @library_path = Dir.mktmpdir("library_spec")
+        post "/libraries", params: {library: {name: "new", path: @library_path}}
+      end
+
+      after { FileUtils.remove_entry(@library_path, true) if @library_path && Dir.exist?(@library_path) }
 
       it "creates a new library", :as_administrator do
         expect(response).to redirect_to("/libraries/#{Library.last.to_param}")

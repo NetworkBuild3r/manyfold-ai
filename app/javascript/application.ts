@@ -19,3 +19,40 @@ document.addEventListener('DOMContentLoaded', () => {
   // Legacy Rails UJS
   Rails.start()
 })
+
+// Preserve focus across Turbo morph refreshes so form inputs remain usable
+let focusedElementBeforeMorph: { id?: string, name?: string, tagName: string } | null = null
+document.addEventListener('turbo:before-render', () => {
+  const el = document.activeElement as HTMLElement | null
+  if (el?.matches('input:not([type="hidden"]), textarea, select') === true) {
+    const inputEl = el as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    const idVal = el.id
+    const nameVal = inputEl.name
+    focusedElementBeforeMorph = {
+      id: (idVal != null && idVal !== '') ? idVal : undefined,
+      name: (nameVal != null && nameVal !== '') ? nameVal : undefined,
+      tagName: el.tagName
+    }
+  } else {
+    focusedElementBeforeMorph = null
+  }
+}, { capture: true })
+document.addEventListener('turbo:render', (event: Event) => {
+  const e = event as CustomEvent<{ renderMethod?: string }>
+  if (e.detail?.renderMethod !== 'morph' || (focusedElementBeforeMorph == null)) return
+  let target: HTMLElement | null = null
+  const idVal = focusedElementBeforeMorph.id
+  if (idVal != null && idVal !== '') {
+    target = document.getElementById(idVal)
+  }
+  const nameVal = focusedElementBeforeMorph.name
+  if ((target == null) && (nameVal != null && nameVal !== '')) {
+    target = document.querySelector(
+      `${focusedElementBeforeMorph.tagName.toLowerCase()}[name="${CSS.escape(nameVal)}"]`
+    )
+  }
+  if (target?.matches('input:not([type="hidden"]), textarea, select') === true) {
+    target.focus()
+  }
+  focusedElementBeforeMorph = null
+})

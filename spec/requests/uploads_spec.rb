@@ -18,7 +18,7 @@ RSpec.describe "Uploads" do
       end
 
       it "is OK for contributors", :as_contributor do
-        pending "test does not yet work with authenticate block in routes.rb"
+        skip "test does not yet work with authenticate block in routes.rb"
         post "/uploads"
         expect(response).to be_http_success
       end

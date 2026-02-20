@@ -9,7 +9,7 @@ class Components::DropdownHeader < Components::Base
 
   def view_template
     li role: "presentation" do
-      h6(class: "dropdown-header") { @text }
+      h6(class: "px-3 py-1.5 text-xs font-semibold uppercase text-secondary-500 dark:text-secondary-400 my-0") { @text }
     end
   end
 end

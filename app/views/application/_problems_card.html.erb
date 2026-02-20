@@ -1,0 +1,51 @@
+<%
+  problematic = local_assigns[:problematic]
+  problems = local_assigns[:problems] || problematic.try(:problems) || []
+  show_when_empty = local_assigns.fetch(:show_when_empty, false)
+  return if problems.empty? && !show_when_empty
+  i18n_scope = problematic.is_a?(Model) ? "model" : "model_file"
+  card_id = local_assigns[:card_id]
+  card_data = local_assigns[:card_data] || {}
+  from_model = local_assigns[:from_model]
+  nesting_models = local_assigns[:nesting_models]
+  duplicates = local_assigns[:duplicates]
+%>
+<%= card("secondary", Problem.model_name.human(count: 100), id: card_id, data: card_data) do %>
+  <% if problems.empty? %>
+    <p class="text-secondary-500 dark:text-secondary-400 mb-0"><%= t("problems.index.no_problems") %></p>
+  <% else %>
+    <% problems.each do |problem| %>
+      <div class="mb-4 <%= "last:mb-0" if i18n_scope == "model_file" %>" id="problem-<%= problem.id %>">
+        <details>
+          <summary class="flex items-center gap-2 cursor-pointer font-medium list-none [&::-webkit-details-marker]:hidden">
+            <%= problem_icon_tag(problem) %>
+            <%= t("problems.#{i18n_scope}.%{cat}.title" % {cat: problem.category}) %>
+          </summary>
+          <div class="mt-2 mb-4 rounded-lg border border-secondary-200 dark:border-secondary-600 bg-secondary-50 dark:bg-secondary-800/50">
+            <div class="p-4">
+              <p class="mb-3 last:mb-0">
+                <%= t("problems.#{i18n_scope}.%{cat}.description_html" % {cat: problem.category}, note: problem.note) %>
+              </p>
+              <% if problem.category == "nesting" && nesting_models.present? %>
+                <ul class="list-disc pl-5 my-2">
+                  <% nesting_models.each do |target| %>
+                    <li><%= link_to target.name, model_path(target) %></li>
+                  <% end %>
+                </ul>
+                <p><%= t("problems.model.nesting.warning") %></p>
+              <% end %>
+              <% if problem.category == "duplicate" && duplicates.present? %>
+                <ul class="list-disc pl-5 mb-3">
+                  <% duplicates.each do |file| %>
+                    <li><%= link_to "#{file.model.name}/#{file.filename}", [file.model, file], class: "text-primary-600 dark:text-primary-400 hover:underline" %></li>
+                  <% end %>
+                </ul>
+              <% end %>
+              <div class="text-right mt-2"><%= ResolveButton(problem: problem, user: current_user, from_model: from_model) %></div>
+            </div>
+          </div>
+        </details>
+      </div>
+    <% end %>
+  <% end %>
+<% end %>

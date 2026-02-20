@@ -7,8 +7,8 @@ class CollectionsController < ApplicationController
   include Sortable
 
   before_action :get_collection, except: [:index, :new, :create]
-  before_action :get_parent_collections, except: [:index, :create]
-  before_action :get_creators, except: [:index, :create]
+  before_action :get_parent_collections, except: [:index, :create, :destroy], if: -> { request.format.html? }
+  before_action :get_creators, except: [:index, :create, :destroy], if: -> { request.format.html? }
   before_action -> { set_indexable @collection }, except: [:index, :new, :create]
 
   def index

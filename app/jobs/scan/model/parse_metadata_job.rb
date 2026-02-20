@@ -8,60 +8,37 @@ class Scan::Model::ParseMetadataJob < ApplicationJob
     "readme.txt"
   ]
 
-  def perform(model_id)
-    model = Model.find(model_id)
-    return if model.remote?
-    options = {
-      # Some things are preserved if already set
-      creator: model.creator,
-      collection: model.collection,
-      preview_file: model.preview_file
-    }.compact
-    # Set preview file
-    options.reverse_merge! identify_preview_file(model)
-    # Set path template attributes
-    options.reverse_merge! attributes_from_path_template(model.path)
-    # Build combined tag list
-    tag_list =
-      model.tag_list +
-      tags_from_directory_name(model.path) +
-      tags_from_path_template(model.path)
-    # Load from datapackage
-    if (datapackage_content = model.datapackage_content)
-      data = DataPackage::ModelDeserializer.new(datapackage_content).deserialize
-      # match creator
-      creator_data = data.delete(:creator)
-      if creator_data
-        data[:creator] = creator_data[:id] ? Creator.find(creator_data.delete(:id)) :
-          find_or_create_from_path_component(Creator, creator_data[:name])
-        data[:creator].update(creator_data)
-      end
-      # match collection
-      collection_data = data.delete(:collection)
-      if collection_data
-        data[:collection] = collection_data[:id] ? Collection.find(collection_data.delete(:id)) :
-          find_or_create_from_path_component(Collection, collection_data[:name])
-        data[:collection].update(collection_data)
-      end
-      # match preview file
-      data[:preview_file] = model.model_files.find_by(filename: data[:preview_file])
-      # Set file data
-      data.delete(:model_files)&.each do |file|
-        model.model_files.find_by(filename: file.delete(:filename))&.update(file)
-      end
-      # Merge in to main lists
-      tag_list.concat data.delete(:tag_list) if data.key?(:tag_list)
-      options.merge! data.compact_blank
+  def perform(model_id, scan_batch_id: nil)
+    Current.set(scan_batch_id: scan_batch_id) do
+      model = Model.find(model_id)
+      return if model.remote?
+      options = {
+        # Some things are preserved if already set
+        creator: model.creator,
+        collection: model.collection,
+        preview_file: model.preview_file
+      }.compact
+      # Set preview file
+      options.reverse_merge! identify_preview_file(model)
+      # Set path template attributes
+      options.reverse_merge! attributes_from_path_template(model.path)
+      # Build combined tag list
+      tag_list =
+        model.tag_list +
+        tags_from_directory_name(model.path) +
+        tags_from_path_template(model.path)
+      # Load information from READMEs
+      options.compact_blank!
+      options.merge! attributes_from_readme(model.model_files.find_by(filename_lower: README_FILES))
+      # Filter stop words
+      options[:tag_list] = remove_stop_words(tag_list.uniq)
+      # Remove data that shouldn't be overwritten
+      options.delete(:notes) if model.notes.present?
+      # Store new metadata
+      model.update!(options.compact_blank!)
+
+      Scan::Model::FinalizeScanBatchJob.set(wait: 10.seconds).perform_later(model.id, scan_batch_id: scan_batch_id) if scan_batch_id.present?
     end
-    # Load information from READMEs
-    options.compact_blank!
-    options.merge! attributes_from_readme(model.model_files.find_by(filename_lower: README_FILES))
-    # Filter stop words
-    options[:tag_list] = remove_stop_words(tag_list.uniq)
-    # Remove data that shouldn't be overwritten
-    options.delete(:notes) if model.notes.present?
-    # Store new metadata
-    model.update!(options.compact_blank!)
   end
 
   private

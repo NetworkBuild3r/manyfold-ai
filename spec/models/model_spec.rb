@@ -128,7 +128,7 @@ RSpec.describe Model do
       end
     end
 
-    let(:library) { create(:library, path: @library_path) } # rubocop:todo RSpec/InstanceVariable
+    let!(:library) { create(:library, path: @library_path) } # rubocop:todo RSpec/InstanceVariable
     let!(:model_one) { create(:model, library: library, path: "common/root/model_one") }
     let!(:model_two) { create(:model, library: library, path: "common/root/model_two") }
     let!(:part_one) { create(:model_file, model: model_one, filename: "part_one.stl") } # rubocop:disable RSpec/LetSetup
@@ -174,7 +174,7 @@ RSpec.describe Model do
       end
     end
 
-    let(:library) { create(:library, path: @library_path) } # rubocop:todo RSpec/InstanceVariable
+    let!(:library) { create(:library, path: @library_path) } # rubocop:todo RSpec/InstanceVariable
     let!(:model_one) { create(:model, library: library, path: "no/common/root/model_one") }
     let!(:model_two) { create(:model, library: library, path: "common/root/model_two") }
     let!(:part_one) { create(:model_file, model: model_one, filename: "part_one.stl") } # rubocop:disable RSpec/LetSetup
@@ -197,8 +197,9 @@ RSpec.describe Model do
         expect(model_one.model_files.count).to eq 2
       end
 
-      it "does not change paths within model" do
-        expect(model_one.model_files.exists?(filename: "part_two.stl")).to be true
+      it "uses path prefix for sibling merge" do
+        # Disjoint models use File.basename(source.path) as prefix
+        expect(model_one.model_files.exists?(filename: "model_two/part_two.stl")).to be true
       end
 
       it "handles filename clashes"
@@ -221,7 +222,7 @@ RSpec.describe Model do
       end
     end
 
-    let(:library) { create(:library, path: @library_path) } # rubocop:todo RSpec/InstanceVariable
+    let!(:library) { create(:library, path: @library_path) } # rubocop:todo RSpec/InstanceVariable
     let!(:parent) { create(:model, library: library, path: "parent") }
     let!(:child) { create(:model, library: library, path: "parent/child") }
 
@@ -273,6 +274,46 @@ RSpec.describe Model do
           parent.merge! child
         }.to change(described_class, :count).from(2).to(1)
       end
+
+      it "restores files to correct paths when unmerging" do # rubocop:todo RSpec/MultipleExpectations
+        create(:model_file, model: child, filename: "child_part.stl")
+        parent.merge! child
+        history = parent.merge_histories.last
+        new_model = parent.unmerge!(history)
+        expect(new_model.path).to eq history.source_path
+        expect(new_model.model_files.pluck(:filename)).to contain_exactly("child_part.stl")
+        expect(new_model.model_files.first.model_id).to eq new_model.id
+      end
+
+      it "raises when attempting to unmerge an already-undone merge" do
+        create(:model_file, model: child, filename: "child_part.stl")
+        parent.merge! child
+        history = parent.merge_histories.last
+
+        parent.unmerge!(history)
+
+        expect { parent.unmerge!(history) }.to raise_error(ArgumentError, /merge already undone/)
+      end
+
+      it "raises when attempting to unmerge a merge older than the allowed window" do
+        create(:model_file, model: child, filename: "child_part.stl")
+        parent.merge! child
+        history = parent.merge_histories.last
+        history.update_column(:created_at, (Model::UNMERGE_WINDOW + 1.day).ago) # rubocop:disable Rails/SkipsModelValidations
+
+        expect { parent.unmerge!(history) }.to raise_error(ArgumentError, /merge is too old to undo/)
+      end
+
+      it "disambiguates the original path if it is already taken" do
+        create(:model_file, model: child, filename: "child_part.stl")
+        parent.merge! child
+        history = parent.merge_histories.last
+        create(:model, library: library, path: history.source_path)
+
+        new_model = parent.unmerge!(history)
+
+        expect(new_model.path).to eq("#{history.source_path}--unmerged-#{history.id}")
+      end
     end
 
     context "when merging models that have duplicated files" do
@@ -283,10 +324,14 @@ RSpec.describe Model do
         create(:model_file, model: child, filename: "child_part.stl")
       end
 
-      it "removes duplicated file" do
+      it "deduplicates and tracks in history without data loss" do
         expect {
           parent.merge! child
         }.to change(ModelFile, :count).by(-1)
+        history = parent.merge_histories.last
+        dedup_entry = history.moved_files.find { |e| e["deduplicated"] || e[:deduplicated] }
+        expect(dedup_entry).to be_present
+        expect(dedup_entry["existing_file_id"] || dedup_entry[:existing_file_id]).to be_present
       end
 
       it "rehomes distinct file" do
@@ -300,6 +345,181 @@ RSpec.describe Model do
           expect(file.exists_on_storage?).to be true
         end
       end
+    end
+  end
+
+  context "when merging with nil digest filename collision" do
+    around do |ex|
+      MockDirectory.create([
+        "parent/parent.stl",
+        "parent/child/collision.stl"
+      ]) do |path|
+        @library_path = path
+        ex.run
+      end
+    end
+
+    let(:library) { create(:library, path: @library_path) } # rubocop:todo RSpec/InstanceVariable
+    let!(:parent) { create(:model, library: library, path: "parent") }
+    let!(:child) { create(:model, library: library, path: "parent/child") }
+
+    it "renames safely with random suffix when digest is nil (avoids basename_.ext)" do
+      create(:model_file, model: parent, filename: "child/collision.stl", digest: nil)
+      create(:model_file, model: child, filename: "collision.stl", digest: nil)
+      parent.merge!(child)
+      filenames = parent.model_files.map(&:filename)
+      expect(filenames).to include("child/collision.stl")
+      # Disambiguation uses basename only, producing collision_<hex>.stl (flat)
+      disambiguated = filenames.find { |f| f =~ /collision_[a-f0-9]{12}\.stl/ }
+      expect(disambiguated).to be_present
+      # Must not produce basename_.stl (literal nil in filename)
+      expect(filenames).not_to include("collision_.stl")
+    end
+  end
+
+  context "when merging sibling models" do
+    around do |ex|
+      MockDirectory.create([
+        "root/model_a/part_a.stl",
+        "root/model_b/part_b.stl"
+      ]) do |path|
+        @library_path = path
+        ex.run
+      end
+    end
+
+    let(:library) { create(:library, path: @library_path) } # rubocop:todo RSpec/InstanceVariable
+    let!(:target) { create(:model, library: library, path: "root") }
+    let!(:model_a) { create(:model, library: library, path: "root/model_a") }
+    let!(:model_b) { create(:model, library: library, path: "root/model_b") }
+    let!(:part_a) { create(:model_file, model: model_a, filename: "part_a.stl") } # rubocop:disable RSpec/LetSetup
+    let!(:part_b) { create(:model_file, model: model_b, filename: "part_b.stl") } # rubocop:disable RSpec/LetSetup
+
+    it "organizes all files by source prefix" do # rubocop:todo RSpec/MultipleExpectations
+      target.merge!(model_a, model_b)
+      expect(target.model_files.pluck(:filename)).to contain_exactly("model_a/part_a.stl", "model_b/part_b.stl")
+    end
+
+    it "restores original paths when unmerging sibling merge" do
+      target.merge!(model_a)
+      history = target.merge_histories.last
+      new_model = target.unmerge!(history)
+      expect(new_model.model_files.pluck(:filename)).to contain_exactly("part_a.stl")
+      expect(new_model.path).to eq "root/model_a"
+    end
+  end
+
+  context "when merge transaction rolls back" do
+    around do |ex|
+      MockDirectory.create([
+        "root/target/part.stl",
+        "root/source/part.stl"
+      ]) do |path|
+        @library_path = path
+        ex.run
+      end
+    end
+
+    let(:library) { create(:library, path: @library_path) } # rubocop:todo RSpec/InstanceVariable
+    let!(:target) { create(:model, library: library, path: "root/target") }
+    let!(:source) { create(:model, library: library, path: "root/source") }
+    let!(:source_file) { create(:model_file, model: source, filename: "part.stl") } # rubocop:disable RSpec/LetSetup
+
+    it "does not leave partial state when reattach! raises" do
+      allow_any_instance_of(ModelFile).to receive(:reattach!).and_raise("simulated failure")
+      expect { target.merge!(source) }.to raise_error("simulated failure")
+      expect(source.reload.model_files.count).to eq 1
+      expect(MergeHistory.where(target_model: target).count).to eq 0
+    end
+  end
+
+  context "when unmerging deduplicated file" do
+    around do |ex|
+      MockDirectory.create([
+        "parent/parent.stl",
+        "parent/child/duplicate.stl",
+        "parent/child/other.stl"
+      ]) do |path|
+        @library_path = path
+        ex.run
+      end
+    end
+
+    let(:library) { create(:library, path: @library_path) } # rubocop:todo RSpec/InstanceVariable
+    let!(:parent) { create(:model, library: library, path: "parent") }
+    let!(:child) { create(:model, library: library, path: "parent/child") }
+
+    before do
+      create(:model_file, model: parent, filename: "child/duplicate.stl", digest: "same")
+      create(:model_file, model: child, filename: "duplicate.stl", digest: "same")
+      create(:model_file, model: child, filename: "other.stl")
+    end
+
+    it "recreates file record and copies physical file for deduplicated entry" do
+      parent.merge!(child)
+      history = parent.merge_histories.last
+      new_model = parent.unmerge!(history)
+      expect(new_model.model_files.count).to eq 2
+      expect(new_model.model_files.pluck(:filename)).to contain_exactly("duplicate.stl", "other.stl")
+      dup_file = new_model.model_files.find_by(filename: "duplicate.stl")
+      expect(dup_file).to be_present
+      expect(dup_file.exists_on_storage?).to be true
+    end
+  end
+
+  context "when merging three or more models" do
+    around do |ex|
+      MockDirectory.create([
+        "root/one/a.stl",
+        "root/two/b.stl",
+        "root/three/c.stl"
+      ]) do |path|
+        @library_path = path
+        ex.run
+      end
+    end
+
+    let(:library) { create(:library, path: @library_path) } # rubocop:todo RSpec/InstanceVariable
+    let!(:target) { create(:model, library: library, path: "root") }
+    let!(:m1) { create(:model, library: library, path: "root/one") }
+    let!(:m2) { create(:model, library: library, path: "root/two") }
+    let!(:m3) { create(:model, library: library, path: "root/three") }
+
+    before do
+      create(:model_file, model: m1, filename: "a.stl")
+      create(:model_file, model: m2, filename: "b.stl")
+      create(:model_file, model: m3, filename: "c.stl")
+    end
+
+    it "organizes all files by source prefix" do
+      target.merge!(m1, m2, m3)
+      expect(target.model_files.pluck(:filename)).to contain_exactly("one/a.stl", "two/b.stl", "three/c.stl")
+    end
+  end
+
+  context "when unmerging after target was modified" do
+    around do |ex|
+      MockDirectory.create([
+        "parent/parent.stl",
+        "parent/child/child.stl"
+      ]) do |path|
+        @library_path = path
+        ex.run
+      end
+    end
+
+    let(:library) { create(:library, path: @library_path) } # rubocop:todo RSpec/InstanceVariable
+    let!(:parent) { create(:model, library: library, path: "parent") }
+    let!(:child) { create(:model, library: library, path: "parent/child") }
+
+    it "restores source model with original files; target keeps new files" do
+      create(:model_file, model: child, filename: "child.stl")
+      parent.merge!(child)
+      create(:model_file, model: parent, filename: "new_after_merge.stl")
+      history = parent.merge_histories.last
+      new_model = parent.unmerge!(history)
+      expect(new_model.model_files.pluck(:filename)).to contain_exactly("child.stl")
+      expect(parent.model_files.pluck(:filename)).to contain_exactly("new_after_merge.stl")
     end
   end
 
@@ -358,20 +578,24 @@ RSpec.describe Model do
   end
 
   context "when merging with duplicate filenames" do
-    let(:model) { create(:model) }
-    let(:target) { create(:model) }
+    let(:library) { create(:library) }
+    let(:model) { create(:model, library: library, path: "source_folder") }
+    let(:target) { create(:model, library: library, path: "target_folder") }
 
-    it "renames incoming file to avoid conflict if files are different" do # rubocop:disable RSpec/MultipleExpectations
+    it "uses path prefix when filenames collide with different content" do # rubocop:disable RSpec/MultipleExpectations
       create(:model_file, model: model, filename: "test.stl", digest: "abcd")
       create(:model_file, model: target, filename: "test.stl", digest: "1234")
       target.merge!(model)
-      expect(target.model_files.map(&:filename)).to contain_exactly("test_abcd.stl", "test.stl")
+      expect(target.model_files.map(&:filename)).to contain_exactly("source_folder/test.stl", "test.stl")
     end
 
-    it "discards incoming file if they are identical" do
-      create(:model_file, model: model, filename: "test.stl", digest: "abcd")
-      create(:model_file, model: target, filename: "test.stl", digest: "abcd")
-      expect { target.merge!(model) }.not_to change { target.model_files.count }
+    it "deduplicates when identical content at same prefixed path" do
+      # Parent has child/duplicate.stl; merge child with duplicate.stl (same digest)
+      parent = create(:model, library: library, path: "parent")
+      child = create(:model, library: library, path: "parent/child")
+      create(:model_file, model: parent, filename: "child/duplicate.stl", digest: "abcd")
+      create(:model_file, model: child, filename: "duplicate.stl", digest: "abcd")
+      expect { parent.merge!(child) }.not_to change { parent.model_files.count }
     end
   end
 
@@ -630,15 +854,12 @@ RSpec.describe Model do
     end
   end
 
-  context "when making changes" do
-    it "writes datapackage if model has changed" do
+  context "when problem check cascade" do
+    it "does not enqueue CheckForProblemsJob when skip_problem_checks is set" do
       model = create(:model)
-      expect { model.update(name: "Changed") }.to have_enqueued_job(UpdateDatapackageJob).with(model.id)
-    end
-
-    it "doesn't update datapackage if model didn't actually change" do
-      model = create(:model)
-      expect { model.update(name: model.name) }.not_to have_enqueued_job(UpdateDatapackageJob)
+      Current.set(skip_problem_checks: true) do
+        expect { model.update!(name: "Changed") }.not_to have_enqueued_job(Scan::Model::CheckForProblemsJob)
+      end
     end
   end
 

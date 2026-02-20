@@ -1,26 +1,24 @@
 <%= PageTitle title: t(".title") %>
 
-<div class="row">
-  <div class='col col-auto'>
-    <%= t ".description", retention_period: distance_of_time_in_words(ActiveJob::Status.options[:expires_in]) %>
-  </div>
+<div class="mb-4">
+  <%= t ".description", retention_period: distance_of_time_in_words(ActiveJob::Status.options[:expires_in]) %>
 </div>
 
 <%= paginate @jobs %>
 
-<table class="table table-striped mt-3">
+<table class="w-full border-collapse border border-secondary-200 dark:border-secondary-600 mt-3 [&>tbody>tr:nth-child(even)]:bg-secondary-50 [&>tbody>tr:nth-child(even)]:dark:bg-secondary-800/50">
   <tr>
-    <th></th>
-    <th><%= t(".name") %></th>
-    <th><%= t(".time") %></th>
-    <th><%= t(".message") %></th>
+    <th class="border border-secondary-200 dark:border-secondary-600 px-4 py-2 text-left"></th>
+    <th class="border border-secondary-200 dark:border-secondary-600 px-4 py-2 text-left"><%= t(".name") %></th>
+    <th class="border border-secondary-200 dark:border-secondary-600 px-4 py-2 text-left"><%= t(".time") %></th>
+    <th class="border border-secondary-200 dark:border-secondary-600 px-4 py-2 text-left"><%= t(".message") %></th>
   </tr>
   <% @jobs.each do |status| %>
     <tr class="<%= activity_row_style(status[:status]) %>">
-      <td><%= status_icon(status[:status]) %></td>
-      <td><%= status.read.dig(:serialized_job, "job_class") %></td>
-      <td><%= time_ago_in_words status.last_activity if status.last_activity %></td>
-      <td><%= status[:exception]&.fetch(:message, nil) || t(status[:step] || status[:error]) %></td>
+      <td class="border border-secondary-200 dark:border-secondary-600 px-4 py-2"><%= status_icon(status[:status]) %></td>
+      <td class="border border-secondary-200 dark:border-secondary-600 px-4 py-2"><%= status.read.dig(:serialized_job, "job_class") %></td>
+      <td class="border border-secondary-200 dark:border-secondary-600 px-4 py-2"><%= time_ago_in_words status.last_activity if status.last_activity %></td>
+      <td class="border border-secondary-200 dark:border-secondary-600 px-4 py-2"><%= status[:exception]&.fetch(:message, nil) || t(status[:step] || status[:error]) %></td>
     </tr>
   <% end %>
 </table>

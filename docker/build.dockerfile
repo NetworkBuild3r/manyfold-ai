@@ -7,6 +7,7 @@ RUN apk add --no-cache \
   gcompat \
   bzip2 \
   ca-certificates \
+  git \
   gmp-dev \
   libffi-dev \
   procps \
@@ -15,7 +16,6 @@ RUN apk add --no-cache \
   nodejs=~24.13.0 \
   npm \
   postgresql-dev \
-  mariadb-dev \
   libarchive \
   imagemagick \
   imagemagick-jpeg \
@@ -27,6 +27,7 @@ COPY package.json .
 COPY yarn.lock .
 RUN npm install --global corepack
 RUN corepack enable yarn
+# yarn.lock resolved URL uses HTTPS so public GitHub deps clone without SSH
 RUN yarn install
 
 COPY .ruby-version .
@@ -34,11 +35,9 @@ COPY Gemfile* ./
 RUN bundle install
 
 COPY . .
-RUN touch db/schema.rb
 RUN \
   DATABASE_URL="nulldb://user:pass@localhost/db" \
   SECRET_KEY_BASE="placeholder" \
   RACK_ENV="production" \
   RAILS_ASSETS_PRECOMPILE=1 \
   bundle exec rake assets:precompile
-RUN rm db/schema.rb

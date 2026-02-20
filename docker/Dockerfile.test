@@ -1,0 +1,42 @@
+# Test image: full bundle (including development/test) and run RSpec.
+# Used by: docker compose --profile test run --rm test [rspec args]
+
+FROM ruby:3.4.8-alpine3.23 AS test
+
+WORKDIR /usr/src/app
+
+RUN apk add --no-cache \
+  tzdata \
+  alpine-sdk \
+  gcompat \
+  bzip2 \
+  ca-certificates \
+  gmp-dev \
+  libffi-dev \
+  postgresql-dev \
+  yaml-dev \
+  nodejs \
+  npm \
+  libarchive \
+  imagemagick \
+  imagemagick-jpeg \
+  imagemagick-webp \
+  imagemagick-heic \
+  assimp-dev
+
+# Use the repo-pinned Yarn version via Corepack (package.json `packageManager`).
+# Alpine's node package doesn't include corepack, so install it via npm.
+RUN npm install -g corepack \
+  && corepack enable \
+  && corepack prepare yarn@3.8.5 --activate
+
+RUN gem install bundler -v 2.6.2
+
+COPY .ruby-version .
+COPY Gemfile Gemfile.lock ./
+RUN bundle config set --local deployment 'false' \
+  && bundle install
+
+COPY . .
+
+CMD ["bundle", "exec", "rspec"]

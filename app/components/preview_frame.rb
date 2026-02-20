@@ -31,11 +31,25 @@ class Components::PreviewFrame < Components::Base
     @object.is_a?(Federails::Actor) ? !@object.local : @object.remote?
   end
 
+  def preview_container_class
+    "block w-full aspect-[4/3] bg-secondary-100 dark:bg-secondary-800"
+  end
+
+  def image_class
+    "w-full h-full object-cover" + (needs_hiding? ? " sensitive" : "")
+  end
+
   def render_local
     if @file.is_image?
-      image model_model_file_path(@file.model, @file, format: @file.extension, derivative: "preview"), @file.name
+      div(class: preview_container_class) do
+        image_tag model_model_file_path(@file.model, @file, format: @file.extension, derivative: "preview"),
+          class: image_class,
+          alt: @file.name,
+          loading: "lazy",
+          decoding: "async"
+      end
     elsif @file.is_renderable?
-      div class: "card-img-top #{"sensitive" if needs_hiding?}" do
+      div(class: "#{preview_container_class} #{"sensitive" if needs_hiding?}") do
         Renderer file: @file
       end
     else
@@ -48,9 +62,15 @@ class Components::PreviewFrame < Components::Base
     preview_data = actor&.extensions&.dig("preview")
     case preview_data&.dig("type")
     when "Image"
-      image sanitize(preview_data["url"]), sanitize(preview_data["summary"])
+      div(class: preview_container_class) do
+        image_tag sanitize(preview_data["url"]),
+          class: image_class,
+          alt: sanitize(preview_data["summary"]),
+          loading: "lazy",
+          decoding: "async"
+      end
     when "Document"
-      div class: "card-img-top #{"sensitive" if needs_hiding?}" do
+      div(class: "#{preview_container_class} #{"sensitive" if needs_hiding?}") do
         iframe(
           scrolling: "no",
           srcdoc: safe([
@@ -58,7 +78,8 @@ class Components::PreviewFrame < Components::Base
             preview_data["content"],
             "</body></html>"
           ].join),
-          title: sanitize(preview_data["summary"])
+          title: sanitize(preview_data["summary"]),
+          class: "w-full h-full object-cover"
         )
       end
     else
@@ -79,13 +100,8 @@ class Components::PreviewFrame < Components::Base
   end
 
   def empty
-    div class: "preview-empty" do
-      p { t("components.model_card.no_preview") }
+    div(class: "flex items-center justify-center block w-full aspect-[4/3] bg-secondary-100 dark:bg-secondary-800 text-secondary-400") do
+      p(class: "text-sm") { t("components.model_card.no_preview") }
     end
-  end
-
-  def image(url, alt)
-    div class: "card-img-top card-img-top-background", style: "background-image: url(#{url})"
-    image_tag url, class: "card-img-top image-preview #{"sensitive" if needs_hiding?}", alt: alt
   end
 end

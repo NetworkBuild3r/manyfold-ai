@@ -6,7 +6,7 @@
 - [ ] Check that that your branch is up to date with our main.
 - [ ] Make sure you are requesting to **pull a topic/feature/bugfix branch** (right side). Don't request *your* main!
 - [ ] Check that the tests and code linter both pass.
-- [ ] If you're a new contributor, please sign our [contributor license agreement](https://cla-assistant.io/manyfold3d/manyfold).
+- [ ] If you're a new contributor, ensure your contributions comply with the project license (MIT).
 
 ## Warnings
 

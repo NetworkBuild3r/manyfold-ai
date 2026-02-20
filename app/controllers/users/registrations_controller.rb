@@ -102,7 +102,8 @@ class Users::RegistrationsController < Devise::RegistrationsController
         :sensitive_content_handling,
         :sort_order,
         pagination_settings: [
-          :per_page
+          :per_page,
+          :grid_columns
         ],
         tag_cloud_settings: [
           :threshold,
@@ -157,8 +158,10 @@ class Users::RegistrationsController < Devise::RegistrationsController
 
   def pagination_json(settings)
     return nil unless settings
+    cols = settings[:grid_columns].to_i
     {
-      "per_page" => settings[:per_page].to_i
+      "per_page" => settings[:per_page].to_i,
+      "grid_columns" => (cols.positive? ? cols.clamp(2, 4) : 3)
     }
   end
 

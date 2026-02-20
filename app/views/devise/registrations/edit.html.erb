@@ -1,28 +1,28 @@
 <%= PageTitle title: t(".title") %>
 
 <%= form_for(resource, as: resource_name, url: registration_path(resource_name), html: {method: :put}) do |f| %>
-  <div class="row mb-4">
-    <div class="col-12 col-sm">
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+    <div>
       <%- if SiteSettings.multiuser_enabled? %>
-        <div class="card mb-2">
-          <h4 class="card-header"><%= t(".contact_info") %></h4>
-          <div class="card-body tabular-form">
+        <div class="rounded-xl border border-secondary-200 dark:border-secondary-600 bg-white dark:bg-secondary-800 shadow-sm mb-4 overflow-hidden">
+          <h4 class="px-4 py-3 bg-secondary-600 text-white m-0 font-medium"><%= t(".contact_info") %></h4>
+          <div class="p-4 tabular-form">
             <%= text_input_row f, :email, autocomplete: "email",
                   help: (devise_mapping.confirmable? && resource.pending_reconfirmation?) ?
                     t(".currently_waiting_confirmation_for_email", email: resource.unconfirmed_email) :
                     nil %>
             <%= text_input_row f, :username, autocomplete: false %>
             <% if SiteSettings.federation_enabled? %>
-              <div class="col-auto col-form-label"><%= t("settings.users.index.fediverse_address") %></div>
-              <div class="col col-form-label">
+              <div class="block text-sm font-medium text-secondary-700 dark:text-secondary-300"><%= t("settings.users.index.fediverse_address") %></div>
+              <div class="mt-1">
                 <%= CopyableText(text: resource.federails_actor.at_address, label: t("general.copy_fediverse_handle")) %>
               </div>
             <% end %>
           </div>
         </div>
-        <div class="card mb-2">
-          <h4 class="card-header"><%= t(".security") %></h4>
-          <div class="card-body tabular-form">
+        <div class="rounded-xl border border-secondary-200 dark:border-secondary-600 bg-white dark:bg-secondary-800 shadow-sm mb-4 overflow-hidden">
+          <h4 class="px-4 py-3 bg-secondary-600 text-white m-0 font-medium"><%= t(".security") %></h4>
+          <div class="p-4 tabular-form">
             <%= password_input_row f, :password, autocomplete: "new-password" %>
             <%= password_input_row f, :password_confirmation, autocomplete: "new-password" %>
             <%= password_input_row f, :current_password, autocomplete: "current-password",
@@ -35,17 +35,13 @@
       <%= render "pagination_settings", form: f %>
       <%= render "file_list_settings", form: f %>
     </div>
-    <div class="col-12 col-sm">
+    <div>
       <%- if SiteSettings.multiuser_enabled? %>
         <%- if @user.has_quota? %>
-        <div class="card mb-2">
-          <h3 class="card-header"><%= t("settings.users.quota.title") %></h3>
-          <div class="card-body">
-            <div class="row text-center">
-              <div class="col">
-                <%= DisplayUserQuota(current_size: @user.current_space_used, quota: @user.quota) %>
-              </div>
-            </div>
+        <div class="rounded-xl border border-secondary-200 dark:border-secondary-600 bg-white dark:bg-secondary-800 shadow-sm mb-4 overflow-hidden">
+          <h3 class="px-4 py-3 bg-secondary-600 text-white m-0 font-medium"><%= t("settings.users.quota.title") %></h3>
+          <div class="p-4 text-center">
+            <%= DisplayUserQuota(current_size: @user.current_space_used, quota: @user.quota) %>
           </div>
         </div>
         <% end %>
@@ -53,15 +49,15 @@
       <%= render "renderer_settings", form: f %>
       <%= render "problem_settings", form: f %>
       <%- if SiteSettings.multiuser_enabled? %>
-        <div class="card border-danger mt-3">
-          <h4 class="card-header text-bg-danger"><%= t ".danger_zone" %></h4>
-          <div class="card-body">
-            <p class="card-text">
+        <div class="rounded-xl border border-danger bg-white dark:bg-secondary-800 shadow-sm mt-4 overflow-hidden">
+          <h4 class="px-4 py-3 bg-danger text-white m-0 font-medium"><%= t ".danger_zone" %></h4>
+          <div class="p-4">
+            <p class="mb-0">
               <%= link_to t(".cancel_my_account"),
                     registration_path(resource_name),
                     data: {confirm: translate(".confirm_deletion"), turbo_confirm: translate(".confirm_deletion")},
                     method: :delete,
-                    class: "btn btn-danger" %>
+                    class: "inline-flex items-center px-4 py-2 rounded-lg bg-danger text-white hover:opacity-90 focus-visible:ring-2 focus-visible:ring-primary-500 no-underline" %>
             </p>
           </div>
         </div>
@@ -69,10 +65,8 @@
     </div>
   </div>
 
-  <div class="row mb-4">
-    <div class='col'>
-      <button type="submit" class="btn btn-primary"><%= Icon(icon: "save", label: t(".submit")) %> <%= t(".submit") %></button>
-    </div>
+  <div class="mb-6">
+    <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500"><%= Icon(icon: "save", label: t(".submit")) %> <%= t(".submit") %></button>
   </div>
 
 <% end %>

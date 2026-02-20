@@ -1,10 +1,10 @@
-<div class="card">
-  <h2 class="card-header">
+<div class="rounded-xl border border-secondary-200 dark:border-secondary-600 bg-white dark:bg-secondary-800 shadow-sm overflow-hidden">
+  <h2 class="px-4 py-3 bg-secondary-600 text-white m-0 font-medium flex items-center gap-2">
     <%= Icon icon: "send" %>
     <%= t ".title" %>
   </h2>
 
-  <div class="card-body">
+  <div class="p-4">
     <p>
       <%= t ".content" %>
     </p>
@@ -12,14 +12,14 @@
       <p>
         <%= t ".new_creator.content" %>
       </p>
-      <div class="text-end">
+      <div class="text-right mt-2">
         <%= GoButton(label: t(".new_creator.button"), href: new_creator_path, variant: :primary, icon: "box-arrow-up-right", target: "_manyfold_new_creator") %>
       </div>
     <%- else %>
       <p>
         <%= t ".existing_creator.content" %>
       </p>
-      <div class="text-end">
+      <div class="text-right mt-2">
         <%= GoButton(label: t(".existing_creator.button"), href: edit_creator_path(current_user.creators.local.first), variant: :primary, icon: "box-arrow-up-right", target: "_manyfold_edit_creator") %>
       </div>
     <%- end %>

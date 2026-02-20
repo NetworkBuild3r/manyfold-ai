@@ -1,3 +1,7 @@
+# Solo image: app + Redis in one container. Uses same base/build/runtime as manyfold.
+# Sets REDIS_URL to localhost; entrypoint starts redis-server when REDIS_URL points to 127.0.0.1.
+# For DB, provide DATABASE_* env or link a postgres service (e.g. in CI smoke test).
+
 # syntax = devthefuture/dockerfile-x
 
 INCLUDE docker/base.dockerfile
@@ -6,15 +10,12 @@ INCLUDE docker/runtime.dockerfile
 
 ## SOLO IMAGE ##########################################
 
-FROM runtime as solo
+FROM runtime AS manyfold-solo
 
-# Install and run redis service
 RUN apk add --no-cache redis
-COPY ./docker/s6-rc.d/redis/redis /etc/s6-overlay/s6-rc.d/redis
-COPY ./docker/s6-rc.d/redis/user/contents.d/redis /etc/s6-overlay/s6-rc.d/user/contents.d/redis
-COPY ./docker/s6-rc.d/redis/manyfold/dependencies.d/redis /etc/s6-overlay/s6-rc.d/manyfold/dependencies.d/redis
 
-# Set parameters for solo mode connections
-ENV DATABASE_URL=sqlite3:/config/manyfold.sqlite3
-ENV REDIS_URL=redis://localhost:6379
-ENV DEFAULT_WORKER_CONCURRENCY=1
+# Solo mode: Redis inside this container; app connects to 127.0.0.1:6379
+ENV REDIS_URL=redis://127.0.0.1:6379/0
+
+# Same CMD as standard image; entrypoint will start Redis when REDIS_URL is localhost
+CMD ["bundle", "exec", "rails", "server", "-p", "3214", "-b", "[::]"]

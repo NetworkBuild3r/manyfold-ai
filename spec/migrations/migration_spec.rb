@@ -7,8 +7,17 @@
 # To add a new test, just add a new SQL file in spec/fixtures/migrations, named with the appropriate Rails
 # migration timestamp, with data which should be inserted into the test database at that point. The rest
 # will be handled automatically, there is no need to edit this file.
+#
+# These specs require sqlite3; they are skipped in environments (e.g. Docker CI) that use PostgreSQL only.
 
-RSpec.describe "Migrations" do
+sqlite3_available = begin
+  require "sqlite3"
+  true
+rescue LoadError
+  false
+end
+
+RSpec.describe "Migrations", skip: !sqlite3_available do
   Rails.root.glob("spec/fixtures/migrations/*.sql").map { |it| File.basename(it.to_s.split("/").last, ".*") }.each do |version|
     context "when migrating database version #{version} to latest", :migration do
       let(:database) { "tmp/migration-test-#{version}.db" }

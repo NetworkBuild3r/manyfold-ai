@@ -1,12 +1,22 @@
 <!DOCTYPE html>
-<html lang="<%= I18n.locale %>">
+<html lang="<%= I18n.locale %>" class="<%= "dark" if dark_theme? %>" data-theme="<%= SiteSettings.validated_theme %>" data-accent="<%= SiteSettings.validated_accent_color %>">
   <head>
+    <script<%= content_security_policy_nonce ? " nonce=\"#{content_security_policy_nonce}\"".html_safe : "" %>>
+      (function() {
+        if (document.documentElement.getAttribute('data-theme') !== 'system') return;
+        var dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.classList.toggle('dark', dark);
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+          document.documentElement.classList.toggle('dark', e.matches);
+        });
+      })();
+    </script>
     <title><%= @title || site_name %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <%= csrf_meta_tags %>
     <%= tag.meta name: "csp-nonce", content: content_security_policy_nonce if content_security_policy_nonce %>
     <%= javascript_include_tag "application", nonce: true, defer: true %>
-    <%= stylesheet_link_tag "themes/#{SiteSettings.validated_theme}", nonce: true %>
+    <%= stylesheet_link_tag "tailwind", nonce: true %>
     <%= yield :head %>
   </head>
 

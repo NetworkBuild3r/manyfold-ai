@@ -1,20 +1,20 @@
-<table class="table table-striped">
+<table class="w-full border-collapse border border-secondary-200 dark:border-secondary-600 [&>tbody>tr:nth-child(even)]:bg-secondary-50 [&>tbody>tr:nth-child(even)]:dark:bg-secondary-800/50">
   <tr>
-    <th></th>
-    <th><%= t(".name") %></th>
-    <%= content_tag(:th) { t(".address") } if SiteSettings.federation_enabled? %>
-    <th><%= t(".actions") %></th>
-    <th></th>
+    <th class="border border-secondary-200 dark:border-secondary-600 px-4 py-2 text-left"></th>
+    <th class="border border-secondary-200 dark:border-secondary-600 px-4 py-2 text-left"><%= t(".name") %></th>
+    <%= content_tag(:th, class: "border border-secondary-200 dark:border-secondary-600 px-4 py-2 text-left") { t(".address") } if SiteSettings.federation_enabled? %>
+    <th class="border border-secondary-200 dark:border-secondary-600 px-4 py-2 text-left"><%= t(".actions") %></th>
+    <th class="border border-secondary-200 dark:border-secondary-600 px-4 py-2 text-left"></th>
   </tr>
   <% actors.each do |actor| %>
     <tr class="align-middle">
-      <td>
-        <%= actor.entity ? Icon(icon: icon_for(actor.entity.class), label: actor.entity.class.model_name.human) : "⁂" %>
+      <td class="border border-secondary-200 dark:border-secondary-600 px-4 py-2">
+        <%= actor.entity ? Icon(icon: icon_for(actor.entity.class), label: actor.entity.class.model_name.human) : "â‚" %>
       </td>
-      <td><%= link_to actor.name, actor.profile_url %></td>
-      <%= content_tag(:td) { actor.short_at_address } if SiteSettings.federation_enabled? %>
-      <td><%= FollowButton(follower: current_user, target: actor) %></td>
-      <td>
+      <td class="border border-secondary-200 dark:border-secondary-600 px-4 py-2"><%= link_to actor.name, actor.profile_url, class: "text-primary-600 hover:underline" %></td>
+      <%= content_tag(:td, class: "border border-secondary-200 dark:border-secondary-600 px-4 py-2") { actor.short_at_address } if SiteSettings.federation_enabled? %>
+      <td class="border border-secondary-200 dark:border-secondary-600 px-4 py-2"><%= FollowButton(follower: current_user, target: actor) %></td>
+      <td class="border border-secondary-200 dark:border-secondary-600 px-4 py-2">
         <% if !actor.local? && actor.extensions&.dig("f3di:concreteType").nil? %>
           <span class="text-warning"><%= Icon(icon: "exclamation-triangle-fill", label: translate("components.actor_card.non_manyfold_account")) %></span>
         <% end %>

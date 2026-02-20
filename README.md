@@ -1,169 +1,167 @@
 # Manyfold
 
-<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![Contributors](https://img.shields.io/github/all-contributors/manyfold3d/manyfold?color=ee8449&style=flat-square)](CONTRIBUTORS.md)
-<!-- ALL-CONTRIBUTORS-BADGE:END -->
+Self-hosted 3D model library for managing and printing 3D models. Rails 8, Tailwind-only UI, batched scan pipeline, structured problem detection, merge/unmerge with history.
 
-Manyfold is an open source, self-hosted web application for managing a collection of 3d models, particularly focused on 3d printing.
+**Project type:** Web application • **Stack:** Ruby 3.4, Rails 8, Tailwind CSS 4, THREE.js/Mittsu, Sidekiq  
+**Source of truth:** `db/schema.rb`, `config/routes.rb`, `app/models/problems/`, `.cursor/rules/`, `.cursor/skills/`
 
-Visit [manyfold.app](https://manyfold.app/) for more details, installation instructions, and user and administration guides! Or, to have a go straight away, try our demo at [try.manyfold.app](https://try.manyfold.app).
+## Fork status
 
-## Help and Support
+This repo is a fork of [manyfold3d/manyfold](https://github.com/manyfold3d/manyfold), maintained independently. See [Differences from upstream](#differences-from-upstream) below.
 
-There are a few routes to get help:
+---
 
-* [GitHub issues](https://github.com/manyfold3d/manyfold/issues/new) is the best place to report bugs.
-* [Live chat](https://matrix.to/#/#manyfold:matrix.org) to the "team" on Matrix (an open Discord/Slack-like chat system).
-* Get in touch with our [social media](https://3dp.chat/@manyfold) presence in the Fediverse (Mastodon, etc).
+## What is Manyfold?
 
-And, if you want to contribute financially to development efforts...
+**Manyfold** is a self-hosted web app that turns folders of 3D model files (STL, 3MF, OBJ, etc.) into a searchable, browsable library. You add **libraries** (root folders on disk); the app scans them, treats each subfolder as a **model**, and stores metadata in a DB. You browse, filter by tags/creators/collections/licenses, view 3D previews, upload files, run **problem detection**, and **merge/unmerge** models. Optional Fediverse (ActivityPub) publishing and multi-user support.
 
-[<img src="https://opencollective.com/manyfold/donate/button@2x.png?color=blue" alt="Donate with OpenCollective" width="20%" />](https://opencollective.com/manyfold/donate)
+**Who it's for:** Hobbyists and makers with large model collections who want a self-hosted catalog for 3D printing—search, tags, problem checks, and merge tracking without cloud lock-in.
 
-## Developer Documentation
+### Capabilities
 
-Manyfold is open source software, and we encourage contributions! If you want to get involved, follow the guidance below, which explains how to get up and running. Then take a look at our [good first issue](https://github.com/manyfold3d/manyfold/labels/good%20first%20issue) tag for tasks that might suit newcomers to the codebase, or take a look at our [development roadmap](https://github.com/orgs/manyfold3d/projects/1).
+| Feature | Description |
+|--------|-------------|
+| Libraries | Add root folders (disk/NAS); scan keeps each subfolder as a model with files |
+| Browse/search | Filter by tags, creators, collections; sort, paginate; 3D previews and image carousels |
+| Metadata | Edit tags, creators, collections, licenses, links; bulk edit; path templates, README inference |
+| Problem detection | Flags issues (empty model, missing file, no license, non-manifold mesh); resolve/ignore from UI |
+| Merge/unmerge | Combine models; merge history; undo (unmerge) within configured time window |
+| Upload | Web UI upload; TUS for large files |
+| Federation | Optional ActivityPub publishing so others can follow your library |
+| API | REST-style API, OEmbed, Data Package exports |
 
-### Application architecture
+**Quick start:** `bin/dev` (local) or `docker compose up` (Docker). App at <http://127.0.0.1:3214>.
 
-The application is built in [Ruby on Rails](https://rubyonrails.org), and tries to follow the best practices of that framework wherever possible. If you're not familiar with Rails, their [Getting Started](https://guides.rubyonrails.org/getting_started.html) guide is a good first introduction.
+---
 
-In general, Manyfold is a server-side app that uses plain old HTTP requests. We don't have any code using XHR, Websockets, or other more interactive comms yet (though could do in future).
+## Differences from upstream
 
-The application consists of the application server itself, plus a background job runner using [Sidekiq](https://sidekiq.org/) for asynchronous tasks.
+This fork diverges from [manyfold3d/manyfold](https://github.com/manyfold3d/manyfold) with a different architecture and UX approach:
 
-There are a few other major components that we build with:
+| Aspect | Upstream (manyfold3d) | This fork |
+|--------|------------------------|-----------|
+| UI | Bootstrap 5 | **Tailwind-only** (no Bootstrap/Bootswatch/Sass). Single pipeline: `app/assets/stylesheets/tailwind.css` → `app/assets/builds/tailwind.css`. Light/dark themes. |
+| Scanning | Implicit/cascade | **Explicit batched pipeline**: filesystem detection → create model from path → add files → parse metadata → single finalize step. No `touch`-driven cascades; DB–filesystem sync is predictable. |
+| Problems | Various entry points | **Single entry point**: `Problem.resolve_batch`. Strategy classes in `app/models/problems/`. Turbo Stream responses (removes + optional card replace). Creation/clearing only via `Problem.create_or_clear` and Registry-registered detectors. |
+| Data management | Basic merge | **Merge with history** and time-limited unmerge; path prefix tracking; `db_integrity.rake` for integrity constraints. |
+| Components | ViewComponent + ERB | **Phlex**-based components in `app/components/`; shared `_problems_card.html.erb`; model card refactored (ModelCardActions, ModelCardPreview, DropdownMenu). |
+| Selection/browsing | — | **Base and file-list selection** Stimulus controllers; infinite scroll restore; `ModelListRestoreWrapper`. |
+| CI | Single-DB | **PostgreSQL-only CI**; lint (StandardRB, Rubocop, erb_lint, TypeScript, i18n-tasks) then RSpec. |
+| Docker | `docker/default.dockerfile` | `docker/manyfold.dockerfile`; Windows one-command: `.\script\start-docker.ps1`. |
+| Docs | Links to manyfold.app | **Fork-first README**; `.cursor/rules/` and `.cursor/skills/` for AI-assisted development. |
 
-* [Bootstrap 5](https://getbootstrap.com) provides the frontend CSS / JS
-* [THREE.js](https://threejs.org/) (via TypeScript) is used for the client-side 3D rendering
-* [Mittsu](https://github.com/danini-the-panini/mittsu), a Ruby port of THREE.js, is used for server-side 3D code
-* [PostgreSQL](https://www.postgresql.org/) is the production database, though sqlite3 is used in dev
+**Why this approach:** Fewer hidden side effects, clearer contracts, better AI/contributor onboarding, and consistent Tailwind-first design.
+
+---
+
+## Technical overview (for AI and contributors)
+
+### Architecture
+
+- **Rails 8** — Server-rendered HTML, Turbo for interactivity; no XHR/WebSockets for core flows.
+- **Sidekiq** — Background jobs: scan, analysis, default, performance, upgrade queues (`config/workers/`, `app/jobs/README.md`).
+- **Tailwind CSS 4** — Single entrypoint: `app/assets/stylesheets/tailwind.css`; utilities prefixed `tw:*`.
+- **3D** — THREE.js (TypeScript) in browser; Mittsu (Ruby) on server.
+- **Database** — PostgreSQL only (production, dev, test, and CI).
+- **Problems** — `Problem` model, `Problems::Registry`, category classes in `app/models/problems/`. Resolution only via `Problem.resolve_batch`; creation/clearing only via `Problem.create_or_clear` and Registry detectors.
+
+### Key files and locations
+
+| Concern | Location |
+|---------|----------|
+| Schema | `db/schema.rb` |
+| Routes | `config/routes.rb` |
+| Problem categories | `app/models/problems/` |
+| Phlex components | `app/components/` |
+| Scan jobs | `app/jobs/scan/` |
+| Architecture guidance | `.cursor/skills/manyfold-*.md` |
+| Problems system | `.cursor/skills/problems-system.md` |
+
+### Prerequisites
+
+- Ruby 3.4 (`.ruby-version`), Bundler 2.6+
+- Node.js (`.node-version`), `corepack enable`, Yarn 3.8+
+- Foreman (or manual process management)
+- libarchive, ImageMagick, assimp (3D/archives)
+- Optional: ngrok for ActivityPub in dev
 
 ### Running locally
 
-To run the app yourself, you'll need the following installed:
-
-* Ruby 3.4
-* Bundler 2.6+
-* Node.js 24.13.0 (and run `corepack enable`)
-* Yarn 3.8+
-* Foreman or [another Procfile runner](https://github.com/ddollar/foreman#ports)
-* [libarchive](https://github.com/chef/ffi-libarchive#installation) (for upload support)
-* [imagemagick](https://imagemagick.org/index.php) (for image thumbnail generation)
-* [ngrok](https://ngrok.com) (for ActivityPub development)
-* [assimp](https://www.assimp.org) (for model file analysis)
-
-To run the application once you've cloned this repo, you should be able to just run `bin/dev`; that should set up the database, perform migrations, install dependencies, and then make the application available at <http://127.0.0.1:3214>.
-
-If you want to configure optional features, set the appropriate [environment variables](https://manyfold.app/sysadmin/configuration.html) in a file called `.env.development.local`. See `env.example` for a template file. Note that the required environment variables in the documentation are not needed in development mode, due to the use of SQLite instead of PostgreSQL.
-
-#### ngrok
-
-Running `bin/dev` also expects to be able to start a pre-configured [ngrok](https://ngrok.com) tunnel called "manyfold", to enable ActivityPub federation in development. If you don't want to use this, you can remove the line from `Procfile.dev`, though please don't commit it!
-
-To configure the tunnel, add this to your [ngrok config file](https://ngrok.com/docs/agent/config/):
-
-```yaml
-endpoints:
-    - name: manyfold
-      url: https://{your-ngrok-url-here}
-      upstream:
-         url: 3214
+```bash
+bin/dev
 ```
 
-### Using the Devcontainer
+App at <http://127.0.0.1:3214>. Config: `.env.development.local` (see `env.example`). For federation in dev, configure ngrok tunnel `manyfold` or remove it from `Procfile.dev`.
 
-To simplify the development environment setup, Manyfold includes a devcontainer configuration. This allows you to use Visual Studio Code's Remote - Containers extension to develop inside a container.
+### Running yarn in a container
 
-#### Prerequisites
+If you don't have Node/Yarn (e.g. on Windows):
 
-- Docker installed on your machine
-- Visual Studio Code with the Remote - Containers extension
-
-#### Steps
-
-1. Clone the repository:
-    ```sh
-    git clone https://github.com/manyfold3d/manyfold.git
-    cd manyfold
-    ```
-
-2. Open the repository in Visual Studio Code:
-    ```sh
-    code .
-    ```
-
-3. When prompted by Visual Studio Code, click on "Reopen in Container". This will build the devcontainer and open the project inside it.
-
-4. Once the container is running, you can use the integrated terminal in Visual Studio Code to run commands as usual.
-
-### Coding standards
-
-[![Codacy Quality](https://img.shields.io/codacy/grade/0d309b8b38b5431c9195e62cd7b707f3)](https://app.codacy.com/gh/manyfold3d/manyfold/dashboard)
-
-We use [Rubocop](https://rubocop.org/) to monitor adherence to coding standards in Ruby code. We use [StandardRB](https://github.com/standardrb/standard) rules along with some other rulesets for specific libraries and frameworks.
-
-You can run the linter with `bundle exec rubocop`.
-
-We also have linters for ERB and Typescript files. You can run these with: `bundle exec erb_lint --lint-all` and `yarn run lint:ts` respectively.
-
-Code linting is automatically performed by our GitHub Actions test runners, but if you set up [Husky](https://typicode.github.io/husky/get-started.html), it will also execute as a pre-commit hook.
-
-### Testing
-
-![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/manyfold3d/manyfold/push.yml)
-[![Codacy Coverage](https://img.shields.io/codacy/coverage/0d309b8b38b5431c9195e62cd7b707f3)](https://app.codacy.com/gh/manyfold3d/manyfold/dashboard)
-
-We want to produce well-tested code; it's not 100%, but we aim to increase test coverage with each new bit of code.
-
-You can run the test suite as a one off with the command `bundle exec rake`, or you can start a continuous test runner with `bundle exec guard` that will automatically run tests as you code.
-
-Tests are run automatically when pushed to our repository using GitHub Actions.
-
-Generation of screenshots for the documentation is made with system specs and is not run by default.
-To generate screenshots, set `DOC_SCREENSHOT=true`:
-
-```sh
-# All specs and documentation
-DOC_SCREENSHOT=true bundle exec rspec
-# Only documentation specs
-DOC_SCREENSHOT=true bundle exec rspec -t @documentation
+```bash
+docker compose --profile assets run --rm assets
 ```
 
+One-off Tailwind: `docker compose --profile assets run --rm assets yarn build:css:tailwind`.
 
-### Internationalisation & Translation
+### CI in a container
 
-Manyfold uses [Rails' I18n framework](https://guides.rubyonrails.org/i18n.html) to handle all text content.
+CI uses `docker/Dockerfile.ci`. Workflow builds that image, then runs lint and test via `docker run` with repo mounted.
 
-You can check the validity of locale files with `bundle exec i18n-tasks health`. This is also run as part of our test pipeline, so will be enforced on new code.
+### Devcontainer
 
-Translations are also available in client-side Javascript; they are built from the Rails locale files as part of the asset pipeline, using [i18n-js](https://github.com/fnando/i18n-js). If you need to run an export manually, do `bundle exec i18n export -c config/i18n-js.yml`.
+VS Code → Remote - Containers → Reopen in Container. Requires Docker and Remote - Containers extension.
 
-We are using [Translation.io](https://translation.io/) to manage translations into other languages. If you want to help out on that, sign up on the site and send us username on a GitHub issue for the language you're interested in.
+### Standards and testing
 
-To synchronise with Translation.io, run `rake translation:clobber_and_sync:{locale}` where `{locale}` is a supported code, such as `de`.
+| Tool | Command |
+|------|---------|
+| Ruby | `bundle exec standardrb --fix` then `bundle exec rake rubocop` |
+| ERB | `bundle exec erb_lint --lint-all` |
+| TypeScript | `yarn run lint:ts`, `yarn typecheck` |
+| Tests | `bundle exec rspec` (or `bundle exec rake`) |
 
-### Building Docker images
+CI runs on push/PR to `main`: lint first, then test (PostgreSQL).
 
-[![Built with Depot](https://depot.dev/badges/built-with-depot.svg)](https://depot.dev?utm_source=manyfold)
+Doc screenshots: `DOC_SCREENSHOT=true bundle exec rspec` or `-t @documentation`.
 
-The application is distributed as a multi-platform docker image (built by [Depot](https://depot.dev/)); see our [Docker Compose instructions](https://manyfold.app/get-started/docker) for full details.
+### i18n
 
-If you want to build your own version of the Docker image, you can do so by running ` docker build -f docker/default.dockerfile .` in the root directory of this repository.
+Rails I18n; `bundle exec i18n-tasks health`. JS: `bundle exec i18n export -c config/i18n-js.yml`. Translation.io: `rake translation:clobber_and_sync:{locale}`.
 
-## Funding
+### Docker
 
-This project is funded through [NGI0 Entrust](https://nlnet.nl/entrust), a fund established by [NLnet](https://nlnet.nl) with financial support from the European Commission's [Next Generation Internet](https://ngi.eu) program. Learn more at the [NLnet project page](https://nlnet.nl/project/Personal-3D-archive).
+| Scenario | Command |
+|----------|---------|
+| One-command (Windows) | `.\script\start-docker.ps1` — brings up db, redis, web, worker; generates `db/schema.rb` if missing; waits for `http://localhost:3214/health` |
+| Manual | `docker compose build` then `docker compose up -d` — uses `docker/manyfold.dockerfile`, port 3214 |
+| Fresh DB schema | `.\script\dump_schema.ps1` (see `db/SCHEMA_DUMP.md`) |
+| Test | `docker compose --profile test run --rm test` |
 
-[<img src="https://nlnet.nl/logo/banner.png" alt="NLnet foundation logo" width="20%" />](https://nlnet.nl)
-[<img src="https://nlnet.nl/image/logos/NGI0_tag.svg" alt="NGI Zero Logo" width="20%" />](https://nlnet.nl/entrust)
+Runs as non-root (PUID/PGID, default 1000:1000). Set env vars to match host if needed.
 
-This project is also funded by you! Make a donation to support long-term development at OpenCollective:
+### Configuration
 
-[<img src="https://opencollective.com/manyfold/donate/button@2x.png?color=blue" alt="Donate with OpenCollective" width="20%" />](https://opencollective.com/manyfold/donate)
+| Variable | Description |
+|----------|-------------|
+| `SECRET_KEY_BASE` | Required in production |
+| `DATABASE_*` / `DATABASE_URL` | DB connection (`config/database.yml`) |
+| `REDIS_URL` | Sidekiq and cache |
+| `PORT` / `RAILS_PORT` | Server port (default 3214) |
 
-## Popularity
+See `config/database.yml`, `env.example`, and the app settings UI. Use placeholders in examples; never commit real secrets.
 
-Down the bottom because they're cool, but not important, here are some stats!
+---
 
-[![Star History Chart](https://api.star-history.com/svg?repos=manyfold3d/manyfold&type=Date)](https://star-history.com/#manyfold3d/manyfold&Date)
+## Help and support
+
+**Bugs / issues:** Open an issue on this repo.
+
+---
+
+## Contributing
+
+See [CONTRIBUTING.md](.github/CONTRIBUTING.md). Run lint and tests before submitting; CI runs on push/PR.
+
+## License
+
+See [LICENSE.md](LICENSE.md).

@@ -15,4 +15,4 @@
 
 ## ActivityPub
 
-Manyfold's ActivityPub usage is described in detail at https://manyfold.app/technology/activitypub.html
+The app implements ActivityPub for publishing models and collections to the Fediverse. Configuration and behavior are documented in the in-app settings and help where federation is enabled.

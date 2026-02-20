@@ -34,6 +34,7 @@ I18n/RailsI18n:
   Exclude:
     - "spec/**/*"
     - "app/lib/cli/**/*"
+    - lib/tasks/health.rake
 Rails/Output:
   Exclude:
     - "app/lib/cli/**/*"
@@ -42,8 +43,61 @@ RSpec/NestedGroups:
 RSpec/MultipleMemoizedHelpers:
   Exclude:
     - "spec/requests/api/**/*"
+    - spec/models/model_spec.rb
 RSpec/NoExpectationExample:
   Exclude:
     - spec/system/documentation_screenshots_spec.rb
 Style/ItAssignment:
   Enabled: false
+
+# Test bootstrap: Rails generator uses abort/exit to guard env and pending migrations.
+# This is test harness code, not application code; Rails/Exit is for the latter.
+Rails/Exit:
+  Exclude:
+    - spec/rails_helper.rb
+
+# One scenario per example often needs several setup steps and assertions; strict
+# 5-line/1-expectation limits force brittle fragmentation with no readability gain.
+RSpec/ExampleLength:
+  Max: 10
+  Exclude:
+    - spec/requests/**/*  # request specs often need more setup
+    - spec/models/merge_history_spec.rb
+RSpec/MultipleExpectations:
+  Max: 6
+  Exclude:
+    - spec/requests/**/*
+
+# Request/system specs describe routes, flows, or multi-class behavior, not a single
+# class; DescribeClass is for unit specs where the first argument is the class under test.
+RSpec/DescribeClass:
+  Exclude:
+    - spec/models/problems/problem_classes_spec.rb
+    - spec/requests/**/*
+    - spec/system/**/*
+
+# In request specs we often don't have a handle to the exact instance being used;
+# allow_any_instance_of is a pragmatic tradeoff for integration-style stubbing.
+RSpec/AnyInstance:
+  Exclude:
+    - spec/requests/problems_spec.rb
+    - spec/models/model_spec.rb
+
+RSpec/IndexedLet:
+  Exclude:
+    - spec/models/model_spec.rb
+
+RSpec/MessageSpies:
+  Exclude:
+    - spec/services/health_checker_spec.rb
+
+RSpec/InstanceVariable:
+  Exclude:
+    - spec/jobs/analysis/geometric_analysis_job_spec.rb
+    - spec/jobs/upgrade/fix_nil_file_size_values_spec.rb
+    - spec/models/model_file_spec.rb
+    - spec/requests/libraries_spec.rb
+
+RSpec/SpecFilePathFormat:
+  Exclude:
+    - spec/components/base_button_spec.rb

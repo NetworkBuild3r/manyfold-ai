@@ -1,16 +1,16 @@
-<h2><%= t(".resend_confirmation_instructions") %></h2>
+<div class="max-w-md mx-auto px-4">
+  <%= PageTitle title: t(".resend_confirmation_instructions") %>
 
-<%= form_for(resource, as: resource_name, url: confirmation_path(resource_name), html: {method: :post}) do |f| %>
-  <%= render "devise/shared/error_messages", resource: resource %>
+  <%= form_for(resource, as: resource_name, url: confirmation_path(resource_name), html: {method: :post}) do |f| %>
+    <%= render "devise/shared/error_messages", resource: resource %>
 
-  <div class="field">
-    <%= f.label :email %><br>
-    <%= f.email_field :email, autofocus: true, autocomplete: "email", value: (resource.pending_reconfirmation? ? resource.unconfirmed_email : resource.email) %>
-  </div>
+    <div class="tabular-form">
+      <%= text_input_row f, :email, autofocus: true, autocomplete: "email", value: (resource.pending_reconfirmation? ? resource.unconfirmed_email : resource.email) %>
+      <div>
+        <%= f.submit translate(".resend_confirmation_instructions"), class: "inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500" %>
+      </div>
+    </div>
+  <% end %>
 
-  <div class="actions">
-    <%= f.submit translate(".resend_confirmation_instructions") %>
-  </div>
-<% end %>
-
-<%= render "devise/shared/links" %>
+  <%= render "devise/shared/links" %>
+</div>

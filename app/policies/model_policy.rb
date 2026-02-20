@@ -16,6 +16,10 @@ class ModelPolicy < ApplicationPolicy
     )
   end
 
+  def unmerge?
+    merge?
+  end
+
   def upload?
     edit? && UploadPolicy.new(user, record).create?
   end

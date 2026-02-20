@@ -5,6 +5,6 @@
     total_pages:   total number of pages
     per_page:      number of items to fetch per page
     remote:        data-remote -%>
-<li class="page-item">
-  <%= link_to_unless current_page.first?, t("views.pagination.previous"), url, rel: "prev", remote: remote, class: "page-link", "aria-label": translate(".label") %>
-</span>
+<li>
+  <%= link_to_unless current_page.first?, t("views.pagination.previous"), url, rel: "prev", remote: remote, class: "inline-flex items-center justify-center min-w-[2.25rem] px-3 py-2 text-sm font-medium rounded-lg border border-secondary-300 bg-white text-secondary-700 no-underline hover:bg-secondary-50 dark:border-secondary-600 dark:bg-secondary-800 dark:text-secondary-200 hover:dark:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-primary-500", "aria-label": translate(".label") %>
+</li>

@@ -12,14 +12,14 @@
 <%- heatmap = defined?(show_count) ? heatmap : tag_cloud_settings["heatmap"] %>
 <%= render_component_collection(Components::Tag, :tag, tags, filters: filter.to_params.merge(@additional_filters), html_options: tag_html_opts, show_count: heatmap, filter_in_place: @filter_in_place) if tags %>
 <% if defined?(kv_tags) && kv_tags %>
-  <ul class="list-unstyled">
+  <ul class="list-none pl-0 m-0">
     <% tiers.each do |tier| %>
-      <li>
+      <li class="border-b border-secondary-200 dark:border-secondary-600">
         <details id="<%= tier %>" data-controller="tag-section" data-action="toggle->tag-section#saveState">
-          <summary><%= tier %></summary>
+          <summary class="cursor-pointer py-2 list-none"><%= tier %></summary>
           <%= render "tag_list", tags: kv_tags.select { |obj| obj.name.match?("^#{tier}:") }, filter: @filter %>
           <%- if tierunset && tierunset[tier] > 0 %>
-            <%= link_to "unset (#{tierunset[tier]})", filter.to_params.merge(missingtag: tier), {class: "badge rounded-pill border border-muted text-danger tag"} %>
+            <%= link_to "unset (#{tierunset[tier]})", filter.to_params.merge(missingtag: tier), class: "inline-flex px-2 py-0.5 rounded-full text-xs border border-secondary-300 dark:border-secondary-500 text-danger hover:bg-secondary-100 dark:hover:bg-secondary-700" %>
           <%- end %>
         </details>
       </li>
@@ -27,5 +27,5 @@
   </ul>
 <% end %>
 <% if defined?(unrelated_tag_count) && unrelated_tag_count && unrelated_tag_count > 0 %>
-  <p class="small"><%= t ".unrelated_tag_count", count: unrelated_tag_count %></p>
+  <p class="text-sm text-secondary-600 dark:text-secondary-400"><%= t ".unrelated_tag_count", count: unrelated_tag_count %></p>
 <% end %>

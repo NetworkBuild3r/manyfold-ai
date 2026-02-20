@@ -1,5 +1,5 @@
-<h3><%= t(".heading") %></h3>
-<p class='lead'>
+<h3 class="text-xl font-semibold text-secondary-900 dark:text-secondary-100 mb-2"><%= t(".heading") %></h3>
+<p class="text-lg text-secondary-600 dark:text-secondary-400">
   <%= t(".description") %>
 </p>
 
@@ -15,7 +15,7 @@
         unit: t(".expiry.hours"),
         help: t(".expiry.help") %>
   <hr>
-  <h4><%= t ".derivatives.heading" %></h4>
+  <h4 class="text-lg font-medium text-secondary-900 dark:text-secondary-100 mt-4 mb-2"><%= t ".derivatives.heading" %></h4>
   <p><%= t ".derivatives.description" %></p>
   <%= checkbox_input_row form, "downloads[image_derivatives]",
         label: t(".derivatives.images.label"),

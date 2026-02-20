@@ -1,4 +1,4 @@
-<%= form_with model: @model, class: "container-md tabular-form" do |form| %>
+<%= form_with model: @model, class: "max-w-2xl mx-auto tabular-form" do |form| %>
   <%= text_input_row form, :name %>
 
   <%= collection_select_input_row form, :preview_file, @model.valid_preview_files, :id, :name, help: t(".preview_file.help") %>
@@ -43,6 +43,6 @@
   <%= render "caber_relations_form", form: form %>
 
   <div>
-    <%= form.submit translate("general.save"), class: "btn btn-primary" %>
+    <%= form.submit translate("general.save"), class: "inline-flex items-center px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500" %>
   </div>
 <% end %>

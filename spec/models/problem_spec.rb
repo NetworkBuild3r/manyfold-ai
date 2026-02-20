@@ -1,6 +1,8 @@
 require "rails_helper"
 
 RSpec.describe Problem do
+  include Rails.application.routes.url_helpers
+
   describe "querying visible scope" do
     let(:settings) do
       {
@@ -98,6 +100,44 @@ RSpec.describe Problem do
       expect {
         described_class.create_or_clear model, :no_license, model.license.blank?
       }.not_to change(described_class, :count)
+    end
+  end
+
+  describe ".resolve_batch" do
+    it "resolves multiple problems and returns removed_ids" do
+      m1 = create(:model)
+      m2 = create(:model)
+      p1 = create(:problem_on_model, category: :empty, problematic: m1)
+      p2 = create(:problem_on_model, category: :empty, problematic: m2)
+      ids = [p1.id, p2.id]
+
+      result = described_class.resolve_batch([p1, p2])
+
+      expect(result[:removed_ids]).to match_array(ids)
+      expect(result[:redirect]).to be_nil
+      expect(described_class.unscoped.where(id: ids)).not_to exist
+      expect(Model.where(id: [m1.id, m2.id])).not_to exist
+    end
+
+    it "returns redirect for single problem when resolution redirects" do
+      model = create(:model, license: nil)
+      problem = create(:problem_on_model, category: :no_license, problematic: model)
+
+      result = described_class.resolve_batch([problem])
+
+      expect(result[:redirect]).to eq(edit_model_path(model))
+      expect(result[:removed_ids]).to be_empty
+    end
+
+    it "ignores problems when override_action: :ignore" do
+      model = create(:model)
+      problem = create(:problem_on_model, category: :empty, problematic: model)
+
+      result = described_class.resolve_batch([problem], override_action: :ignore)
+
+      expect(result[:ignored_ids]).to eq([problem.id])
+      expect(result[:removed_ids]).to be_empty
+      expect(problem.reload.ignored).to be true
     end
   end
 end

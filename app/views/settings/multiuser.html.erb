@@ -1,24 +1,26 @@
-<h3><%= t(".heading") %></h3>
-<p class='lead'>
+<h3 class="text-xl font-semibold text-secondary-900 dark:text-secondary-100 mb-2"><%= t(".heading") %></h3>
+<p class="text-lg text-secondary-600 dark:text-secondary-400">
   <%= SiteSettings.multiuser_enabled? ? t(".multiuser_mode") : t(".single_user_mode") %>
 </p>
-<table class='table table-striped'>
-  <tr>
-    <td><%= t(".multiuser") %></td>
-    <td><%= SiteSettings.multiuser_enabled? ? "✅" : "❌" %></td>
+<table class="w-full border-collapse border border-secondary-200 dark:border-secondary-600">
+  <tbody>
+  <tr class="border-b border-secondary-200 dark:border-secondary-600 even:bg-secondary-50 dark:even:bg-secondary-800/30">
+    <td class="px-4 py-2 font-medium"><%= t(".multiuser") %></td>
+    <td class="px-4 py-2"><%= SiteSettings.multiuser_enabled? ? "✅" : "❌" %></td>
   </tr>
-  <tr>
-    <td><%= t(".federation") %></td>
-    <td><%= SiteSettings.federation_enabled? ? "✅" : "❌" %></td>
+  <tr class="border-b border-secondary-200 dark:border-secondary-600 even:bg-secondary-50 dark:even:bg-secondary-800/30">
+    <td class="px-4 py-2 font-medium"><%= t(".federation") %></td>
+    <td class="px-4 py-2"><%= SiteSettings.federation_enabled? ? "✅" : "❌" %></td>
   </tr>
-  <tr>
-    <td><%= t(".email") %></td>
-    <td><%= SiteSettings.email_configured? ? "✅" : "❌" %></td>
+  <tr class="border-b border-secondary-200 dark:border-secondary-600 even:bg-secondary-50 dark:even:bg-secondary-800/30">
+    <td class="px-4 py-2 font-medium"><%= t(".email") %></td>
+    <td class="px-4 py-2"><%= SiteSettings.email_configured? ? "✅" : "❌" %></td>
   </tr>
-  <tr>
-    <td><%= t(".oidc") %></td>
-    <td><%= SiteSettings.oidc_enabled? ? "✅" : "❌" %></td>
+  <tr class="border-b border-secondary-200 dark:border-secondary-600 even:bg-secondary-50 dark:even:bg-secondary-800/30">
+    <td class="px-4 py-2 font-medium"><%= t(".oidc") %></td>
+    <td class="px-4 py-2"><%= SiteSettings.oidc_enabled? ? "✅" : "❌" %></td>
   </tr>
+  </tbody>
 </table>
 <p>
   <%= t(".details_html") %>
@@ -26,7 +28,7 @@
 <hr>
 
 <%= form_with url: settings_path, method: :patch, class: "tabular-form" do |form| %>
-  <h3><%= t(".registration") %></h3>
+  <h3 class="text-xl font-semibold text-secondary-900 dark:text-secondary-100 mt-4 mb-2"><%= t(".registration") %></h3>
   <%= checkbox_input_row form, "multiuser[registration_open]",
         label: t(".registration_open.label"),
         checked: SiteSettings.registration_enabled,
@@ -48,7 +50,7 @@
         help: t(".default_signup_role.help") %>
 
   <hr>
-  <h3><%= t(".permissions") %></h3>
+  <h3 class="text-xl font-semibold text-secondary-900 dark:text-secondary-100 mt-4 mb-2"><%= t(".permissions") %></h3>
 
   <%= select_input_row form, "multiuser[default_viewer_role]", [
         [translate(".default_viewer_role.options.private"), "private"],
@@ -60,7 +62,7 @@
         help: t(".default_viewer_role.help") %>
 
   <hr>
-  <h3><%= t(".user_quotas") %></h3>
+  <h3 class="text-xl font-semibold text-secondary-900 dark:text-secondary-100 mt-4 mb-2"><%= t(".user_quotas") %></h3>
 
   <%= checkbox_input_row form, "multiuser[enable_user_quota]",
         label: t(".user_quotas_enable_quota"),

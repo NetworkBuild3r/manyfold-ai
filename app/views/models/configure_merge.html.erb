@@ -2,48 +2,43 @@
       Model.model_name.human(count: 100) => models_path
     } %>
 
-<p class="lead">
+<p class="text-lg text-secondary-600 dark:text-secondary-400">
   <%= t(".description") %>
 </p>
 
-<div class="container">
+<div class="max-w-2xl mx-auto">
   <%= form_with url: merge_models_path do |form| %>
     <% @models.each do |it| %>
-      <div class="row p-2 radio-option rounded">
+      <div class="flex items-start gap-3 p-3 mb-2 rounded-lg border border-secondary-200 dark:border-secondary-600 has-[:checked]:border-primary-500 has-[:checked]:ring-2 has-[:checked]:ring-primary-500/20">
         <%= form.hidden_field "models[]", value: it.public_id %>
-        <%= form.radio_button :target, it.public_id, id: it.public_id %>
-        <label for="<%= it.public_id %>">
+        <%= form.radio_button :target, it.public_id, id: it.public_id, class: "mt-2 border-secondary-300 text-primary-600 focus:ring-primary-500" %>
+        <label for="<%= it.public_id %>" class="flex-1 cursor-pointer">
           <%= ModelSummary(model: it) %>
         </label>
       </div>
     <% end %>
-    <div class="row p-2 radio-option rounded">
-      <%= form.radio_button :target, "==new==", id: "==new==" %>
-      <label for="==new==">
-        <div class="card">
-          <div class="card-body">
-            <h5><%= t(".new_model.title") %></h5>
-            <p><%= t(".new_model.description") %></p>
-          </div>
+    <div class="flex items-start gap-3 p-3 mb-2 rounded-lg border border-secondary-200 dark:border-secondary-600 has-[:checked]:border-primary-500 has-[:checked]:ring-2 has-[:checked]:ring-primary-500/20">
+      <%= form.radio_button :target, "==new==", id: "==new==", class: "mt-2 border-secondary-300 text-primary-600 focus:ring-primary-500" %>
+      <label for="==new==" class="flex-1 cursor-pointer">
+        <div class="rounded-xl border border-secondary-200 dark:border-secondary-600 bg-surface dark:bg-surface-dark p-4">
+          <h5 class="text-lg font-medium mb-1"><%= t(".new_model.title") %></h5>
+          <p class="text-secondary-600 dark:text-secondary-400"><%= t(".new_model.description") %></p>
         </div>
       </label>
     </div>
     <% if @common_root %>
-      <div class="row p-2 radio-option rounded">
-        <%= form.radio_button :target, "==common_root==", id: "==common_root==" %>
-        <label for="==common_root==">
-        <div class="card">
-          <div class="card-body">
-            <h5><%= t(".common_root.title") %></h5>
-            <p><%= t(".common_root.description") %>: <code><%= @common_root %></code></p>
+      <div class="flex items-start gap-3 p-3 mb-2 rounded-lg border border-secondary-200 dark:border-secondary-600 has-[:checked]:border-primary-500 has-[:checked]:ring-2 has-[:checked]:ring-primary-500/20">
+        <%= form.radio_button :target, "==common_root==", id: "==common_root==", class: "mt-2 border-secondary-300 text-primary-600 focus:ring-primary-500" %>
+        <label for="==common_root==" class="flex-1 cursor-pointer">
+          <div class="rounded-xl border border-secondary-200 dark:border-secondary-600 bg-surface dark:bg-surface-dark p-4">
+            <h5 class="text-lg font-medium mb-1"><%= t(".common_root.title") %></h5>
+            <p class="text-secondary-600 dark:text-secondary-400"><%= t(".common_root.description") %>: <code class="px-1.5 py-0.5 rounded bg-secondary-100 dark:bg-secondary-700 text-sm"><%= @common_root %></code></p>
           </div>
-        </div>
-
         </label>
       </div>
     <% end %>
-    <div class="mt-3">
-      <%= form.submit %>
+    <div class="mt-4">
+      <%= form.submit class: "inline-flex items-center px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500" %>
     </div>
   <% end %>
 </div>

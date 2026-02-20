@@ -1,0 +1,142 @@
+# Main CI pipeline: lint first (fast feedback), then test. Runs inside a container.
+# Trigger manually via Actions → CI → Run workflow for agent or local verification.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  CI_IMAGE: manyfold-ci
+
+jobs:
+  lint:
+    if: github.triggering_actor != 'allcontributors[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Lint workflow files
+        uses: eifinger/actionlint-action@v1
+        with:
+          version: "1.7.10"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build CI image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.ci
+          load: true
+          tags: ${{ env.CI_IMAGE }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          push: false
+
+      - name: Run lint in container
+        env:
+          RAILS_ENV: test
+          DATABASE_URL: "nulldb://user:pass@localhost/db"
+        run: |
+          docker run --rm \
+            -e RAILS_ENV \
+            -e DATABASE_URL \
+            -v "${{ github.workspace }}:/workspace" \
+            -w /workspace \
+            ${{ env.CI_IMAGE }}:latest \
+            bash -c "
+              corepack enable
+              bundle config set --local path vendor/bundle
+              bundle install
+              yarn install
+              yarn build:css:tailwind
+              bundle exec rake rubocop
+              bundle exec erb_lint --lint-all
+              yarn run lint:ts
+              yarn typecheck
+              bundle exec i18n-tasks health -l en
+            "
+
+  test:
+    if: github.triggering_actor != 'allcontributors[bot]'
+    needs: lint
+    runs-on: ubuntu-latest
+    env:
+      RAILS_ENV: test
+      DATABASE_URL: postgresql://manyfold:manyfold@localhost:5432/manyfold
+      REDIS_URL: redis://localhost:6379/0
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build CI image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.ci
+          load: true
+          tags: ${{ env.CI_IMAGE }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          push: false
+
+      - name: Run tests in container
+        run: |
+          docker run --rm --network host \
+            -v "${{ github.workspace }}:/workspace" \
+            -w /workspace \
+            -e RAILS_ENV=test \
+            -e DATABASE_URL="${{ env.DATABASE_URL }}" \
+            -e REDIS_URL="${{ env.REDIS_URL }}" \
+            ${{ env.CI_IMAGE }}:latest \
+            bash -c "
+              corepack enable
+              bundle config set --local path vendor/bundle
+              bundle install
+              yarn install
+              bundle exec rails db:prepare:with_data
+              bundle exec rails assets:precompile
+              bundle exec rspec --fail-fast
+            "
+
+      - name: Upload coverage
+        if: success()
+        env:
+          CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }}
+        run: |
+          if [ -n "$CODACY_PROJECT_TOKEN" ]; then
+            bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r coverage/coverage.xml
+          fi
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: manyfold
+          POSTGRES_PASSWORD: manyfold
+          POSTGRES_DB: manyfold
+        options: >-
+          --health-cmd "pg_isready -d postgresql://$POSTGRES_USER:$POSTGRES_PASSWORD@localhost:5432/$POSTGRES_DB"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379

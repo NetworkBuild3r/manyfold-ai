@@ -1,11 +1,11 @@
-<div class="card">
-  <h2 class="card-header">
+<div class="rounded-xl border border-secondary-200 dark:border-secondary-600 bg-white dark:bg-secondary-800 shadow-sm overflow-hidden">
+  <h2 class="px-4 py-3 bg-secondary-600 text-white m-0 font-medium">
     ⁂
     <%= t ".title" %>
   </h2>
 
-  <div class="card-body">
-    <div class="mb-3">
+  <div class="p-4">
+    <div class="mb-4">
       <p>
         <%= t ".content_html" %>
       </p>
@@ -13,12 +13,12 @@
     </div>
 
     <% if SiteSettings.autocreate_creator_for_new_users %>
-      <div class="mb-3">
+      <div class="mb-4">
         <p><%= t ".creator_handle_html", handle: current_user.creators.local.first.federails_actor.at_address %></p>
-        <div class="alert alert-info">
-          <div class="row">
-            <div class="col col-auto"><%= t(".creator_handle") %></div>
-            <div class="col">
+        <div class="px-4 py-3 rounded-lg bg-info/10 text-info dark:bg-info/20">
+          <div class="flex flex-wrap items-center gap-2">
+            <div class="shrink-0"><%= t(".creator_handle") %></div>
+            <div class="min-w-0">
               <%= CopyableText text: current_user.creators.local.first.federails_actor.at_address, label: t("general.copy_fediverse_handle") %>
             </div>
           </div>
@@ -26,12 +26,12 @@
       </div>
     <% end %>
 
-    <div class="mb-3">
+    <div class="mb-4">
       <p><%= t ".handle_html", handle: current_user.federails_actor.at_address %></p>
-      <div class="alert alert-info">
-        <div class="row">
-          <div class="col col-auto"><%= t(".account_handle") %></div>
-          <div class="col">
+      <div class="px-4 py-3 rounded-lg bg-info/10 text-info dark:bg-info/20">
+        <div class="flex flex-wrap items-center gap-2">
+          <div class="shrink-0"><%= t(".account_handle") %></div>
+          <div class="min-w-0">
             <%= CopyableText text: current_user.federails_actor.at_address, label: t("general.copy_fediverse_handle") %>
           </div>
         </div>

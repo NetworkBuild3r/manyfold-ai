@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Components::SortMenu < Components::Base
   register_value_helper :session
 
@@ -6,13 +8,18 @@ class Components::SortMenu < Components::Base
   end
 
   def view_template
-    div class: "btn-group" do
-      button type: "button", data: {bs_toggle: "dropdown"}, aria: {expanded: "false"}, class: "btn btn-sm dropdown-toggle" do
+    div(class: "relative", data: {controller: "dropdown"}) do
+      button type: "button",
+        data: {action: "click->dropdown#toggle"},
+        aria: {expanded: "false", haspopup: "menu"},
+        class: "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 bg-white text-secondary-900 border border-secondary-300 hover:bg-secondary-50 dark:bg-secondary-700 dark:text-secondary-100 dark:border-secondary-500 dark:hover:bg-secondary-600" do
         Icon(icon: "sort-down")
         whitespace
         span { t "components.sort_menu.sort-by" }
       end
-      ul class: "dropdown-menu" do
+      ul class: Components::DropdownMenu.panel_class(align: :left, direction: :down),
+        data: {dropdown_target: "menu"},
+        role: "menu" do
         item "sort-alpha-down", "name", "asc" # i18n-tasks-use t('components.sort_menu.name')
         item "sort-numeric-down-alt", "recent", "desc" # i18n-tasks-use t('components.sort_menu.recent')
         item "sort-numeric-down-alt", "updated", "desc" # i18n-tasks-use t('components.sort_menu.updated')

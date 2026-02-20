@@ -56,11 +56,13 @@ module ModelsController::Merge
   end
 
   def get_merging_models
-    model_ids = @merge_params[:models].without(@merge_params[:target])
-    @models = policy_scope(Model, policy_scope_class: ApplicationPolicy::UpdateScope).local.where(public_id: model_ids)
+    model_ids = @merge_params[:models].without(@merge_params[:target]).compact.uniq
+    @models = policy_scope(Model, policy_scope_class: ApplicationPolicy::UpdateScope).where(public_id: model_ids)
     if @models.count != model_ids.count
       skip_authorization
-      head :forbidden
+      skip_policy_scope
+      redirect_to models_path, alert: t("models.configure_merge.forbidden")
+      return false
     end
   end
 end

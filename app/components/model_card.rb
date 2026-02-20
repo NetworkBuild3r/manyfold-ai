@@ -18,21 +18,23 @@ class Components::ModelCard < Components::Base
   end
 
   def view_template
-    div class: "col mb-3" do
-      div class: "card preview-card" do
-        div(class: "card-header position-absolute w-100 top-0 z-3 bg-body-secondary text-secondary-emphasis opacity-75") { server_indicator @model } if @model.remote?
-        PreviewFrame(object: @model)
-        div(class: "card-body") { info_row }
-        actions
-      end
+    div(class: "model-card relative flex flex-col rounded-xl overflow-hidden bg-surface dark:bg-surface-dark border border-secondary-200 dark:border-secondary-600 shadow-sm hover:shadow-md transition-shadow") do
+      div(class: "absolute top-0 left-0 right-0 z-10 px-2 py-1 bg-secondary-200/90 dark:bg-secondary-700/90 text-sm") { server_indicator @model } if @model.remote?
+      ModelCardPreview(model: @model, editable: @editable, actor: @actor)
+      div(class: "p-3 flex flex-col gap-1") { info_row }
+      ModelCardActions(model: @model, editable: @editable, actor: @actor)
     end
   end
 
   private
 
   def title
-    div class: "card-title" do
-      @editable ? EditableSpan(fieldname: "model[name]", path: model_path(@model), text: @model.name) : span { @model.name }
+    div(class: "font-medium text-secondary-900 dark:text-secondary-100") do
+      if @editable
+        EditableSpan(fieldname: "model[name]", path: model_path(@model), text: @model.name)
+      else
+        link_to @model.name, @model, class: "text-inherit no-underline hover:underline", data: {turbo_frame: "_top"}, "aria-label": translate("components.model_card.open_button.label", name: @model.name)
+      end
       if @model.sensitive
         whitespace
         Icon(icon: "explicit", label: Model.human_attribute_name(:sensitive))
@@ -42,20 +44,8 @@ class Components::ModelCard < Components::Base
     end
   end
 
-  def open_button
-    if @actor && !@actor.local
-      link_to @actor.profile_url, {class: "btn btn-primary btn-sm", "aria-label": translate("components.model_card.open_button.label", name: @actor.name)} do
-        span { "⁂" }
-        whitespace
-        span { t("components.model_card.open_button.text") }
-      end
-    else
-      link_to t("components.model_card.open_button.text"), @model, {class: "btn btn-primary btn-sm", "aria-label": translate("components.model_card.open_button.label", name: @model.name)}
-    end
-  end
-
   def credits
-    ul class: "list-unstyled" do
+    ul(class: "list-none flex flex-wrap gap-x-2 text-xs text-secondary-500 dark:text-secondary-400 m-0 p-0") do
       if @actor && !@actor.local
         if (creator = @actor.extensions["attributedTo"])
           li { creator target: creator["url"], name: creator["name"] }
@@ -73,52 +63,31 @@ class Components::ModelCard < Components::Base
   def creator(target:, name:)
     Icon icon: "person", label: Creator.model_name.human
     whitespace
-    link_to name, target, "aria-label": [Creator.model_name.human, name].join(": ")
+    link_to name, target, "aria-label": [Creator.model_name.human, name].join(": "), data: {turbo_frame: "_top"}
   end
 
   def collection(target:, name:)
     Icon icon: "collection", label: Collection.model_name.human
     whitespace
-    link_to name, target, "aria-label": [Collection.model_name.human, name].join(": ")
+    link_to name, target, "aria-label": [Collection.model_name.human, name].join(": "), data: {turbo_frame: "_top"}
   end
 
   def caption
-    if (summary = @model.try(:caption) || @actor.extensions&.dig("summary"))
-      span class: "card-subtitle text-muted" do
+    if (summary = @model.try(:caption) || @actor&.extensions&.dig("summary"))
+      span(class: "text-sm text-secondary-500 dark:text-secondary-400") do
         sanitize summary.split("</p>", 2).first
       end
     end
   end
 
   def info_row
-    div class: "row" do
-      div class: "col" do
+    div(class: "flex flex-wrap items-start gap-x-2 gap-y-1") do
+      div(class: "min-w-0 flex-1") do
         title
         caption
       end
-      div class: "col-auto" do
-        small do
-          credits
-        end
-      end
-    end
-  end
-
-  def actions
-    div class: "card-footer" do
-      div class: "row" do
-        div class: "col" do
-          open_button
-          whitespace
-          StatusBadges model: @model
-        end
-        div class: "col col-auto" do
-          BurgerMenu(small: true) do
-            DropdownItem(icon: "pencil", label: t("components.model_card.edit_button.text"), path: edit_model_path(@model), aria_label: translate("components.model_card.edit_button.label", name: @model.name)) if policy(@model).edit?
-            DropdownItem(icon: "trash", label: t("components.model_card.delete_button.text"), path: model_path(@model), method: :delete, aria_label: translate("components.model_card.delete_button.label", name: @model.name), confirm: translate("models.destroy.confirm")) if policy(@model).destroy?
-            DropdownItem(icon: "flag", label: t("general.report", type: ""), path: new_model_report_path(@model)) if SiteSettings.multiuser_enabled?
-          end
-        end
+      div(class: "flex-shrink-0") do
+        small { credits }
       end
     end
   end

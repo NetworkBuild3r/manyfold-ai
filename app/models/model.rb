@@ -13,6 +13,9 @@ class Model < ApplicationRecord
 
   broadcasts_refreshes
 
+  # Transient flag to suppress expensive callback cascades (e.g. during bulk deletes).
+  attr_accessor :skip_problem_check
+
   acts_as_federails_actor(
     username_field: :public_id,
     name_field: :name,
@@ -37,6 +40,7 @@ class Model < ApplicationRecord
   belongs_to :collection, optional: true
   belongs_to :preview_file, class_name: "ModelFile", optional: true
   has_many :model_files, dependent: :destroy
+  has_many :merge_histories, foreign_key: :target_model_id, dependent: :destroy, inverse_of: :target_model
   acts_as_taggable_on :tags
 
   accepts_nested_attributes_for :creator
@@ -52,8 +56,7 @@ class Model < ApplicationRecord
   before_update :move_files, if: :need_to_move_files?
   after_update_commit :post_update_activity
   after_update :pregenerate_downloads, if: :was_changed?
-  after_save :write_datapackage_later, if: :was_changed?
-  after_commit :check_for_problems_later, on: :update
+  after_commit :check_for_problems_later, on: :update, unless: -> { skip_problem_check || Current.skip_problem_checks || Current.scan_batch_id.present? }
 
   validates :name, presence: true, on: [:create, :update, :single_upload]
   validates :path, presence: true, uniqueness: {scope: :library}, on: [:create, :update]
@@ -105,51 +108,161 @@ class Model < ApplicationRecord
   end
 
   def adopt_file(file, path_prefix: nil)
-    # Work out the new filename
     new_filename = path_prefix ? File.join(path_prefix, file.filename) : file.filename
-    # If there's an identical file already there...
     existing_file = model_files.find_by(filename: new_filename)
-    if file.digest && file.digest == existing_file&.digest
-      file.problems.destroy_all # Remove associated problems for this file manually
-      file.delete # Don't run callbacks, just remove the database record
-      return
-    elsif existing_file
-      # Otherwise, make sure the name is distinct by adding the digest to the end if there's a clash
-      new_filename = "#{File.basename(new_filename, ".*")}_#{file.digest}#{File.extname(new_filename)}"
+
+    if existing_file
+      if file.digest.present? && file.digest == existing_file.digest
+        # Identical content at same path -- deduplicate (don't delete; let source destroy handle it)
+        return {status: :deduplicated, existing_file_id: existing_file.id}
+      else
+        # Name collision, different content -- disambiguate
+        suffix = file.digest.presence || SecureRandom.hex(6)
+        new_filename = "#{File.basename(new_filename, ".*")}_#{suffix}#{File.extname(new_filename)}"
+      end
     end
-    # Adopt the file
-    file.update(
-      filename: new_filename,
-      model: self
-    )
+
+    file.update!(filename: new_filename, model: self)
     file.reattach!
+    {status: :adopted}
   end
 
   def merge!(*models)
-    # If we've got one argument and it's enumerable, use it directly
     models = models[0] if models.length == 1 && models[0].is_a?(Enumerable)
-    # Go through the list
+
     models.each do |other|
-      # Work out path to the other target from here
-      relative_path = contains?(other) ? Pathname.new(other.path).relative_path_from(Pathname.new(path)) : nil
-      # Remove datapackage
-      other.datapackage&.destroy
-      # Move files
-      other.model_files.each { |it| adopt_file(it, path_prefix: relative_path) }
+      ActiveRecord::Base.transaction do
+        path_prefix = compute_merge_prefix(other)
+
+        moved_files = []
+        other.model_files.to_a.each do |file|
+          source_filename = file.filename
+          result = adopt_file(file, path_prefix: path_prefix)
+
+          moved_files << {
+            id: file.id,
+            source_filename: source_filename,
+            merged_filename: (result[:status] == :adopted) ? file.filename : nil,
+            deduplicated: result[:status] == :deduplicated,
+            existing_file_id: result[:existing_file_id]
+          }
+        end
+
+        MergeHistory.create!(
+          target_model: self,
+          source_library_id: other.library_id,
+          source_path: other.path,
+          source_name: other.name,
+          path_prefix: path_prefix,
+          source_metadata: {
+            creator_id: other.creator_id,
+            collection_id: other.collection_id,
+            license: other.license,
+            caption: other.caption,
+            notes: other.notes,
+            sensitive: other.sensitive,
+            tag_list: other.tag_list,
+            links: other.links.map(&:url),
+            preview_filename: other.preview_file&.filename
+          },
+          moved_files: moved_files
+        )
+
+        # Merge metadata (target wins for single-value fields)
+        self.creator ||= other.creator
+        self.collection ||= other.collection
+        self.license ||= other.license
+        self.caption ||= other.caption
+        self.notes ||= other.notes
+        self.sensitive ||= other.sensitive
+        tag_list.add(*other.tag_list)
+        self.links_attributes = other.links.map { |it| {url: it.url} }
+        save!
+
+        other.reload
+        other.destroy!
+      end
       check_for_problems_later
-      # Merge metadata
-      self.creator ||= other.creator
-      self.collection ||= other.collection
-      self.license ||= other.license
-      self.caption ||= other.caption
-      self.notes ||= other.notes
-      self.sensitive ||= other.sensitive
-      tag_list.add(*other.tag_list)
-      self.links_attributes = other.links.map { |it| {url: it.url} }
-      save!
-      # Destroy the other model
-      other.reload
-      other.destroy
+    end
+  end
+
+  UNMERGE_WINDOW = 30.days
+
+  def unmerge!(merge_history)
+    history = merge_history.is_a?(MergeHistory) ? merge_history : merge_histories.find(merge_history)
+    raise ArgumentError, "merge history does not belong to this model" if history.target_model_id != id
+    raise ArgumentError, "merge already undone" if history.undone_at.present?
+    raise ArgumentError, "merge is too old to undo" if history.created_at < UNMERGE_WINDOW.ago
+    if history.source_library_id.nil?
+      raise ActiveRecord::RecordNotFound,
+        "Cannot unmerge: source library no longer exists (was deleted after merge)"
+    end
+
+    ActiveRecord::Base.transaction do
+      Current.set(skip_problem_checks: true) do
+        library = Library.find(history.source_library_id) # rubocop:disable Pundit/UsePolicyScope -- internal unmerge, not controller
+        source_meta = history.source_metadata || {}
+
+        new_path = history.source_path
+        if library.models.exists?(path: new_path.trim_path_separators)
+          new_path = "#{new_path.trim_path_separators}--unmerged-#{history.id}"
+        end
+
+        # Guard against creator/collection deleted between merge and unmerge
+        creator = Creator.find_by(id: source_meta["creator_id"])
+        collection = Collection.find_by(id: source_meta["collection_id"])
+
+        new_model = library.models.create!(
+          name: history.source_name,
+          path: new_path.trim_path_separators,
+          creator_id: creator&.id,
+          collection_id: collection&.id,
+          license: source_meta["license"],
+          caption: source_meta["caption"],
+          notes: source_meta["notes"],
+          sensitive: source_meta["sensitive"]
+        )
+
+        new_model.tag_list = Array(source_meta["tag_list"])
+        new_model.links_attributes = Array(source_meta["links"]).map { |url| {url: url} }
+        new_model.save!
+
+        Array(history.moved_files).each do |entry|
+          file_id = entry["id"] || entry[:id]
+          source_filename = entry["source_filename"] || entry[:source_filename]
+          was_deduplicated = entry["deduplicated"] || entry[:deduplicated]
+
+          if was_deduplicated
+            existing_id = entry["existing_file_id"] || entry[:existing_file_id]
+            existing_file = ModelFile.find_by(id: existing_id)
+            next unless existing_file && source_filename.present?
+
+            new_file = new_model.model_files.create!(
+              filename: source_filename,
+              digest: existing_file.digest,
+              size: existing_file.size,
+              presupported: existing_file.presupported,
+              y_up: existing_file.y_up,
+              previewable: existing_file.previewable
+            )
+            copy_file_to_model_file(existing_file, new_file)
+          else
+            file = ModelFile.find_by(id: file_id)
+            next unless file && source_filename.present?
+
+            file.filename = source_filename
+            new_model.adopt_file(file)
+          end
+        end
+
+        if (preview_filename = history.source_preview_filename)
+          preview = new_model.model_files.find_by(filename: preview_filename)
+          new_model.update!(preview_file: preview) if preview
+        end
+
+        history.update!(undone_at: Time.current)
+        new_model
+      end
     end
   end
 
@@ -162,17 +275,21 @@ class Model < ApplicationRecord
   end
 
   def delete_from_disk_and_destroy
-    # Remove all presupported_version relationships first, they get in the way
-    # This will go away later when we do proper file relationships rather than linking the tables directly
-    model_files.update_all(presupported_version_id: nil) # rubocop:disable Rails/SkipsModelValidations
-    # Trigger deletion for each file separately, to make sure cleanup happens
-    model_files.each { |f| f.delete_from_disk_and_destroy }
-    # Remove tags first - sometimes this causes problems if we don't do it beforehand
-    update!(tags: [])
-    # Delete directory corresponding to model
-    library.storage.delete_prefixed(path)
-    # Remove from DB
-    destroy
+    self.skip_problem_check = true
+
+    Current.set(skip_problem_checks: true) do
+      # Remove all presupported_version relationships first, they get in the way
+      # This will go away later when we do proper file relationships rather than linking the tables directly
+      model_files.update_all(presupported_version_id: nil) # rubocop:disable Rails/SkipsModelValidations
+      # Trigger deletion for each file separately, to make sure cleanup happens
+      model_files.each { |f| f.delete_from_disk_and_destroy }
+      # Remove tags first - sometimes this causes problems if we don't do it beforehand
+      update!(tags: [])
+      # Delete directory corresponding to model
+      library.storage.delete_prefixed(path)
+      # Remove from DB
+      destroy
+    end
   end
 
   def contained_models
@@ -232,17 +349,21 @@ class Model < ApplicationRecord
     new_model.update!(
       caber_relations_attributes: other.caber_relations.all.map { |it| {permission: it.permission, subject: it.subject} }
     )
+    # Prevent after_create_commit :set_permissions_from_preset from adding default view permission on commit
+    new_model.instance_variable_set(:@permission_preset, nil)
     new_model
   end
 
   def split!(files: [])
     preview_file_will_move = files.include?(preview_file)
-    new_model = Model.create_from(self, link_preview_file: preview_file_will_move)
-    # Clear preview file if it was moved
-    update!(preview_file: nil) if preview_file_will_move
-    # Move files
-    files.each { |it| new_model.adopt_file(it) }
-    # Done!
+    new_model = nil
+    ActiveRecord::Base.transaction do
+      new_model = Model.create_from(self, link_preview_file: preview_file_will_move)
+      # Clear preview file if it was moved
+      update!(preview_file: nil) if preview_file_will_move
+      # Move files
+      files.each { |it| new_model.adopt_file(it) }
+    end
     new_model
   end
 
@@ -263,15 +384,42 @@ class Model < ApplicationRecord
     ActivityPub::ModelSerializer.new(self).serialize
   end
 
-  def add_new_files_later(include_all_subfolders: false, delay: 0.seconds)
-    Scan::Model::AddNewFilesJob.set(wait: delay).perform_later(id, include_all_subfolders: include_all_subfolders)
+  def add_new_files_later(include_all_subfolders: false, delay: 0.seconds, scan_batch_id: nil)
+    Scan::Model::AddNewFilesJob.set(wait: delay).perform_later(
+      id,
+      include_all_subfolders: include_all_subfolders,
+      scan_batch_id: scan_batch_id
+    )
   end
 
-  def check_later(delay: 0.seconds)
-    Scan::CheckModelJob.set(wait: delay).perform_later(id)
+  # Scan batch ID is only in job arguments and Current (ActiveSupport::CurrentAttributes).
+  # It is not stored on the model; it is used for cache-key idempotency in FinalizeScanBatchJob.
+  SCAN_STALE_THRESHOLD = 10.minutes
+
+  def scan_stale?
+    scan_started_at.present? && scan_started_at < SCAN_STALE_THRESHOLD.ago
+  end
+
+  def check_later(delay: 0.seconds, scan_batch_id: nil)
+    scan_batch_id ||= SecureRandom.uuid
+    if has_attribute?(:scan_started_at)
+      update_column(:scan_started_at, Time.current) # rubocop:disable Rails/SkipsModelValidations
+    end
+    Scan::CheckModelJob.set(wait: delay).perform_later(id, scan_batch_id: scan_batch_id)
   end
 
   def check_for_problems_later(delay: 5.seconds)
+    return if skip_problem_check || Current.skip_problem_checks
+
+    # Debounce: avoid enqueuing multiple identical checks in quick succession.
+    begin
+      key = "manyfold:problems:debounce:model:#{id}"
+      wrote = Rails.cache.write(key, true, expires_in: delay + 30.seconds, unless_exist: true)
+      return unless wrote
+    rescue ArgumentError, NoMethodError
+      # Cache store doesn't support `unless_exist`; fall back to job uniqueness.
+    end
+
     Scan::Model::CheckForProblemsJob.set(wait: delay).perform_later(id)
   end
 
@@ -279,21 +427,8 @@ class Model < ApplicationRecord
     OrganizeModelJob.set(wait: delay).perform_later(id)
   end
 
-  def write_datapackage_later(delay: 1.second)
-    UpdateDatapackageJob.set(wait: delay).perform_later(id)
-  end
-
-  def parse_metadata_later(delay: 0.seconds)
-    Scan::Model::ParseMetadataJob.set(wait: delay).perform_later(id)
-  end
-
-  def datapackage
-    model_files.find_by(filename: "datapackage.json")
-  end
-
-  def datapackage_content
-    JSON.parse(datapackage.attachment.read) unless datapackage.nil?
-  rescue Shrine::FileNotFound
+  def parse_metadata_later(delay: 0.seconds, scan_batch_id: nil)
+    Scan::Model::ParseMetadataJob.set(wait: delay).perform_later(id, scan_batch_id: scan_batch_id)
   end
 
   def pregenerate_downloads(delay: 10.minutes, queue: nil)
@@ -311,6 +446,26 @@ class Model < ApplicationRecord
   end
 
   private
+
+  def compute_merge_prefix(other)
+    if contains?(other)
+      Pathname.new(other.path).relative_path_from(Pathname.new(path)).to_s
+    elsif other.library_id == library_id && Model.common_root(self, other)
+      Pathname.new(other.path).relative_path_from(Pathname.new(path)).to_s
+    else
+      File.basename(other.path)
+    end
+  end
+
+  # Copy physical file from source_file (e.g. target's file) to dest_file (e.g. restored model's new record).
+  def copy_file_to_model_file(source_file, dest_file)
+    dest_path = dest_file.path_within_library
+    dest_storage = dest_file.model.library.storage
+    source_file.attachment.download do |io|
+      dest_storage.upload(io, dest_path)
+    end
+    dest_file.attach_existing_file!
+  end
 
   def normalize_license
     self.license = nil if license.blank?

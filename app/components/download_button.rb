@@ -20,25 +20,22 @@ class Components::DownloadButton < Components::Base
   end
 
   def view_template
-    div class: "btn-group ml-auto mr-auto" do
-      download_link html_class: "btn btn-primary"
+    div(class: "relative inline-flex", data: {controller: "dropdown"}) do
+      download_link html_class: "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-l-lg transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 bg-primary-600 text-white hover:bg-primary-700 no-underline"
       button type: "button",
-        class: "btn btn-primary dropdown-toggle dropdown-toggle-split",
-        data: {
-          bs_toggle: "dropdown"
-        },
+        data: {action: "click->dropdown#toggle"},
+        class: "inline-flex items-center justify-center px-2 py-1.5 text-sm font-medium rounded-r-lg border-l border-primary-500 bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 min-w-[44px] min-h-[44px]",
         aria: {
           expanded: false,
           haspopup: "menu",
           controls: "download-menu"
         } do
-        span(class: "visually-hidden") { t("components.download_button.menu_header") }
+        span(class: "sr-only") { t("components.download_button.menu_header") }
       end
-      ul class: "dropdown-menu",
+      ul class: Components::DropdownMenu.panel_class(align: :right, direction: :down),
         id: "download-menu",
-        aria: {
-          role: "menu"
-        } do
+        data: {dropdown_target: "menu"},
+        role: "menu" do
         DropdownHeader text: t("components.download_button.menu_header")
         if @has_supported_and_unsupported
           li(role: "menuitem") { download_link selection: "supported" }
@@ -52,7 +49,7 @@ class Components::DownloadButton < Components::Base
     end
   end
 
-  def download_link(selection: nil, file_type: nil, html_class: "dropdown-item")
+  def download_link(selection: nil, file_type: nil, html_class: "block w-full px-3 py-2 text-left text-sm text-secondary-700 dark:text-secondary-200 hover:bg-secondary-100 dark:hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-primary-500 no-underline")
     downloader = ArchiveDownloadService.new(model: @model, selection: selection || file_type)
     link_options = {
       class: html_class,
@@ -64,7 +61,7 @@ class Components::DownloadButton < Components::Base
         disabled: true,
         "aria-disabled": "true",
         tabindex: -1,
-        class: html_class + " disabled"
+        class: html_class + " opacity-70 cursor-not-allowed"
       )
     end
     link_to model_path(@model, format: @format, selection: selection || file_type), link_options do

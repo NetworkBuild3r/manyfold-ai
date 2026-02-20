@@ -180,7 +180,7 @@ RSpec.describe "Model Files" do
         it "shows success message if conversion job was queued" do
           post model_model_files_path(model, params: params)
           follow_redirect!
-          expect(response.body).to include "alert-info"
+          expect(response.body).to include "File conversion started"
         end
       end
 
