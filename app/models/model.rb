@@ -349,6 +349,8 @@ class Model < ApplicationRecord
     new_model.update!(
       caber_relations_attributes: other.caber_relations.all.map { |it| {permission: it.permission, subject: it.subject} }
     )
+    # Prevent after_create_commit :set_permissions_from_preset from adding default view permission on commit
+    new_model.instance_variable_set(:@permission_preset, nil)
     new_model
   end
 
