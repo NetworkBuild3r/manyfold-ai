@@ -37,7 +37,15 @@ class Scan::Model::ParseMetadataJob < ApplicationJob
       # Store new metadata
       model.update!(options.compact_blank!)
 
-      Scan::Model::FinalizeScanBatchJob.set(wait: 10.seconds).perform_later(model.id, scan_batch_id: scan_batch_id) if scan_batch_id.present?
+      # Short delay so newly created ModelFile rows from AddNewFiles are committed
+      # before CheckForProblems runs. File parse/analysis continues async on :low.
+      if scan_batch_id.present?
+        Scan::Model::FinalizeScanBatchJob.set(wait: 3.seconds)
+          .perform_later(model.id, scan_batch_id: scan_batch_id)
+      else
+        # Manual single-model scan without a batch still needs problem detection.
+        model.check_for_problems_later(delay: 3.seconds)
+      end
     end
   end
 

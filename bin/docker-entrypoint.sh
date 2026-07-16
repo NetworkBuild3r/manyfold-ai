@@ -65,8 +65,30 @@ fi
 if [ -d /config ]; then
   chown -R "$PUID:$PGID" /config
 fi
+# NEVER recursively chown network library mounts (NFS/SMB/9p/drvfs). On a multi-thousand
+# model NAS tree this can run for hours, freeze workers at PID 1, and look like Docker is hung.
+# Set SKIP_LIBRARY_CHOWN=1 to force-skip, or leave unset to auto-detect network FS types.
 if [ -d /libraries ]; then
-  chown -R "$PUID:$PGID" /libraries 2>/dev/null || true
+  if [ -n "${SKIP_LIBRARY_CHOWN}" ]; then
+    echo "Skipping /libraries chown (SKIP_LIBRARY_CHOWN set)."
+  else
+    lib_fs="$(stat -f -c %T /libraries 2>/dev/null || stat -f /libraries 2>/dev/null || echo unknown)"
+    # Also check mount table for network-ish mounts under /libraries
+    if mount 2>/dev/null | grep -E ' on /libraries' | grep -qiE 'nfs|cifs|smb|9p|fuse|drvfs|sshfs'; then
+      echo "Skipping /libraries chown (network mount detected in mount table)."
+    elif echo "$lib_fs" | grep -qiE 'nfs|cifs|smb|9p|fuse|drvfs|sshfs'; then
+      echo "Skipping /libraries chown (network filesystem type: $lib_fs)."
+    else
+      # Local/disk only: still avoid deep recursion on huge trees by only fixing top-level dirs.
+      # Full recursive chown of large libraries is a known startup stall.
+      echo "Fixing ownership on /libraries top-level entries only (not recursive)..."
+      chown "$PUID:$PGID" /libraries 2>/dev/null || true
+      for entry in /libraries/* /libraries/.[!.]*; do
+        [ -e "$entry" ] || continue
+        chown "$PUID:$PGID" "$entry" 2>/dev/null || true
+      done
+    fi
+  fi
 fi
 
 echo "Cleaning up old cache files..."

@@ -1,189 +1,224 @@
 import { Controller } from '@hotwired/stimulus'
 
 const STORAGE_KEY_PREFIX = 'scroll_models_'
-const RESTORE_MAX_ATTEMPTS = 30
-const RESTORE_RETRY_MS = 100
-const PAGE_THRESHOLD_PX = 120
-const SCROLL_AT_TOP_THRESHOLD_PX = 50
+const FILL_BUFFER_PX = 500
+const PREFETCH_ROOT_MARGIN = '1000px 0px'
+const MAX_FILL_PAGES = 25
+const URL_SYNC_DEBOUNCE_MS = 400
 
-// Syncs URL ?page=N on scroll, saves scroll before navigation, restores scroll on back.
-// Turbo cache is primary; sessionStorage fallback when cache misses.
+/**
+ * Continuous card stream for the model grid.
+ *
+ * - Fetches flat HTML fragments (X-Infinite-Scroll) and appends .model-card nodes
+ * - Fills the viewport on connect (no empty half-page / "page 5 with 12 cards")
+ * - Prefetches ~1000px before the bottom sentinel
+ * - Does NOT nest turbo-frames; no full-width loading row between chunks
+ */
 export default class extends Controller {
+  static targets = ['sentinel']
   static values = {
-    perPage: Number
+    nextUrl: { type: String, default: '' },
+    startPage: { type: Number, default: 1 },
+    perPage: { type: Number, default: 24 }
   }
 
+  declare nextUrlValue: string
+  declare startPageValue: number
   declare perPageValue: number
-  declare hasPerPageValue: boolean
+  declare hasNextUrlValue: boolean
+  declare sentinelTarget: HTMLElement
+  declare hasSentinelTarget: boolean
 
-  private boundOnFrameLoad: (e: Event) => void
+  private loading = false
+  private exhausted = false
+  private observer: IntersectionObserver | null = null
   private boundOnBeforeVisit: (e: Event) => void
   private boundOnScroll: () => void
-  private scrollTicking = false
-  private restoreComplete = false
-  private restoreAttempts = 0
-  private restoreTimer: ReturnType<typeof setTimeout> | null = null
+  private urlSyncTimer: ReturnType<typeof setTimeout> | null = null
+  private pagesLoaded = 1
 
   connect (): void {
-    if (typeof history !== 'undefined') {
-      history.scrollRestoration = 'manual'
-    }
-    this.boundOnFrameLoad = this.onFrameLoad.bind(this)
     this.boundOnBeforeVisit = this.onBeforeVisit.bind(this)
     this.boundOnScroll = this.onScroll.bind(this)
-
-    this.element.addEventListener('turbo:frame-load', this.boundOnFrameLoad)
     document.addEventListener('turbo:before-visit', this.boundOnBeforeVisit)
     window.addEventListener('scroll', this.boundOnScroll, { passive: true })
 
-    requestAnimationFrame(() => {
-      this.maybeRestoreScroll()
-    })
+    if (this.hasSentinelTarget) {
+      this.observer = new IntersectionObserver(
+        (entries) => {
+          if (entries.some((e) => e.isIntersecting)) {
+            void this.loadMore()
+          }
+        },
+        { root: null, rootMargin: PREFETCH_ROOT_MARGIN, threshold: 0 }
+      )
+      this.observer.observe(this.sentinelTarget)
+      this.updateSentinelVisibility()
+    }
+
+    // Fill the screen immediately so browse never looks like thin pagination
+    void this.fillViewport()
   }
 
   disconnect (): void {
-    this.element.removeEventListener('turbo:frame-load', this.boundOnFrameLoad)
     document.removeEventListener('turbo:before-visit', this.boundOnBeforeVisit)
     window.removeEventListener('scroll', this.boundOnScroll)
-    this.cancelPendingRestore()
+    this.observer?.disconnect()
+    this.observer = null
+    if (this.urlSyncTimer != null) clearTimeout(this.urlSyncTimer)
   }
 
-  private onFrameLoad (event: Event): void {
-    const target = (event as CustomEvent).target
-    if (!(target instanceof HTMLElement)) return
-    if (!this.element.contains(target)) return
-    this.syncUrlToViewport()
+  private get hasMore (): boolean {
+    return !this.exhausted && typeof this.nextUrlValue === 'string' && this.nextUrlValue.length > 0
+  }
+
+  private updateSentinelVisibility (): void {
+    if (!this.hasSentinelTarget) return
+    if (this.hasMore) {
+      this.sentinelTarget.hidden = false
+      this.sentinelTarget.removeAttribute('hidden')
+    } else {
+      this.sentinelTarget.hidden = true
+      this.sentinelTarget.setAttribute('hidden', 'hidden')
+    }
+  }
+
+  /** Keep loading until the grid extends past the viewport (or no more pages). */
+  private async fillViewport (): Promise<void> {
+    let guard = 0
+    while (guard < MAX_FILL_PAGES && this.hasMore && !this.viewportSatisfied()) {
+      guard += 1
+      const loaded = await this.loadMore()
+      if (!loaded) break
+    }
+  }
+
+  private viewportSatisfied (): boolean {
+    const bottom = this.element.getBoundingClientRect().bottom
+    return bottom > window.innerHeight + FILL_BUFFER_PX
+  }
+
+  /**
+   * @returns true if a page was appended
+   */
+  private async loadMore (): Promise<boolean> {
+    if (this.loading || !this.hasMore) return false
+    this.loading = true
+    this.element.classList.add('is-loading-more')
+
+    const url = this.nextUrlValue
+    try {
+      const response = await fetch(url, {
+        headers: {
+          Accept: 'text/html',
+          'X-Infinite-Scroll': '1'
+        },
+        credentials: 'same-origin'
+      })
+      if (!response.ok) {
+        console.warn('[infinite-scroll] page load failed', response.status, url)
+        this.exhausted = true
+        this.nextUrlValue = ''
+        this.updateSentinelVisibility()
+        return false
+      }
+
+      const html = await response.text()
+      const doc = new DOMParser().parseFromString(html, 'text/html')
+      const page = doc.querySelector('.model-stream-page')
+      if (page == null) {
+        const cards = doc.querySelectorAll('.model-card')
+        if (cards.length === 0) {
+          this.exhausted = true
+          this.nextUrlValue = ''
+          this.updateSentinelVisibility()
+          return false
+        }
+        this.appendCards(cards)
+        this.pagesLoaded += 1
+        this.exhausted = true
+        this.nextUrlValue = ''
+        this.updateSentinelVisibility()
+        return true
+      }
+
+      const cards = page.querySelectorAll('.model-card')
+      this.appendCards(cards)
+      this.pagesLoaded += 1
+
+      const next = page.getAttribute('data-next-url') ?? ''
+      if (next.length > 0) {
+        this.nextUrlValue = next
+      } else {
+        this.nextUrlValue = ''
+        this.exhausted = true
+      }
+      this.updateSentinelVisibility()
+      return cards.length > 0
+    } catch (e) {
+      console.warn('[infinite-scroll] load error', e)
+      return false
+    } finally {
+      this.loading = false
+      this.element.classList.remove('is-loading-more')
+    }
+  }
+
+  private appendCards (cards: NodeListOf<Element> | Element[]): void {
+    const list = Array.from(cards)
+    const sentinel = this.hasSentinelTarget ? this.sentinelTarget : null
+    for (const card of list) {
+      const node = document.importNode(card, true)
+      if (sentinel != null && sentinel.parentNode === this.element) {
+        this.element.insertBefore(node, sentinel)
+      } else {
+        this.element.appendChild(node)
+      }
+    }
   }
 
   private onScroll (): void {
-    if (this.scrollTicking) return
-    this.scrollTicking = true
-    requestAnimationFrame(() => {
-      this.scrollTicking = false
-      this.syncUrlToViewport()
-    })
+    if (this.urlSyncTimer != null) clearTimeout(this.urlSyncTimer)
+    this.urlSyncTimer = setTimeout(() => {
+      this.urlSyncTimer = null
+      this.syncUrlQuietly()
+    }, URL_SYNC_DEBOUNCE_MS)
   }
 
-  private syncUrlToViewport (): void {
-    const visiblePage = this.detectVisiblePage()
-    if (visiblePage == null) return
-    const url = new URL(window.location.href)
-    const currentPage = parseInt(url.searchParams.get('page') ?? '1', 10)
-    if (currentPage === visiblePage) return
+  private syncUrlQuietly (): void {
+    const cardNodes = this.element.querySelectorAll<HTMLElement>('.model-card')
+    if (cardNodes.length === 0) return
+    const perPage = this.perPageValue > 0 ? this.perPageValue : 24
+    const firstVisible = Array.from(cardNodes)
+      .findIndex((c) => c.getBoundingClientRect().bottom > 80)
+    const index = firstVisible >= 0 ? firstVisible : 0
+    const page = Math.floor(index / perPage) + this.startPageValue
 
-    if (visiblePage <= 1) {
+    const url = new URL(window.location.href)
+    const current = parseInt(url.searchParams.get('page') ?? String(this.startPageValue), 10)
+    if (page === current) return
+    if (page <= 1) {
       url.searchParams.delete('page')
     } else {
-      url.searchParams.set('page', String(visiblePage))
+      url.searchParams.set('page', String(page))
     }
     history.replaceState(history.state, '', url.toString())
   }
 
-  private detectVisiblePage (): number | null {
-    const cards = Array.from(this.element.querySelectorAll<HTMLElement>('.model-card'))
-    if (cards.length === 0) return null
-
-    const firstVisibleIndex = cards.findIndex((card) => card.getBoundingClientRect().bottom > PAGE_THRESHOLD_PX)
-    const cardIndex = firstVisibleIndex >= 0 ? firstVisibleIndex : cards.length - 1
-    const perPage = this.hasPerPageValue && this.perPageValue > 0 ? this.perPageValue : 12
-
-    return Math.floor(cardIndex / perPage) + 1
-  }
-
   private onBeforeVisit (): void {
-    this.syncUrlToViewport()
-    this.saveScroll()
-  }
-
-  private saveScroll (): void {
+    this.syncUrlQuietly()
     try {
       const key = this.storageKey()
       sessionStorage.setItem(key, String(window.scrollY))
-    } catch (e) {
-      console.warn('[infinite-scroll-restore] Could not save scroll:', e)
+    } catch {
+      // ignore
     }
   }
 
   private storageKey (): string {
     const url = new URL(window.location.href)
     url.searchParams.delete('page')
-    const normalizedSearch = url.searchParams.toString()
-    return STORAGE_KEY_PREFIX + url.pathname + (normalizedSearch.length > 0 ? `?${normalizedSearch}` : '')
-  }
-
-  private detectRestorationNeeded (): boolean {
-    const page = new URL(window.location.href).searchParams.get('page')
-    const isDeepPage = page !== null && parseInt(page, 10) > 1
-    const scrollIsAtTop = window.scrollY < SCROLL_AT_TOP_THRESHOLD_PX
-    return isDeepPage && scrollIsAtTop
-  }
-
-  private maybeRestoreScroll (): void {
-    if (this.restoreComplete) return
-
-    const url = new URL(window.location.href)
-    if (!url.searchParams.has('page')) {
-      this.restoreComplete = true
-      return
-    }
-
-    if (!this.detectRestorationNeeded()) {
-      this.restoreComplete = true
-      return
-    }
-
-    this.runFallbackRestore()
-  }
-
-  private runFallbackRestore (): void {
-    try {
-      const key = this.storageKey()
-      const saved = sessionStorage.getItem(key)
-      if (saved === null) {
-        this.restoreComplete = true
-        return
-      }
-      const scrollY = parseInt(saved, 10)
-      if (Number.isNaN(scrollY) || scrollY < 0) {
-        this.restoreComplete = true
-        return
-      }
-
-      const maxScroll = document.documentElement.scrollHeight - window.innerHeight
-      if (scrollY > maxScroll) {
-        if (this.restoreAttempts < RESTORE_MAX_ATTEMPTS) {
-          this.restoreAttempts += 1
-          this.restoreTimer = setTimeout(() => {
-            this.restoreTimer = null
-            this.runFallbackRestore()
-          }, RESTORE_RETRY_MS)
-        } else {
-          this.restoreComplete = true
-        }
-        return
-      }
-
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          window.scrollTo(0, scrollY)
-          try {
-            sessionStorage.removeItem(this.storageKey())
-          } catch {
-            // ignore
-          }
-          this.restoreComplete = true
-        })
-      })
-    } catch (e) {
-      console.warn('[infinite-scroll-restore] Could not restore scroll:', e)
-      this.restoreComplete = true
-    }
-  }
-
-  private cancelPendingRestore (): void {
-    if (this.restoreTimer != null) {
-      clearTimeout(this.restoreTimer)
-      this.restoreTimer = null
-    }
+    const q = url.searchParams.toString()
+    return STORAGE_KEY_PREFIX + url.pathname + (q.length > 0 ? `?${q}` : '')
   }
 }

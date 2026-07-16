@@ -24,7 +24,7 @@
                 [t(".auto_load_max_size.under_1024"), 1024],
                 [t(".auto_load_max_size.always"), 9_999_999]
               ],
-              {selected: renderer_settings["auto_load_max_size"] || 9_999_999},
+              {selected: renderer_settings["auto_load_max_size"] || SiteSettings::UserDefaults::RENDERER[:auto_load_max_size]},
               {class: "block w-full rounded-lg border border-secondary-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-primary-500 dark:border-secondary-600 dark:bg-secondary-800"} %>
       </div>
       <div>

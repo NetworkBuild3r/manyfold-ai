@@ -6,20 +6,21 @@ class Components::ModelCardPreview < Components::Base
   register_output_helper :server_indicator
   register_value_helper :policy
 
-  def initialize(model:, editable:, actor: nil)
+  def initialize(model:, editable:, actor: nil, eager_preview: false)
     @model = model
     @editable = editable
     @actor = actor || model.federails_actor
+    @eager_preview = eager_preview
   end
 
   def view_template
     div(class: "relative w-full aspect-[4/3]") do
       selection_bubble if @editable
       if @actor && !@actor.local
-        PreviewFrame(object: @model)
+        PreviewFrame(object: @model, lite: true, eager: @eager_preview)
       else
         link_to @model, class: "block no-underline", data: {turbo_frame: "_top"}, aria: {label: translate("components.model_card.open_button.label", name: @model.name)} do
-          PreviewFrame(object: @model)
+          PreviewFrame(object: @model, lite: true, eager: @eager_preview)
         end
       end
     end

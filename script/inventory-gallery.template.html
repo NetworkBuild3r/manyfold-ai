@@ -1,0 +1,286 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Manyfold Inventory â€” 3D Prints</title>
+<style>
+  :root {
+    --bg: #0f1419; --card: #1a2332; --border: #2d3a4d; --text: #e7ecf3;
+    --muted: #8b9bb4; --accent: #5b8def; --ok: #3d9a6a; --warn: #c9a227;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, Segoe UI, sans-serif; background: var(--bg); color: var(--text); }
+  header {
+    position: sticky; top: 0; z-index: 20;
+    background: rgba(15,20,25,.95); backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border); padding: 12px 20px;
+  }
+  h1 { margin: 0 0 8px; font-size: 1.25rem; font-weight: 600; }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .toolbar input, .toolbar select, .toolbar button {
+    background: var(--card); color: var(--text); border: 1px solid var(--border);
+    border-radius: 8px; padding: 6px 10px; font-size: 0.875rem;
+  }
+  .toolbar button { cursor: pointer; background: var(--accent); border-color: transparent; font-weight: 500; }
+  .toolbar button.secondary { background: var(--card); border-color: var(--border); }
+  .stats { color: var(--muted); font-size: 0.8rem; margin-top: 8px; }
+  main { padding: 16px 20px 48px; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 14px;
+  }
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    overflow: hidden; display: flex; flex-direction: column;
+  }
+  .card.no-preview { border-color: #5a4030; }
+  .thumb {
+    aspect-ratio: 4/3; background: #0a0e14; display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .thumb .placeholder { color: var(--muted); font-size: 0.75rem; text-align: center; padding: 8px; }
+  .body { padding: 10px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+  .name { font-size: 0.875rem; font-weight: 600; line-height: 1.3; }
+  .meta { font-size: 0.7rem; color: var(--muted); word-break: break-all; }
+  .card select { width: 100%; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 4px 6px; font-size: 0.8rem; }
+  .card .row { display: flex; gap: 6px; align-items: center; }
+  .card .row button { flex: 1; font-size: 0.7rem; padding: 4px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text); cursor: pointer; }
+  .card .row button.active-move { background: var(--ok); border-color: transparent; }
+  .card .row button.active-skip { background: #6b3a3a; border-color: transparent; }
+  .badge { display: inline-block; font-size: 0.65rem; padding: 2px 6px; border-radius: 999px; background: var(--border); color: var(--muted); }
+  .badge.org { background: #1e3a2f; color: #7dcea0; }
+  .badge.unorg { background: #3a2e1e; color: #e0c070; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Manyfold inventory</h1>
+  <div class="toolbar">
+    <input type="search" id="q" placeholder="Search name or pathâ€¦" style="min-width:220px" />
+    <select id="filterBucket"><option value="">All buckets</option></select>
+    <select id="filterCat"><option value="">All categories</option></select>
+    <select id="filterPreview">
+      <option value="">All previews</option>
+      <option value="yes">Has image</option>
+      <option value="no">No image</option>
+    </select>
+    <select id="filterLoc">
+      <option value="unorg">Unorg only</option>
+      <option value="org">Org only</option>
+      <option value="">Both</option>
+    </select>
+    <select id="filterStatus">
+      <option value="">All status</option>
+      <option value="pending">Pending</option>
+      <option value="move">Move</option>
+      <option value="skip">Skip</option>
+    </select>
+    <button type="button" id="btnAcceptSuggested">Accept all suggested</button>
+    <button type="button" class="secondary" id="btnExport">Export decisions.json</button>
+    <button type="button" class="secondary" id="btnExportCsv">Export CSV</button>
+  </div>
+  <div class="stats" id="stats"></div>
+</header>
+<main>
+  <div class="grid" id="grid"></div>
+</main>
+<script id="catalog-data" type="application/json">
+__ITEMS_JSON__
+</script>
+<script>
+const CATEGORIES = __CATEGORIES_JSON__;
+const STORAGE_KEY = 'manyfold-inventory-decisions-v1';
+
+let items = [];
+try {
+  items = JSON.parse(document.getElementById('catalog-data').textContent);
+} catch (e) {
+  document.getElementById('grid').innerHTML = '<p>Failed to parse catalog JSON.</p>';
+  throw e;
+}
+
+// Restore prior decisions from localStorage
+try {
+  const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+  items.forEach(it => {
+    const s = saved[it.id];
+    if (s) {
+      if (s.category) it.category = s.category;
+      if (s.status) it.status = s.status;
+    }
+  });
+} catch (_) {}
+
+function persist() {
+  const map = {};
+  items.forEach(it => { map[it.id] = { category: it.category, status: it.status }; });
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
+}
+
+const buckets = [...new Set(items.map(i => i.bucket))].sort();
+const fb = document.getElementById('filterBucket');
+buckets.forEach(b => {
+  const o = document.createElement('option'); o.value = b; o.textContent = b; fb.appendChild(o);
+});
+const fc = document.getElementById('filterCat');
+CATEGORIES.forEach(c => {
+  const o = document.createElement('option'); o.value = c; o.textContent = c; fc.appendChild(o);
+});
+
+function catOptions(selected) {
+  return CATEGORIES.map(c =>
+    `<option value="${escapeHtml(c)}"${c === selected ? ' selected' : ''}>${escapeHtml(c)}</option>`
+  ).join('');
+}
+
+function escapeHtml(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/""/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function filtered() {
+  const q = document.getElementById('q').value.trim().toLowerCase();
+  const bucket = document.getElementById('filterBucket').value;
+  const cat = document.getElementById('filterCat').value;
+  const prev = document.getElementById('filterPreview').value;
+  const loc = document.getElementById('filterLoc').value;
+  const st = document.getElementById('filterStatus').value;
+  return items.filter(it => {
+    if (bucket && it.bucket !== bucket) return false;
+    if (cat && it.category !== cat) return false;
+    if (prev === 'yes' && !it.hasPreview) return false;
+    if (prev === 'no' && it.hasPreview) return false;
+    if (loc && it.location !== loc) return false;
+    if (st && it.status !== st) return false;
+    if (q) {
+      const hay = (it.name + ' ' + it.sourcePath + ' ' + it.bucket).toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function render() {
+  const list = filtered();
+  const withP = list.filter(i => i.hasPreview).length;
+  document.getElementById('stats').textContent =
+    `Showing ${list.length} / ${items.length} Â· ${withP} with images Â· decisions saved in this browser`;
+
+  const grid = document.getElementById('grid');
+  grid.innerHTML = list.map(it => `
+    <article class="card ${it.hasPreview ? '' : 'no-preview'}" data-id="${escapeHtml(it.id)}">
+      <div class="thumb">
+        ${it.thumb
+          ? `<img src="${escapeHtml(it.thumb)}" alt="" loading="lazy" decoding="async" />`
+          : `<div class="placeholder">No preview<br/><span class="badge">${escapeHtml(it.kind)}</span></div>`}
+      </div>
+      <div class="body">
+        <div class="name" title="${escapeHtml(it.name)}">${escapeHtml(it.name)}</div>
+        <div>
+          <span class="badge ${it.location}">${escapeHtml(it.location)}</span>
+          <span class="badge">${escapeHtml(it.bucket)}</span>
+        </div>
+        <div class="meta" title="${escapeHtml(it.sourcePath)}">${escapeHtml(it.sourcePath)}</div>
+        <label class="meta">Category
+          <select data-action="cat">${catOptions(it.category)}</select>
+        </label>
+        <div class="row">
+          <button type="button" data-action="move" class="${it.status==='move'?'active-move':''}">Move</button>
+          <button type="button" data-action="skip" class="${it.status==='skip'?'active-skip':''}">Skip</button>
+          <button type="button" data-action="copy">Copy path</button>
+        </div>
+      </div>
+    </article>
+  `).join('');
+}
+
+document.getElementById('grid').addEventListener('change', e => {
+  const sel = e.target.closest('select[data-action="cat"]');
+  if (!sel) return;
+  const card = sel.closest('.card');
+  const it = items.find(x => x.id === card.dataset.id);
+  if (!it) return;
+  it.category = sel.value;
+  if (it.status === 'pending') it.status = 'move';
+  persist();
+  render();
+});
+
+document.getElementById('grid').addEventListener('click', e => {
+  const btn = e.target.closest('button[data-action]');
+  if (!btn) return;
+  const card = btn.closest('.card');
+  const it = items.find(x => x.id === card.dataset.id);
+  if (!it) return;
+  const act = btn.dataset.action;
+  if (act === 'move') { it.status = it.status === 'move' ? 'pending' : 'move'; }
+  if (act === 'skip') { it.status = it.status === 'skip' ? 'pending' : 'skip'; }
+  if (act === 'copy') {
+    navigator.clipboard?.writeText(it.sourcePath);
+    return;
+  }
+  persist();
+  render();
+});
+
+['q','filterBucket','filterCat','filterPreview','filterLoc','filterStatus'].forEach(id => {
+  document.getElementById(id).addEventListener('input', render);
+  document.getElementById(id).addEventListener('change', render);
+});
+
+document.getElementById('btnAcceptSuggested').addEventListener('click', () => {
+  items.forEach(it => {
+    if (it.location === 'unorg' && it.status === 'pending') {
+      it.category = it.suggestedCategory;
+      it.status = 'move';
+    }
+  });
+  persist();
+  render();
+});
+
+document.getElementById('btnExport').addEventListener('click', () => {
+  const decisions = items
+    .filter(it => it.location === 'unorg' && it.status === 'move')
+    .map(it => ({
+      id: it.id,
+      sourcePath: it.sourcePath,
+      name: it.name,
+      category: it.category,
+      kind: it.kind
+    }));
+  const blob = new Blob([JSON.stringify({ generatedAt: new Date().toISOString(), decisions }, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'decisions.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+document.getElementById('btnExportCsv').addEventListener('click', () => {
+  const rows = [['status','category','name','bucket','kind','sourcePath']];
+  items.forEach(it => {
+    rows.push([it.status, it.category, it.name, it.bucket, it.kind, it.sourcePath].map(c =>
+      `"${String(c).replace(/"/g, '""')}"`
+    ));
+  });
+  const blob = new Blob([rows.map(r => r.join(',')).join('\n')], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'inventory.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+render();
+</script>
+</body>
+</html>
+

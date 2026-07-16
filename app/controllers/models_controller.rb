@@ -25,8 +25,9 @@ class ModelsController < ApplicationController
     prepare_model_list
     set_indexable @models
     respond_to do |format|
+      format.turbo_stream { render "models/page" }
       format.html do
-        if turbo_frame_request?
+        if turbo_frame_request? || request.headers["X-Infinite-Scroll"].present?
           render partial: "list_page", layout: false
         else
           render layout: "card_list_page"

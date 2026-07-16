@@ -417,6 +417,7 @@ en:
         label: Edit model %{name}
         text: Edit
       no_preview: No preview available
+      model_preview: 3D model
       open_button:
         label: Open model %{name}
         text: Open

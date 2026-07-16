@@ -48,6 +48,8 @@ export class OffscreenRenderer {
   controls: OrbitControls
   gridHelper: THREE.GridHelper
   ready: boolean = false
+  private disposed: boolean = false
+  private boundRender: (() => void) | null = null
 
   cbLoadComplete: (() => void) | null = null
   cbLoadProgress: ((percentage: number) => void) | null = null
@@ -58,7 +60,11 @@ export class OffscreenRenderer {
     settings: DOMStringMap
   ) {
     this.canvas = new CanvasProxy(canvas)
-    this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas.realCanvas })
+    this.renderer = new THREE.WebGLRenderer({
+      canvas: this.canvas.realCanvas,
+      powerPreference: 'low-power',
+      antialias: true
+    })
     this.settings = settings
     this.setup()
   }
@@ -259,10 +265,11 @@ export class OffscreenRenderer {
 
     // Let's go!
     this.ready = true
+    this.boundRender = this.render.bind(this)
     this.render()
 
     // Listen for control updates and re-render
-    this.controls.addEventListener('change', this.render.bind(this))
+    this.controls.addEventListener('change', this.boundRender)
 
     // Report load complete
     this.cbLoadComplete?.()
@@ -274,27 +281,29 @@ export class OffscreenRenderer {
   }
 
   onResize (width: number, height: number, pixelRatio: number): void {
+    if (this.disposed) return
     this.canvas.resize(width, height)
     this.renderer.setSize(width, height, false)
     this.composer.setSize(width, height)
     // Update camera
     this.camera.aspect = width / height
     this.camera.updateProjectionMatrix()
-    // Update pixel ratio
-    this.renderer.setPixelRatio(pixelRatio)
-    this.composer.setPixelRatio(pixelRatio)
+    // Cap pixel ratio — 3x retina balloons VRAM for little visual gain on previews
+    const cappedRatio = Math.min(pixelRatio, 2)
+    this.renderer.setPixelRatio(cappedRatio)
+    this.composer.setPixelRatio(cappedRatio)
     // Render!
     this.render()
   }
 
   render (): void {
-    setTimeout(() => {
-      requestAnimationFrame(this.onAnimationFrame.bind(this))
-    }, 16) // ms per 60fps frame, near enough
+    if (this.disposed || !this.ready) return
+    // Single rAF — avoid setTimeout+rAF which can stack under damping
+    requestAnimationFrame(this.onAnimationFrame.bind(this))
   }
 
   onAnimationFrame (): void {
-    if (!this.ready || this.canvas === null || this.renderer === null) {
+    if (this.disposed || !this.ready || this.canvas === null || this.renderer === null) {
       return
     }
     // Update controls to allow animation of damping
@@ -304,13 +313,33 @@ export class OffscreenRenderer {
   }
 
   cleanup (): void {
+    this.disposed = true
+    this.ready = false
+    if (this.boundRender != null) {
+      this.controls?.removeEventListener('change', this.boundRender)
+      this.boundRender = null
+    }
     if (typeof this.scene !== 'undefined' && this.scene !== null) {
       this.scene.traverse(function (node) {
         if (node instanceof THREE.Mesh) {
-          node.geometry.dispose()
-          node.material.dispose()
+          node.geometry?.dispose()
+          const material = node.material
+          if (Array.isArray(material)) {
+            material.forEach((m) => m.dispose())
+          } else if (material != null) {
+            material.dispose()
+          }
         }
       })
+      while (this.scene.children.length > 0) {
+        this.scene.remove(this.scene.children[0])
+      }
+    }
+    this.controls?.dispose()
+    this.composer?.dispose()
+    if (this.renderer != null) {
+      this.renderer.dispose()
+      this.renderer.forceContextLoss()
     }
   }
 }

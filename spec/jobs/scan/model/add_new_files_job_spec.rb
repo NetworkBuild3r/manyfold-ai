@@ -31,8 +31,15 @@ RSpec.describe Scan::Model::AddNewFilesJob do
       expect(model.model_files.pluck(:filename)).not_to include "stream.glb"
     end
 
-    it "queues up individual file metadata parsing" do
+    it "queues up individual file metadata parsing for new files only" do
       expect { described_class.perform_now(model.id) }.to have_enqueued_job(Scan::ModelFile::ParseMetadataJob).exactly(2).times
+    end
+
+    it "does not re-queue file metadata parsing for already-known files" do
+      described_class.perform_now(model.id)
+      expect {
+        described_class.perform_now(model.id)
+      }.not_to have_enqueued_job(Scan::ModelFile::ParseMetadataJob)
     end
 
     it "queues up metadata parsing" do
@@ -40,6 +47,7 @@ RSpec.describe Scan::Model::AddNewFilesJob do
         .to have_enqueued_job(Scan::Model::ParseMetadataJob).with(model.id, scan_batch_id: nil).once
     end
   end
+
 
   context "with a thingiverse-structured model" do
     around do |ex|

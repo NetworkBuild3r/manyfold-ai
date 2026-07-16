@@ -13,7 +13,7 @@ RUN apk add --no-cache \
   procps \
   yaml-dev \
   zlib-dev \
-  nodejs=~24.13.0 \
+  nodejs=~24 \
   npm \
   postgresql-dev \
   libarchive \

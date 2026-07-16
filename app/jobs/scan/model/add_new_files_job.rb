@@ -24,12 +24,38 @@ class Scan::Model::AddNewFilesJob < ApplicationJob
       model = Model.find(model_id)
       return if model.remote?
       return if Problems::MissingModel.detect(model)
-      # For each file in the model, create a file object
-      file_list(model.path, model.library, include_all_subfolders: include_all_subfolders).each do |filename|
-        # Create the file
-        file = model.model_files.find_or_create_by(filename: filename.gsub(model.path + "/", ""))
-        file.parse_metadata_later if file.valid?
+
+      prefix = model.path + "/"
+      on_disk = file_list(model.path, model.library, include_all_subfolders: include_all_subfolders)
+        .map { |filename| filename.delete_prefix(prefix).delete_prefix(model.path) }
+        .map { |filename| filename.sub(%r{\A/}, "") }
+      on_disk_set = on_disk.to_set
+
+      # Existing filenames from DB (one query)
+      existing_names = model.model_files.without_special.pluck(:filename).to_set
+
+      created = 0
+      # Only create + parse *new* files. Re-parsing every file on every scan is what
+      # made rescan unusable on large libraries.
+      on_disk.each do |filename|
+        next if existing_names.include?(filename)
+
+        file = model.model_files.create(filename: filename)
+        if file.persisted?
+          created += 1
+          file.parse_metadata_later
+        end
       end
+
+      # Files in DB but gone from disk — leave records; CheckForProblems raises MissingFile.
+      gone = (existing_names - on_disk_set).size
+
+      Rails.logger.info(
+        "[scan] model=#{model.id} on_disk=#{on_disk.size} existing=#{existing_names.size} " \
+        "created=#{created} missing=#{gone} batch=#{scan_batch_id}"
+      )
+
+      # Model-level metadata (preview, path tags, README) then finalize → problems
       model.parse_metadata_later(scan_batch_id: scan_batch_id)
     end
   end

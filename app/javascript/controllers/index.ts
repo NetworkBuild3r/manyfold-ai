@@ -16,7 +16,7 @@ import DropdownController from './dropdown_controller'
 import FileListSelectionController from './file_list_selection_controller'
 import EditableController from './editable_controller'
 import I18nController from './i18n_controller'
-import InfiniteScrollRestoreController from './infinite_scroll_restore_controller'
+import InfiniteScrollController from './infinite_scroll_controller'
 import ObfuscatedTextController from './obfuscated_text_controller'
 import RendererController from './renderer_controller'
 import SearchableSelectController from './searchable_select_controller'
@@ -38,7 +38,9 @@ application.register('dropdown', DropdownController)
 application.register('file-list-selection', FileListSelectionController)
 application.register('editable', EditableController)
 application.register('i18n', I18nController)
-application.register('infinite-scroll-restore', InfiniteScrollRestoreController)
+application.register('infinite-scroll', InfiniteScrollController)
+// Alias for any cached markup still using the old controller name
+application.register('infinite-scroll-restore', InfiniteScrollController)
 application.register('obfuscated-text', ObfuscatedTextController)
 application.register('renderer', RendererController)
 application.register('searchable-select', SearchableSelectController)

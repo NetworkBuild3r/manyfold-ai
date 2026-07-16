@@ -17,7 +17,9 @@ class Components::Renderer < Components::Base
   end
 
   def view_template
-    div class: "relative", data: {turbo_permanent: true} do
+    # Avoid turbo_permanent: WebGL workers + offscreen canvases accumulate across
+    # Turbo navigations and will not free GPU/heap memory.
+    div class: "relative" do
       canvas id: "preview-file-#{@file.to_param}",
         class: "object-preview relative w-full block",
         tabindex: "0",
@@ -34,7 +36,7 @@ class Components::Renderer < Components::Base
           background_colour: @settings["background_colour"],
           object_colour: @settings["object_colour"],
           render_style: @settings["render_style"],
-          auto_load: ((@file.size || 9_999_999.megabytes) < (@settings["auto_load_max_size"] || 9_999_999).megabytes) ? "true" : "false"
+          auto_load: auto_load? ? "true" : "false"
         }
       div class: "object-preview-progress absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 px-4 py-2 rounded-lg bg-secondary-200 dark:bg-secondary-700 border border-secondary-300 dark:border-secondary-600",
         role: "presentation" do
@@ -49,5 +51,18 @@ class Components::Renderer < Components::Base
         end
       end
     end
+  end
+
+  private
+
+  def auto_load?
+    max_mb = @settings["auto_load_max_size"]
+    max_mb = SiteSettings::UserDefaults::RENDERER[:auto_load_max_size] if max_mb.nil?
+    return false if max_mb.to_i <= 0
+
+    size = @file.size
+    return false if size.nil?
+
+    size < max_mb.to_i.megabytes
   end
 end

@@ -1,5 +1,6 @@
 ---
-:concurrency: <%= ENV.fetch("DEFAULT_WORKER_CONCURRENCY", 4) %>
+# Keep default low: analysis/scan jobs can hold large file buffers. Raise via env if you have RAM.
+:concurrency: <%= ENV.fetch("DEFAULT_WORKER_CONCURRENCY", 2) %>
 :queues:
   - critical
   - high

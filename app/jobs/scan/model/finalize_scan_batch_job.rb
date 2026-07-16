@@ -14,6 +14,9 @@ class Scan::Model::FinalizeScanBatchJob < ApplicationJob
       # Cache store doesn't support `unless_exist`; fall back to job uniqueness.
     end
 
+    # Problem checks need the file list; model metadata is done. File-level
+    # parse/analysis can still be in flight — that is fine: MissingFile and
+    # EmptyModel only need DB rows + storage existence, not digests.
     Scan::Model::CheckForProblemsJob.perform_later(model_id)
 
     Model.where(id: model_id).update_all(scan_started_at: nil) # rubocop:disable Rails/SkipsModelValidations

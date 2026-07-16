@@ -125,11 +125,15 @@ class SiteSettings < RailsSettings::Base
       enable_pan_zoom: false,
       background_colour: "#000000",
       object_colour: "#ffffff",
-      render_style: "original"
+      render_style: "original",
+      # Never auto-load 3D meshes by default. Auto-load on infinite-scroll
+      # model cards was the main browser memory bomb (one WebGL worker per card).
+      auto_load_max_size: 0
     )
 
     PAGINATION = ActiveSupport::HashWithIndifferentAccess.new(
-      per_page: 12,
+      # Dense enough to fill ~2–3 rows on a typical desktop without waiting on scroll
+      per_page: 24,
       grid_columns: 3
     )
 

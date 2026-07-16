@@ -45,7 +45,7 @@ This fork diverges from [manyfold3d/manyfold](https://github.com/manyfold3d/many
 | Problems | Various entry points | **Single entry point**: `Problem.resolve_batch`. Strategy classes in `app/models/problems/`. Turbo Stream responses (removes + optional card replace). Creation/clearing only via `Problem.create_or_clear` and Registry-registered detectors. |
 | Data management | Basic merge | **Merge with history** and time-limited unmerge; path prefix tracking; `db_integrity.rake` for integrity constraints. |
 | Components | ViewComponent + ERB | **Phlex**-based components in `app/components/`; shared `_problems_card.html.erb`; model card refactored (ModelCardActions, ModelCardPreview, DropdownMenu). |
-| Selection/browsing | — | **Base and file-list selection** Stimulus controllers; infinite scroll restore; `ModelListRestoreWrapper`. |
+| Selection/browsing | — | **Base and file-list selection** Stimulus controllers; windowed infinite scroll (recycles off-screen pages); list cards never mount WebGL. |
 | CI | Single-DB | **PostgreSQL-only CI**; lint (StandardRB, Rubocop, erb_lint, TypeScript, i18n-tasks) then RSpec. |
 | Docker | `docker/default.dockerfile` | `docker/manyfold.dockerfile`; Windows one-command: `.\script\start-docker.ps1`. |
 | Docs | Links to manyfold.app | **Fork-first README**; `.cursor/rules/` and `.cursor/skills/` for AI-assisted development. |
@@ -147,8 +147,27 @@ Runs as non-root (PUID/PGID, default 1000:1000). Set env vars to match host if n
 | `DATABASE_*` / `DATABASE_URL` | DB connection (`config/database.yml`) |
 | `REDIS_URL` | Sidekiq and cache |
 | `PORT` / `RAILS_PORT` | Server port (default 3214) |
+| `WEB_CONCURRENCY` | Puma worker processes (default **0** = single process; raise only if you have RAM) |
+| `RAILS_MAX_THREADS` | Puma threads (default **5**) |
+| `DEFAULT_WORKER_CONCURRENCY` | Sidekiq default worker threads (default **2**) |
+| `PERFORMANCE_WORKER_CONCURRENCY` | Sidekiq performance queue (mesh jobs; default **1**) |
+| `MAX_MESH_ANALYSIS_BYTES` | Skip manifold analysis above this size (default **100 MiB**) |
 
 See `config/database.yml`, `env.example`, and the app settings UI. Use placeholders in examples; never commit real secrets.
+
+### Memory notes (self-hosted)
+
+Manyfold can use a lot of RAM if left on “generous” defaults: large STL digests, mesh analysis, zip downloads, and auto-loading 3D previews on every model card.
+
+This fork tunes for stability by default:
+
+- **Puma** single process / modest threads (`WEB_CONCURRENCY=0`)
+- **Sidekiq** lower concurrency so scan/analysis jobs do not stack multi‑GB buffers
+- **Streaming** digests and zip packing (no full-file `attachment.read` for those paths)
+- **Mesh analysis** size cap + GC after each geometric job
+- **3D previews** do not auto-load by default; workers are torn down when cards scroll off-screen
+
+If you have RAM to spare, raise concurrency via the env vars above. For manifold analysis of huge files, raise `MAX_MESH_ANALYSIS_BYTES` or disable **Analyse manifold** in site settings.
 
 ---
 

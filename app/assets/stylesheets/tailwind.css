@@ -197,26 +197,42 @@ dialog.modal::backdrop {
   background-color: white;
 }
 
-/* Infinite scroll: empty frame needs dimensions so IntersectionObserver fires */
-#model-card-grid turbo-frame:not(:empty) {
-  display: contents;
-}
+/* ——— Infinite scroll: cards are direct grid children; sentinel spans full row ——— */
 
-#model-card-grid turbo-frame:empty {
+#model-card-grid .models-scroll-sentinel {
+  grid-column: 1 / -1;
+  min-height: 2.5rem;
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 200px;
-  width: 100%;
-  grid-column: 1 / -1;
+  pointer-events: none;
 }
 
-#model-card-grid turbo-frame:empty::after,
-#model-card-grid turbo-frame[aria-busy="true"]::after {
+#model-card-grid .models-scroll-sentinel[hidden] {
+  display: none !important;
+}
+
+/* Label only visible while a page fetch is in flight */
+#model-card-grid .models-scroll-sentinel__label {
+  font-size: 0.75rem;
+  color: var(--color-secondary-500);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+#model-card-grid.is-loading-more .models-scroll-sentinel__label {
+  opacity: 1;
+}
+
+#model-card-grid.is-loading-more .models-scroll-sentinel__label::before {
   content: "";
-  width: 2rem;
-  height: 2rem;
-  border: 3px solid var(--color-secondary-300);
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  margin-right: 0.5rem;
+  vertical-align: -0.15rem;
+  border: 2px solid var(--color-secondary-300);
   border-top-color: var(--color-primary-500);
   border-radius: 50%;
   animation: model-grid-spin 0.8s linear infinite;
@@ -226,13 +242,10 @@ dialog.modal::backdrop {
   to { transform: rotate(360deg); }
 }
 
-#model-card-grid turbo-frame[aria-busy="true"] {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 200px;
-  width: 100%;
-  grid-column: 1 / -1;
+#model-card-grid .model-card.content-visibility-auto,
+#model-card-grid .content-visibility-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 320px;
 }
 
 /* ——— Components ——— */

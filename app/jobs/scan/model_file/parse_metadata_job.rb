@@ -4,7 +4,12 @@ class Scan::ModelFile::ParseMetadataJob < ApplicationJob
 
   def perform(file_id)
     file = ModelFile.find(file_id)
-    # Refresh shrine metadata
+    return unless file.exists_on_storage?
+
+    # Attach shrine data if the row was created from a path scan without upload
+    file.attach_existing_file! if file.attachment.blank?
+
+    # Refresh shrine metadata (size, mime) without reading whole file body
     file.attachment_attacher.refresh_metadata!
     # Get metadata for specific types
     params = if file.is_image?
@@ -14,7 +19,7 @@ class Scan::ModelFile::ParseMetadataJob < ApplicationJob
     end
     # Store updated data
     file.update!(params.compact) if params
-    # Queue up deeper analysis job
+    # Deeper analysis (digest, duplicates, inefficiency) — only for this new/updated file
     file.analyse_later
   end
 

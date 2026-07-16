@@ -1,0 +1,20 @@
+<%# Insert cards BEFORE the sentinel so they stay siblings in the CSS grid. %>
+<%= turbo_stream.before "models-scroll-sentinel" do %>
+  <% @models.each do |model| %>
+    <%= render Components::ModelCard.new(model: model, eager_preview: false) %>
+  <% end %>
+<% end %>
+
+<%= turbo_stream.replace "models-scroll-sentinel" do %>
+  <% if @models.next_page %>
+    <div id="models-scroll-sentinel"
+         class="models-scroll-sentinel col-span-full"
+         data-infinite-scroll-target="sentinel"
+         data-next-url="<%= models_page_url(@models.next_page, @filter) %>"
+         aria-hidden="true">
+      <span class="models-scroll-sentinel__label">Loading more…</span>
+    </div>
+  <% else %>
+    <div id="models-scroll-sentinel" class="models-scroll-sentinel col-span-full" hidden aria-hidden="true"></div>
+  <% end %>
+<% end %>

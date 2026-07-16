@@ -22,16 +22,17 @@ class PrepareDownloadJob < ApplicationJob
     when "unsupported"
       scope.where(presupported: false)
     else
+      # Prefer relation filter when possible; extension lives in shrine JSON so fall back carefully
       scope.select { |f| f.extension == selection }
     end
   end
 
   def write_archive(filename, files)
     Archive.write_open_filename(filename, Archive::COMPRESSION_NONE, Archive::FORMAT_ZIP) do |archive|
-      files.each do |file|
+      each_file(files) do |file|
         # Make sure we have a file size before proceeding
         file.attachment_attacher&.refresh_metadata! if file.size.nil?
-        # Build archive
+        # Build archive — stream each file so large models never fully buffer
         archive.new_entry do |entry|
           entry.pathname = file.filename
           entry.size = file.size
@@ -40,9 +41,22 @@ class PrepareDownloadJob < ApplicationJob
           entry.mtime = file.mtime
           entry.ctime = file.ctime
           archive.write_header entry
-          archive.write_data file.attachment.read
+          file.attachment.open do |io|
+            # Block form streams until an empty/nil chunk ends the loop
+            archive.write_data do
+              io.read(1.megabyte) || ""
+            end
+          end
         end
       end
+    end
+  end
+
+  def each_file(files, &block)
+    if files.respond_to?(:find_each)
+      files.find_each(&block)
+    else
+      files.each(&block)
     end
   end
 end

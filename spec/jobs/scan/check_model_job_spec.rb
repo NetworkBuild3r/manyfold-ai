@@ -10,8 +10,14 @@ RSpec.describe Scan::CheckModelJob do
     )
   end
 
-  it "queues up analysis jobs for all model files" do
-    expect { described_class.perform_now(thing.id) }.to(
+  it "does not re-analyse every file on a normal rescan" do
+    expect { described_class.perform_now(thing.id) }.not_to(
+      have_enqueued_job(Analysis::AnalyseModelFileJob)
+    )
+  end
+
+  it "re-analyses all files when deep: true" do
+    expect { described_class.perform_now(thing.id, deep: true) }.to(
       have_enqueued_job(Analysis::AnalyseModelFileJob).with(file.id).once
     )
   end

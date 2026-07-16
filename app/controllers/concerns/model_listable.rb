@@ -1,8 +1,6 @@
 module ModelListable
   extend ActiveSupport::Concern
 
-  MAX_RESTORE_PAGES = 50
-
   included do
     include TagListable
     include Filterable
@@ -22,18 +20,12 @@ module ModelListable
     per_page = helpers.pagination_settings["per_page"]
     page = params[:page] || 1
 
-    # Restore mode only applies to HTML full-page requests (back-button scroll restoration).
-    # API requests always get a standard paginated relation.
-    if request.format.html? && !turbo_frame_request? && page.to_i > 1
-      restore_page = [page.to_i, MAX_RESTORE_PAGES].min
-      @models = @models.page(1).per(per_page * restore_page)
-      @models = @models.includes [:creator, :collection]
-      @models = @models.preload [:model_files, :preview_file]
-      @models = ModelListRestoreWrapper.new(@models, restore_page: restore_page, per_page: per_page)
-    else
-      @models = @models.page(page).per(per_page)
-      @models = @models.includes [:creator, :collection]
-      @models = @models.preload [:model_files, :preview_file]
-    end
+    # Always serve a single page. Multi-page "restore" preloads (up to 50 pages)
+    # blew browser memory on back-navigation. Infinite scroll + windowing handles
+    # forward load; ?page=N lands on that page and scrolls from there.
+    @models = @models.page(page).per(per_page)
+    @models = @models.includes [:creator, :collection]
+    # preview_file only — avoid preloading every model_file on index
+    @models = @models.preload [:preview_file]
   end
 end

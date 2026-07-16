@@ -135,9 +135,17 @@ class ModelFile < ApplicationRecord
     result
   end
 
-  # TODO: this should move to Shrine metadata processing to be more efficient
+  # Stream the file so large STLs do not get fully buffered in process memory.
+  # TODO: move to Shrine metadata processing to be more efficient
   def calculate_digest
-    Digest::SHA512.new.update(attachment.read).hexdigest
+    digest = Digest::SHA512.new
+    attachment.open do |io|
+      # 1 MiB chunks keep peak memory flat regardless of file size
+      while (chunk = io.read(1.megabyte))
+        digest.update(chunk)
+      end
+    end
+    digest.hexdigest
   rescue Errno::ENOENT
     nil
   end

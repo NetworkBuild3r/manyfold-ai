@@ -8,9 +8,10 @@ class Components::ModelCard < Components::Base
   register_output_helper :server_indicator
   register_value_helper :policy
 
-  def initialize(model:)
+  def initialize(model:, eager_preview: false)
     @model = model
     @actor = @model.federails_actor
+    @eager_preview = eager_preview
   end
 
   def before_template
@@ -18,9 +19,13 @@ class Components::ModelCard < Components::Base
   end
 
   def view_template
-    div(class: "model-card relative flex flex-col rounded-xl overflow-hidden bg-surface dark:bg-surface-dark border border-secondary-200 dark:border-secondary-600 shadow-sm hover:shadow-md transition-shadow") do
+    # content-visibility only on below-fold cards — first row paints immediately
+    classes = "model-card relative flex flex-col rounded-xl overflow-hidden bg-surface dark:bg-surface-dark border border-secondary-200 dark:border-secondary-600 shadow-sm hover:shadow-md transition-shadow"
+    classes += " content-visibility-auto" unless @eager_preview
+
+    div(class: classes) do
       div(class: "absolute top-0 left-0 right-0 z-10 px-2 py-1 bg-secondary-200/90 dark:bg-secondary-700/90 text-sm") { server_indicator @model } if @model.remote?
-      ModelCardPreview(model: @model, editable: @editable, actor: @actor)
+      ModelCardPreview(model: @model, editable: @editable, actor: @actor, eager_preview: @eager_preview)
       div(class: "p-3 flex flex-col gap-1") { info_row }
       ModelCardActions(model: @model, editable: @editable, actor: @actor)
     end
