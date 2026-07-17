@@ -14,6 +14,7 @@ class Search::FilterService
       :link,
       :missingtag,
       :owner,
+      :has_image,
       tag: []
     )
     @collection = Collection.find_param(parameter(:collection)) if parameter(:collection).present?
@@ -46,6 +47,7 @@ class Search::FilterService
     scope = filter_by_collection(scope)
     scope = filter_by_creator(scope)
     scope = filter_by_url(scope)
+    scope = filter_by_has_image(scope)
     filter_by_search(scope)
   end
 
@@ -153,5 +155,28 @@ class Search::FilterService
     else
       scope
     end
+  end
+
+  # Only models that have at least one image file (jpg/png/…).
+  # Hides cards that would show "no preview available" / mesh placeholders only.
+  def filter_by_has_image(scope)
+    return scope unless truthy?(parameter(:has_image))
+
+    exts = SupportedMimeTypes.image_extensions.map(&:downcase).uniq
+    return scope.none if exts.empty?
+
+    image_filename_sql = exts.map { |ext|
+      "LOWER(model_files.filename) LIKE #{ActiveRecord::Base.connection.quote("%.#{ext}")}"
+    }.join(" OR ")
+
+    scope.where(
+      id: ModelFile.without_special.where(image_filename_sql).select(:model_id)
+    )
+  end
+
+  def truthy?(value)
+    ActiveModel::Type::Boolean.new.cast(value)
+  rescue ArgumentError
+    %w[1 true yes on].include?(value.to_s.downcase)
   end
 end

@@ -8,7 +8,9 @@ class Components::SortMenu < Components::Base
   end
 
   def view_template
-    div(class: "relative", data: {controller: "dropdown"}) do
+    # align right: sort control sits on the trailing edge of the list toolbar;
+    # left-aligned menus were clipped by the sidebar.
+    div(class: "relative z-30", data: {controller: "dropdown"}) do
       button type: "button",
         data: {action: "click->dropdown#toggle"},
         aria: {expanded: "false", haspopup: "menu"},
@@ -17,7 +19,7 @@ class Components::SortMenu < Components::Base
         whitespace
         span { t "components.sort_menu.sort-by" }
       end
-      ul class: Components::DropdownMenu.panel_class(align: :left, direction: :down),
+      ul class: "#{Components::DropdownMenu.panel_class(align: :right, direction: :down)} z-[100]",
         data: {dropdown_target: "menu"},
         role: "menu" do
         item "sort-alpha-down", "name", "asc" # i18n-tasks-use t('components.sort_menu.name')

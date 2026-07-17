@@ -291,10 +291,13 @@ en:
       permissions: Sharing
     demo_mode: This instance is in demo mode. You cannot add or remove models, but you can do everything else.
     filters_card:
+      has_image: With images only
       missing_tags: Missing tags
       owner: Owner
       remove_collection_filter: Remove collection filter
       remove_creator_filter: Remove creator filter
+      remove_filter: Remove filter
+      remove_has_image_filter: Remove with-images filter
       remove_library_filter: Remove library filter
       remove_missing_tag_filter: Remove missing tag filter
       remove_owner_filter: Remove owner filter

@@ -77,5 +77,19 @@ RSpec.describe Search::FilterService do
       service = described_class.new(ActionController::Parameters.new(owner: contributor.to_param))
       expect(service.models(Model.all).pluck(:name)).to contain_exactly("bat on a hat")
     end
+
+    it "filters to models that have image files" do
+      with_image = Model.find_by!(name: "cat in the hat")
+      create(:model_file, model: with_image, filename: "preview.jpg")
+      create(:model_file, model: Model.find_by!(name: "bat on a mat"), filename: "part.stl")
+
+      service = described_class.new(ActionController::Parameters.new(has_image: "1"))
+      expect(service.models(Model.all).pluck(:name)).to contain_exactly("cat in the hat")
+    end
+
+    it "ignores has_image when not truthy" do
+      service = described_class.new(ActionController::Parameters.new(has_image: "0"))
+      expect(service.models(Model.all).count).to eq 4
+    end
   end
 end

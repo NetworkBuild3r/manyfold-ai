@@ -28,9 +28,25 @@
           <button type="button" data-model-list-selection-target="clearButton" data-action="click->model-list-selection#clear" class="inline-flex items-center px-3 py-1.5 text-sm rounded-lg border border-secondary-300 dark:border-secondary-500 text-secondary-800 dark:text-secondary-100 bg-white dark:bg-secondary-800 hover:bg-secondary-100 dark:hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-secondary-500"><%= t(".selection.clear") %></button>
         </div>
       </div>
-      <div class="flex flex-wrap items-center gap-2 mb-4">
+      <div class="flex flex-wrap items-center gap-2 mb-4 relative z-20">
         <%= skip_link "sidebar", t(".skip_models") %>
-        <div class="ml-auto">
+        <div class="ml-auto flex flex-wrap items-center gap-2">
+          <% has_image_on = ActiveModel::Type::Boolean.new.cast(@filter.parameter(:has_image)) %>
+          <% if has_image_on %>
+            <%= link_to models_path(@filter.to_params.except(:has_image)),
+                  class: "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500",
+                  aria: {pressed: "true"} do %>
+              <%= Icon icon: "image", label: "" %>
+              <span><%= t(".has_image_filter_on", default: "With images") %></span>
+            <% end %>
+          <% else %>
+            <%= link_to models_path(@filter.to_params.merge(has_image: "1")),
+                  class: "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-white text-secondary-900 border border-secondary-300 hover:bg-secondary-50 dark:bg-secondary-700 dark:text-secondary-100 dark:border-secondary-500 dark:hover:bg-secondary-600 focus-visible:ring-2 focus-visible:ring-primary-500",
+                  aria: {pressed: "false"} do %>
+              <%= Icon icon: "image", label: "" %>
+              <span><%= t(".has_image_filter", default: "With images only") %></span>
+            <% end %>
+          <% end %>
           <%= SortMenu(filter: @filter) %>
         </div>
       </div>

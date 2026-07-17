@@ -270,14 +270,19 @@ module ApplicationHelper
   def active_filters_list(filter)
     return [] if filter.blank? || !filter.any?
     base_params = filter.to_params
-    %i[q collection library creator owner tag missingtag].filter_map do |key|
+    %i[q collection library creator owner tag missingtag has_image].filter_map do |key|
       build_active_filter_entry(filter, key, base_params)
     end
   end
 
   def build_active_filter_entry(filter, key, base_params)
     return unless filter.filtering_by?(key)
+    # has_image only shows when enabled (truthy)
+    if key == :has_image
+      return unless ActiveModel::Type::Boolean.new.cast(filter.parameter(:has_image))
+    end
     type_label, value_html, pill_label = active_filter_label_and_value(filter, key)
+    return if type_label.nil?
     aria_key = "application.filters_card.remove_#{key}_filter"
     {
       key: key,
@@ -285,13 +290,13 @@ module ApplicationHelper
       type_label: type_label,
       value_html: value_html,
       remove_url: url_for(base_params.except(key)),
-      aria_remove: t(aria_key),
+      aria_remove: t(aria_key, default: t("application.filters_card.remove_filter", default: "Remove filter")),
       pill_label: pill_label
     }
   end
 
   def active_filter_icon(key)
-    {q: "search", collection: "collection", library: "boxes", creator: "person", owner: "person", tag: "tag", missingtag: "tag"}[key]
+    {q: "search", collection: "collection", library: "boxes", creator: "person", owner: "person", tag: "tag", missingtag: "tag", has_image: "image"}[key]
   end
 
   def active_filter_label_and_value(filter, key)
@@ -320,6 +325,9 @@ module ApplicationHelper
     when :missingtag
       mt = filter.parameter(:missingtag).presence || "*"
       [t("application.filters_card.missing_tags"), mt, "#{t("application.filters_card.missing_tags")}: #{mt}"]
+    when :has_image
+      label = t("application.filters_card.has_image")
+      [label, label, label]
     else
       [nil, nil, nil]
     end

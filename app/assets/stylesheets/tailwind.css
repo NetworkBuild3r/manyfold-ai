@@ -153,8 +153,9 @@ dialog.modal::backdrop {
 .skip-link:focus-within {
   transform: translateY(0);
 }
+/* Skip-link anchor container. Do NOT set overflow:hidden — it clips the
+   models Sort-by dropdown under the right-hand sidebar. */
 .skip-link-container {
-  overflow-y: hidden;
   position: relative;
 }
 
