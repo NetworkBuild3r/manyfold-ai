@@ -8,60 +8,74 @@ class Scan::Model::ParseMetadataJob < ApplicationJob
     "readme.txt"
   ]
 
-  def perform(model_id)
-    model = Model.find(model_id)
-    return if model.remote?
-    # Loads metadata in order of priority; README, datapackage, path template,
-    # Some things are high-priority if already set
-    options = {
-      creator: model.creator,
-      collections: model.collections,
-      preview_file: model.preview_file,
-      notes: model.notes,
-      tag_list: model.tag_list
-    }.compact_blank
-    # Load information from READMEs
-    options = combine_options options, attributes_from_readme(model.model_files.find_by(filename_lower: README_FILES))
-    # Load from datapackage
-    options = combine_options options, attributes_from_datapackage(model)
-    # Set path template attributes
-    options = combine_options options, attributes_from_path_template(model.library, model.path)
-    # Add additional tags
-    tag_list = tags_from_directory_name(model.path) + tags_from_path_template(model.library, model.path)
-    options[:tag_list] = (options[:tag_list] || []) + remove_stop_words(tag_list.uniq)
-    # Set preview file
-    options = combine_options options, identify_preview_file(model)
-    # Store new metadata
-    model.update!(options.compact_blank!)
+  def perform(model_id, scan_batch_id: nil)
+    Current.set(scan_batch_id: scan_batch_id) do
+      model = Model.find(model_id)
+      return if model.remote?
+      options = {
+        # Some things are preserved if already set
+        creator: model.creator,
+        collection: model.collection,
+        preview_file: model.preview_file
+      }.compact
+      # Set preview file
+      options.reverse_merge! identify_preview_file(model)
+      # Set path template attributes
+      options.reverse_merge! attributes_from_path_template(model.path)
+      # Build combined tag list
+      tag_list =
+        model.tag_list +
+        tags_from_directory_name(model.path) +
+        tags_from_path_template(model.path)
+      # Load information from READMEs
+      options.compact_blank!
+      options.merge! attributes_from_readme(model.model_files.find_by(filename_lower: README_FILES))
+      # Filter stop words
+      options[:tag_list] = remove_stop_words(tag_list.uniq)
+      # Remove data that shouldn't be overwritten
+      options.delete(:notes) if model.notes.present?
+      # Store new metadata
+      model.update!(options.compact_blank!)
+
+      # Short delay so newly created ModelFile rows from AddNewFiles are committed
+      # before CheckForProblems runs. File parse/analysis continues async on :low.
+      if scan_batch_id.present?
+        Scan::Model::FinalizeScanBatchJob.set(wait: 3.seconds)
+          .perform_later(model.id, scan_batch_id: scan_batch_id)
+      else
+        # Manual single-model scan without a batch still needs problem detection.
+        model.check_for_problems_later(delay: 3.seconds)
+      end
+    end
   end
 
   private
 
   def identify_preview_file(model)
     {
-      preview_file: Naturally.sort_by(model.valid_preview_files, :filename).min_by { preview_priority(it) }
+      preview_file: model.model_files.min_by { |it| preview_priority(it) }
     }
   end
 
   def preview_priority(file)
     return 0 if file.is_image?
-    return 1 if Components::Renderers::Three.supports?(file)
+    return 1 if file.is_renderable?
     100
   end
 
   def tags_from_directory_name(path)
     return [] unless SiteSettings.model_tags_tag_model_directory_name
-    File.split(path).last.split(/[\W_+-]/).filter { it.length > 1 }
+    File.split(path).last.split(/[\W_+-]/).filter { |it| it.length > 1 }
   end
 
-  def attributes_from_path_template(library, path)
-    return {} unless library.parse_metadata_from_path && library.path_template
-    components = PathParserService.new(library.path_template, path).call
+  def attributes_from_path_template(path)
+    return {} unless SiteSettings.parse_metadata_from_path && SiteSettings.model_path_template
+    components = PathParserService.new(SiteSettings.model_path_template, path).call
     {
       creator: find_or_create_from_path_component(Creator, components[:creator]),
-      collections: Array(find_or_create_from_path_component(Collection, components[:collections])),
+      collection: find_or_create_from_path_component(Collection, components[:collection]),
       name: to_human_name(components[:model_name])
-    }.compact_blank
+    }.compact
   end
 
   ASCII_ART_THINGIVERSE_README = /(?<url>https?:\/\/www\.thingiverse\.com\/thing:[0-9]+)\n(?<title>.*) by (?<creator>.*) is licensed under the (?<license_name>.*) license\.\n(?<license_url>https?:\/\/.*)\n\n# Summary\n\n(?<summary>.*)/
@@ -69,7 +83,7 @@ class Scan::Model::ParseMetadataJob < ApplicationJob
 
   def attributes_from_readme(file)
     return {} if file.nil?
-    content = file.attachment.read.force_encoding(Encoding::UTF_8).encode("UTF-8", invalid: :replace)
+    content = file.attachment.read.force_encoding(Encoding::UTF_8)
     case content
     when SIMPLE_THINGIVERSE_README
       attributes_from_simple_thingiverse_readme(content)
@@ -112,52 +126,17 @@ class Scan::Model::ParseMetadataJob < ApplicationJob
     }
   end
 
-  def attributes_from_datapackage(model)
-    if (datapackage_content = model.datapackage_content)
-      data = DataPackage::ModelDeserializer.new(datapackage_content).deserialize
-      # match creator
-      creator_data = data.delete(:creator)
-      if creator_data
-        data[:creator] = creator_data[:id] ? Creator.find(creator_data.delete(:id)) :
-          find_or_create_from_path_component(Creator, creator_data[:name])
-        data[:creator].update(creator_data)
-      end
-      # match collections
-      collections_data = data.delete(:collections) || []
-      data[:collections] = []
-      collections_data.each do |collection_data|
-        collection = collection_data[:id] ? Collection.find(collection_data.delete(:id)) :
-          find_or_create_from_path_component(Collection, collection_data[:name])
-        collection.update(collection_data)
-        data[:collections] << collection
-      end
-      # match preview file
-      data[:preview_file] = model.model_files.find_by(filename: data[:preview_file])
-      # match entrypoint
-      data[:entrypoint_fragment] = model.model_files.find_by(filename: data[:entrypoint_fragment])
-      data[:entrypoint] = model.model_files.find_by(filename: data[:entrypoint])
-      # Set file data
-      data.delete(:model_files)&.each do |file|
-        model.model_files.find_by(filename: file.delete(:filename))&.update(file)
-      end
-      # Done
-      data.compact_blank
-    else
-      {}
-    end
-  end
-
   def filter_thingiverse_text(content)
     content.gsub(/{(.+?) %!S\(Bool=True\)}/i, "\\1")
   end
 
   def license_id_from_url(url)
-    Spdx.licenses.find { |id, details| details["seeAlso"].map { it.gsub("legalcode", "") }.include?(url.gsub("http:", "https:")) }&.dig(0)
+    Spdx.licenses.find { |id, details| details["seeAlso"].map { |it| it.gsub("legalcode", "") }.include?(url.gsub("http:", "https:")) }&.dig(0)
   end
 
-  def tags_from_path_template(library, path)
-    return [] unless library.parse_metadata_from_path && library.path_template
-    components = PathParserService.new(library.path_template, path).call
+  def tags_from_path_template(path)
+    return [] unless SiteSettings.parse_metadata_from_path && SiteSettings.model_path_template
+    components = PathParserService.new(SiteSettings.model_path_template, path).call
     tags = components[:tags] ? components[:tags].map { |tag| tag.titleize.downcase } : []
     tags.delete("@untagged")
     tags
@@ -174,25 +153,13 @@ class Scan::Model::ParseMetadataJob < ApplicationJob
 
   def find_or_create_from_path_component(klass, path_component)
     return unless path_component
-    if path_component.is_a? Array
-      path_component.map { find_or_create_from_path_component(klass, it) }
-    else
-      klass.find_by(slug: path_component) ||
-        klass.create_with(slug: path_component.parameterize).find_or_create_by(
-          name: to_human_name(path_component)
-        )
-    end
+    klass.find_by(slug: path_component) ||
+      klass.create_with(slug: path_component.parameterize).find_or_create_by(
+        name: to_human_name(path_component)
+      )
   end
 
   def to_human_name(str)
     str&.humanize&.tr("+", " ")&.careful_titleize
-  end
-
-  def combine_options(options, new_options)
-    combined = options.reverse_merge(new_options)
-    existing_collections = options[:collections] || []
-    combined[:collections] = existing_collections.concat(new_options[:collections] - existing_collections) if new_options[:collections]
-    combined[:tag_list] = (options[:tag_list] || []).concat(new_options[:tag_list]).uniq if new_options[:tag_list]
-    combined.compact_blank
   end
 end
