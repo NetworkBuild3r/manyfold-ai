@@ -75,6 +75,7 @@ db/data_schema.rb
 .yardoc
 doc
 
+<<<<<<< HEAD
 # Vite Ruby
 /public/vite*
 node_modules
@@ -85,3 +86,14 @@ node_modules
 # Plugins folder
 /plugins/*
 !/plugins/.keep
+=======
+# Local dev artifacts
+rspec_full.txt
+rspec_output.txt
+web_logs.txt
+script/start-and-capture-logs.ps1
+
+__pycache__/
+*.py[cod]
+
+>>>>>>> cf080c125 (chore: stop tracking spark_curate __pycache__)
