@@ -1,0 +1,52 @@
+# Standalone library curator — independent of Manyfold UI / Rails / k8s manyfold app.
+#
+# Talks to DGX Spark APIs on the LAN and rearranges files under a mounted volume
+# in Manyfold-friendly Category/ModelName layout. Never deletes.
+#
+# Usage:
+#   cp .env.example .env   # edit LIBRARY bind mount / APPLY
+#   docker compose run --rm curate smoke
+#   docker compose run --rm curate          # dry-run once
+#   APPLY=1 docker compose run --rm curate  # apply moves once
+#   docker compose up -d                    # optional loop worker
+
+services:
+  curate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: spark-curate:local
+    container_name: spark-curate
+    restart: "no"
+    # Optional: copy .env.example → .env for local overrides
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      LIBRARY_ROOT: ${LIBRARY_ROOT:-/library}
+      WORK_DIR: ${WORK_DIR:-/library/.spark-curate}
+      GEMMA_URL: ${GEMMA_URL:-http://192.168.11.161:11435/v1}
+      GEMMA_MODEL: ${GEMMA_MODEL:-gemma4-uncensored}
+      CURATOR_URL: ${CURATOR_URL:-http://192.168.11.161:11436/v1}
+      CURATOR_MODEL: ${CURATOR_MODEL:-qwen2.5-1.5b-instruct}
+      NUDENET_URL: ${NUDENET_URL:-http://192.168.11.161:8090}
+      EMBED_URL: ${EMBED_URL:-http://192.168.11.161:8000/v1}
+      EMBED_MODEL: ${EMBED_MODEL:-BAAI/bge-m3}
+      MIN_CONFIDENCE: ${MIN_CONFIDENCE:-0.55}
+      WORKERS: ${WORKERS:-2}
+      LIMIT: ${LIMIT:-0}
+      ONLY_CATEGORIES: ${ONLY_CATEGORIES:-}
+      SKIP_GOOD: ${SKIP_GOOD:-0}
+      APPLY: ${APPLY:-0}
+      RUN_INTERVAL_SECONDS: ${RUN_INTERVAL_SECONDS:-0}
+    volumes:
+      # Host path to 3D-Prints library (NAS mount or local path).
+      # Linux NFS example: /mnt/nas/3D-Prints:/library:rw
+      # Windows: //192.168.11.102/Backups/3D-Prints may need a host drive letter mount first.
+      # Set LIBRARY_HOST_PATH in .env to your NAS/host 3D-Prints path.
+      - ${LIBRARY_HOST_PATH:-./.data-library-placeholder}:/library:rw
+    # Host network makes Spark LAN IPs work without extra routing (Linux).
+    # On Docker Desktop Windows/Mac, comment network_mode and rely on bridge + LAN IPs.
+    network_mode: ${NETWORK_MODE:-bridge}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
