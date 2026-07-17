@@ -24,9 +24,11 @@ jobs:
       fail-fast: true
       max-parallel: 1
       matrix:
+        # k8s cluster is linux/amd64; multi-arch (arm64) multiplies build time and was
+        # starving the Actions queue. solo variant is only for optional smoke — build
+        # main image first.
         variant:
           - manyfold
-          - manyfold-solo
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -64,7 +66,7 @@ jobs:
         with:
           context: .
           file: ./docker/${{ matrix.variant }}.dockerfile
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.docker_meta.outputs.tags }}
           labels: ${{ steps.docker_meta.outputs.labels }}
@@ -95,11 +97,14 @@ jobs:
           --health-timeout 5s
           --health-retries 5
       manyfold:
-        image: ghcr.io/networkbuild3r/manyfold-solo:sha-${{ github.sha }}
+        # Use full image (solo dropped from matrix to cut CI time); sha tag is unique per commit.
+        image: ghcr.io/networkbuild3r/manyfold:sha-${{ github.sha }}
         env:
           SECRET_KEY_BASE: abc123
           DATABASE_HOST: postgres
           DATABASE_PASSWORD: manyfold
+          # Skip heavy boot paths if any
+          SKIP_LIBRARY_CHOWN: "1"
         options: >-
           --health-cmd "wget -q -O - http://localhost:3214/health || exit 1"
           --health-start-period 90s
