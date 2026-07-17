@@ -91,5 +91,15 @@ RSpec.describe Search::FilterService do
       service = described_class.new(ActionController::Parameters.new(has_image: "0"))
       expect(service.models(Model.all).count).to eq 4
     end
+
+    it "treats library/creator/collection 'all' as no filter" do
+      service = described_class.new(ActionController::Parameters.new(
+        library: "all",
+        creator: "all",
+        collection: "all"
+      ))
+      expect(service.any?).to be false
+      expect(service.models(Model.all).count).to eq 4
+    end
   end
 end

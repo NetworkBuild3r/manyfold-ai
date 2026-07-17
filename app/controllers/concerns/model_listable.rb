@@ -27,5 +27,26 @@ module ModelListable
     @models = @models.includes [:creator, :collection]
     # preview_file only — avoid preloading every model_file on index
     @models = @models.preload [:preview_file]
+
+    load_model_filter_sidebar_options
+  end
+
+  # Options for the models index filter form (full HTML only — skip turbo/infinite-scroll fragments).
+  def load_model_filter_sidebar_options
+    return unless controller_name == "models" && action_name == "index"
+    return if turbo_frame_request?
+    return if request.headers["X-Infinite-Scroll"].present?
+    return unless request.format.html?
+
+    visible_models = policy_scope(Model)
+    @filter_libraries = policy_scope(Library).order(Arel.sql("LOWER(libraries.name) ASC"))
+    @filter_creators = policy_scope(Creator)
+      .where(id: visible_models.where.not(creator_id: nil).select(:creator_id))
+      .order(Arel.sql("LOWER(creators.name) ASC"))
+      .limit(1000)
+    @filter_collections = policy_scope(Collection)
+      .where(id: visible_models.where.not(collection_id: nil).select(:collection_id))
+      .order(Arel.sql("LOWER(collections.name) ASC"))
+      .limit(1000)
   end
 end

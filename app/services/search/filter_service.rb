@@ -17,6 +17,14 @@ class Search::FilterService
       :has_image,
       tag: []
     )
+    # Sidebar form uses "all" for unconstrained selects; drop so they do not stick as filters.
+    %i[library collection creator].each do |key|
+      @filters.delete(key) if @filters[key].to_s == "all"
+    end
+    @filters.delete(:link) if @filters[:link].blank?
+    @filters.delete(:q) if @filters[:q].blank?
+    @filters.delete(:has_image) unless ActiveModel::Type::Boolean.new.cast(@filters[:has_image])
+
     @collection = Collection.find_param(parameter(:collection)) if parameter(:collection).present?
     @creator = Creator.find_param(parameter(:creator)) if parameter(:creator).present?
     @owner = User.find_param(parameter(:owner)) if parameter(:owner).present?

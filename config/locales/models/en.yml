@@ -59,9 +59,17 @@ en:
       has_image_filter_on: With images
       no_results_html: Sorry, we couldn't find anything to show you! Try changing your filters or search terms, or uploading some models.
     model_filters_card:
+      any: Any
+      apply: Apply filters
+      clear: Clear all
       has_image_active_hint: Click again to show all models.
       has_image_help: Hide models that have no image preview.
-      title: Preview
+      link: Link contains
+      link_placeholder: thingiverse.com…
+      none: None (unassigned)
+      search: Search
+      search_placeholder: Name, notes…
+      title: Filter models
       no_results_signed_out_html: Sorry, we couldn't find anything to show you! There might be more to see if you <a href="%{link}">sign in</a>.
       search:
         or_other_sites: 'Or, try searching elsewhere:'
