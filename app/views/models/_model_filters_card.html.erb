@@ -1,0 +1,25 @@
+<%# Always-visible model list filters in the right sidebar %>
+<% has_image_on = ActiveModel::Type::Boolean.new.cast(@filter&.parameter(:has_image)) %>
+<%= card :secondary, t(".title", default: "Preview") do %>
+  <p class="text-sm text-secondary-600 dark:text-secondary-300 mb-3">
+    <%= t(".has_image_help", default: "Hide models with no image preview.") %>
+  </p>
+  <% if has_image_on %>
+    <%= link_to models_path((@filter&.to_params || {}).except(:has_image)),
+          class: "inline-flex w-full items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500",
+          aria: {pressed: "true"} do %>
+      <%= Icon icon: "image", label: "" %>
+      <span><%= t("models.list.has_image_filter_on", default: "With images") %> ✓</span>
+    <% end %>
+    <p class="mt-2 text-xs text-secondary-500 dark:text-secondary-400">
+      <%= t(".has_image_active_hint", default: "Click again to show all models.") %>
+    </p>
+  <% else %>
+    <%= link_to models_path((@filter&.to_params || {}).merge(has_image: "1")),
+          class: "inline-flex w-full items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-lg border border-secondary-300 dark:border-secondary-500 bg-white dark:bg-secondary-800 text-secondary-900 dark:text-secondary-100 hover:bg-secondary-50 dark:hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-primary-500",
+          aria: {pressed: "false"} do %>
+      <%= Icon icon: "image", label: "" %>
+      <span><%= t("models.list.has_image_filter", default: "With images only") %></span>
+    <% end %>
+  <% end %>
+<% end %>
