@@ -221,8 +221,8 @@ class ModelFile < ApplicationRecord
     Analysis::GeometricAnalysisJob.set(wait: delay).perform_later(id)
   end
 
-  def parse_metadata_later(delay: 0.seconds)
-    Scan::ModelFile::ParseMetadataJob.set(wait: delay).perform_later(id)
+  def parse_metadata_later(delay: 0.seconds, scan_batch_id: nil)
+    Scan::ModelFile::ParseMetadataJob.set(wait: delay).perform_later(id, scan_batch_id: scan_batch_id)
   end
 
   def up_direction

@@ -514,10 +514,16 @@ class Model < ApplicationRecord
   end
 
   def post_creation_activity
+    # Skip Fediverse/activity fan-out during library discovery batches
+    # (avoids thousands of Federails::NotifyInboxJob on :default).
+    return if Current.scan_batch_id.present?
+
     Activity::ModelPublishedJob.set(wait: 5.seconds).perform_later(id) if public?
   end
 
   def post_update_activity
+    return if Current.scan_batch_id.present?
+
     if creator_previously_changed? && creator&.public?
       Activity::ModelPublishedJob.set(wait: 5.seconds).perform_later(id)
     elsif collection_previously_changed? && collection&.public?

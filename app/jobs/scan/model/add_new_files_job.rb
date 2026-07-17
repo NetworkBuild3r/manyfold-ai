@@ -43,7 +43,9 @@ class Scan::Model::AddNewFilesJob < ApplicationJob
         file = model.model_files.create(filename: filename)
         if file.persisted?
           created += 1
-          file.parse_metadata_later
+          # Thread scan_batch_id so ParseMetadata can skip AnalyseModelFileJob
+          # during library discovery (see SCAN_DEFER_ANALYSIS).
+          file.parse_metadata_later(scan_batch_id: scan_batch_id)
         end
       end
 

@@ -46,6 +46,14 @@ RSpec.describe Scan::Model::AddNewFilesJob do
       expect { described_class.perform_now(model.id) }
         .to have_enqueued_job(Scan::Model::ParseMetadataJob).with(model.id, scan_batch_id: nil).once
     end
+
+    it "passes scan_batch_id into file metadata parse jobs" do
+      expect {
+        described_class.perform_now(model.id, scan_batch_id: "batch-abc")
+      }.to have_enqueued_job(Scan::ModelFile::ParseMetadataJob)
+        .with(kind_of(Integer), scan_batch_id: "batch-abc")
+        .exactly(2).times
+    end
   end
 
 

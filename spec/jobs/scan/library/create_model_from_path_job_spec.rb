@@ -38,4 +38,18 @@ RSpec.describe Scan::Library::CreateModelFromPathJob do
     described_class.perform_now(library.id, "model")
     expect(Model.first.tag_list).to be_empty
   end
+
+  it "does not enqueue Activity publish jobs during a scan batch" do
+    expect {
+      described_class.perform_now(library.id, "model", scan_batch_id: "batch-xyz")
+    }.not_to have_enqueued_job(Activity::ModelPublishedJob)
+  end
+
+  it "passes scan_batch_id into AddNewFilesJob" do
+    described_class.perform_now(library.id, "model", scan_batch_id: "batch-xyz")
+    expect(Scan::Model::AddNewFilesJob).to have_been_enqueued.with(
+      Model.first.id,
+      hash_including(scan_batch_id: "batch-xyz")
+    ).once
+  end
 end

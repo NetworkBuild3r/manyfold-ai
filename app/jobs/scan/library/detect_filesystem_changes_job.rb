@@ -91,8 +91,11 @@ class Scan::Library::DetectFilesystemChangesJob < ApplicationJob
       "missing_models=#{missing_model_paths.size} batch=#{scan_batch_id}"
     )
 
-    new_model_paths.each do |path|
-      library.create_model_from_path_later(path, scan_batch_id: scan_batch_id)
+    # Stagger fan-out so Redis + NFS are not hit by thousands of CreateModel jobs
+    # in the same second. Cap at 30s so the tail is not delayed forever.
+    new_model_paths.each_with_index do |path, index|
+      delay = [index * 0.05, 30.0].min.seconds
+      library.create_model_from_path_later(path, delay: delay, scan_batch_id: scan_batch_id)
     end
 
     # Models that lost files (but still exist): cheap problem check only — no re-parse/re-analyse.
@@ -167,19 +170,25 @@ class Scan::Library::DetectFilesystemChangesJob < ApplicationJob
 
     new_folders = []
     categories_scanned = 0
+    common_dir_names = ApplicationJob.common_subfolders.keys.map(&:downcase).to_set
 
     safe_children(root).each do |category|
       cat_abs = File.join(root, category)
       next unless File.directory?(cat_abs)
       categories_scanned += 1
 
-      # Case 1: category itself is a model (files directly under top-level dir)
-      if model_dir_has_indexable?(cat_abs) && !known.include?(category)
+      # Case 1: category itself is a model (files or common subfolders like files/images)
+      category_is_model = model_dir_has_indexable?(cat_abs)
+      if category_is_model && !known.include?(category)
         new_folders << category
       end
 
       # Case 2: organized layout Category/ModelName
+      # Never treat thingiverse-style common subfolders (files/, images/, stl/, …)
+      # as separate models when scanning under a category.
       safe_children(cat_abs).each do |model_name|
+        next if common_dir_names.include?(model_name.downcase)
+
         model_abs = File.join(cat_abs, model_name)
         next unless File.directory?(model_abs)
         rel = File.join(category, model_name).tr("\\", "/")
