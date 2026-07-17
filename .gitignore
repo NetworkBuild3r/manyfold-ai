@@ -41,9 +41,13 @@ yarn-debug.log*
 /vendor/bundle
 
 .env*
+# Allow standalone curator service env example + compose
+!spark-curate/.env.example
+!spark-curate/docker-compose.yml
 
 /config/credentials/test.key
 docker-compose.yml
+!spark-curate/docker-compose.yml
 
 /app/assets/builds/*
 !/app/assets/builds/.keep
