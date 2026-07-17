@@ -326,10 +326,29 @@ RSpec.describe "Models" do
           expect(response).to have_http_status(:success)
         end
 
-        it "returns paginated models" do # rubocop:todo RSpec/MultipleExpectations
-          get "/models?library=#{library.to_param}&page=2"
+        it "returns paginated models with infinite-scroll chrome" do # rubocop:todo RSpec/MultipleExpectations
+          get "/models?library=#{library.to_param}&page=1"
           expect(response).to have_http_status(:success)
-          expect(response.body).to match(/pagination/)
+          expect(response.body).to include('data-controller="infinite-scroll"')
+          expect(response.body).to include("model-card-grid")
+        end
+
+        it "serves turbo-stream pages for infinite scroll" do # rubocop:todo RSpec/MultipleExpectations
+          get "/models",
+            params: {library: library.to_param, page: 1},
+            headers: {"Accept" => "text/vnd.turbo-stream.html"}
+          expect(response).to have_http_status(:success)
+          expect(response.media_type).to eq("text/vnd.turbo-stream.html")
+          expect(response.body).to include("turbo-stream")
+          expect(response.body).to include("models-scroll-sentinel")
+        end
+
+        it "serves flat HTML page fragments when X-Infinite-Scroll is set" do # rubocop:todo RSpec/MultipleExpectations
+          get "/models",
+            params: {library: library.to_param, page: 1},
+            headers: {"X-Infinite-Scroll" => "1"}
+          expect(response).to have_http_status(:success)
+          expect(response.body).to include("model-stream-page").or include("model-card")
         end
       end
 

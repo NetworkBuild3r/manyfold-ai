@@ -51,8 +51,10 @@ en:
     general:
       edit: Edit Model
     list:
+      back_to_top: Back to top
       bulk_edit: Edit All Models
       clear_filters: Clear filters
+      end_of_results: End of results
       no_results_html: Sorry, we couldn't find anything to show you! Try changing your filters or search terms, or uploading some models.
       no_results_signed_out_html: Sorry, we couldn't find anything to show you! There might be more to see if you <a href="%{link}">sign in</a>.
       search:

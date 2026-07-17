@@ -46,27 +46,45 @@
       <% end %>
       <% current = @models.try(:current_page) || 1 %>
       <% next_url = @models.next_page ? models_page_url(@models.next_page, @filter) : "" %>
-      <%# Cards are DIRECT children of the grid (no display:contents wrapper).
+      <%# Controller wraps grid + chrome so back-to-top/status are valid targets.
+          Cards remain DIRECT children of #model-card-grid for CSS grid layout;
           turbo_stream.before sentinel inserts new cards as siblings. %>
-      <div class="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4 mb-4"
-           id="model-card-grid"
-           role="list"
-           aria-label="Models"
-           data-controller="infinite-scroll"
+      <div data-controller="infinite-scroll"
            data-infinite-scroll-next-url-value="<%= next_url %>"
            data-infinite-scroll-start-page-value="<%= current %>"
-           data-infinite-scroll-per-page-value="<%= pagination_settings["per_page"] %>">
-        <% @models.each_with_index do |model, index| %>
-          <%= render Components::ModelCard.new(model: model, eager_preview: index < 8) %>
-        <% end %>
-        <div id="models-scroll-sentinel"
-             class="models-scroll-sentinel col-span-full"
-             data-infinite-scroll-target="sentinel"
-             <% if next_url.present? %>data-next-url="<%= next_url %>"<% end %>
-             <% if next_url.blank? %>hidden<% end %>
-             aria-hidden="true">
-          <span class="models-scroll-sentinel__label">Loading more…</span>
+           data-infinite-scroll-per-page-value="<%= pagination_settings["per_page"] %>"
+           data-infinite-scroll-end-message-value="<%= t(".end_of_results", default: "End of results") %>">
+        <div class="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4 mb-4"
+             id="model-card-grid"
+             role="list"
+             aria-label="Models"
+             data-infinite-scroll-target="grid">
+          <% @models.each_with_index do |model, index| %>
+            <%= render Components::ModelCard.new(model: model, eager_preview: index < 8) %>
+          <% end %>
+          <div id="models-scroll-sentinel"
+               class="models-scroll-sentinel col-span-full"
+               data-infinite-scroll-target="sentinel"
+               <% if next_url.present? %>data-next-url="<%= next_url %>" data-has-more="true"<% end %>
+               <% if next_url.blank? %>data-has-more="false" hidden<% end %>
+               aria-hidden="true">
+            <span class="models-scroll-sentinel__label">Loading more…</span>
+          </div>
         </div>
+        <p id="models-scroll-status"
+           class="models-scroll-status"
+           data-infinite-scroll-target="status"
+           role="status"
+           aria-live="polite"
+           hidden></p>
+        <button type="button"
+                class="models-back-to-top"
+                data-infinite-scroll-target="backToTop"
+                hidden
+                aria-label="<%= t(".back_to_top", default: "Back to top") %>">
+          <i class="bi bi-arrow-up" aria-hidden="true"></i>
+          <span><%= t(".back_to_top", default: "Back to top") %></span>
+        </button>
       </div>
       <% if @search %>
         <div class="flex items-center gap-2 mt-4 py-3 px-4 rounded-lg bg-secondary-100 dark:bg-secondary-800 text-secondary-700 dark:text-secondary-300">
