@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [ "main" ]
   push:
-    branches: [ "main" ]
+    branches: [ "main", "upstream-v0.146" ]
     tags:
       - v*
   workflow_dispatch:
