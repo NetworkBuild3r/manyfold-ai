@@ -23,12 +23,13 @@ RUN apk add --no-cache \
   mesa-egl=25.2.7-r1
 
 # Install latest VTK and OpenCascade from Alpine edge
+# Unpinned edge packages — Alpine edge versions drift and break pinned builds.
 RUN apk add --no-cache --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community \
-  vtk=9.5.2-r2 \
-  opencascade=7.9.3-r2 \
-  imath=3.2.2-r1 \
-  alembic-libs=1.8.11-r0 \
-  openexr-libopenexr=3.4.11-r0
+  vtk \
+  opencascade \
+  imath \
+  alembic-libs \
+  openexr-libopenexr
 
 # Scripts for cross-platform architecture detection
 COPY --from=tonistiigi/xx / /
