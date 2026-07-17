@@ -83,3 +83,7 @@ rspec_full.txt
 rspec_output.txt
 web_logs.txt
 script/start-and-capture-logs.ps1
+
+__pycache__/
+*.py[cod]
+
