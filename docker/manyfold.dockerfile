@@ -1,4 +1,4 @@
-# syntax = devthefuture/dockerfile-x
+# syntax=devthefuture/dockerfile-x
 
 INCLUDE docker/base.dockerfile
 INCLUDE docker/build.dockerfile

@@ -1,8 +1,7 @@
+# syntax=devthefuture/dockerfile-x
 # Solo image: app + Redis in one container. Uses same base/build/runtime as manyfold.
 # Sets REDIS_URL to localhost; entrypoint starts redis-server when REDIS_URL points to 127.0.0.1.
 # For DB, provide DATABASE_* env or link a postgres service (e.g. in CI smoke test).
-
-# syntax = devthefuture/dockerfile-x
 
 INCLUDE docker/base.dockerfile
 INCLUDE docker/build.dockerfile

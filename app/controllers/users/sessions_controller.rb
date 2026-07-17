@@ -39,10 +39,14 @@ class Users::SessionsController < Devise::SessionsController
     create_admin_user if User.with_role(:administrator).empty?
     # If in single user mode, or on first run,
     # automatically sign in with an admin account
-    if !SiteSettings.multiuser_enabled? || User.with_role(:administrator).first.first_use?
-      sign_in(:user, User.with_role(:administrator).first)
+    admin = User.with_role(:administrator).first
+    return unless admin
+    if !SiteSettings.multiuser_enabled? || admin.first_use?
+      sign_in(:user, admin)
       flash.discard
-      redirect_back_or_to root_path, alert: nil
+      # Always land on a concrete app path — redirect_back can bounce to /users/sign_in
+      # and recreate a loop for clients that follow redirects without a cookie jar.
+      redirect_to(root_path, alert: nil)
     end
   end
 
