@@ -50,7 +50,7 @@ zh-CN:
       bulk_edit: 编辑所有模型
       no_results_html: 抱歉，我们找不到任何可向您展示的内容！请尝试更改过滤器或搜索条件，或上传一些模型。
       no_results_signed_out_html: 很抱歉，我们找不到任何可向您展示的内容！如果您<a href="%{link}">登录</a>，可能会看到更多内容。
-      search:
+      search_elsewhere:
         or_other_sites: 或者，尝试在其他地方搜索：
         other_sites: 找不到您想要的？试试在其他地方搜索：
       skip_models: 跳过模型列表

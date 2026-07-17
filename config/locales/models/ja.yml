@@ -50,7 +50,7 @@ ja:
       bulk_edit:
       no_results_html:
       no_results_signed_out_html:
-      search:
+      search_elsewhere:
         or_other_sites:
         other_sites:
       skip_models:

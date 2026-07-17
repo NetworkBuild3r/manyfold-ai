@@ -255,7 +255,12 @@ module ApplicationHelper
 
   def translate_with_locale_wrapper(key, **options)
     translate(key, **options) do |str, _key|
-      str&.locale ? content_tag(:span, lang: str.locale) { sanitize str } : str
+      # Mobility translations expose .locale; plain Strings/Hashes/etc. must pass through.
+      if str.respond_to?(:locale) && str.locale
+        content_tag(:span, lang: str.locale) { sanitize str }
+      else
+        str
+      end
     end
   end
   alias_method :t, :translate_with_locale_wrapper

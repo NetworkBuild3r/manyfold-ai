@@ -7,7 +7,7 @@
         <p class="mt-2"><%= link_to t(".clear_filters"), models_path, class: "inline-flex items-center px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2" %></p>
       <% end %>
       <% if @search %>
-        <p class="mt-4 text-sm text-secondary-600 dark:text-secondary-400"><%= t ".search.or_other_sites" %></p>
+        <p class="mt-4 text-sm text-secondary-600 dark:text-secondary-400"><%= t ".search_elsewhere.or_other_sites" %></p>
         <div class="mt-2"><%= render "search_links" %></div>
       <% end %>
     </div>
@@ -105,7 +105,7 @@
       <% if @search %>
         <div class="flex items-center gap-2 mt-4 py-3 px-4 rounded-lg bg-secondary-100 dark:bg-secondary-800 text-secondary-700 dark:text-secondary-300">
           <%= Icon icon: "search", label: "" %>
-          <span><%= t ".search.other_sites" %></span>
+          <span><%= t ".search_elsewhere.other_sites" %></span>
           <%= render "search_links" %>
         </div>
       <% end %>
