@@ -39,7 +39,8 @@ jobs:
         id: docker_meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository_owner }}/${{ matrix.variant }}
+          # GHCR requires lowercase repository names (github.repository_owner may be mixed case).
+          images: ghcr.io/networkbuild3r/${{ matrix.variant }}
           tags: |
             type=raw,value=${{ inputs.tag }},event=workflow_dispatch
             type=schedule,pattern=nightly
@@ -94,7 +95,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
       manyfold:
-        image: ghcr.io/${{ github.repository_owner }}/manyfold-solo:sha-${{ github.sha }}
+        image: ghcr.io/networkbuild3r/manyfold-solo:sha-${{ github.sha }}
         env:
           SECRET_KEY_BASE: abc123
           DATABASE_HOST: postgres
