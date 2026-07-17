@@ -36,6 +36,7 @@ Turn a messy dump into a **Manyfold library**:
 | `cleanup-unorg-duplicates.ps1` | Remove `Copy of …` / `(1)` dumps and same-size duplicates; optional full folder drop |
 | `organize-from-decisions.ps1` | Apply gallery “Move” decisions into `3D-Prints` |
 | `organize-unorg.ps1` | Bulk auto-map buckets (dry-run / apply) without reviewing thumbs |
+| **`spark_curate/`** | **DGX Spark vision curator** — Gemma + Qwen + NudeNet reorganize `3D-Prints` (never deletes; dry-run default). See `script/spark_curate/README.md` |
 
 ---
 
