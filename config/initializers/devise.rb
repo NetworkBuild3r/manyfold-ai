@@ -213,13 +213,14 @@ Devise.setup do |config|
 
   # ==> Configuration for :rememberable
   # The time the user will be remembered without asking for credentials again.
-  # config.remember_for = 2.weeks
+  # DEVISE_REMEMBER_DAYS (default 14). Personal long-lived: set e.g. 3650.
+  config.remember_for = ENV.fetch("DEVISE_REMEMBER_DAYS", "14").to_i.days
 
   # Invalidates all the remember me tokens when the user signs out.
   config.expire_all_remember_me_on_sign_out = true
 
-  # If true, extends the user's remember period when remembered via cookie.
-  # config.extend_remember_period = false
+  # Extend remember period on each request so active users never drop.
+  config.extend_remember_period = ENV.fetch("DEVISE_EXTEND_REMEMBER", "1") != "0"
 
   # Options to be passed to the created cookie. For instance, you can set
   # secure: true in order to force SSL only cookies.
@@ -229,9 +230,10 @@ Devise.setup do |config|
   }
 
   # ==> Configuration for :timeoutable
-  # The time you want to timeout the user session without activity. After this
-  # time the user will be asked for credentials again. Default is 30 minutes.
-  config.timeout_in = 30.minutes
+  # Idle session timeout. DEVISE_TIMEOUT_MINUTES (default 30). Set 0 to disable
+  # (never auto-logout from inactivity) — intended for personal single-user deploys.
+  _timeout_minutes = ENV.fetch("DEVISE_TIMEOUT_MINUTES", "30").to_i
+  config.timeout_in = _timeout_minutes.positive? ? _timeout_minutes.minutes : nil
 
   # ==> Configuration for :lockable
   # Defines which strategy will be used to lock an account.
