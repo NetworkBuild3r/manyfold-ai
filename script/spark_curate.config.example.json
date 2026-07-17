@@ -1,0 +1,44 @@
+{
+  "spark": {
+    "gemma_url": "http://192.168.11.161:11435/v1",
+    "gemma_model": "gemma4-uncensored",
+    "curator_url": "http://192.168.11.161:11436/v1",
+    "curator_model": "qwen2.5-1.5b-instruct",
+    "nudenet_url": "http://192.168.11.161:8090",
+    "embed_url": "http://192.168.11.161:8000/v1",
+    "embed_model": "BAAI/bge-m3",
+    "vision_timeout": 180,
+    "curator_timeout": 60,
+    "nudenet_timeout": 30,
+    "max_tokens_vision": 1200,
+    "max_tokens_curator": 800,
+    "temperature": 0.15
+  },
+  "curate": {
+    "library_root": "\\\\192.168.11.102\\Backups\\3D-Prints",
+    "work_dir": "",
+    "min_confidence": 0.55,
+    "never_delete": true,
+    "workers": 2,
+    "limit": 0,
+    "only_categories": [],
+    "skip_if_has_preview_and_known_category": false,
+    "nudenet_sensitive_threshold": 0.6,
+    "max_image_edge": 1024,
+    "jpeg_quality": 85,
+    "categories": [
+      "Anime",
+      "AnySTL",
+      "B3dserk",
+      "Cartoons",
+      "Cosplay",
+      "Cults3D",
+      "D&D",
+      "DC",
+      "Games",
+      "Movie TV",
+      "Unknown",
+      "WICKED"
+    ]
+  }
+}
