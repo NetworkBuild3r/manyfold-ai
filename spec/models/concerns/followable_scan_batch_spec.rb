@@ -18,4 +18,13 @@ RSpec.describe Model, "Followable scan batch gating" do
     expect(model.federails_actor).to be_nil
     expect(Federails::Actor.where(entity: model).count).to eq 0
   end
+
+  it "returns empty followers and false followed_by? when federation is disabled" do
+    allow(SiteSettings).to receive(:federation_enabled?).and_return(false)
+    model = create(:model)
+    follower = create(:user)
+    expect(model.followers).to eq []
+    expect(model.followed_by?(follower)).to be false
+    expect(model.following_followers).to be_nil
+  end
 end

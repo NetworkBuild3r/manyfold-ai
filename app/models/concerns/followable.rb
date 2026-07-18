@@ -5,7 +5,7 @@ module Followable
   TIMEOUT = Rails.env.development? ? 1 : 15
 
   included do
-    delegate :following_followers, to: :federails_actor
+    delegate :following_followers, to: :federails_actor, allow_nil: true
     after_commit :followable_post_creation_activity, on: :create
     after_commit :followable_post_update_activity, on: :update
 
@@ -13,10 +13,12 @@ module Followable
   end
 
   def followers
+    return [] unless federails_actor
     federails_actor.followers.map(&:entity)
   end
 
   def followed_by?(follower)
+    return false unless federails_actor && follower&.federails_actor
     federails_actor.followers.include? follower.federails_actor
   end
 
@@ -56,7 +58,7 @@ module Followable
   end
 
   def auto_accept(follow)
-    return unless federails_actor.local?
+    return unless federails_actor&.local?
     follow.accept!
   end
 end
