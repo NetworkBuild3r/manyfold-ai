@@ -11,7 +11,7 @@ Stop broken card thumbnails when DB `preview_file` points at NFS paths that no l
 | A Planning files | complete | Reset task_plan / findings / progress |
 | B Harden serve/UI | complete | 404 missing files; PreviewFrame empty; specs |
 | C Heal previews | complete | resolve_preview_file + HealMissingPreviewsJob + rake |
-| D Ship + run heal | in_progress | Pin digest, Argo sync, rake heal, verify |
+| D Ship + run heal | complete | Pin f052fa36; healed 1802; verified |
 
 ## Decisions
 
@@ -23,4 +23,5 @@ Stop broken card thumbnails when DB `preview_file` points at NFS paths that no l
 
 | Error | Attempt | Resolution |
 |-------|---------|------------|
-| | | |
+| `bash` missing in container | 1 | Used `env LIMIT=… bundle exec rake` |
+| Docker smoke-test failed | 1 | Pin digest from successful build job (as before) |
