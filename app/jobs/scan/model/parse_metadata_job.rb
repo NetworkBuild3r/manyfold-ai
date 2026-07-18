@@ -55,13 +55,20 @@ class Scan::Model::ParseMetadataJob < ApplicationJob
 
   private
 
-  # Keep an existing image preview. Upgrade nil or non-image preview when an
-  # image file exists (AddNewFiles can attach photos after a mesh was chosen).
+  # Prefer an on-disk image. Keep a missing image only when no on-disk image
+  # exists (HealMissingPreviewsJob clears those). Upgrade nil/mesh → image.
   def resolve_preview_file(model)
     identified = identify_preview_file(model)
     current = model.preview_file
+    on_disk_image = model.model_files
+      .select { |f| f.is_image? && f.exists_on_storage? }
+      .min_by { |f| preview_priority(f) }
 
-    preview = if current&.is_image?
+    preview = if current&.is_image? && current.exists_on_storage?
+      current
+    elsif on_disk_image
+      on_disk_image
+    elsif current&.is_image?
       current
     elsif identified&.is_image?
       identified

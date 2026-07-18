@@ -156,7 +156,7 @@ class ApplicationController < ActionController::Base
     self.status = status
     self.headers.merge!(headers)
     self.response_body = body
-  rescue Errno::ENOENT
-    head :internal_server_error
+  rescue Shrine::FileNotFound, Errno::ENOENT
+    head :not_found
   end
 end

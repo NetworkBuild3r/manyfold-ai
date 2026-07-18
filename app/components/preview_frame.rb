@@ -45,6 +45,8 @@ class Components::PreviewFrame < Components::Base
 
   def render_local
     if @file.is_image?
+      return empty unless @file.exists_on_storage?
+
       div(class: preview_container_class) do
         opts = {
           class: image_class,

@@ -162,6 +162,15 @@ RSpec.describe "Model Files" do
           expect(response.media_type).to eq("image/jpeg")
         end
       end
+
+      describe "GET a file that is missing on storage", :as_member do
+        it "returns not found instead of 500" do
+          abs = File.join(library.path, jpg_file.path_within_library)
+          FileUtils.rm_f(abs)
+          get model_model_file_path(model, jpg_file, format: :jpg)
+          expect(response).to have_http_status(:not_found)
+        end
+      end
     end
 
     describe "POST /models/:model_id/model_files", :as_moderator do

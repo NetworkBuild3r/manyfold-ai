@@ -37,6 +37,18 @@ RSpec.describe Scan::Model::ParseMetadataJob do
         .not_to change { model.reload.preview_file_id }
     end
 
+    it "switches from a missing image preview to an on-disk image" do
+      MockDirectory.create(["m/present.jpg"]) do |path|
+        lib = create(:library, path: path)
+        m = create(:model, library: lib, path: "m")
+        missing = create(:model_file, model: m, filename: "missing.jpg")
+        present = create(:model_file, model: m, filename: "present.jpg")
+        m.update!(preview_file: missing)
+        expect { described_class.perform_now(m.id) }
+          .to change { m.reload.preview_file_id }.from(missing.id).to(present.id)
+      end
+    end
+
     it "enqueues FinalizeScanBatchJob when scan_batch_id is provided (which runs CheckForProblemsJob)" do
       expect { described_class.perform_now(model.id, scan_batch_id: "batch-123") }
         .to have_enqueued_job(Scan::Model::FinalizeScanBatchJob).with(model.id, scan_batch_id: "batch-123").once

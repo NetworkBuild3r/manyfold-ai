@@ -1,29 +1,26 @@
-# Task Plan: Fix manyfold-ai scanner issues
+# Task Plan: Fix blank card previews
 
 ## Goal
 
-Fix filesystem discovery so library scans find deep trees and new files in existing models; harden locks/scan state, Federails batching, and NFS efficiency. Stay on manyfold-ai `main` only.
+Stop broken card thumbnails when DB `preview_file` points at NFS paths that no longer exist. Harden serve/UI (404 + empty placeholder), heal stale preview pointers, ship on manyfold-ai `main` only.
 
 ## Phases
 
 | Phase | Status | Notes |
 |-------|--------|-------|
-| 0 Planning files | complete | task_plan / findings / progress |
-| 1 Discovery correctness | complete | deep recurse, known-file deltas, symlinks, specs |
-| 2 Reliability | complete | lock_ttl, scan_started_at clear, create race |
-| 3 Federails / scan batch | complete | Followable + actor skip |
-| 4 NFS efficiency | complete | refresh once, CheckMissingFilesJob, light problems |
-| 5 Analyse undigested | complete | job + rake |
-| 6 Ship | complete | pinned 1ad48b66; Synced/Healthy; scan draining |
+| A Planning files | complete | Reset task_plan / findings / progress |
+| B Harden serve/UI | complete | 404 missing files; PreviewFrame empty; specs |
+| C Heal previews | complete | resolve_preview_file + HealMissingPreviewsJob + rake |
+| D Ship + run heal | in_progress | Pin digest, Argo sync, rake heal, verify |
 
 ## Decisions
 
-- Depth: recurse under unknown dirs (max depth 6 via SCAN_MAX_DEPTH); do not require spark-curate.
-- Keep SCAN_DEFER_ANALYSIS=1; Phase B is AnalyseUndigestedJob.
-- Never full-library Dir.glob("**/*") into memory.
+- Heal + harden only — do not auto-delete orphan missing-folder models.
+- PreviewFrame may call `exists_on_storage?` once per visible card.
+- `send_file_content` returns 404 (not 500) on ENOENT / Shrine::FileNotFound.
 
 ## Errors Encountered
 
 | Error | Attempt | Resolution |
 |-------|---------|------------|
-| No local ruby/docker for rspec | 1 | Rely on GH Actions CI after push |
+| | | |
