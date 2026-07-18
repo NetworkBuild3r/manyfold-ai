@@ -6,6 +6,6 @@ module Filterable
   end
 
   def get_filters
-    @filter = Search::FilterService.new(params)
+    @filter = Search::FilterService.new(params, user: current_user)
   end
 end

@@ -5,8 +5,9 @@ class Components::ImageCarousel < Components::Base
 
   register_value_helper :policy
 
-  def initialize(images:)
+  def initialize(images:, browse: false)
     @images = images
+    @browse = browse
   end
 
   def render?
@@ -14,20 +15,17 @@ class Components::ImageCarousel < Components::Base
   end
 
   def view_template
-    div id: "imageCarousel",
-      class: "relative w-full aspect-[4/3] rounded-xl overflow-hidden mb-4",
+    div id: carousel_dom_id,
+      class: "relative w-full aspect-[4/3] rounded-xl overflow-hidden #{"mb-4" unless @browse}",
       role: "group",
-      data: {
-        controller: "carousel",
-        action: "mouseenter->carousel#onEnter mouseleave->carousel#onLeave"
-      },
+      data: carousel_data,
       aria: {
         roledescription: "carousel"
       } do
-      if @images.count > 1
+      if @images.count > 1 && !@browse
         play_pause_control
       end
-      div id: "imageCarouselInner",
+      div id: "#{carousel_dom_id}Inner",
         class: "absolute inset-0 overflow-hidden",
         data: {carousel_target: "inner"},
         aria: {
@@ -47,7 +45,7 @@ class Components::ImageCarousel < Components::Base
               class: "block w-full h-full object-contain bg-secondary-900 dark:bg-secondary-950",
               loading: ((index <= 1) ? "eager" : "lazy"),
               decoding: "async"
-            button_overlay(image)
+            button_overlay(image) unless @browse
           end
         end
       end
@@ -59,6 +57,21 @@ class Components::ImageCarousel < Components::Base
   end
 
   private
+
+  def carousel_dom_id
+    @browse ? "browseCarousel" : "imageCarousel"
+  end
+
+  def carousel_data
+    data = {
+      controller: "carousel",
+      carousel_interval_value: (@browse ? 0 : 5000)
+    }
+    unless @browse
+      data[:action] = "mouseenter->carousel#onEnter mouseleave->carousel#onLeave"
+    end
+    data
+  end
 
   def play_pause_control
     button id: "rotationControl",

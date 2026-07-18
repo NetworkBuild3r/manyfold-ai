@@ -17,13 +17,13 @@ module ApplicationHelper
   def heading_classes(level = :h1)
     case level
     when :h1, :page
-      "text-2xl font-bold text-secondary-900 dark:text-secondary-100"
+      "font-display text-3xl font-semibold tracking-tight text-secondary-900 dark:text-secondary-100"
     when :h2, :section
-      "text-xl font-semibold text-secondary-900 dark:text-secondary-100"
+      "font-display text-xl font-semibold text-secondary-900 dark:text-secondary-100"
     when :h3, :subsection
       "text-lg font-medium text-secondary-900 dark:text-secondary-100"
     else
-      "text-2xl font-bold text-secondary-900 dark:text-secondary-100"
+      "font-display text-3xl font-semibold tracking-tight text-secondary-900 dark:text-secondary-100"
     end
   end
 
@@ -215,12 +215,17 @@ module ApplicationHelper
     link_class = if options[:style].present?
       options[:style]
     else
-      base = "flex items-center gap-1.5 px-3 py-2 rounded-lg text-white/90 hover:text-white hover:bg-primary-500 no-underline transition-colors focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary-600"
-      base += " bg-primary-500 text-white" if current_page?(path)
+      active = nav_link_active?(path, options)
+      base = "flex items-center gap-1.5 px-3 py-2 rounded-lg no-underline transition-colors focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-900"
+      base += if active
+        " text-primary-400 bg-white/10 font-medium"
+      else
+        " text-secondary-300 hover:text-white hover:bg-white/10"
+      end
       base
     end
     aria = {label: options[:aria_label]}
-    aria[:current] = "page" if options[:style].blank? && current_page?(path)
+    aria[:current] = "page" if options[:style].blank? && nav_link_active?(path, options)
     link_to(
       safe_join(
         [
@@ -237,6 +242,12 @@ module ApplicationHelper
       data: options[:data],
       aria: aria
     )
+  end
+
+  def nav_link_active?(path, options = {})
+    return true if options[:active]
+    return false if options[:active] == false
+    current_page?(path)
   end
 
   def errors_for(record, attribute)
@@ -275,7 +286,7 @@ module ApplicationHelper
   def active_filters_list(filter)
     return [] if filter.blank? || !filter.any?
     base_params = filter.to_params
-    %i[q collection library creator owner tag missingtag has_image].filter_map do |key|
+    %i[q collection library creator owner tag missingtag has_image list].filter_map do |key|
       build_active_filter_entry(filter, key, base_params)
     end
   end
@@ -301,7 +312,7 @@ module ApplicationHelper
   end
 
   def active_filter_icon(key)
-    {q: "search", collection: "collection", library: "boxes", creator: "person", owner: "person", tag: "tag", missingtag: "tag", has_image: "image"}[key]
+    {q: "search", collection: "collection", library: "boxes", creator: "person", owner: "person", tag: "tag", missingtag: "tag", has_image: "image", list: "heart"}[key]
   end
 
   def active_filter_label_and_value(filter, key)
@@ -333,6 +344,9 @@ module ApplicationHelper
     when :has_image
       label = t("application.filters_card.has_image")
       [label, label, label]
+    when :list
+      label = t("application.filters_card.list.#{filter.parameter(:list)}", default: filter.parameter(:list).to_s.humanize)
+      [t("application.filters_card.list_label"), label, label]
     else
       [nil, nil, nil]
     end

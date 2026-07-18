@@ -48,20 +48,53 @@ en:
       preview_file:
         help: The file displayed as a model preview in library pages
       tags: Tags
+    gallery:
+      no_images: No images for this model.
     general:
       edit: Edit Model
+    index:
+      favorites_hint: Models you starred for later.
+      library_hint: Browse, filter, and scroll your whole library.
+      printed_hint: Models with at least one file marked as printed.
+      queue_hint: Models you want to print next — your shortlist.
+      unprinted_hint: Everything you have that you have not printed yet.
     list:
+      active_filters: Active filters
+      any_collection: All
+      any_creator: All
       back_to_top: Back to top
       bulk_edit: Edit All Models
       clear_filters: Clear filters
-      end_of_results: End of results
+      end_of_results: You've reached the end of this list
+      filters: Filters
       has_image_filter: With images only
       has_image_filter_on: With images
+      loading_more: Loading more…
+      more_collections: More…
+      more_creators: More…
       no_results_html: Sorry, we couldn't find anything to show you! Try changing your filters or search terms, or uploading some models.
       no_results_signed_out_html: Sorry, we couldn't find anything to show you! There might be more to see if you <a href="%{link}">sign in</a>.
+      personal_lists: My lists
+      empty:
+        browse_library: Browse library
+        browse_printed: See what you've printed
+        browse_unprinted: Find something unprinted
+        favorite_body: Tap the heart on any model card to save it here.
+        favorite_title: No favorites yet
+        printed_body: Mark a file as printed on a model page, and it will show up here.
+        printed_title: Nothing marked printed yet
+        queue_body: Bookmark models while you browse — they land here as your shortlist of what to print next.
+        queue_title: Your print queue is empty
+        unprinted_body: Looks like everything in the library is marked printed. Time to add something new?
+        unprinted_title: You've printed it all
+      result_count:
+        one: "%{count} model"
+        other: "%{count} models"
+      scroll_hint: Keep scrolling — more models load automatically.
       search_elsewhere:
         or_other_sites: 'Or, try searching elsewhere:'
         other_sites: 'Can''t find what you want? Try searching elsewhere:'
+      search_placeholder: Search models, tags, creators…
       selection:
         bulk_edit: Bulk edit
         clear: Clear selection
@@ -112,9 +145,20 @@ en:
         title: Problems
     scan:
       success: Model scan started
+    toggle_favorite:
+      added: Added to favorites
+      removed: Removed from favorites
+    toggle_queue:
+      queue_added: Added to print queue
+      queue_removed: Removed from print queue
     show:
       download_preparing: Download is being prepared, please wait.
       download_requested: Download requested and will be ready soon, please wait.
+      favorite: Favorite
+      unfavorite: Unfavorite
+      queue: Queue to print
+      dequeue: In queue
+      fediverse: Fediverse
       file_selection:
         bulk_edit: Bulk edit
         clear: Clear selection

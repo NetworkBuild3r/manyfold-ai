@@ -1,7 +1,7 @@
 <%# Insert cards BEFORE the sentinel so they stay siblings in the CSS grid. %>
 <%= turbo_stream.before "models-scroll-sentinel" do %>
   <% @models.each do |model| %>
-    <%= render Components::ModelCard.new(model: model, eager_preview: false) %>
+    <%= render Components::ModelCard.new(model: model, eager_preview: false, gallery: true) %>
   <% end %>
 <% end %>
 

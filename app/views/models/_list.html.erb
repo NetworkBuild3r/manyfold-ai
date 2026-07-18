@@ -1,82 +1,217 @@
+<% content_for :browse_chrome do %>
+  <% total = @models.try(:total_count) %>
+  <% list = @filter&.parameter(:list).to_s %>
+  <div class="flex flex-col gap-2.5 max-w-screen-2xl mx-auto">
+    <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+      <button type="button"
+              class="lg:hidden inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg border border-secondary-300 dark:border-secondary-600 bg-surface dark:bg-secondary-900 text-secondary-900 dark:text-secondary-100 hover:border-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500"
+              data-action="click->filter-drawer#open"
+              aria-controls="sidebar"
+              aria-expanded="false">
+        <%= Icon icon: "funnel", label: "" %>
+        <span><%= t(".filters") %></span>
+        <% if @filter&.any? %>
+          <span class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full bg-primary-600 text-white text-xs font-semibold"><%= active_filters_list(@filter).size %></span>
+        <% end %>
+      </button>
+
+      <%= form_with url: models_path, method: :get, local: true, role: "search", class: "flex-1 min-w-[12rem] max-w-xl" do |f| %>
+        <% (@filter&.to_params || {}).except(:q).each do |key, value| %>
+          <% Array(value).each do |v| %>
+            <%= hidden_field_tag (key.to_s == "tag" ? "tag[]" : key), v %>
+          <% end %>
+        <% end %>
+        <div class="relative">
+          <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-secondary-400" aria-hidden="true"><%= Icon icon: "search", label: "" %></span>
+          <%= f.search_field :q,
+                value: @filter&.parameter(:q) || @query || params[:q],
+                placeholder: t(".search_placeholder"),
+                aria: {label: t(".search_placeholder")},
+                class: "w-full rounded-xl border border-secondary-300 dark:border-secondary-600 bg-surface dark:bg-secondary-900 pl-10 pr-3 py-2 text-sm shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500" %>
+        </div>
+      <% end %>
+
+      <div class="flex items-center gap-2 ml-auto">
+        <% if total %>
+          <p class="hidden sm:block text-sm text-secondary-600 dark:text-secondary-400 whitespace-nowrap" aria-live="polite">
+            <%= t(".result_count", count: total) %>
+          </p>
+        <% end %>
+        <% has_image_on = ActiveModel::Type::Boolean.new.cast(@filter.parameter(:has_image)) %>
+        <%= link_to models_path(has_image_on ? @filter.to_params.except(:has_image) : @filter.to_params.merge(has_image: "1")),
+              class: "inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg focus-visible:ring-2 focus-visible:ring-primary-500 #{has_image_on ? "bg-primary-600 text-white" : "bg-surface dark:bg-secondary-900 text-secondary-900 dark:text-secondary-100 border border-secondary-300 dark:border-secondary-600 hover:border-primary-400"}",
+              aria: {pressed: has_image_on ? "true" : "false", label: t(".has_image_filter")} do %>
+          <%= Icon icon: "image", label: "" %>
+          <span class="hidden md:inline"><%= has_image_on ? t(".has_image_filter_on") : t(".has_image_filter") %></span>
+        <% end %>
+        <%= SortMenu(filter: @filter) %>
+      </div>
+    </div>
+
+    <% if current_user %>
+      <% list_chip = ->(active) { "shrink-0 inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold no-underline transition-colors #{active ? "bg-secondary-900 text-surface dark:bg-surface dark:text-secondary-900" : "bg-surface dark:bg-secondary-900 border border-secondary-200 dark:border-secondary-700 text-secondary-700 dark:text-secondary-300 hover:border-primary-400"}" } %>
+      <div class="flex gap-1.5 overflow-x-auto scrollbar-thin py-0.5 -mx-0.5 px-0.5" role="tablist" aria-label="<%= t(".personal_lists") %>">
+        <%= link_to t("application.navbar.library"), models_path((@filter&.to_params || {}).except(:list)), class: list_chip.call(list.blank?), role: "tab", "aria-selected": list.blank? %>
+        <%= link_to t("application.navbar.queue"), models_path((@filter&.to_params || {}).merge(list: "queue")), class: list_chip.call(list == "queue"), role: "tab", "aria-selected": list == "queue" %>
+        <%= link_to t("application.navbar.unprinted"), models_path((@filter&.to_params || {}).merge(list: "unprinted")), class: list_chip.call(list == "unprinted"), role: "tab", "aria-selected": list == "unprinted" %>
+        <%= link_to t("application.navbar.favorites"), models_path((@filter&.to_params || {}).merge(list: "favorite")), class: list_chip.call(list == "favorite"), role: "tab", "aria-selected": list == "favorite" %>
+        <%= link_to t("application.navbar.printed"), models_path((@filter&.to_params || {}).merge(list: "printed")), class: list_chip.call(list == "printed"), role: "tab", "aria-selected": list == "printed" %>
+      </div>
+    <% end %>
+
+    <% if @filter.any? %>
+      <div class="flex gap-2 overflow-x-auto pb-0.5 -mx-1 px-1 scrollbar-thin" role="group" aria-label="<%= t(".active_filters") %>">
+        <% active_filters_list(@filter).each do |entry| %>
+          <span class="inline-flex items-center gap-1.5 shrink-0 px-3 py-1.5 rounded-full bg-primary-100 dark:bg-primary-900/40 text-primary-900 dark:text-primary-100 text-sm border border-primary-200/80 dark:border-primary-800">
+            <span class="truncate max-w-[14rem]"><%= entry[:pill_label] %></span>
+            <%= link_to "×", entry[:remove_url], class: "flex-shrink-0 rounded-full p-0.5 hover:bg-primary-200 dark:hover:bg-primary-800 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none no-underline", aria: {label: entry[:aria_remove]} %>
+          </span>
+        <% end %>
+        <%= link_to t(".clear_filters"), models_path, class: "inline-flex items-center shrink-0 px-3 py-1.5 rounded-full text-sm text-secondary-600 dark:text-secondary-400 hover:text-primary-700 dark:hover:text-primary-300 no-underline" %>
+      </div>
+    <% end %>
+
+    <%# Facet rails: tags first (taste), then creators / collections %>
+    <% top_tags = Array(@tags).first(14) %>
+    <% creators = Array(@filter_creators).first(12) %>
+    <% collections = Array(@filter_collections).first(10) %>
+    <% if top_tags.any? || creators.any? || collections.any? %>
+      <div class="flex flex-col gap-1.5">
+        <% if top_tags.any? %>
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="shrink-0 text-xs font-semibold uppercase tracking-wide text-secondary-500 dark:text-secondary-400"><%= ActsAsTaggableOn::Tag.model_name.human(count: 100) %></span>
+            <div class="flex gap-1.5 overflow-x-auto scrollbar-thin py-0.5">
+              <% active_tags = Array(@filter.parameter(:tag)).map(&:to_s) %>
+              <% top_tags.each do |tag| %>
+                <% name = tag.respond_to?(:name) ? tag.name : tag.to_s %>
+                <% selected = active_tags.include?(name) %>
+                <% next_tags = selected ? (active_tags - [name]) : (active_tags + [name]) %>
+                <%= link_to name,
+                      models_path(@filter.to_params.merge(tag: next_tags.presence).compact),
+                      class: "shrink-0 inline-flex max-w-[9rem] truncate px-2.5 py-1 rounded-lg text-xs font-medium no-underline #{selected ? "bg-primary-600 text-white" : "bg-surface dark:bg-secondary-900 border border-secondary-200 dark:border-secondary-700 text-secondary-700 dark:text-secondary-300 hover:border-primary-400"}",
+                      title: name %>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+        <% if creators.any? %>
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="shrink-0 text-xs font-semibold uppercase tracking-wide text-secondary-500 dark:text-secondary-400"><%= Creator.model_name.human(count: 100) %></span>
+            <div class="flex gap-1.5 overflow-x-auto scrollbar-thin py-0.5">
+              <% active_creator = @filter.parameter(:creator).to_s %>
+              <%= link_to t(".any_creator"),
+                    models_path(@filter.to_params.except(:creator)),
+                    class: "shrink-0 inline-flex px-2.5 py-1 rounded-lg text-xs font-medium no-underline #{active_creator.blank? ? "bg-secondary-900 text-surface dark:bg-surface dark:text-secondary-900" : "bg-surface dark:bg-secondary-900 border border-secondary-200 dark:border-secondary-700 text-secondary-700 dark:text-secondary-300 hover:border-primary-400"}" %>
+              <% creators.each do |creator| %>
+                <% selected = active_creator == creator.to_param %>
+                <%= link_to creator.name.careful_titleize,
+                      models_path(@filter.to_params.merge(creator: creator.to_param)),
+                      class: "shrink-0 inline-flex max-w-[10rem] truncate px-2.5 py-1 rounded-lg text-xs font-medium no-underline #{selected ? "bg-primary-600 text-white" : "bg-surface dark:bg-secondary-900 border border-secondary-200 dark:border-secondary-700 text-secondary-700 dark:text-secondary-300 hover:border-primary-400"}",
+                      title: creator.name.careful_titleize %>
+              <% end %>
+              <%= link_to t(".more_creators"), creators_path(@filter.to_params(except: :creator)),
+                    class: "shrink-0 inline-flex px-2.5 py-1 rounded-lg text-xs font-medium text-primary-700 dark:text-primary-400 no-underline hover:underline" %>
+            </div>
+          </div>
+        <% end %>
+        <% if collections.any? %>
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="shrink-0 text-xs font-semibold uppercase tracking-wide text-secondary-500 dark:text-secondary-400"><%= Collection.model_name.human(count: 100) %></span>
+            <div class="flex gap-1.5 overflow-x-auto scrollbar-thin py-0.5">
+              <% active_collection = @filter.parameter(:collection).to_s %>
+              <%= link_to t(".any_collection"),
+                    models_path(@filter.to_params.except(:collection)),
+                    class: "shrink-0 inline-flex px-2.5 py-1 rounded-lg text-xs font-medium no-underline #{active_collection.blank? ? "bg-secondary-900 text-surface dark:bg-surface dark:text-secondary-900" : "bg-surface dark:bg-secondary-900 border border-secondary-200 dark:border-secondary-700 text-secondary-700 dark:text-secondary-300 hover:border-primary-400"}" %>
+              <% collections.each do |collection| %>
+                <% selected = active_collection == collection.to_param %>
+                <%= link_to collection.name,
+                      models_path(@filter.to_params.merge(collection: collection.to_param)),
+                      class: "shrink-0 inline-flex max-w-[10rem] truncate px-2.5 py-1 rounded-lg text-xs font-medium no-underline #{selected ? "bg-primary-600 text-white" : "bg-surface dark:bg-secondary-900 border border-secondary-200 dark:border-secondary-700 text-secondary-700 dark:text-secondary-300 hover:border-primary-400"}",
+                      title: collection.name %>
+              <% end %>
+              <%= link_to t(".more_collections"), collections_path(@filter.to_params(except: :collection)),
+                    class: "shrink-0 inline-flex px-2.5 py-1 rounded-lg text-xs font-medium text-primary-700 dark:text-primary-400 no-underline hover:underline" %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+<% end %>
+
 <% content_for :items do %>
+  <div data-controller="model-gallery">
   <% if @models.empty? %>
-    <div class="flex flex-col items-center justify-center py-12 px-4 text-center rounded-xl bg-surface-alt dark:bg-secondary-800/50 border border-secondary-200 dark:border-secondary-600" role="status" aria-live="polite">
-      <%= Icon icon: "person-arms-up", label: "" %>
-      <p class="mt-4 text-secondary-700 dark:text-secondary-300"><%= signed_in? ? t(".no_results_html") : t(".no_results_signed_out_html", link: new_user_session_path) %></p>
-      <% if @filter.any? %>
-        <p class="mt-2"><%= link_to t(".clear_filters"), models_path, class: "inline-flex items-center px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2" %></p>
+    <% list = @filter&.parameter(:list).to_s %>
+    <% extra_filters = (@filter&.to_params || {}).except(:list) %>
+    <div class="flex flex-col items-center justify-center py-16 px-4 text-center rounded-2xl bg-surface dark:bg-surface-dark border border-secondary-200 dark:border-secondary-600" role="status" aria-live="polite">
+      <%= Icon icon: ({"queue" => "bookmark", "unprinted" => "stars", "favorite" => "heart", "printed" => "check-circle"}[list] || "search"), label: "" %>
+      <% if list == "queue" && extra_filters.blank? %>
+        <h2 class="mt-4 font-display text-xl font-semibold text-secondary-900 dark:text-secondary-100"><%= t(".empty.queue_title") %></h2>
+        <p class="mt-2 max-w-md text-secondary-600 dark:text-secondary-400"><%= t(".empty.queue_body") %></p>
+        <div class="mt-6 flex flex-wrap justify-center gap-2">
+          <%= link_to t(".empty.browse_unprinted"), models_path(list: "unprinted"), class: "#{primary_button_class} no-underline" %>
+          <%= link_to t(".empty.browse_library"), models_path, class: "inline-flex items-center px-4 py-2 rounded-lg border border-secondary-300 dark:border-secondary-600 no-underline text-sm font-medium" %>
+        </div>
+      <% elsif list == "unprinted" && extra_filters.blank? %>
+        <h2 class="mt-4 font-display text-xl font-semibold text-secondary-900 dark:text-secondary-100"><%= t(".empty.unprinted_title") %></h2>
+        <p class="mt-2 max-w-md text-secondary-600 dark:text-secondary-400"><%= t(".empty.unprinted_body") %></p>
+        <div class="mt-6 flex flex-wrap justify-center gap-2">
+          <%= link_to t(".empty.browse_printed"), models_path(list: "printed"), class: "#{primary_button_class} no-underline" %>
+          <%= link_to t(".empty.browse_library"), models_path, class: "inline-flex items-center px-4 py-2 rounded-lg border border-secondary-300 dark:border-secondary-600 no-underline text-sm font-medium" %>
+        </div>
+      <% elsif list == "favorite" && extra_filters.blank? %>
+        <h2 class="mt-4 font-display text-xl font-semibold text-secondary-900 dark:text-secondary-100"><%= t(".empty.favorite_title") %></h2>
+        <p class="mt-2 max-w-md text-secondary-600 dark:text-secondary-400"><%= t(".empty.favorite_body") %></p>
+        <p class="mt-6"><%= link_to t(".empty.browse_library"), models_path, class: "#{primary_button_class} no-underline" %></p>
+      <% elsif list == "printed" && extra_filters.blank? %>
+        <h2 class="mt-4 font-display text-xl font-semibold text-secondary-900 dark:text-secondary-100"><%= t(".empty.printed_title") %></h2>
+        <p class="mt-2 max-w-md text-secondary-600 dark:text-secondary-400"><%= t(".empty.printed_body") %></p>
+        <p class="mt-6"><%= link_to t(".empty.browse_library"), models_path, class: "#{primary_button_class} no-underline" %></p>
+      <% else %>
+        <p class="mt-4 text-lg text-secondary-800 dark:text-secondary-200"><%= signed_in? ? t(".no_results_html") : t(".no_results_signed_out_html", link: new_user_session_path) %></p>
+        <% if @filter.any? %>
+          <p class="mt-4"><%= link_to t(".clear_filters"), models_path, class: "#{primary_button_class} no-underline" %></p>
+        <% end %>
       <% end %>
       <% if @search %>
-        <p class="mt-4 text-sm text-secondary-600 dark:text-secondary-400"><%= t ".search_elsewhere.or_other_sites" %></p>
+        <p class="mt-6 text-sm text-secondary-600 dark:text-secondary-400"><%= t ".search_elsewhere.or_other_sites" %></p>
         <div class="mt-2"><%= render "search_links" %></div>
       <% end %>
     </div>
   <% else %>
     <div data-controller="model-list-selection" class="skip-link-container">
-      <div data-model-list-selection-target="toolbar" hidden role="toolbar" aria-label="<%= t(".selection.toolbar_label") %>" class="fixed top-14 left-0 right-0 z-30 py-2 px-4 sm:px-6 lg:px-8 bg-white/95 dark:bg-secondary-900/95 backdrop-blur-sm border-b border-secondary-200 dark:border-secondary-700 shadow-sm dark:shadow-md">
+      <div data-model-list-selection-target="toolbar" hidden role="toolbar" aria-label="<%= t(".selection.toolbar_label") %>" class="fixed top-14 left-0 right-0 z-30 py-2 px-4 sm:px-6 lg:px-8 bg-surface/95 dark:bg-secondary-900/95 backdrop-blur-sm border-b border-secondary-200 dark:border-secondary-700 shadow-sm">
         <div class="max-w-screen-2xl mx-auto flex flex-wrap items-center gap-2">
           <%= link_to t(".selection.edit"), "#", data: {model_list_selection_target: "editLink", base_href: edit_model_path("__ID__")}, class: "inline-flex items-center px-3 py-1.5 text-sm rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500" %>
           <% if policy(:model).bulk_edit? %>
             <%= form_with url: bulk_edit_selected_models_path, method: :post, local: true, data: {model_list_selection_target: "bulkEditForm", action: "submit->model-list-selection#clearOnSubmit"}, class: "inline" do %>
               <div data-model-list-selection-target="idsContainer"></div>
-              <button type="submit" class="inline-flex items-center px-3 py-1.5 text-sm rounded-lg bg-secondary-600 text-white hover:bg-secondary-700 dark:bg-secondary-500 dark:text-white dark:hover:bg-secondary-400 focus-visible:ring-2 focus-visible:ring-secondary-500 mr-2"><%= t(".selection.bulk_edit") %></button>
+              <button type="submit" class="inline-flex items-center px-3 py-1.5 text-sm rounded-lg bg-secondary-600 text-white hover:bg-secondary-700 dark:bg-secondary-500 focus-visible:ring-2 focus-visible:ring-secondary-500 mr-2"><%= t(".selection.bulk_edit") %></button>
             <% end %>
           <% end %>
           <% if policy(:model).merge? %>
-            <%= link_to t(".selection.merge"), "#", data: {model_list_selection_target: "mergeLink", base_href: configure_merge_models_path}, class: "inline-flex items-center px-3 py-1.5 text-sm rounded-lg border border-secondary-300 dark:border-secondary-500 text-secondary-800 dark:text-secondary-100 bg-white dark:bg-secondary-800 hover:bg-secondary-100 dark:hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-secondary-500 no-underline", hidden: true %>
+            <%= link_to t(".selection.merge"), "#", data: {model_list_selection_target: "mergeLink", base_href: configure_merge_models_path}, class: "inline-flex items-center px-3 py-1.5 text-sm rounded-lg border border-secondary-300 dark:border-secondary-500 text-secondary-800 dark:text-secondary-100 bg-surface dark:bg-secondary-800 hover:bg-secondary-100 dark:hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-secondary-500 no-underline", hidden: true %>
           <% end %>
-          <button type="button" data-model-list-selection-target="clearButton" data-action="click->model-list-selection#clear" class="inline-flex items-center px-3 py-1.5 text-sm rounded-lg border border-secondary-300 dark:border-secondary-500 text-secondary-800 dark:text-secondary-100 bg-white dark:bg-secondary-800 hover:bg-secondary-100 dark:hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-secondary-500"><%= t(".selection.clear") %></button>
+          <button type="button" data-model-list-selection-target="clearButton" data-action="click->model-list-selection#clear" class="inline-flex items-center px-3 py-1.5 text-sm rounded-lg border border-secondary-300 dark:border-secondary-500 bg-surface dark:bg-secondary-800 hover:bg-secondary-100 dark:hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-secondary-500"><%= t(".selection.clear") %></button>
         </div>
       </div>
-      <div class="flex flex-wrap items-center gap-2 mb-4 relative z-20">
-        <%= skip_link "sidebar", t(".skip_models") %>
-        <div class="ml-auto flex flex-wrap items-center gap-2">
-          <% has_image_on = ActiveModel::Type::Boolean.new.cast(@filter.parameter(:has_image)) %>
-          <% if has_image_on %>
-            <%= link_to models_path(@filter.to_params.except(:has_image)),
-                  class: "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500",
-                  aria: {pressed: "true"} do %>
-              <%= Icon icon: "image", label: "" %>
-              <span><%= t(".has_image_filter_on", default: "With images") %></span>
-            <% end %>
-          <% else %>
-            <%= link_to models_path(@filter.to_params.merge(has_image: "1")),
-                  class: "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-white text-secondary-900 border border-secondary-300 hover:bg-secondary-50 dark:bg-secondary-700 dark:text-secondary-100 dark:border-secondary-500 dark:hover:bg-secondary-600 focus-visible:ring-2 focus-visible:ring-primary-500",
-                  aria: {pressed: "false"} do %>
-              <%= Icon icon: "image", label: "" %>
-              <span><%= t(".has_image_filter", default: "With images only") %></span>
-            <% end %>
-          <% end %>
-          <%= SortMenu(filter: @filter) %>
-        </div>
-      </div>
-      <% if @filter.any? %>
-        <div class="flex flex-wrap gap-2 mb-4" role="group" aria-label="Active filters">
-          <% active_filters_list(@filter).each do |entry| %>
-            <span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-secondary-200 dark:bg-secondary-600 text-secondary-800 dark:text-secondary-100 text-sm">
-              <span class="truncate max-w-[200px]"><%= entry[:pill_label] %></span>
-              <%= link_to "×", entry[:remove_url], class: "flex-shrink-0 rounded-full p-0.5 hover:bg-secondary-300 dark:hover:bg-secondary-500 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none", aria: {label: entry[:aria_remove]} %>
-            </span>
-          <% end %>
-        </div>
-      <% end %>
+
       <% current = @models.try(:current_page) || 1 %>
       <% next_url = @models.next_page ? models_page_url(@models.next_page, @filter) : "" %>
-      <%# Controller wraps grid + chrome so back-to-top/status are valid targets.
-          Cards remain DIRECT children of #model-card-grid for CSS grid layout;
-          turbo_stream.before sentinel inserts new cards as siblings. %>
       <div data-controller="infinite-scroll"
            data-infinite-scroll-next-url-value="<%= next_url %>"
            data-infinite-scroll-start-page-value="<%= current %>"
            data-infinite-scroll-per-page-value="<%= pagination_settings["per_page"] %>"
-           data-infinite-scroll-end-message-value="<%= t(".end_of_results", default: "End of results") %>">
-        <div class="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4 mb-4"
+           data-infinite-scroll-end-message-value="<%= t(".end_of_results") %>"
+           class="library-infinite">
+        <div class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,10.5rem),1fr))] sm:grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-3 sm:gap-3.5 mb-2"
              id="model-card-grid"
              role="list"
-             aria-label="Models"
+             aria-label="<%= Model.model_name.human(count: 100) %>"
              data-infinite-scroll-target="grid">
           <% @models.each_with_index do |model, index| %>
-            <%= render Components::ModelCard.new(model: model, eager_preview: index < 8) %>
+            <%= render Components::ModelCard.new(model: model, eager_preview: index < 8, gallery: true) %>
           <% end %>
           <div id="models-scroll-sentinel"
                class="models-scroll-sentinel col-span-full"
@@ -84,26 +219,31 @@
                <% if next_url.present? %>data-next-url="<%= next_url %>" data-has-more="true"<% end %>
                <% if next_url.blank? %>data-has-more="false" hidden<% end %>
                aria-hidden="true">
-            <span class="models-scroll-sentinel__label">Loading more…</span>
+            <span class="models-scroll-sentinel__label"><%= t(".loading_more") %></span>
           </div>
         </div>
-        <p id="models-scroll-status"
-           class="models-scroll-status"
-           data-infinite-scroll-target="status"
-           role="status"
-           aria-live="polite"
-           hidden></p>
+        <div class="library-infinite__end py-10 text-center">
+          <p id="models-scroll-status"
+             class="models-scroll-status"
+             data-infinite-scroll-target="status"
+             role="status"
+             aria-live="polite"
+             hidden></p>
+          <p class="mt-2 text-sm text-secondary-500 dark:text-secondary-400 library-infinite__hint">
+            <%= t(".scroll_hint") %>
+          </p>
+        </div>
         <button type="button"
                 class="models-back-to-top"
                 data-infinite-scroll-target="backToTop"
                 hidden
-                aria-label="<%= t(".back_to_top", default: "Back to top") %>">
+                aria-label="<%= t(".back_to_top") %>">
           <i class="bi bi-arrow-up" aria-hidden="true"></i>
-          <span><%= t(".back_to_top", default: "Back to top") %></span>
+          <span><%= t(".back_to_top") %></span>
         </button>
       </div>
       <% if @search %>
-        <div class="flex items-center gap-2 mt-4 py-3 px-4 rounded-lg bg-secondary-100 dark:bg-secondary-800 text-secondary-700 dark:text-secondary-300">
+        <div class="flex flex-wrap items-center gap-2 mt-2 py-3 px-4 rounded-xl bg-secondary-100 dark:bg-secondary-800/60 text-secondary-700 dark:text-secondary-300 text-sm">
           <%= Icon icon: "search", label: "" %>
           <span><%= t ".search_elsewhere.other_sites" %></span>
           <%= render "search_links" %>
@@ -111,10 +251,52 @@
       <% end %>
     </div>
   <% end %>
+
+  <dialog data-model-gallery-target="dialog"
+          class="model-gallery-dialog w-[min(100%,48rem)] max-h-[90vh] overflow-auto rounded-xl bg-surface dark:bg-secondary-900 shadow-xl p-0 border-0 backdrop:bg-secondary-950/60"
+          aria-labelledby="model-gallery-title"
+          aria-modal="true">
+    <div class="flex flex-col">
+      <div class="flex items-center justify-between gap-3 px-4 py-3 border-b border-secondary-200 dark:border-secondary-700">
+        <h2 id="model-gallery-title"
+            data-model-gallery-target="title"
+            class="font-display text-lg font-semibold text-secondary-900 dark:text-secondary-100 m-0 truncate min-w-0"></h2>
+        <button type="button"
+                class="shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-lg hover:bg-secondary-100 dark:hover:bg-secondary-800 focus-visible:ring-2 focus-visible:ring-primary-500"
+                data-action="click->model-gallery#close"
+                aria-label="<%= t("components.model_gallery.close") %>">
+          <%= Icon icon: "x-lg", label: t("components.model_gallery.close") %>
+        </button>
+      </div>
+      <div class="p-4 bg-secondary-950">
+        <%= turbo_frame_tag "model-gallery",
+              data: {
+                model_gallery_target: "frame",
+                loading_label: t("components.model_gallery.loading")
+              } do %>
+          <p class="text-sm text-secondary-400 text-center py-12 m-0"><%= t("components.model_gallery.loading") %></p>
+        <% end %>
+      </div>
+      <div class="flex items-center justify-end gap-2 px-4 py-3 border-t border-secondary-200 dark:border-secondary-700">
+        <button type="button"
+                class="inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg border border-secondary-300 dark:border-secondary-600 bg-surface dark:bg-secondary-800 hover:bg-secondary-50 dark:hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-primary-500"
+                data-action="click->model-gallery#close">
+          <%= t("components.model_gallery.close") %>
+        </button>
+        <a href="#"
+           data-model-gallery-target="openLink"
+           data-turbo-frame="_top"
+           class="inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 no-underline">
+          <%= t("components.model_gallery.open_model") %>
+        </a>
+      </div>
+    </div>
+  </dialog>
+  </div>
 <% end %>
 
 <% content_for :actions do %>
-  <%= link_to t(".bulk_edit"), edit_models_path((@additional_filters || {}).merge(@filter&.to_params)), class: "inline-flex items-center px-4 py-2 rounded-lg bg-secondary-600 text-white hover:bg-secondary-700 dark:bg-secondary-500 dark:text-white dark:hover:bg-secondary-400 focus-visible:ring-2 focus-visible:ring-secondary-500" if policy(:model).edit? %>
+  <%= link_to t(".bulk_edit"), edit_models_path((@additional_filters || {}).merge(@filter&.to_params)), class: "inline-flex w-full items-center justify-center px-4 py-2 rounded-lg bg-secondary-700 text-white hover:bg-secondary-800 dark:bg-secondary-500 dark:hover:bg-secondary-400 focus-visible:ring-2 focus-visible:ring-secondary-500 no-underline text-sm font-medium" if policy(:model).edit? %>
 <% end %>
 
 <% content_for :sidebar do %>

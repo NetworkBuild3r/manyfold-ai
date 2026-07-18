@@ -81,6 +81,7 @@ Rails.application.routes.draw do
 
   root to: "home#index"
   get "/about", to: "home#about", as: :about
+  get "/surprise", to: "home#surprise", as: :surprise
   resources :imports, only: [:new, :create]
   resources :scans, only: [:create]
 
@@ -120,6 +121,9 @@ Rails.application.routes.draw do
     member do
       post "scan"
       post "unmerge"
+      post "toggle_favorite"
+      post "toggle_queue"
+      get "gallery"
     end
     collection do
       post "bulk_edit_selected"

@@ -1,4 +1,4 @@
-<h3 class="text-xl font-semibold text-secondary-900 dark:text-secondary-100 mb-2"><%= t(".heading") %></h3>
+<h3 class="<%= heading_classes(:section) %> mb-2"><%= t(".heading") %></h3>
 <p class="text-lg text-secondary-600 dark:text-secondary-400"><%= t(".summary") %></p>
 
 <%= form_with url: settings_path, method: :patch, class: "tabular-form" do |form| %>
@@ -15,7 +15,7 @@
         selected: SiteSettings.validated_accent_color,
         help: t(".accent.help") %>
   <hr>
-  <h4 class="text-lg font-medium text-secondary-900 dark:text-secondary-100 mt-4 mb-2"><%= t(".information") %></h4>
+  <h4 class="<%= heading_classes(:subsection) %> mt-4 mb-2"><%= t(".information") %></h4>
   <%= rich_text_input_row form, "appearance[about]", label: t(".about.label"), value: SiteSettings.about, help: t(".about.help_html") %>
   <%= rich_text_input_row form, "appearance[rules]", label: t(".rules.label"), value: SiteSettings.rules, help: t(".rules.help_html") %>
   <%= render "submit", form: form %>

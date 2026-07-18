@@ -1,25 +1,45 @@
-<%= content_tag :nav, class: "sticky top-0 z-40 bg-primary-600 dark:bg-primary-900 border-b border-primary-700/50 dark:border-primary-800", id: "main-navbar",
+<%= content_tag :nav, class: "sticky top-0 z-40 bg-secondary-900 dark:bg-secondary-950 border-b border-secondary-800", id: "main-navbar",
       data: tour_attributes(id: "main-navbar", title: t("tour.navbar.main.title", name: site_name), description: t("tour.navbar.main.description")) do %>
   <div class="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-wrap items-center justify-between gap-2 min-h-14" data-controller="collapse">
-    <a class="flex items-center gap-2 py-2 text-white no-underline hover:opacity-90 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary-600" href="<%= root_path %>" aria-label="<%= translate ".home" %>">
-      <%= image_tag site_icon, alt: site_name, class: "h-10 w-auto" %>
-      <span class="md:hidden font-medium"><%= site_name %></span>
+    <a class="flex items-center gap-2 py-2 text-surface no-underline hover:opacity-90 focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-900" href="<%= root_path %>" aria-label="<%= translate ".home" %>">
+      <%= image_tag site_icon, alt: site_name, class: "h-9 w-auto" %>
+      <span class="font-display font-semibold text-lg tracking-tight hidden sm:inline"><%= site_name %></span>
     </a>
-    <button class="md:hidden flex items-center justify-center w-10 h-10 rounded-lg text-white hover:bg-primary-500 focus-visible:ring-2 focus-visible:ring-white" type="button" data-action="click->collapse#toggle" aria-controls="navbar" aria-expanded="false" aria-label="<%= translate ".navbar.toggler.label" %>">
+    <button class="md:hidden flex items-center justify-center w-10 h-10 rounded-lg text-surface hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-primary-400" type="button" data-action="click->collapse#toggle" aria-controls="navbar" aria-expanded="false" aria-label="<%= translate ".navbar.toggler.label" %>">
       <%= Icon icon: "list", label: translate(".navbar.toggler.label") %>
     </button>
     <div class="navbar-content flex-col flex grow basis-full items-start gap-2 md:flex-row md:basis-auto md:grow-0 mt-2 md:mt-0" id="navbar" data-collapse-target="content">
       <ul class="flex flex-col md:flex-row gap-1 list-none m-0 p-0 ps-4 md:ps-0" role="presentation">
         <li class="flex" role="presentation">
-          <%= nav_link "box", Model.model_name.human(count: 100), models_path(@filter&.to_params), text_style: "md:hidden lg:inline", id: "nav-link-models",
-                data: tour_attributes(id: "nav-link-models", title: Model.model_name.human(count: 100), description: t("tour.navbar.models.description")) %>
+          <%= nav_link "house", t(".library_home"), root_path, text_style: "md:hidden lg:inline", id: "nav-link-home",
+                active: current_page?(root_path),
+                data: tour_attributes(id: "nav-link-home", title: t(".library_home"), description: t("tour.navbar.main.description")) %>
         </li>
         <li class="flex" role="presentation">
-          <%= nav_link "people", Creator.model_name.human(count: 100), creators_path(@filter&.to_params(except: :creator)), text_style: "md:hidden lg:inline", id: "nav-link-creators",
+          <%= nav_link "box", t(".library"), models_path((@filter&.to_params || {}).except(:list)), text_style: "md:hidden lg:inline", id: "nav-link-models",
+                active: controller_name == "models" && params[:list].blank? && !current_page?(root_path),
+                data: tour_attributes(id: "nav-link-models", title: t(".library"), description: t("tour.navbar.models.description")) %>
+        </li>
+        <%- if current_user %>
+          <li class="flex" role="presentation">
+            <%= nav_link "bookmark", t(".queue"), models_path(list: "queue"), text_style: "md:hidden lg:inline", id: "nav-link-queue",
+                  active: params[:list].to_s == "queue" %>
+          </li>
+          <li class="flex" role="presentation">
+            <%= nav_link "heart", t(".favorites"), models_path(list: "favorite"), text_style: "md:hidden lg:inline", id: "nav-link-favorites",
+                  active: params[:list].to_s == "favorite" %>
+          </li>
+          <li class="flex" role="presentation">
+            <%= nav_link "check-circle", t(".printed"), models_path(list: "printed"), text_style: "md:hidden lg:inline", id: "nav-link-printed",
+                  active: params[:list].to_s == "printed" %>
+          </li>
+        <%- end %>
+        <li class="flex" role="presentation">
+          <%= nav_link "people", Creator.model_name.human(count: 100), creators_path(@filter&.to_params(except: :creator)), text_style: "md:hidden xl:inline", id: "nav-link-creators",
                 data: tour_attributes(id: "nav-link-creators", title: Creator.model_name.human(count: 100), description: t("tour.navbar.creators.description")) %>
         </li>
         <li class="flex" role="presentation">
-          <%= nav_link "collection", Collection.model_name.human(count: 100), collections_path(@filter&.to_params(except: :collection)), text_style: "md:hidden lg:inline", id: "nav-link-collections",
+          <%= nav_link "collection", Collection.model_name.human(count: 100), collections_path(@filter&.to_params(except: :collection)), text_style: "md:hidden xl:inline", id: "nav-link-collections",
                 data: tour_attributes(id: "nav-link-collections", title: Collection.model_name.human(count: 100), description: t("tour.navbar.collections.description")) %>
         </li>
         <% if SiteSettings.show_libraries %>
@@ -29,7 +49,8 @@
                     library.icon.presence || "boxes",
                     library.name,
                     models_path({library: library}.merge(@filter&.to_params(except: :library) || {})),
-                    title: library.caption
+                    title: library.caption,
+                    text_style: "md:hidden xl:inline"
                   )	%>
             </li>
           <% end %>
@@ -42,7 +63,7 @@
               <%= content_tag :button,
                     type: "button",
                     id: "nav-link-upload",
-                    class: "inline-flex items-center gap-1.5 px-2 py-1 text-sm font-medium rounded-lg bg-warning text-secondary-900 hover:opacity-90 focus-visible:ring-2 focus-visible:ring-primary-500 mt-1 me-1",
+                    class: "inline-flex items-center gap-1.5 px-2.5 py-1.5 text-sm font-medium rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-400 mt-1 me-1",
                     data: {
                       action: "click->dropdown#toggle"
                     }.merge(tour_attributes(
@@ -57,7 +78,7 @@
                     } do
                     safe_join [Icon(icon: "plus-circle"), t(".add_models")], " "
                   end %>
-              <ul class="absolute right-0 mt-1 min-w-[10rem] py-1 bg-white dark:bg-secondary-800 rounded-lg shadow-lg border border-secondary-200 dark:border-secondary-600 z-50" role="menu" id="add-content-menu" data-dropdown-target="menu">
+              <ul class="absolute right-0 mt-1 min-w-[10rem] py-1 bg-surface dark:bg-secondary-800 rounded-lg shadow-lg border border-secondary-200 dark:border-secondary-600 z-50" role="menu" id="add-content-menu" data-dropdown-target="menu">
                 <%= DropdownItem label: t(".upload"), path: new_model_path %>
                 <%= DropdownItem label: t(".import_url"), path: new_import_path %>
               </ul>
@@ -67,15 +88,15 @@
         <li class="flex" role="presentation">
           <% if policy(:scan).create? %>
             <% if @scan_in_progress %>
-              <%= nav_link "", t(".scanning"), activity_path, nofollow: true, style: "inline-flex items-center gap-1.5 px-2 py-1 text-sm font-medium rounded-lg border border-warning text-warning bg-transparent hover:bg-warning/10 mt-1 me-1", icon_style: "animate-spin inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full" %>
+              <%= nav_link "", t(".scanning"), activity_path, nofollow: true, style: "inline-flex items-center gap-1.5 px-2 py-1 text-sm font-medium rounded-lg border border-primary-400 text-primary-400 bg-transparent hover:bg-primary-400/10 mt-1 me-1", icon_style: "animate-spin inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full" %>
             <% else %>
               <div class="relative inline-flex" data-controller="dropdown">
                 <button type="button" data-action="click->dropdown#toggle" aria-expanded="false" aria-haspopup="menu"
-                  class="inline-flex items-center gap-1.5 px-2 py-1 text-sm font-medium rounded-lg bg-warning text-secondary-900 hover:opacity-90 focus-visible:ring-2 focus-visible:ring-primary-500 mt-1 me-1">
+                  class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-sm font-medium rounded-lg border border-secondary-600 text-secondary-200 hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-primary-400 mt-1 me-1">
                   <%= Icon(icon: "radar") %>
                   <%= t ".scan" %>
                 </button>
-                <ul class="absolute right-0 mt-1 min-w-[10rem] py-1 bg-white dark:bg-secondary-800 rounded-lg shadow-lg border border-secondary-200 dark:border-secondary-600 z-50" data-dropdown-target="menu" role="menu">
+                <ul class="absolute right-0 mt-1 min-w-[10rem] py-1 bg-surface dark:bg-secondary-800 rounded-lg shadow-lg border border-secondary-200 dark:border-secondary-600 z-50" data-dropdown-target="menu" role="menu">
                   <%= DropdownItem label: t(".scan_changes.label"), path: scans_path, method: :post, confirm: translate(".scan_changes.confirm") %>
                   <%= DropdownItem label: t(".check_existing.label"), path: scans_path(type: :check), method: :post, confirm: translate(".check_existing.confirm") %>
                   <%= DropdownItem label: t(".check_results.label"), path: scans_path({type: :check}.merge(@filter.to_params)), method: :post, confirm: translate(".check_results.confirm") if @filter&.any? %>
@@ -93,7 +114,7 @@
                     problems_path,
                     title: translate("problems.severities.#{severity}"), # rubocop:todo I18n/RailsI18n/DecorateStringFormattingUsingInterpolation
                     icon_style: "link-#{severity}",
-                    text_style: "md:hidden",
+                    text_style: "md:hidden lg:inline",
                     aria_label: Problem.model_name.human(count: 100) %>
             </li>
           <% end %>
@@ -116,14 +137,14 @@
         <%- unless current_page?(root_path) %>
           <li id="nav-search" class="flex ms-1 me-3" data-turbo-permanent>
             <%= form_with url: models_path, method: :get, role: "search" do |f| %>
-              <%= f.search_field :q, class: "block w-full max-w-xs rounded-lg border border-primary-500/50 bg-white/10 px-3 py-1.5 text-sm text-white placeholder-primary-200 focus:ring-2 focus:ring-white focus:border-white dark:bg-white/5 dark:placeholder-primary-400", placeholder: translate(".search"), aria_label: translate(".search"), aria_describedby: "button-search", value: @query || params[:q] %>
+              <%= f.search_field :q, class: "block w-full max-w-xs rounded-lg border border-secondary-700 bg-white/5 px-3 py-1.5 text-sm text-surface placeholder-secondary-400 focus:ring-2 focus:ring-primary-400 focus:border-primary-400", placeholder: translate(".search"), aria_label: translate(".search"), aria_describedby: "button-search", value: @query || params[:q] %>
             <% end %>
           </li>
         <% end %>
         <%- if current_user %>
           <%- if SiteSettings.multiuser_enabled? %>
             <li class="flex" role="presentation" data-controller="dropdown">
-              <%= content_tag :button, id: "nav-link-preferences", title: t(".account"), class: "inline-flex items-center justify-center w-9 h-9 rounded-lg bg-white/20 text-white hover:bg-white/30 focus-visible:ring-2 focus-visible:ring-white mt-1",
+              <%= content_tag :button, id: "nav-link-preferences", title: t(".account"), class: "inline-flex items-center justify-center w-9 h-9 rounded-lg bg-white/10 text-surface hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-primary-400 mt-1",
                     data: {action: "click->dropdown#toggle"}.merge(
                       tour_attributes(id: "nav-link-preferences", title: t(".account"), description: t("tour.navbar.account.description"))
                     ),
@@ -134,10 +155,14 @@
                     } do %>
                 <%= Icon(icon: "person", label: t(".account")) %>
               <% end %>
-              <ul class="absolute right-0 left-auto mt-1 min-w-[10rem] py-1 bg-white dark:bg-secondary-800 rounded-lg shadow-lg border border-secondary-200 dark:border-secondary-600 z-50" id="preferences-menu" data-dropdown-target="menu" role="menu">
+              <ul class="absolute right-0 left-auto mt-1 min-w-[10rem] py-1 bg-surface dark:bg-secondary-800 rounded-lg shadow-lg border border-secondary-200 dark:border-secondary-600 z-50" id="preferences-menu" data-dropdown-target="menu" role="menu">
                 <%= DropdownItem label: t("devise.registrations.edit.title"), path: edit_user_registration_path %>
                 <%= DropdownDivider() %>
                 <%= DropdownHeader text: t(".my_stuff") %>
+                <%= DropdownItem label: t(".queue"), path: models_path(list: "queue") %>
+                <%= DropdownItem label: t(".unprinted"), path: models_path(list: "unprinted") %>
+                <%= DropdownItem label: t(".favorites"), path: models_path(list: "favorite") %>
+                <%= DropdownItem label: t(".printed"), path: models_path(list: "printed") %>
                 <%= DropdownItem label: Model.model_name.human(count: 100), path: models_path(owner: current_user.to_param) %>
                 <%= DropdownItem label: Creator.model_name.human(count: 100), path: creators_path(owner: current_user.to_param) %>
                 <%= DropdownItem label: Collection.model_name.human(count: 100), path: collections_path(owner: current_user.to_param) %>
@@ -164,7 +189,7 @@
         <% end %>
         <%- if SiteSettings.multiuser_enabled? && current_user.nil? %>
           <li class="flex" role="presentation">
-            <%= nav_link "box-arrow-in-right", t(".log_in"), new_user_session_path, title: translate(".log_in"), nofollow: true, style: "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-white/20 text-white hover:bg-white/30 focus-visible:ring-2 focus-visible:ring-white" %>
+            <%= nav_link "box-arrow-in-right", t(".log_in"), new_user_session_path, title: translate(".log_in"), nofollow: true, style: "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-400" %>
           </li>
         <%- end %>
       </ul>

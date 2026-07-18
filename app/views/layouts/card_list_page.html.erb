@@ -1,15 +1,55 @@
 <%= yield :page_header %>
 
-<div class="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6 mt-6">
-  <%# overflow-visible so Sort-by dropdown can paint over the sidebar %>
-  <div class="min-w-0 overflow-visible relative z-10" id="item_list">
-    <%= yield :items %>
+<%# Browse layouts hide the site footer so infinite scroll can reach the sentinel. %>
+<% content_for :hide_footer, "1" %>
+
+<div data-controller="filter-drawer" class="library-browse mt-4 mb-8">
+  <% if content_for?(:browse_chrome) %>
+    <div class="library-browse__chrome sticky top-14 z-20 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-3 mb-4 bg-surface-alt/95 dark:bg-secondary-950/95 backdrop-blur-md border-b border-secondary-200/80 dark:border-secondary-800">
+      <%= yield :browse_chrome %>
+    </div>
+  <% else %>
+    <div class="lg:hidden mb-3">
+      <button type="button"
+              class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg border border-secondary-300 dark:border-secondary-600 bg-surface dark:bg-secondary-900"
+              data-action="click->filter-drawer#open">
+        <%= Icon icon: "funnel", label: "" %>
+        <%= t(".filters_heading", default: "Filters") %>
+      </button>
+    </div>
+  <% end %>
+
+  <div data-filter-drawer-target="backdrop"
+       class="fixed inset-0 z-40 bg-secondary-950/50 backdrop-blur-[2px] lg:hidden"
+       hidden
+       data-action="click->filter-drawer#close"
+       aria-hidden="true"></div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] gap-6 items-start">
+    <aside id="sidebar"
+           data-filter-drawer-target="panel"
+           class="library-filter-panel space-y-4 z-50 lg:z-0"
+           aria-label="<%= t(".filters_heading", default: "Filters") %>"
+           aria-hidden="true">
+      <div class="flex items-center justify-between gap-2 mb-2 lg:hidden px-1">
+        <h2 class="font-display text-lg font-semibold text-secondary-900 dark:text-secondary-100"><%= t(".filters_heading", default: "Filters") %></h2>
+        <button type="button"
+                data-filter-drawer-close
+                data-action="click->filter-drawer#close"
+                class="inline-flex items-center justify-center w-10 h-10 rounded-lg border border-secondary-300 dark:border-secondary-600 bg-surface dark:bg-secondary-800 text-secondary-800 dark:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500"
+                aria-label="<%= t(".close_filters", default: "Close filters") %>">
+          <%= Icon icon: "x-lg", label: t(".close_filters", default: "Close filters") %>
+        </button>
+      </div>
+      <% action_content = yield :actions %>
+      <%= card(:secondary, t(".actions_heading"), class: "action-card hidden lg:block") { action_content } if action_content.present? %>
+      <%= yield :sidebar %>
+    </aside>
+
+    <div class="min-w-0 overflow-visible relative z-10" id="item_list">
+      <%= yield :items %>
+    </div>
   </div>
-  <aside class="space-y-4 relative z-0" id="sidebar">
-    <% action_content = yield :actions %>
-    <%= card(:secondary, t(".actions_heading"), class: "action-card") { action_content } if action_content.present? %>
-    <%= yield :sidebar %>
-  </aside>
 </div>
 
 <% parent_layout "application" %>

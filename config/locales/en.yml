@@ -292,6 +292,12 @@ en:
     demo_mode: This instance is in demo mode. You cannot add or remove models, but you can do everything else.
     filters_card:
       has_image: With images only
+      list:
+        favorite: Favorites
+        printed: Printed
+        queue: Print queue
+        unprinted: Never printed
+      list_label: Personal list
       missing_tags: Missing tags
       owner: Owner
       remove_collection_filter: Remove collection filter
@@ -299,6 +305,7 @@ en:
       remove_filter: Remove filter
       remove_has_image_filter: Remove with-images filter
       remove_library_filter: Remove library filter
+      remove_list_filter: Remove list filter
       remove_missing_tag_filter: Remove missing tag filter
       remove_owner_filter: Remove owner filter
       remove_search_filter: Remove search filter
@@ -336,8 +343,11 @@ en:
         confirm: Are you sure you want to start a rescan of all filtered models? This may take a long time!
         label: Rescan filtered models
       developer: Developers
+      favorites: Favorites
       home: Homepage
       import_url: Import URL
+      library: Library
+      library_home: Home
       log_in: Sign in
       log_out: Sign out
       moderator_settings: Moderator Settings
@@ -345,6 +355,9 @@ en:
       navbar:
         toggler:
           label: Toggle navigation
+      printed: Printed
+      queue: Queue
+      unprinted: Never printed
       scan: Scan
       scan_changes:
         confirm: Are you sure you want to scan all libraries for new files? This may take a long time!
@@ -419,11 +432,19 @@ en:
       edit_button:
         label: Edit model %{name}
         text: Edit
+      favorite: Favorite
       model_preview: 3D model
       no_preview: No preview available
       open_button:
         label: Open model %{name}
         text: Open
+      printed: Printed
+      queue: Queue
+    model_gallery:
+      close: Close
+      loading: Loading images…
+      open_model: Open model
+      preview_label: Preview images for %{name}
     search_help:
       boolean: Use "or" to find models that match any of the terms.
       federation: Search for any Fediverse username to follow it.
@@ -771,12 +792,45 @@ en:
       users_v_creators: Unlike many Fediverse platforms, you don't just have one handle on Manyfold. Every model, creator and collection has its own handle for people to follow, as does the account you sign in with. This means you can manage more than one creator profile!
     index:
       browse_models: Browse all models
-      no_activities: There are no activities to display for now.
+      no_activities: There are no models in your library yet.
       open_search_help: Search syntax
+      pulse_label: Library at a glance
+      pulse:
+        favorites: Favorites
+        models: Models
+        printed: Printed
+        queue: Queue
+        unprinted: Never printed
+      queue_heading: Your print queue
+      queue_sub: Models you marked to print next
+      print_next_heading: What to print next
+      print_next_sub: In your library, never printed — start here
+      surprise: Surprise me
       recent_activity: Recent Activity
+      recent_models: Recently added
+      recent_sub: Fresh arrivals in your libraries
+      see_all: See all
       search:
-        placeholder: What are you looking for?
+        placeholder: Search models, tags, creators…
         submit: Search
+      shortcuts_label: Quick links
+      shortcuts:
+        browse: Library
+        browse_hint: Browse and filter everything
+        favorites: Favorites
+        favorites_hint: Models you starred
+        printed: Printed
+        printed_hint: What you've marked as printed
+        problems: Problems
+        problems_hint: Needs attention
+        queue: Print queue
+        queue_hint: Decide later, print soon
+        unprinted: Never printed
+        unprinted_hint: Discover what you haven't tried
+      tagline: Find what to print — know what you have
+    surprise:
+      empty: Nothing left unprinted — time to find new models!
+      picked: Here's something you haven't printed yet.
     publishing:
       content: You can make your models public by going to the model edit page and setting the permissions.
       existing_creator:
@@ -862,6 +916,8 @@ en:
       skip_to_content: Skip to main content
     card_list_page:
       actions_heading: Actions
+      close_filters: Close filters
+      filters_heading: Filters
     mailer:
       footer: 'This email was sent by %{site_name}: %{site_link}'
       greeting: Hi!

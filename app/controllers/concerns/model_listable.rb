@@ -24,7 +24,7 @@ module ModelListable
     # blew browser memory on back-navigation. Infinite scroll + windowing handles
     # forward load; ?page=N lands on that page and scrolls from there.
     @models = @models.page(page).per(per_page)
-    @models = @models.includes [:creator, :collection]
+    @models = @models.includes [:creator, :collection, :tags]
     # preview_file only — avoid preloading every model_file on index
     @models = @models.preload [:preview_file]
 

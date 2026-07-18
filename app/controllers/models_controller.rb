@@ -73,6 +73,14 @@ class ModelsController < ApplicationController
     end
   end
 
+  # Lightweight image gallery for the browse lightbox (turbo-frame only).
+  def gallery
+    files = policy_scope(@model.model_files).without_special
+    @images = files.select(&:is_image?)
+    @images.unshift(@model.preview_file) if @images.delete(@model.preview_file)
+    render layout: false
+  end
+
   def new
     @model = Model.new # dummy model object
     authorize :model
@@ -159,6 +167,14 @@ class ModelsController < ApplicationController
     @model.check_later
     # Back to the model page
     redirect_to @model, notice: t(".success")
+  end
+
+  def toggle_favorite
+    toggle_personal_list(:favorite, added_key: ".added", removed_key: ".removed")
+  end
+
+  def toggle_queue
+    toggle_personal_list(:want_to_print, added_key: ".queue_added", removed_key: ".queue_removed")
   end
 
   def unmerge
@@ -319,6 +335,22 @@ class ModelsController < ApplicationController
 
   def clear_returnable
     session[:return_after_new] = nil
+  end
+
+  def toggle_personal_list(list_name, added_key:, removed_key:)
+    authorize @model, :show?
+    if current_user.blank?
+      redirect_to new_user_session_path, alert: t("devise.failure.unauthenticated")
+      return
+    end
+    if current_user.listed?(@model, list_name)
+      current_user.delist(@model, list_name)
+      notice = t(removed_key)
+    else
+      current_user.list(@model, list_name)
+      notice = t(added_key)
+    end
+    redirect_back_or_to @model, notice: notice
   end
 
   def cached_file_data(file)

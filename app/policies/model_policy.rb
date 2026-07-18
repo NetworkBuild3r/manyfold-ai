@@ -3,6 +3,18 @@ class ModelPolicy < ApplicationPolicy
     super && !(user&.sensitive_content_handling == "hide" && record.sensitive)
   end
 
+  def gallery?
+    show?
+  end
+
+  def toggle_favorite?
+    show?
+  end
+
+  def toggle_queue?
+    show?
+  end
+
   def configure_merge?
     merge?
   end

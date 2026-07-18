@@ -133,6 +133,7 @@ export default class extends Controller {
       this.nextUrlValue = ''
       this.exhausted = true
       this.updateStatus(this.endMessage())
+      this.element.classList.add('is-exhausted')
     }
   }
 
@@ -243,8 +244,10 @@ export default class extends Controller {
       if (!this.hasMore) {
         this.exhausted = true
         this.updateStatus(this.endMessage())
+        this.element.classList.add('is-exhausted')
       } else {
         this.updateStatus('')
+        this.element.classList.remove('is-exhausted')
       }
 
       return true

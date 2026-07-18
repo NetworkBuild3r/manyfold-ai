@@ -1,33 +1,128 @@
-<div class="pt-4 pb-4 text-center">
-  <h1 class="hidden md:block text-2xl font-bold text-secondary-900 dark:text-secondary-100"><%= site_name %></h1>
-  <p class="text-lg text-secondary-600 dark:text-secondary-400"><%= site_tagline %></p>
+<div class="max-w-3xl mx-auto pt-6 pb-8 text-center">
+  <h1 class="font-display text-4xl sm:text-5xl font-semibold tracking-tight text-secondary-900 dark:text-secondary-100"><%= site_name %></h1>
+  <p class="mt-2 text-lg text-secondary-600 dark:text-secondary-400"><%= site_tagline.presence || t(".tagline") %></p>
   <% if SiteSettings.demo_mode_enabled? %>
-    <div class="px-4 py-3 rounded-lg bg-info/10 text-info dark:bg-info/20 inline-block mt-2">
+    <div class="px-4 py-3 rounded-lg bg-info/10 text-info dark:bg-info/20 inline-block mt-4">
       <%= t "application.demo_mode" %>
     </div>
   <% end %>
-  <div id="home-search" class="max-w-2xl mx-auto mt-4 mb-4" data-turbo-permanent>
+
+  <div id="home-search" class="max-w-xl mx-auto mt-6" data-turbo-permanent>
     <%= form_with url: models_path, method: :get do |f| %>
-      <div class="flex rounded-lg overflow-hidden border border-secondary-300 dark:border-secondary-600">
-        <%= f.text_field :q, class: "flex-1 block w-full rounded-none border-0 px-3 py-2 shadow-sm focus-visible:ring-2 focus-visible:ring-primary-500 dark:bg-secondary-800", placeholder: translate(".search.placeholder"), aria_label: translate(".search.submit"), aria_describedby: "button-search", value: @query, role: "search" %>
-        <%= f.submit translate(".search.submit"), class: "inline-flex items-center px-4 py-2 bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500", name: nil, id: "button-search" %>
+      <div class="flex rounded-xl overflow-hidden border border-secondary-300 dark:border-secondary-600 bg-surface dark:bg-secondary-900 shadow-sm">
+        <%= f.text_field :q, class: "flex-1 block w-full rounded-none border-0 px-4 py-3 shadow-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:bg-secondary-900", placeholder: translate(".search.placeholder"), aria_label: translate(".search.submit"), aria_describedby: "button-search", value: @query, role: "search" %>
+        <%= f.submit translate(".search.submit"), class: "inline-flex items-center px-5 py-3 bg-primary-600 text-white font-medium hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500", name: nil, id: "button-search" %>
       </div>
-      <%= SearchHelp do %>
-        <small class="inline-block mt-3 ms-3 text-secondary-600 dark:text-secondary-400"><%= t(".open_search_help") %></small>
-      <% end %>
     <% end %>
   </div>
-  <p class="mt-2 text-center">
-    <%= link_to t(".browse_models"), models_path, class: "inline-flex items-center gap-1.5 px-4 py-2 text-sm rounded-lg border border-secondary-300 dark:border-secondary-500 bg-white dark:bg-secondary-800 text-secondary-700 dark:text-secondary-200 hover:bg-secondary-50 dark:hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-primary-500 no-underline" %>
-  </p>
 </div>
-<div class="max-w-2xl mx-auto mt-8">
-  <% if !@feed.empty? %>
-    <h2 class="<%= heading_classes(:section) %> mb-6"><%= t(".recent_activity") %></h2>
-    <%= render partial: "activity", collection: @feed %>
-  <% else %>
-    <%= render "application/empty_state", message: t(".no_activities"), icon: "inbox" do %>
-      <p><%= link_to t(".browse_models"), models_path, class: "inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 no-underline" %></p>
+
+<% if @pulse %>
+  <section class="max-w-4xl mx-auto mb-10" aria-label="<%= t(".pulse_label") %>">
+    <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+      <%= link_to models_path, class: "rounded-xl border border-secondary-200 dark:border-secondary-700 bg-surface dark:bg-surface-dark px-4 py-3 text-center no-underline hover:border-primary-400 transition-colors" do %>
+        <div class="font-display text-2xl font-semibold text-secondary-900 dark:text-secondary-100"><%= number_with_delimiter(@pulse[:models]) %></div>
+        <div class="text-xs font-medium uppercase tracking-wide text-secondary-500 mt-0.5"><%= t(".pulse.models") %></div>
+      <% end %>
+      <%= link_to models_path(list: "queue"), class: "rounded-xl border border-secondary-200 dark:border-secondary-700 bg-surface dark:bg-surface-dark px-4 py-3 text-center no-underline hover:border-primary-400 transition-colors" do %>
+        <div class="font-display text-2xl font-semibold text-primary-700 dark:text-primary-400"><%= number_with_delimiter(@pulse[:queue]) %></div>
+        <div class="text-xs font-medium uppercase tracking-wide text-secondary-500 mt-0.5"><%= t(".pulse.queue") %></div>
+      <% end %>
+      <%= link_to models_path(list: "unprinted"), class: "rounded-xl border border-secondary-200 dark:border-secondary-700 bg-surface dark:bg-surface-dark px-4 py-3 text-center no-underline hover:border-primary-400 transition-colors" do %>
+        <div class="font-display text-2xl font-semibold text-secondary-900 dark:text-secondary-100"><%= number_with_delimiter(@pulse[:unprinted]) %></div>
+        <div class="text-xs font-medium uppercase tracking-wide text-secondary-500 mt-0.5"><%= t(".pulse.unprinted") %></div>
+      <% end %>
+      <%= link_to models_path(list: "printed"), class: "rounded-xl border border-secondary-200 dark:border-secondary-700 bg-surface dark:bg-surface-dark px-4 py-3 text-center no-underline hover:border-primary-400 transition-colors" do %>
+        <div class="font-display text-2xl font-semibold text-success"><%= number_with_delimiter(@pulse[:printed]) %></div>
+        <div class="text-xs font-medium uppercase tracking-wide text-secondary-500 mt-0.5"><%= t(".pulse.printed") %></div>
+      <% end %>
+      <%= link_to models_path(list: "favorite"), class: "rounded-xl border border-secondary-200 dark:border-secondary-700 bg-surface dark:bg-surface-dark px-4 py-3 text-center no-underline hover:border-primary-400 transition-colors col-span-2 sm:col-span-1" do %>
+        <div class="font-display text-2xl font-semibold text-secondary-900 dark:text-secondary-100"><%= number_with_delimiter(@pulse[:favorites]) %></div>
+        <div class="text-xs font-medium uppercase tracking-wide text-secondary-500 mt-0.5"><%= t(".pulse.favorites") %></div>
+      <% end %>
+    </div>
+  </section>
+<% end %>
+
+<section class="max-w-4xl mx-auto mb-10" aria-label="<%= t(".shortcuts_label") %>">
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+    <% if current_user %>
+      <%= link_to models_path(list: "queue"), class: "group block rounded-xl border border-primary-300 dark:border-primary-800 bg-primary-50/80 dark:bg-primary-950/30 p-4 text-left no-underline hover:shadow-md transition-all focus-visible:ring-2 focus-visible:ring-primary-500" do %>
+        <span class="block font-display text-lg font-semibold text-primary-900 dark:text-primary-200"><%= t(".shortcuts.queue") %></span>
+        <span class="mt-1 block text-sm text-primary-800/80 dark:text-primary-300/80"><%= t(".shortcuts.queue_hint") %></span>
+      <% end %>
+      <%= link_to models_path(list: "unprinted"), class: "group block rounded-xl border border-secondary-200 dark:border-secondary-600 bg-surface dark:bg-surface-dark p-4 text-left no-underline hover:border-primary-400 hover:shadow-md transition-all focus-visible:ring-2 focus-visible:ring-primary-500" do %>
+        <span class="block font-display text-lg font-semibold text-secondary-900 dark:text-secondary-100 group-hover:text-primary-700"><%= t(".shortcuts.unprinted") %></span>
+        <span class="mt-1 block text-sm text-secondary-600 dark:text-secondary-400"><%= t(".shortcuts.unprinted_hint") %></span>
+      <% end %>
+      <%= link_to models_path(list: "printed"), class: "group block rounded-xl border border-secondary-200 dark:border-secondary-600 bg-surface dark:bg-surface-dark p-4 text-left no-underline hover:border-primary-400 hover:shadow-md transition-all focus-visible:ring-2 focus-visible:ring-primary-500" do %>
+        <span class="block font-display text-lg font-semibold text-secondary-900 dark:text-secondary-100 group-hover:text-primary-700"><%= t(".shortcuts.printed") %></span>
+        <span class="mt-1 block text-sm text-secondary-600 dark:text-secondary-400"><%= t(".shortcuts.printed_hint") %></span>
+      <% end %>
     <% end %>
-  <% end %>
-</div>
+    <%= link_to models_path, class: "group block rounded-xl border border-secondary-200 dark:border-secondary-600 bg-surface dark:bg-surface-dark p-4 text-left no-underline hover:border-primary-400 hover:shadow-md transition-all focus-visible:ring-2 focus-visible:ring-primary-500" do %>
+      <span class="block font-display text-lg font-semibold text-secondary-900 dark:text-secondary-100 group-hover:text-primary-700"><%= t(".shortcuts.browse") %></span>
+      <span class="mt-1 block text-sm text-secondary-600 dark:text-secondary-400"><%= t(".shortcuts.browse_hint") %></span>
+    <% end %>
+  </div>
+</section>
+
+<% if @queue_models.present? %>
+  <section class="max-w-screen-2xl mx-auto mb-12" aria-labelledby="queue-heading">
+    <div class="flex items-end justify-between gap-4 mb-4">
+      <div>
+        <h2 id="queue-heading" class="<%= heading_classes(:section) %>"><%= t(".queue_heading") %></h2>
+        <p class="text-sm text-secondary-600 dark:text-secondary-400"><%= t(".queue_sub") %></p>
+      </div>
+      <%= link_to t(".see_all"), models_path(list: "queue"), class: "text-sm font-medium text-primary-700 dark:text-primary-400 no-underline hover:underline" %>
+    </div>
+    <div class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,11rem),1fr))] sm:grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3 sm:gap-4" role="list">
+      <% @queue_models.each_with_index do |model, index| %>
+        <%= render Components::ModelCard.new(model: model, eager_preview: index < 8) %>
+      <% end %>
+    </div>
+  </section>
+<% end %>
+
+<% if @print_next.present? %>
+  <section class="max-w-screen-2xl mx-auto mb-12" aria-labelledby="print-next-heading">
+    <div class="flex items-end justify-between gap-4 mb-4">
+      <div>
+        <h2 id="print-next-heading" class="<%= heading_classes(:section) %>"><%= t(".print_next_heading") %></h2>
+        <p class="text-sm text-secondary-600 dark:text-secondary-400"><%= t(".print_next_sub") %></p>
+      </div>
+      <div class="flex items-center gap-3 shrink-0">
+        <%= link_to t(".surprise"), surprise_path, class: "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-primary-600 text-white no-underline hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500" %>
+        <%= link_to t(".see_all"), models_path(list: "unprinted"), class: "text-sm font-medium text-primary-700 dark:text-primary-400 no-underline hover:underline" %>
+      </div>
+    </div>
+    <div class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,11rem),1fr))] sm:grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3 sm:gap-4" role="list">
+      <% @print_next.each_with_index do |model, index| %>
+        <%= render Components::ModelCard.new(model: model, eager_preview: index < 8) %>
+      <% end %>
+    </div>
+  </section>
+<% end %>
+
+<% if @recent_models.present? %>
+  <section class="max-w-screen-2xl mx-auto mb-12" aria-labelledby="recent-models-heading">
+    <div class="flex items-end justify-between gap-4 mb-4">
+      <div>
+        <h2 id="recent-models-heading" class="<%= heading_classes(:section) %>"><%= t(".recent_models") %></h2>
+        <p class="text-sm text-secondary-600 dark:text-secondary-400"><%= t(".recent_sub") %></p>
+      </div>
+      <%= link_to t(".browse_models"), models_path(order: "recent"), class: "text-sm font-medium text-primary-700 dark:text-primary-400 no-underline hover:underline" %>
+    </div>
+    <div class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,11rem),1fr))] sm:grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3 sm:gap-4" role="list">
+      <% @recent_models.each_with_index do |model, index| %>
+        <%= render Components::ModelCard.new(model: model, eager_preview: index < 8) %>
+      <% end %>
+    </div>
+  </section>
+<% elsif @feed.blank? && @print_next.blank? %>
+  <div class="max-w-md mx-auto mb-12">
+    <%= render "application/empty_state", message: t(".no_activities"), icon: "inbox" do %>
+      <p><%= link_to t(".browse_models"), models_path, class: "#{primary_button_class} no-underline" %></p>
+    <% end %>
+  </div>
+<% end %>

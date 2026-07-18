@@ -3,8 +3,9 @@ class Search::FilterService
   attr_reader :creator
   attr_reader :owner
 
-  # Get list filters from URL
-  def initialize(params)
+  # Get list filters from URL. Optional +user+ enables personal list filters (favorite/printed).
+  def initialize(params, user: nil)
+    @user = user
     params = ActionController::Parameters.new(params) if params.is_a?(Hash)
     @filters = params.permit(
       :library,
@@ -15,6 +16,7 @@ class Search::FilterService
       :missingtag,
       :owner,
       :has_image,
+      :list,
       tag: []
     )
     # Sidebar form uses "all" for unconstrained selects; drop so they do not stick as filters.
@@ -24,6 +26,7 @@ class Search::FilterService
     @filters.delete(:link) if @filters[:link].blank?
     @filters.delete(:q) if @filters[:q].blank?
     @filters.delete(:has_image) unless ActiveModel::Type::Boolean.new.cast(@filters[:has_image])
+    @filters.delete(:list) unless %w[favorite printed queue unprinted].include?(@filters[:list].to_s)
 
     @collection = Collection.find_param(parameter(:collection)) if parameter(:collection).present?
     @creator = Creator.find_param(parameter(:creator)) if parameter(:creator).present?
@@ -56,6 +59,7 @@ class Search::FilterService
     scope = filter_by_creator(scope)
     scope = filter_by_url(scope)
     scope = filter_by_has_image(scope)
+    scope = filter_by_list(scope)
     filter_by_search(scope)
   end
 
@@ -180,6 +184,25 @@ class Search::FilterService
     scope.where(
       preview_file_id: ModelFile.without_special.where(image_filename_sql).select(:id)
     )
+  end
+
+  # Personal lists: favorites, print queue, printed, or never printed.
+  def filter_by_list(scope)
+    return scope if @user.blank? || !filtering_by?(:list)
+
+    case parameter(:list).to_s
+    when "favorite"
+      scope.where(id: @user.favorited_model_ids.to_a)
+    when "queue"
+      scope.where(id: @user.queued_model_ids.to_a)
+    when "printed"
+      scope.where(id: @user.printed_model_ids.to_a)
+    when "unprinted"
+      printed = @user.printed_model_ids
+      printed.empty? ? scope : scope.where.not(id: printed.to_a)
+    else
+      scope
+    end
   end
 
   def truthy?(value)

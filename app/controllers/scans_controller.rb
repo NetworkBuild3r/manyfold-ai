@@ -2,7 +2,7 @@ class ScansController < ApplicationController
   def create
     authorize :scan
     # Load filters
-    @filter = Search::FilterService.new(params)
+    @filter = Search::FilterService.new(params, user: current_user)
     # Prune orphaned problems
     Upgrade::PruneOrphanedProblems.perform_later
     if params[:type] === "check"

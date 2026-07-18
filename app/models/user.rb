@@ -110,6 +110,63 @@ class User < ApplicationRecord
     listed?(file, :printed)
   end
 
+  def favorited_model?(model)
+    listed?(model, :favorite)
+  end
+
+  def queued_model?(model)
+    listed?(model, :want_to_print)
+  end
+
+  # Model ids the user has favorited (scope: favorite)
+  def favorited_model_ids
+    @favorited_model_ids ||= Favorite.where(
+      favoritor: self,
+      favoritable_type: "Model",
+      scope: "favorite",
+      blocked: false
+    ).pluck(:favoritable_id).to_set
+  end
+
+  # Model ids on the print queue (scope: want_to_print)
+  def queued_model_ids
+    @queued_model_ids ||= Favorite.where(
+      favoritor: self,
+      favoritable_type: "Model",
+      scope: "want_to_print",
+      blocked: false
+    ).pluck(:favoritable_id).to_set
+  end
+
+  # Model ids where at least one file is marked printed
+  def printed_model_ids
+    @printed_model_ids ||= begin
+      file_ids = Favorite.where(
+        favoritor: self,
+        favoritable_type: "ModelFile",
+        scope: "printed",
+        blocked: false
+      ).select(:favoritable_id)
+      ModelFile.where(id: file_ids).distinct.pluck(:model_id).to_set
+    end
+  end
+
+  def library_pulse(visible_models)
+    total = visible_models.count
+    printed_in_scope = if printed_model_ids.empty?
+      0
+    else
+      visible_models.where(id: printed_model_ids.to_a).count
+    end
+    {
+      models: total,
+      queue: queued_model_ids.size,
+      printed: printed_in_scope,
+      favorites: favorited_model_ids.size,
+      unprinted: [total - printed_in_scope, 0].max
+    }
+  end
+
   def is_administrator?
     has_any_role_of? :administrator
   end

@@ -4,6 +4,6 @@
      data-next-url="<%= @models.next_page ? models_page_url(@models.next_page, @filter) : "" %>"
      data-has-more="<%= @models.next_page.present? %>">
   <% @models.each do |model| %>
-    <%= render Components::ModelCard.new(model: model, eager_preview: false) %>
+    <%= render Components::ModelCard.new(model: model, eager_preview: false, gallery: true) %>
   <% end %>
 </div>

@@ -1,0 +1,10 @@
+<%= turbo_frame_tag "model-gallery" do %>
+  <% if @images.present? %>
+    <%= ImageCarousel(images: @images, browse: true) %>
+  <% else %>
+    <div class="flex flex-col items-center justify-center gap-3 py-16 px-4 text-center rounded-xl bg-secondary-900 text-secondary-300">
+      <%= Icon icon: "image", label: "" %>
+      <p class="text-sm m-0"><%= t(".no_images") %></p>
+    </div>
+  <% end %>
+<% end %>

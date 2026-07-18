@@ -1,5 +1,48 @@
 <% content_for :page_header do %>
-  <%= PageTitle title: Model.model_name.human(count: 100), heading: false %>
+  <% list = @filter.parameter(:list).to_s %>
+  <% total = @models.try(:total_count) %>
+  <% title = case list
+     when "favorite" then t("application.navbar.favorites")
+     when "printed" then t("application.navbar.printed")
+     when "queue" then t("application.navbar.queue")
+     when "unprinted" then t("application.navbar.unprinted")
+     else t("application.navbar.library")
+     end %>
+  <% hint = case list
+     when "favorite" then t(".favorites_hint")
+     when "printed" then t(".printed_hint")
+     when "queue" then t(".queue_hint")
+     when "unprinted" then t(".unprinted_hint")
+     else t(".library_hint")
+     end %>
+  <%= PageTitle title: title, heading: false %>
+  <div class="flex flex-wrap items-end justify-between gap-3 max-w-screen-2xl mx-auto">
+    <div class="min-w-0">
+      <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        <h1 class="<%= heading_classes(:page) %>"><%= title %></h1>
+        <% if total %>
+          <p class="text-sm text-secondary-500 dark:text-secondary-400" aria-live="polite">
+            <%= t("models.list.result_count", count: total) %>
+          </p>
+        <% end %>
+      </div>
+      <p class="mt-1 text-sm text-secondary-600 dark:text-secondary-400"><%= hint %></p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+      <% if current_user && (list.blank? || list == "unprinted") %>
+        <%= link_to t("home.index.surprise"), surprise_path,
+              class: "inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg bg-primary-600 text-white no-underline hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500" %>
+      <% end %>
+      <% if current_user && list != "queue" %>
+        <%= link_to t("application.navbar.queue"), models_path((@filter&.to_params || {}).merge(list: "queue")),
+              class: "inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg border border-secondary-300 dark:border-secondary-600 bg-surface dark:bg-secondary-900 text-secondary-900 dark:text-secondary-100 no-underline hover:border-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500" %>
+      <% end %>
+      <% if current_user && list != "unprinted" %>
+        <%= link_to t("application.navbar.unprinted"), models_path((@filter&.to_params || {}).merge(list: "unprinted")),
+              class: "inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg border border-secondary-300 dark:border-secondary-600 bg-surface dark:bg-secondary-900 text-secondary-900 dark:text-secondary-100 no-underline hover:border-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500" %>
+      <% end %>
+    </div>
+  </div>
 <% end %>
 
 <%= render "list" %>

@@ -6,7 +6,18 @@
   label_class = "block text-sm font-medium text-secondary-700 dark:text-secondary-300 mb-1"
   input_class = select_class
 %>
-<%= card :secondary, t(".title", default: "Filter models"), collapse: "md" do %>
+<%= card :secondary, t(".title", default: "Filter models") do %>
+  <% if current_user %>
+    <div class="flex flex-wrap gap-2 mb-3" role="group" aria-label="<%= t("application.filters_card.list_label") %>">
+      <% list = @filter&.parameter(:list).to_s %>
+      <% chip = ->(active) { "inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium no-underline #{active ? "bg-primary-100 text-primary-800 dark:bg-primary-900/40 dark:text-primary-200" : "bg-secondary-100 dark:bg-secondary-800 text-secondary-700 dark:text-secondary-300 hover:bg-secondary-200 dark:hover:bg-secondary-700"}" } %>
+      <%= link_to t("application.navbar.library"), models_path((@filter&.to_params || {}).except(:list)), class: chip.call(list.blank?) %>
+      <%= link_to t("application.navbar.queue"), models_path((@filter&.to_params || {}).merge(list: "queue")), class: chip.call(list == "queue") %>
+      <%= link_to t("application.navbar.unprinted"), models_path((@filter&.to_params || {}).merge(list: "unprinted")), class: chip.call(list == "unprinted") %>
+      <%= link_to t("application.navbar.favorites"), models_path((@filter&.to_params || {}).merge(list: "favorite")), class: chip.call(list == "favorite") %>
+      <%= link_to t("application.navbar.printed"), models_path((@filter&.to_params || {}).merge(list: "printed")), class: chip.call(list == "printed") %>
+    </div>
+  <% end %>
   <%= form_with url: models_path, method: :get, local: true, class: "space-y-3", html: {id: "models-filter-form"} do %>
     <%# Preserve sort + active tags across Apply %>
     <% if params[:order].present? %>
@@ -17,6 +28,9 @@
     <% end %>
     <% Array(fp[:tag]).compact_blank.each do |tag_name| %>
       <%= hidden_field_tag "tag[]", tag_name %>
+    <% end %>
+    <% if @filter&.filtering_by?(:list) %>
+      <%= hidden_field_tag :list, @filter.parameter(:list) %>
     <% end %>
 
     <div>
