@@ -12,7 +12,7 @@ class ModelFile < ApplicationRecord
 
   belongs_to :model, touch: true
 
-  after_create :attach_existing_file!
+  after_create :attach_existing_file_on_create!
 
   before_destroy :rescan_duplicates
   after_commit :reattach!, on: :update, if: :filename_previously_changed?
@@ -118,6 +118,11 @@ class ModelFile < ApplicationRecord
     )
     attachment_attacher.refresh_metadata! if refresh
     save!(validate: !skip_validations)
+  end
+
+  # During library discovery, skip NFS metadata refresh here — ParseMetadataJob does it once.
+  def attach_existing_file_on_create!
+    attach_existing_file!(refresh: Current.scan_batch_id.blank?)
   end
 
   def exists_on_storage?

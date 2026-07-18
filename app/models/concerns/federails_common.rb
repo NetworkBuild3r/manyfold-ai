@@ -20,6 +20,7 @@ module FederailsCommon
   def federails_actor
     return nil unless DatabaseDetector.table_ready? "federails_actors"
     return nil unless persisted?
+    return nil unless SiteSettings.federation_enabled?
     act = Federails::Actor.find_by(entity: self)
     if act.nil?
       act = create_federails_actor
@@ -29,6 +30,11 @@ module FederailsCommon
   rescue NoMethodError, ActiveRecord::StatementInvalid
     # Just return nil if we get errors from not running on fully-migrated data
     nil
+  end
+
+  def create_federails_actor
+    return nil unless SiteSettings.federation_enabled?
+    super
   end
 
   def local?

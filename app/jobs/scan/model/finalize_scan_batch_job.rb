@@ -1,6 +1,6 @@
 class Scan::Model::FinalizeScanBatchJob < ApplicationJob
   queue_as :scan
-  unique :until_executed
+  unique :until_executed, lock_ttl: 15.minutes
 
   def perform(model_id, scan_batch_id:)
     return if scan_batch_id.blank?

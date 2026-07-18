@@ -20,6 +20,7 @@ RSpec.describe Scan::Library::DetectFilesystemChangesJob do
       described_class.perform_now(library.id)
       expect(Scan::Library::CreateModelFromPathJob).to have_been_enqueued.with(library.id, "model_one", hash_including(scan_batch_id: kind_of(String)))
       expect(Scan::Library::CreateModelFromPathJob).to have_been_enqueued.with(library.id, "subfolder/model_two", hash_including(scan_batch_id: kind_of(String)))
+      expect(Scan::Library::CheckMissingFilesJob).to have_been_enqueued.with(library.id, hash_including(scan_batch_id: kind_of(String)))
     end
 
     it "only scans models with changes on rescan" do
@@ -301,6 +302,76 @@ RSpec.describe Scan::Library::DetectFilesystemChangesJob do
       described_class.perform_now(library.id)
       expect(Scan::Library::CreateModelFromPathJob).to have_been_enqueued.with(library.id, "model_one", hash_including(scan_batch_id: kind_of(String)))
       expect(Scan::Library::CreateModelFromPathJob).to have_been_enqueued.with(library.id, "subfolder/model_two", hash_including(scan_batch_id: kind_of(String)))
+    end
+  end
+
+  context "with depth-3 Category/Creator/Model layout" do
+    around do |ex|
+      MockDirectory.create([
+        "Cults3D/Abe3D/Mystique/part.stl"
+      ]) do |path|
+        @library_path = path
+        ex.run
+      end
+    end
+
+    let(:library) { create(:library, path: @library_path) } # rubocop:todo RSpec/InstanceVariable
+
+    it "discovers models deeper than Category/Model" do
+      expect { described_class.perform_now(library.id) }
+        .to have_enqueued_job(Scan::Library::CreateModelFromPathJob)
+        .with(library.id, "Cults3D/Abe3D/Mystique", hash_including(scan_batch_id: kind_of(String)))
+    end
+  end
+
+  context "with new files in an existing model" do
+    around do |ex|
+      MockDirectory.create([
+        "model_one/part_1.obj",
+        "model_one/part_2.obj"
+      ]) do |path|
+        @library_path = path
+        ex.run
+      end
+    end
+
+    let(:library) { create(:library, path: @library_path) } # rubocop:todo RSpec/InstanceVariable
+    let!(:model) do
+      m = create(:model, path: "model_one", library: library)
+      create(:model_file, model: m, filename: "part_1.obj")
+      m
+    end
+
+    it "enqueues AddNewFiles for the known model instead of CreateModel" do
+      expect { described_class.perform_now(library.id) }
+        .to have_enqueued_job(Scan::Model::AddNewFilesJob)
+        .with(model.id, hash_including(scan_batch_id: kind_of(String)))
+      expect(Scan::Library::CreateModelFromPathJob).not_to have_been_enqueued.with(library.id, "model_one", anything)
+    end
+  end
+
+  context "with a symlink escaping the library root" do
+    around do |ex|
+      MockDirectory.create([
+        "safe_model/part.stl"
+      ]) do |path|
+        @library_path = path
+        outside = File.join(File.dirname(path), "outside_escape")
+        FileUtils.mkdir_p(outside)
+        File.write(File.join(outside, "secret.stl"), "x")
+        File.symlink(outside, File.join(path, "escape_link"))
+        ex.run
+      ensure
+        FileUtils.rm_rf(outside) if outside && File.exist?(outside)
+      end
+    end
+
+    let(:library) { create(:library, path: @library_path) } # rubocop:todo RSpec/InstanceVariable
+
+    it "does not treat symlink targets outside the library as models" do
+      described_class.perform_now(library.id)
+      expect(Scan::Library::CreateModelFromPathJob).to have_been_enqueued.with(library.id, "safe_model", hash_including(scan_batch_id: kind_of(String)))
+      expect(Scan::Library::CreateModelFromPathJob).not_to have_been_enqueued.with(library.id, "escape_link", anything)
     end
   end
 end

@@ -1,6 +1,6 @@
 class Scan::Model::ParseMetadataJob < ApplicationJob
   queue_as :scan
-  unique :until_executed
+  unique :until_executed, lock_ttl: 30.minutes
 
   README_FILES = [
     "readme",
@@ -47,6 +47,11 @@ class Scan::Model::ParseMetadataJob < ApplicationJob
         model.check_for_problems_later(delay: 3.seconds)
       end
     end
+  rescue StandardError
+    if Model.column_names.include?("scan_started_at")
+      Model.where(id: model_id).update_all(scan_started_at: nil) # rubocop:disable Rails/SkipsModelValidations
+    end
+    raise
   end
 
   private

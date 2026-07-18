@@ -35,11 +35,13 @@ module Followable
 
   def followable_post_creation_activity
     return unless SiteSettings.federation_enabled?
+    return if Current.scan_batch_id.present?
     followable_post_activity("Create")
   end
 
   def followable_post_update_activity
     return unless SiteSettings.federation_enabled?
+    return if Current.scan_batch_id.present?
     followable_post_activity("Update") unless recently_posted?
   end
 

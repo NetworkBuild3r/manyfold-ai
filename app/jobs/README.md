@@ -4,16 +4,18 @@ Incremental, batched scan pipeline. **Only new/changed work is expensive.**
 
 ## Design rules
 
-1. **Scan for changes** only creates/rescan models for *new* files on disk. Missing files do **not** re-trigger full model scans (that caused endless loops).
+1. **Scan for changes** discovers new model dirs (bounded depth, default `SCAN_MAX_DEPTH=6`) and shallow-checks **known models** for new files. Missing files are handled by `CheckMissingFilesJob` (batched), not a full re-scan loop.
 2. **AddNewFiles** only enqueues file metadata/analysis for *newly created* `ModelFile` rows — never re-parses the whole model.
 3. **Rescan all models** syncs filesystem + problem checks. It does **not** re-analyse every mesh (`deep: true` is opt-in on `CheckModelJob`).
-4. **Analysis** (digest, duplicates, manifold) runs for new files only, or when `deep: true`.
+4. **Analysis** (digest, duplicates, manifold) runs for new files only, or when `deep: true`, or via Phase B `AnalyseUndigestedJob` / `rake manyfold:analyse_undigested`.
+5. Scan jobs set explicit `lock_ttl`. Stuck locks: `Scan::Library::DetectFilesystemChangesJob.unlock!` (or `ActiveJob::Uniqueness.unlock!`).
 
 ```mermaid
 flowchart TD
     DFS[Scan::Library::DetectFilesystemChangesJob]
     CMFP[Scan::Library::CreateModelFromPathJob]
     ANF[Scan::Model::AddNewFilesJob]
+    MISS[Scan::Library::CheckMissingFilesJob]
     PM[Scan::Model::ParseMetadataJob]
     PMF[Scan::ModelFile::ParseMetadataJob]
     FIN[Scan::Model::FinalizeScanBatchJob]
@@ -23,6 +25,7 @@ flowchart TD
     OM[OrganizeModelJob]
     PUF[ProcessUploadedFileJob]
     AMF[Analysis::AnalyseModelFileJob]
+    UND[Scan::AnalyseUndigestedJob]
     FC[Analysis::FileConversionJob]
     GA[Analysis::GeometricAnalysisJob]
 
@@ -35,8 +38,10 @@ flowchart TD
     FileConvert([fa:fa-person Convert file button])
 
     ScanAll --> DFS
-    DFS -->|new files only → each model path| CMFP
-    DFS -->|missing files → existing models| CFP
+    DFS -->|new model dirs| CMFP
+    DFS -->|new files in known models| ANF
+    DFS --> MISS
+    MISS -->|light| CFP
     CheckAll --> CA
     CA -->|each model| CM
     CM --> ANF
@@ -65,9 +70,9 @@ flowchart TD
     classDef queue_default fill:#077,stroke:#0ff,stroke-width:2px;
     classDef queue_performance fill:#007,stroke:#00f,stroke-width:2px;
 
-    class DFS,CA,CM,CMFP,ANF,PM,PMF,CFP,FIN queue_scan
+    class DFS,CA,CM,CMFP,ANF,PM,PMF,CFP,FIN,MISS queue_scan
     class FC,GA queue_performance
-    class AMF queue_analysis
+    class AMF,UND queue_analysis
     class OM,PUF queue_default
 
     classDef user_action fill:#777,stroke:#fff,stroke-width:2px;

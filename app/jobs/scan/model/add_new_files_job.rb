@@ -2,7 +2,7 @@ require "shellwords"
 
 class Scan::Model::AddNewFilesJob < ApplicationJob
   queue_as :scan
-  unique :until_executed
+  unique :until_executed, lock_ttl: 30.minutes
 
   def file_list(model_path, library, include_all_subfolders: false)
     glob = include_all_subfolders ?
@@ -60,5 +60,19 @@ class Scan::Model::AddNewFilesJob < ApplicationJob
       # Model-level metadata (preview, path tags, README) then finalize → problems
       model.parse_metadata_later(scan_batch_id: scan_batch_id)
     end
+  rescue StandardError
+    clear_scan_started_at!(model_id)
+    raise
+  end
+
+  private
+
+  def clear_scan_started_at!(model_id)
+    return unless Model.column_names.include?("scan_started_at")
+
+    Model.where(id: model_id).where.not(scan_started_at: nil)
+      .update_all(scan_started_at: nil) # rubocop:disable Rails/SkipsModelValidations
+  rescue ActiveRecord::StatementInvalid, ActiveRecord::RecordNotFound
+    nil
   end
 end

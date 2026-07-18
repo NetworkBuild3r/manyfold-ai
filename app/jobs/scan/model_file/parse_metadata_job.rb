@@ -1,6 +1,6 @@
 class Scan::ModelFile::ParseMetadataJob < ApplicationJob
   queue_as :scan
-  unique :until_executed
+  unique :until_executed, lock_ttl: 30.minutes
 
   # scan_batch_id: when set (library discovery), skip heavy AnalyseModelFileJob
   # (NFS digests / dups). Manual rescans pass nil and still enqueue analysis.

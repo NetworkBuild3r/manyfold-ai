@@ -2,7 +2,7 @@ class Scan::CheckAllJob < ApplicationJob
   include JobIteration::Iteration
 
   queue_as :scan
-  unique :until_executed
+  unique :until_executed, lock_ttl: 2.hours
 
   # Rescan all models: filesystem sync + problem detection per model.
   # Does NOT re-analyse every file (that is what "deep" is for, and it OOMs large libs).

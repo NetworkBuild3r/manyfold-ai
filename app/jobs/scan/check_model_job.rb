@@ -1,6 +1,6 @@
 class Scan::CheckModelJob < ApplicationJob
   queue_as :scan
-  unique :until_executed
+  unique :until_executed, lock_ttl: 30.minutes
 
   # deep: when true, re-run analysis on every file (expensive). Default false —
   # only sync filesystem and re-check problems; analysis runs for *new* files only
