@@ -2,7 +2,7 @@
 
 require "rails_helper"
 
-RSpec.describe "Followable scan batch gating" do
+RSpec.describe Model, "Followable scan batch gating" do
   before { create(:admin) }
 
   it "does not post Create activity during a scan batch even if federation is enabled" do
