@@ -78,10 +78,20 @@ RSpec.describe Search::FilterService do
       expect(service.models(Model.all).pluck(:name)).to contain_exactly("bat on a hat")
     end
 
-    it "filters to models that have image files" do
+    it "filters to models whose preview_file is an image" do
       with_image = Model.find_by!(name: "cat in the hat")
-      create(:model_file, model: with_image, filename: "preview.jpg")
-      create(:model_file, model: Model.find_by!(name: "bat on a mat"), filename: "part.stl")
+      image = create(:model_file, model: with_image, filename: "preview.jpg")
+      with_image.update!(preview_file: image)
+
+      # Image file exists but preview_file unset — excluded (card would show empty)
+      orphan = Model.find_by!(name: "hat on the cat")
+      create(:model_file, model: orphan, filename: "cover.png")
+
+      # Mesh locked as preview despite an image file — excluded
+      mesh_preview = Model.find_by!(name: "bat on a mat")
+      stl = create(:model_file, model: mesh_preview, filename: "part.stl")
+      create(:model_file, model: mesh_preview, filename: "photo.jpg")
+      mesh_preview.update!(preview_file: stl)
 
       service = described_class.new(ActionController::Parameters.new(has_image: "1"))
       expect(service.models(Model.all).pluck(:name)).to contain_exactly("cat in the hat")

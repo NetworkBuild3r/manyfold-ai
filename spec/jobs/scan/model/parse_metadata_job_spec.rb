@@ -15,6 +15,28 @@ RSpec.describe Scan::Model::ParseMetadataJob do
         .to change { model.reload.preview_file&.filename }.to("part_2.obj")
     end
 
+    it "prefers an image over a renderable mesh" do
+      create(:model_file, model: model, filename: "cover.jpg")
+      expect { described_class.perform_now(model.id) }
+        .to change { model.reload.preview_file&.filename }.to("cover.jpg")
+    end
+
+    it "upgrades a mesh preview to an image when one appears" do
+      mesh = model.model_files.find_by!(filename: "part_2.obj")
+      model.update!(preview_file: mesh)
+      create(:model_file, model: model, filename: "cover.jpg")
+      expect { described_class.perform_now(model.id) }
+        .to change { model.reload.preview_file&.filename }.from("part_2.obj").to("cover.jpg")
+    end
+
+    it "keeps an existing image preview" do
+      image = create(:model_file, model: model, filename: "cover.jpg")
+      model.update!(preview_file: image)
+      create(:model_file, model: model, filename: "other.png")
+      expect { described_class.perform_now(model.id) }
+        .not_to change { model.reload.preview_file_id }
+    end
+
     it "enqueues FinalizeScanBatchJob when scan_batch_id is provided (which runs CheckForProblemsJob)" do
       expect { described_class.perform_now(model.id, scan_batch_id: "batch-123") }
         .to have_enqueued_job(Scan::Model::FinalizeScanBatchJob).with(model.id, scan_batch_id: "batch-123").once

@@ -249,6 +249,13 @@ RSpec.describe ModelFile do
     end
   end
 
+  it "treats filename extension as image when shrine extension is blank" do
+    file = create(:model_file, filename: "cover.JPG")
+    allow(file).to receive_message_chain(:attachment, :extension).and_return(nil) # rubocop:disable RSpec/MessageChain
+    expect(file.is_image?).to be true
+    expect(file.extension).to eq "jpg"
+  end
+
   [true, false].each do |state|
     before do
       allow(SiteSettings).to receive_messages(default_indexable: state, default_ai_indexable: state)

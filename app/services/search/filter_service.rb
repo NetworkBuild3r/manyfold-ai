@@ -165,8 +165,8 @@ class Search::FilterService
     end
   end
 
-  # Only models that have at least one image file (jpg/png/…).
-  # Hides cards that would show "no preview available" / mesh placeholders only.
+  # Only models whose preview_file is an image (jpg/png/…).
+  # Matches grid cards: PreviewFrame lite only paints a photo for image previews.
   def filter_by_has_image(scope)
     return scope unless truthy?(parameter(:has_image))
 
@@ -178,7 +178,7 @@ class Search::FilterService
     }.join(" OR ")
 
     scope.where(
-      id: ModelFile.without_special.where(image_filename_sql).select(:model_id)
+      preview_file_id: ModelFile.without_special.where(image_filename_sql).select(:id)
     )
   end
 

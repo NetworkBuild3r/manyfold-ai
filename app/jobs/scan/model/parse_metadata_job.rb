@@ -15,11 +15,10 @@ class Scan::Model::ParseMetadataJob < ApplicationJob
       options = {
         # Some things are preserved if already set
         creator: model.creator,
-        collection: model.collection,
-        preview_file: model.preview_file
+        collection: model.collection
       }.compact
-      # Set preview file
-      options.reverse_merge! identify_preview_file(model)
+      # Preview: keep an image; upgrade nil/mesh → image when one exists
+      options.merge!(resolve_preview_file(model))
       # Set path template attributes
       options.reverse_merge! attributes_from_path_template(model.path)
       # Build combined tag list
@@ -56,10 +55,25 @@ class Scan::Model::ParseMetadataJob < ApplicationJob
 
   private
 
+  # Keep an existing image preview. Upgrade nil or non-image preview when an
+  # image file exists (AddNewFiles can attach photos after a mesh was chosen).
+  def resolve_preview_file(model)
+    identified = identify_preview_file(model)
+    current = model.preview_file
+
+    preview = if current&.is_image?
+      current
+    elsif identified&.is_image?
+      identified
+    else
+      current.presence || identified
+    end
+
+    {preview_file: preview}
+  end
+
   def identify_preview_file(model)
-    {
-      preview_file: model.model_files.min_by { |it| preview_priority(it) }
-    }
+    model.model_files.min_by { |it| preview_priority(it) }
   end
 
   def preview_priority(file)

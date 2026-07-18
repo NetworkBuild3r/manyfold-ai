@@ -54,12 +54,8 @@ class ModelFile < ApplicationRecord
   ]
 
   def extension
-    if has_attribute? :attachment_data
-      attachment&.extension
-    else
-      # DEPRECATED: for Pre-shrine migration
-      File.extname(filename).delete(".").downcase
-    end
+    attached = (attachment&.extension if has_attribute?(:attachment_data))
+    attached.presence || File.extname(filename.to_s).delete(".").downcase
   end
 
   def is_image?
