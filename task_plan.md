@@ -14,7 +14,7 @@ Fix filesystem discovery so library scans find deep trees and new files in exist
 | 3 Federails / scan batch | complete | Followable + actor skip |
 | 4 NFS efficiency | complete | refresh once, CheckMissingFilesJob, light problems |
 | 5 Analyse undigested | complete | job + rake |
-| 6 Ship | in_progress | push, CI, pin home_k3 |
+| 6 Ship | complete | pinned 1ad48b66; Synced/Healthy; scan draining |
 
 ## Decisions
 
