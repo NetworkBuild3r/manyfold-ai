@@ -88,13 +88,13 @@ class ApplicationController < ActionController::Base
     content_security_policy.connect_src :self
     content_security_policy.frame_ancestors :self
     content_security_policy.frame_src(*frame_src)
-    content_security_policy.font_src :self, "https://cdn.jsdelivr.net", "https://fonts.gstatic.com"
+    content_security_policy.font_src :self, "https://cdn.jsdelivr.net", :data
     content_security_policy.img_src(*img_src)
     content_security_policy.object_src :none
     content_security_policy.script_src :self
     content_security_policy.style_src :self
     content_security_policy.style_src_attr :unsafe_inline
-    content_security_policy.style_src_elem :self, "nonce-#{content_security_policy_nonce}", "https://fonts.googleapis.com"
+    content_security_policy.style_src_elem :self, "nonce-#{content_security_policy_nonce}"
     # Add library origins
     origins = Library.all.filter_map(&:storage_origin) # rubocop:disable Pundit/UsePolicyScope
     content_security_policy.img_src(*origins)
