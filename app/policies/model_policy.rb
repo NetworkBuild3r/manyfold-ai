@@ -7,6 +7,10 @@ class ModelPolicy < ApplicationPolicy
     show?
   end
 
+  def filter_facets?
+    true
+  end
+
   def toggle_favorite?
     show?
   end

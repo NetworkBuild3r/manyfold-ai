@@ -45,7 +45,11 @@ class Components::PreviewFrame < Components::Base
 
   def render_local
     if @file.is_image?
-      return empty unless @file.exists_on_storage?
+      # Lite/grid cards: skip sync NFS exists_on_storage? — it adds ~200ms+ of
+      # Synology round-trips per page and blocks TTFB. Broken paths 404 as <img>.
+      if !@lite && !@file.exists_on_storage?
+        return empty
+      end
 
       div(class: preview_container_class) do
         opts = {

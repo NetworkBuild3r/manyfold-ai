@@ -131,6 +131,7 @@ Rails.application.routes.draw do
       get "merge", action: "configure_merge", as: "configure_merge"
       get "edit", action: "bulk_edit"
       patch "/update", action: "bulk_update"
+      get "filter_facets"
     end
     resources :model_files, except: [:index, :new] do
       collection do

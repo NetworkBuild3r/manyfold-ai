@@ -35,12 +35,14 @@ class ApplicationController < ActionController::Base
   end
 
   def check_for_first_use
-    authenticate_user! if User.all.empty? # rubocop:disable Pundit/UsePolicyScope
+    authenticate_user! unless User.exists? # rubocop:disable Pundit/UsePolicyScope
     redirect_to(edit_user_registration_path) if current_user&.first_use?
   end
 
   def check_scan_status
-    @scan_in_progress = Sidekiq::Queue.new("scan").size > 0
+    @scan_in_progress = Rails.cache.fetch("manyfold/scan_queue_nonempty", expires_in: 15.seconds) {
+      Sidekiq::Queue.new("scan").size > 0
+    }
   end
 
   private

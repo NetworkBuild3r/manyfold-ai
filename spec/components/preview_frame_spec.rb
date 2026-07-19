@@ -11,15 +11,15 @@ RSpec.describe Components::PreviewFrame, type: :component do
     allow(controller).to receive(:policy_scope).and_return(Model.none)
   end
 
-  it "renders an image tag when the preview exists on storage" do
-    allow_any_instance_of(ModelFile).to receive(:exists_on_storage?).and_return(true) # rubocop:disable RSpec/AnyInstance
+  it "renders an image tag on lite cards without checking NFS" do
+    expect_any_instance_of(ModelFile).not_to receive(:exists_on_storage?) # rubocop:disable RSpec/AnyInstance
     html = render described_class.new(object: model.reload, lite: true)
     expect(html).to include("<img")
   end
 
-  it "renders the empty placeholder when the preview file is missing on storage" do
+  it "renders the empty placeholder when a non-lite preview is missing on storage" do
     allow_any_instance_of(ModelFile).to receive(:exists_on_storage?).and_return(false) # rubocop:disable RSpec/AnyInstance
-    html = render described_class.new(object: model.reload, lite: true)
+    html = render described_class.new(object: model.reload, lite: false)
     expect(html).not_to include("<img")
     expect(html).to include(I18n.t("components.model_card.no_preview"))
   end

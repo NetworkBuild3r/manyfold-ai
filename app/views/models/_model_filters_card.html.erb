@@ -42,39 +42,15 @@
             autocomplete: "off" %>
     </div>
 
-    <% if @filter_libraries.present? && @filter_libraries.many? %>
-      <div>
-        <label for="filter_library" class="<%= label_class %>"><%= Library.model_name.human %></label>
-        <select name="library" id="filter_library" class="<%= select_class %>">
-          <option value="all" <%= "selected" unless @filter&.filtering_by?(:library) %>><%= t(".any", default: "Any") %></option>
-          <% @filter_libraries.each do |lib| %>
-            <option value="<%= lib.to_param %>" <%= "selected" if @filter&.parameter(:library).to_s == lib.to_param %>><%= lib.name %></option>
-          <% end %>
-        </select>
+    <%= turbo_frame_tag "model-filter-facets",
+          src: filter_facets_models_path((@filter&.to_params || {}).except(:page)),
+          loading: :lazy do %>
+      <div class="space-y-3" aria-busy="true">
+        <div class="h-16 rounded-lg bg-secondary-100 dark:bg-secondary-800 animate-pulse"></div>
+        <div class="h-16 rounded-lg bg-secondary-100 dark:bg-secondary-800 animate-pulse"></div>
+        <div class="h-16 rounded-lg bg-secondary-100 dark:bg-secondary-800 animate-pulse"></div>
       </div>
     <% end %>
-
-    <div>
-      <label for="filter_creator" class="<%= label_class %>"><%= Creator.model_name.human %></label>
-      <select name="creator" id="filter_creator" class="<%= select_class %>">
-        <option value="all" <%= "selected" if @filter&.parameter(:creator).blank? %>><%= t(".any", default: "Any") %></option>
-        <option value="" <%= "selected" if @filter&.parameter(:creator) == "" %>><%= t(".none", default: "None (unassigned)") %></option>
-        <% (@filter_creators || []).each do |creator| %>
-          <option value="<%= creator.to_param %>" <%= "selected" if @filter&.parameter(:creator).to_s == creator.to_param %>><%= creator.name.careful_titleize %></option>
-        <% end %>
-      </select>
-    </div>
-
-    <div>
-      <label for="filter_collection" class="<%= label_class %>"><%= Collection.model_name.human %></label>
-      <select name="collection" id="filter_collection" class="<%= select_class %>">
-        <option value="all" <%= "selected" if @filter&.parameter(:collection).blank? %>><%= t(".any", default: "Any") %></option>
-        <option value="" <%= "selected" if @filter&.parameter(:collection) == "" %>><%= t(".none", default: "None (unassigned)") %></option>
-        <% (@filter_collections || []).each do |collection| %>
-          <option value="<%= collection.to_param %>" <%= "selected" if @filter&.parameter(:collection).to_s == collection.to_param %>><%= collection.name %></option>
-        <% end %>
-      </select>
-    </div>
 
     <div>
       <label for="filter_link" class="<%= label_class %>"><%= t(".link", default: "Link contains") %></label>

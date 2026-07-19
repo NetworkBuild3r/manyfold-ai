@@ -11,8 +11,9 @@ class ModelsController < ApplicationController
   before_action :get_creators_and_collections, only: [:new, :edit, :bulk_edit]
   before_action :set_returnable, only: [:bulk_edit, :edit, :new]
   before_action :clear_returnable, only: [:bulk_update, :update, :create]
-  before_action :get_filters, only: [:bulk_edit, :bulk_update, :bulk_edit_selected, :index, :show] # rubocop:todo Rails/LexicallyScopedActionFilter
-  before_action :get_model, except: [:bulk_edit, :bulk_update, :bulk_edit_selected, :index, :new, :create]
+  # get_filters comes from Filterable (index/show); add for bulk + lazy facets
+  before_action :get_filters, only: [:bulk_edit, :bulk_update, :bulk_edit_selected, :filter_facets] # rubocop:todo Rails/LexicallyScopedActionFilter
+  before_action :get_model, except: [:bulk_edit, :bulk_update, :bulk_edit_selected, :index, :new, :create, :filter_facets]
   before_action -> { set_indexable @model if @model }
 
   after_action :verify_policy_scoped, only: [:bulk_edit, :bulk_update]
@@ -35,6 +36,14 @@ class ModelsController < ApplicationController
       end
       format.manyfold_api_v0 { render json: ManyfoldApi::V0::ModelListSerializer.new(@models).serialize }
     end
+  end
+
+  # Lazy facet options for the models filter form (Turbo Frame).
+  # Keeps creator/collection/library queries off the critical TTFB path.
+  def filter_facets
+    authorize :model
+    load_model_filter_sidebar_options
+    render layout: false
   end
 
   def show

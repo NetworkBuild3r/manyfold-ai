@@ -28,14 +28,17 @@ module ModelListable
     # preview_file only — avoid preloading every model_file on index
     @models = @models.preload [:preview_file]
 
-    load_model_filter_sidebar_options
+    # Filter sidebar facets load via ModelsController#filter_facets Turbo Frame —
+    # not on the critical path for first byte.
   end
 
-  # Options for the models index filter form (full HTML only — skip turbo/infinite-scroll fragments).
+  # Options for the models index filter form (lazy Turbo Frame or explicit call).
   def load_model_filter_sidebar_options
-    return unless controller_name == "models" && action_name == "index"
-    return if turbo_frame_request?
-    return if request.headers["X-Infinite-Scroll"].present?
+    return unless controller_name == "models"
+    return unless %w[index filter_facets].include?(action_name)
+    return if action_name == "index" && (
+      turbo_frame_request? || request.headers["X-Infinite-Scroll"].present?
+    )
     return unless request.format.html?
 
     visible_models = policy_scope(Model)
