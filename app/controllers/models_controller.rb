@@ -11,8 +11,9 @@ class ModelsController < ApplicationController
   before_action :get_creators_and_collections, only: [:new, :edit, :bulk_edit]
   before_action :set_returnable, only: [:bulk_edit, :edit, :new]
   before_action :clear_returnable, only: [:bulk_update, :update, :create]
-  # get_filters comes from Filterable (index/show); add for bulk + lazy facets
-  before_action :get_filters, only: [:bulk_edit, :bulk_update, :bulk_edit_selected, :filter_facets] # rubocop:todo Rails/LexicallyScopedActionFilter
+  # Filterable also registers get_filters for index/show; keep index/show here so
+  # ModelsController is not dependent on include order of ModelListable.
+  before_action :get_filters, only: [:bulk_edit, :bulk_update, :bulk_edit_selected, :index, :show, :filter_facets] # rubocop:todo Rails/LexicallyScopedActionFilter
   before_action :get_model, except: [:bulk_edit, :bulk_update, :bulk_edit_selected, :index, :new, :create, :filter_facets]
   before_action -> { set_indexable @model if @model }
 
