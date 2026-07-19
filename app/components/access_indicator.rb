@@ -29,10 +29,10 @@ class Components::AccessIndicator < Components::Base
           span { t("general.public") }
         end
       else
-        span(class: "text-info") { Icon(icon: "unlock", label: t("general.shared")) } if @icon
+        span(class: "text-primary-600 dark:text-primary-400") { Icon(icon: "unlock", label: t("general.shared")) } if @icon
         if @text
           whitespace
-          span { t("general.shared") }
+          span(class: "text-secondary-900 dark:text-secondary-100") { t("general.shared") }
         end
       end
     end

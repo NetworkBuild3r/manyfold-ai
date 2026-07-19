@@ -2,6 +2,6 @@
 
 class Components::UrlInputRow < Components::InputRow
   def input_element
-    @form.url_field(@attribute, {class: Components::TextInputRow::INPUT_CLASS}.merge(@options))
+    raw @form.url_field(@attribute, {class: Components::TextInputRow::INPUT_CLASS}.merge(@options)) # rubocop:disable Rails/OutputSafety
   end
 end

@@ -18,7 +18,7 @@ class Components::LinkList < Components::Base
           li(class: "flex items-center gap-1 flex-wrap") do
             span(class: "text-secondary-700 dark:text-secondary-300") { Icon(icon: "link-45deg", role: "presentation") } if @icons
             whitespace
-            link_to t("sites.%{site}" % {site: link.site}, default: "%{site}" % {site: link.site}), link.url, rel: "noreferrer", class: "no-underline hover:underline"
+            link_to t("sites.%{site}" % {site: link.site}, default: "%{site}" % {site: link.site}), link.url, rel: "noreferrer", class: "text-primary-700 dark:text-primary-400 no-underline hover:underline"
             if link.deserializer.present? && policy(link.linkable).sync?
               whitespace
               link_to({action: "sync", id: link.linkable, link: link.id}, {method: :post, class: "text-secondary-700 dark:text-secondary-300"}) do

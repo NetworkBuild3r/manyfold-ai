@@ -28,11 +28,11 @@
         </h1>
 
         <% if @locked_files > 0 %>
-          <div class="flex items-center gap-2 px-4 py-3 rounded-lg bg-info/10 text-info mb-4"><%= t(".preview", count: @locked_files) %></div>
+          <div class="flex items-center gap-2 px-4 py-3 rounded-lg bg-info/10 text-info dark:bg-info/20 dark:text-info mb-4"><%= t(".preview", count: @locked_files) %></div>
         <% end %>
 
         <% if @model.respond_to?(:scan_started_at) && @model.scan_started_at.present? && !@model.scan_stale? %>
-          <div class="flex items-center gap-2 px-4 py-3 rounded-lg bg-info/10 text-info mb-4"><%= t(".scan_in_progress") %></div>
+          <div class="flex items-center gap-2 px-4 py-3 rounded-lg bg-info/10 text-info dark:bg-info/20 dark:text-info mb-4"><%= t(".scan_in_progress") %></div>
         <% end %>
 
         <%= card(:secondary) do %>
@@ -193,49 +193,49 @@
           <%= AccessIndicator(object: @model, text: false) %>
           <%= AccessIndicator(object: @model, text: true, icon: false) %>
           <% if @model.creator %>
-            <div class="flex items-center gap-2"><%= Icon icon: "person", label: Creator.model_name.human %></div>
-            <div class="min-w-0"><%= link_to @model.creator.name, @model.creator, itemprop: "author" %></div>
+            <div class="flex items-center gap-2 text-secondary-700 dark:text-secondary-200"><%= Icon icon: "person", label: Creator.model_name.human %></div>
+            <div class="min-w-0"><%= link_to @model.creator.name, @model.creator, itemprop: "author", class: content_link_class %></div>
           <% end %>
           <% if @model.collection %>
-            <div class="flex items-center gap-2"><%= Icon icon: "collection", label: Collection.model_name.human(count: 100) %></div>
-            <div class="min-w-0"><%= link_to @model.collection.name, models_path({collection: @model.collection}.merge(@filter&.to_params)) %></div>
+            <div class="flex items-center gap-2 text-secondary-700 dark:text-secondary-200"><%= Icon icon: "collection", label: Collection.model_name.human(count: 100) %></div>
+            <div class="min-w-0"><%= link_to @model.collection.name, models_path({collection: @model.collection}.merge(@filter&.to_params)), class: content_link_class %></div>
           <% end %>
           <% if SiteSettings.show_libraries || current_user&.is_administrator? %>
-            <div class="flex items-center gap-2"><%= Icon icon: "boxes", label: Library.model_name.human %></div>
-            <div class="min-w-0"><%= link_to @model.library.name, models_path({library: @model.library}.merge(@filter&.to_params)) %></div>
+            <div class="flex items-center gap-2 text-secondary-700 dark:text-secondary-200"><%= Icon icon: "boxes", label: Library.model_name.human %></div>
+            <div class="min-w-0"><%= link_to @model.library.name, models_path({library: @model.library}.merge(@filter&.to_params)), class: content_link_class %></div>
           <% end %>
           <% if @model.license %>
-            <div class="flex items-center gap-2"><%= Icon icon: "card-heading", label: t(".license") %></div>
+            <div class="flex items-center gap-2 text-secondary-700 dark:text-secondary-200"><%= Icon icon: "card-heading", label: t(".license") %></div>
             <div class="min-w-0">
               <%= Spdx.licenses[@model.license]&.fetch("reference") ?
-                link_to(t_license(@model.license), Spdx.licenses[@model.license]["reference"], itemprop: "license") :
+                link_to(t_license(@model.license), Spdx.licenses[@model.license]["reference"], itemprop: "license", class: content_link_class) :
                 t_license(@model.license) %>
             </div>
           <% end %>
           <% if @model.sensitive %>
-            <div class="flex items-center gap-2"><%= Icon(icon: "explicit", label: Model.human_attribute_name(:sensitive)) %></div>
+            <div class="flex items-center gap-2 text-secondary-700 dark:text-secondary-200"><%= Icon(icon: "explicit", label: Model.human_attribute_name(:sensitive)) %></div>
             <div class="min-w-0">
               <%= Model.human_attribute_name(:sensitive) %>
             </div>
           <% end %>
           <% if current_user&.is_administrator? %>
-            <div class="flex items-center gap-2"><%= Icon icon: "folder", label: t(".path") %></div>
+            <div class="flex items-center gap-2 text-secondary-700 dark:text-secondary-200"><%= Icon icon: "folder", label: t(".path") %></div>
             <div class="min-w-0">
               <%= content_tag(:code, class: "path") { safe_join @model.path.split("/"), safe_join([tag.wbr, "/"]) } %>
             </div>
           <% end %>
-          <div class="flex items-center gap-2"><%= Icon icon: "tag", label: t(".tags") %></div>
+          <div class="flex items-center gap-2 text-secondary-700 dark:text-secondary-200"><%= Icon icon: "tag", label: t(".tags") %></div>
           <div class="min-w-0"><%= render "tag_list", tags: @model.tags.order(taggings_count: :desc, name: :asc), filter: @filter %></div>
           <% unless @model.links.empty? %>
-            <div class="flex items-center gap-2"><%= Icon icon: "link-45deg", role: "presentation", label: Model.human_attribute_name(:links) %></div>
+            <div class="flex items-center gap-2 text-secondary-700 dark:text-secondary-200"><%= Icon icon: "link-45deg", role: "presentation", label: Model.human_attribute_name(:links) %></div>
             <div class="min-w-0"><%= LinkList links: @model.links, icons: false %></div>
           <% end %>
           <% if SiteSettings.social_enabled? %>
             <% if SiteSettings.federation_enabled? %>
-              <div class="flex items-center gap-2"><%= Icon icon: "at", label: t(".fediverse") %></div>
+              <div class="flex items-center gap-2 text-secondary-700 dark:text-secondary-200"><%= Icon icon: "at", label: t(".fediverse") %></div>
               <div class="min-w-0">
                 <% if @model.remote? %>
-                  <small><%= link_to @model.federails_actor.at_address, @model.federails_actor.profile_url, target: "new" %></small>
+                  <small><%= link_to @model.federails_actor.at_address, @model.federails_actor.profile_url, target: "new", class: content_link_class %></small>
                 <% else %>
                   <small>
                     <%= CopyableText(text: @model.federails_actor.at_address, label: t("general.copy_fediverse_handle")) %>
@@ -243,7 +243,7 @@
                 <% end %>
               </div>
             <% end %>
-            <div class="flex items-center gap-2"><%= Icon icon: "people", label: t(".followers") %></div>
+            <div class="flex items-center gap-2 text-secondary-700 dark:text-secondary-200"><%= Icon icon: "people", label: t(".followers") %></div>
             <div class="min-w-0">
               <%= t("general.followers", count: @model.followers.count) %>
               <div class="mt-1">

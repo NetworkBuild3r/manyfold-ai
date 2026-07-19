@@ -36,7 +36,9 @@ class Components::InputRow < Components::Base
   end
 
   def help
-    span(class: "text-sm text-secondary-500 dark:text-secondary-300 mt-1 block") { @help } if @help
+    return unless @help
+    # help_html translations include <a> tags; raw so links render, themed via CSS base `a`.
+    span(class: "text-sm text-secondary-500 dark:text-secondary-300 mt-1 block") { raw(@help) } # rubocop:disable Rails/OutputSafety
   end
 
   def errors_for(object, attribute)

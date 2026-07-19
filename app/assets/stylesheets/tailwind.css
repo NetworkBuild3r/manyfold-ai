@@ -55,7 +55,8 @@
   --color-success: oklch(0.520 0.110 145);
   --color-warning: oklch(0.666 0.179 58.318);
   --color-danger: oklch(0.520 0.160 25);
-  --color-info: oklch(0.546 0.245 262.881);
+  /* Info: teal (not indigo) — readable on dark surfaces; was oklch blue 262° */
+  --color-info: oklch(0.620 0.110 195);
   --color-surface: oklch(0.995 0.004 85);
   --color-surface-alt: oklch(0.960 0.008 80);
   --color-surface-dark: oklch(0.220 0.012 42);
@@ -72,6 +73,11 @@
 :root {
   --brand-primary: var(--color-primary-600);
   --brand-primary-hover: var(--color-primary-700);
+}
+
+/* Lighter info on dark surfaces (alerts, badges) */
+.dark {
+  --color-info: oklch(0.760 0.095 195);
 }
 
 /* Accent palettes (data-accent on <html>) */
@@ -137,6 +143,33 @@
 @import "../../../node_modules/driver.js/dist/driver.css" layer(vendor);
 
 /* ——— Base / layout ——— */
+
+/*
+  Theme contrast contract (Workshop Craft) — ONE place to change link/body colors.
+  - Body text comes from <body> utilities in the layout.
+  - Bare <a> tags (markdown help, unclassed link_to) get primary amber — never UA blue.
+  - Explicit text-* / bg-* utilities still win (utilities layer).
+  - Icons use currentColor (see Components::Icon text-current) so they follow parent text.
+*/
+@layer base {
+  a {
+    color: var(--color-primary-700);
+  }
+  .dark a {
+    color: var(--color-primary-400);
+  }
+  /* Dark surfaces: form controls and icons should not fall back to browser black */
+  .dark input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="image"]),
+  .dark textarea,
+  .dark select {
+    color: var(--color-secondary-100);
+  }
+  .dark input[type="checkbox"],
+  .dark input[type="radio"] {
+    accent-color: var(--color-primary-500);
+  }
+}
+
 dialog.modal {
   border: none;
   padding: 0;

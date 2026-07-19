@@ -51,6 +51,24 @@ module ApplicationHelper
     "#{visibility} items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border border-secondary-300 dark:border-secondary-500 bg-white dark:bg-secondary-800 text-secondary-900 dark:text-secondary-100 hover:bg-secondary-50 dark:hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-primary-500 outline-none"
   end
 
+  # Content / inline links. Prefer this helper for new link_to calls; bare <a> also
+  # themed via CSS @layer base in tailwind.css (fallback for markdown + old call sites).
+  def content_link_class
+    "text-primary-700 dark:text-primary-400 no-underline hover:underline"
+  end
+
+  def muted_link_class
+    "text-secondary-600 dark:text-secondary-400 no-underline hover:underline"
+  end
+
+  def body_text_class
+    "text-secondary-900 dark:text-secondary-100"
+  end
+
+  def muted_text_class
+    "text-secondary-600 dark:text-secondary-400"
+  end
+
   def checkmark(value)
     value ? "✅" : "❌"
   end
@@ -78,11 +96,13 @@ module ApplicationHelper
   end
 
   def markdownify(text)
-    Kramdown::Document.new(
+    html = Kramdown::Document.new(
       sanitize(text),
       header_offset: 2,
       input: "GFM"
-    ).to_html.html_safe # rubocop:disable Rails/OutputSafety
+    ).to_html
+    # Wrap so markdown links/icons inherit theme; bare <a> also covered by CSS base.
+    content_tag(:div, html.html_safe, class: "markdown-content #{body_text_class}") # rubocop:disable Rails/OutputSafety
   end
 
   def card(style, title = nil, options = {}, &content)
