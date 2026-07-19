@@ -86,14 +86,16 @@ class ApplicationController < ActionController::Base
     return if Rails.env.test?
 
     # Standard security policy
+    # Cloudflare Web Analytics injects static.cloudflareinsights.com/beacon.min.js at the edge;
+    # allow it here (Manyfold uses Traefik nocsp so this app CSP is authoritative).
     content_security_policy.default_src :self
-    content_security_policy.connect_src :self
+    content_security_policy.connect_src :self, "https://cloudflareinsights.com"
     content_security_policy.frame_ancestors :self
     content_security_policy.frame_src(*frame_src)
     content_security_policy.font_src :self, "https://cdn.jsdelivr.net", :data
     content_security_policy.img_src(*img_src)
     content_security_policy.object_src :none
-    content_security_policy.script_src :self
+    content_security_policy.script_src :self, "https://static.cloudflareinsights.com"
     content_security_policy.style_src :self
     content_security_policy.style_src_attr :unsafe_inline
     content_security_policy.style_src_elem :self, "nonce-#{content_security_policy_nonce}"
