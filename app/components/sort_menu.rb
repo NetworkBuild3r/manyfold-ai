@@ -25,6 +25,7 @@ class Components::SortMenu < Components::Base
         item "sort-alpha-down", "name", "asc" # i18n-tasks-use t('components.sort_menu.name')
         item "sort-numeric-down-alt", "recent", "desc" # i18n-tasks-use t('components.sort_menu.recent')
         item "sort-numeric-down-alt", "updated", "desc" # i18n-tasks-use t('components.sort_menu.updated')
+        item "shuffle", "random", "asc" # i18n-tasks-use t('components.sort_menu.random')
       end
     end
   end

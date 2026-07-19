@@ -30,6 +30,8 @@ module Sortable
       scope.order(updated_at: :desc)
     when "name"
       scope.order(name_lower: :asc)
+    when "random"
+      scope.in_random_order
     else
       scope
     end

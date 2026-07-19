@@ -36,6 +36,22 @@ class Model < ApplicationRecord
 
   scope :recent, -> { order(created_at: :desc) }
 
+  # Preview is an image file (jpg/png/…) — same rule as FilterService#filter_by_has_image.
+  scope :with_image_preview, -> {
+    exts = SupportedMimeTypes.image_extensions.map(&:downcase).uniq
+    if exts.empty?
+      none
+    else
+      image_filename_sql = exts.map { |ext|
+        "LOWER(model_files.filename) LIKE #{ActiveRecord::Base.connection.quote("%.#{ext}")}"
+      }.join(" OR ")
+
+      where(preview_file_id: ModelFile.without_special.where(image_filename_sql).select(:id))
+    end
+  }
+
+  scope :in_random_order, -> { order(Arel.sql("RANDOM()")) }
+
   belongs_to :library
   belongs_to :creator, optional: true
   belongs_to :collection, optional: true

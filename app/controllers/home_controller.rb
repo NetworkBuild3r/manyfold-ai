@@ -18,13 +18,10 @@ class HomeController < ApplicationController
 
       printed_ids = current_user.printed_model_ids.to_a
       unprinted = printed_ids.any? ? visible.where.not(id: printed_ids) : visible
-      # Prefer models with image previews for "what to print"
-      @print_next = unprinted
-        .includes(:preview_file, :creator, :collection, :tags)
-        .where.not(preview_file_id: nil)
-        .order(updated_at: :desc)
-        .limit(8)
-      @print_next = unprinted.includes(:preview_file, :creator, :collection, :tags).order(updated_at: :desc).limit(8) if @print_next.empty?
+      base = unprinted.includes(:preview_file, :creator, :collection, :tags)
+      # Always shuffle; prefer models with photo previews so the strip isn't blank cards.
+      @print_next = base.with_image_preview.in_random_order.limit(8).load
+      @print_next = base.in_random_order.limit(8) if @print_next.empty?
     end
   end
 
@@ -39,7 +36,7 @@ class HomeController < ApplicationController
     visible = policy_scope(Model)
     printed_ids = current_user.printed_model_ids.to_a
     scope = printed_ids.any? ? visible.where.not(id: printed_ids) : visible
-    model = scope.order(Arel.sql("RANDOM()")).first
+    model = scope.with_image_preview.in_random_order.first || scope.in_random_order.first
     if model
       redirect_to model, notice: t(".picked")
     else

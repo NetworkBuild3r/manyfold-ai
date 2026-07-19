@@ -463,6 +463,7 @@ en:
       without_tag: Use "!tag" to find models without a certain tag
     sort_menu:
       name: Title
+      random: Random
       recent: Newest
       sort-by: Sort by
       updated: Updated
@@ -804,8 +805,9 @@ en:
       queue_heading: Your print queue
       queue_sub: Models you marked to print next
       print_next_heading: What to print next
-      print_next_sub: In your library, never printed — start here
+      print_next_sub: A fresh random pick of never-printed models with photos
       surprise: Surprise me
+      shuffle: Shuffle
       recent_activity: Recent Activity
       recent_models: Recently added
       recent_sub: Fresh arrivals in your libraries

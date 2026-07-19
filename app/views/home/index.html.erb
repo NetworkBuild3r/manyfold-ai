@@ -92,8 +92,9 @@
         <p class="text-sm text-secondary-600 dark:text-secondary-400"><%= t(".print_next_sub") %></p>
       </div>
       <div class="flex items-center gap-3 shrink-0">
+        <%= link_to t(".shuffle"), root_path(shuffle: SecureRandom.hex(3)), class: "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border border-secondary-300 dark:border-secondary-600 bg-surface dark:bg-secondary-900 text-secondary-900 dark:text-secondary-100 no-underline hover:border-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500" %>
         <%= link_to t(".surprise"), surprise_path, class: "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-primary-600 text-white no-underline hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500" %>
-        <%= link_to t(".see_all"), models_path(list: "unprinted"), class: "text-sm font-medium text-primary-700 dark:text-primary-400 no-underline hover:underline" %>
+        <%= link_to t(".see_all"), models_path(list: "unprinted", order: "random"), class: "text-sm font-medium text-primary-700 dark:text-primary-400 no-underline hover:underline" %>
       </div>
     </div>
     <div class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,11rem),1fr))] sm:grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3 sm:gap-4" role="list">

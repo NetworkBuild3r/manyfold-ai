@@ -94,8 +94,8 @@
             <% else %>
               <div class="relative inline-flex" data-controller="dropdown">
                 <button type="button" data-action="click->dropdown#toggle" aria-expanded="false" aria-haspopup="menu"
-                  class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-sm font-medium rounded-lg border border-secondary-600 text-secondary-200 hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-primary-400 mt-1 me-1">
-                  <%= Icon(icon: "radar") %>
+                  class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-sm font-medium rounded-lg border border-secondary-500 bg-transparent text-surface hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-primary-400 mt-1 me-1">
+                  <%= Icon(icon: "radar", label: t(".scan")) %>
                   <%= t ".scan" %>
                 </button>
                 <ul class="absolute right-0 mt-1 min-w-[10rem] py-1 bg-surface dark:bg-secondary-800 rounded-lg shadow-lg border border-secondary-200 dark:border-secondary-600 z-50" data-dropdown-target="menu" role="menu">
