@@ -41,11 +41,14 @@ module TagListable
   private
 
   # Keep this as a Relation when possible so Postgres never materializes 40k+ IDs in Ruby.
+  # Do NOT except(:includes) — policy_scope may JOIN caber_relations into WHERE.
   def taggable_model_ids_scope(models)
     case models
     when ActiveRecord::Relation
-      models.except(:includes, :preload, :eager_load, :order, :select, :limit, :offset, :group, :having)
-        .reselect("#{models.klass.table_name}.id")
+      table = models.klass.arel_table
+      models.except(:order, :select, :limit, :offset, :group, :having, :preload, :eager_load)
+        .reselect(table[:id])
+        .distinct
     when Array
       models.map { |m| m.respond_to?(:id) ? m.id : m }
     else

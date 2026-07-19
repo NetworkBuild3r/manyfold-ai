@@ -37,6 +37,16 @@ RSpec.describe TagListable, type: :controller do
       expect(tags.pluck(:name)).to include("alpha", "beta")
     end
 
+    it "preserves caber joins when building the id subquery" do
+      create(:model, tag_list: ["delta"])
+      # Simulate policy_scope.granted_to shape: includes + where on caber_relations
+      scope = Model.includes(:caber_relations).references(:caber_relations)
+      expect {
+        tags, _ = controller.send(:generate_tag_list, scope)
+        tags.load
+      }.not_to raise_error
+    end
+
     it "still accepts an Array of models" do
       model = create(:model, tag_list: ["gamma"])
       tags, _ = controller.send(:generate_tag_list, [model])
