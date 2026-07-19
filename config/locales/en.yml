@@ -372,10 +372,10 @@ en:
       unrelated_tag_count:
         one: "%{count} unrelated tag hidden"
         other: "%{count} unrelated tags hidden"
-    tagline: Helping you keep track of your 3d print files
+    tagline: Your personal 3D print library
     tags_card:
       skip_tags: Skip tag list
-    title: Manyfold
+    title: 3D Prints
   application_helper:
     ai_indexable_select_options:
       always_no: Always no

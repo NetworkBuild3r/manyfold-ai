@@ -16,7 +16,7 @@ class Components::Icon < Components::Base
       prefix = "ra"
       icon = @icon.gsub("ra-", "")
     end
-    @classes = [prefix, "#{prefix}-#{icon}", @effect].compact.join(" ")
+    @classes = [prefix, "#{prefix}-#{icon}", "text-current", @effect].compact.join(" ")
   end
 
   def view_template

@@ -40,8 +40,15 @@ module ApplicationHelper
     SiteSettings.site_tagline.presence || t("application.tagline")
   end
 
+  # Only show a custom icon when an admin set one; never fall back to the Manyfold roundel.
   def site_icon
-    SiteSettings.site_icon.presence || "roundel.svg"
+    SiteSettings.site_icon.presence
+  end
+
+  # Outline / secondary toolbar controls — explicit text so Bootstrap Icons (currentColor) stay visible in dark mode.
+  # Pass visibility: "hidden lg:inline-flex" for desktop-only toolbar icons.
+  def secondary_action_class(visibility: "inline-flex")
+    "#{visibility} items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border border-secondary-300 dark:border-secondary-500 bg-white dark:bg-secondary-800 text-secondary-900 dark:text-secondary-100 hover:bg-secondary-50 dark:hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-primary-500 outline-none"
   end
 
   def checkmark(value)

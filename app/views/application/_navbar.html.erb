@@ -2,8 +2,10 @@
       data: tour_attributes(id: "main-navbar", title: t("tour.navbar.main.title", name: site_name), description: t("tour.navbar.main.description")) do %>
   <div class="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-wrap items-center justify-between gap-2 min-h-14" data-controller="collapse">
     <a class="flex items-center gap-2 py-2 text-surface no-underline hover:opacity-90 focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-900" href="<%= root_path %>" aria-label="<%= translate ".home" %>">
-      <%= image_tag site_icon, alt: site_name, class: "h-9 w-auto" %>
-      <span class="font-display font-semibold text-lg tracking-tight hidden sm:inline"><%= site_name %></span>
+      <% if site_icon.present? %>
+        <%= image_tag site_icon, alt: site_name, class: "h-9 w-auto" %>
+      <% end %>
+      <span class="font-display font-semibold text-lg tracking-tight <%= "hidden sm:inline" if site_icon.present? %>"><%= site_name %></span>
     </a>
     <button class="md:hidden flex items-center justify-center w-10 h-10 rounded-lg text-surface hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-primary-400" type="button" data-action="click->collapse#toggle" aria-controls="navbar" aria-expanded="false" aria-label="<%= translate ".navbar.toggler.label" %>">
       <%= Icon icon: "list", label: translate(".navbar.toggler.label") %>

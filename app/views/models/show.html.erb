@@ -24,7 +24,7 @@
           <%= policy(@model).edit? ? EditableSpan(fieldname: "model[name]", path: model_path(@model), text: @model.name) : @model.name %>
           <%= link_to Icon(icon: "search", label: t(".search")),
                 "https://yeggi.com/q/#{ERB::Util.url_encode(@model.name)}/",
-                class: "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border border-secondary-300 dark:border-secondary-500 bg-white dark:bg-secondary-800 hover:bg-secondary-50 dark:hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-primary-500 outline-none", target: "manyfold_search", rel: "noreferrer" %>
+                class: secondary_action_class, target: "manyfold_search", rel: "noreferrer" %>
         </h1>
 
         <% if @locked_files > 0 %>
@@ -42,34 +42,34 @@
         <div class="flex flex-wrap items-center gap-3 mb-6" role="toolbar" aria-label="Model actions">
           <% if current_user %>
             <% queued = current_user.queued_model?(@model) %>
-            <%= button_to toggle_queue_model_path(@model), method: :post, class: queued ? "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-primary-600 text-white border border-primary-700 hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500" : "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border border-secondary-300 dark:border-secondary-500 bg-white dark:bg-secondary-800 hover:bg-secondary-50 dark:hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-primary-500", form: {class: "inline"} do %>
+            <%= button_to toggle_queue_model_path(@model), method: :post, class: queued ? "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-primary-600 text-white border border-primary-700 hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500" : secondary_action_class, form: {class: "inline"} do %>
               <%= Icon(icon: queued ? "bookmark-fill" : "bookmark", label: queued ? t(".dequeue") : t(".queue")) %>
               <%= queued ? t(".dequeue") : t(".queue") %>
             <% end %>
             <% favorited = current_user.favorited_model?(@model) %>
-            <%= button_to toggle_favorite_model_path(@model), method: :post, class: favorited ? "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-primary-100 text-primary-800 border border-primary-300 hover:bg-primary-200 dark:bg-primary-900/40 dark:text-primary-200 dark:border-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500" : "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border border-secondary-300 dark:border-secondary-500 bg-white dark:bg-secondary-800 hover:bg-secondary-50 dark:hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-primary-500", form: {class: "inline"} do %>
+            <%= button_to toggle_favorite_model_path(@model), method: :post, class: favorited ? "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-primary-100 text-primary-800 border border-primary-300 hover:bg-primary-200 dark:bg-primary-900/40 dark:text-primary-200 dark:border-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500" : secondary_action_class, form: {class: "inline"} do %>
               <%= Icon(icon: favorited ? "heart-fill" : "heart", label: favorited ? t(".unfavorite") : t(".favorite")) %>
               <%= favorited ? t(".unfavorite") : t(".favorite") %>
             <% end %>
           <% end %>
           <%= DownloadButton(model: @model) %>
           <% if policy(@model).edit? %>
-            <%= link_to Icon(icon: "pencil", label: translate("general.edit")), edit_model_path(@model), class: "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border border-secondary-300 dark:border-secondary-500 bg-white dark:bg-secondary-800 hover:bg-secondary-50 dark:hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-primary-500 outline-none", aria: {label: translate("components.model_card.edit_button.label", name: @model.name)} %>
+            <%= link_to Icon(icon: "pencil", label: translate("general.edit")), edit_model_path(@model), class: secondary_action_class, aria: {label: translate("components.model_card.edit_button.label", name: @model.name)} %>
           <% end %>
           <% if policy(@model).destroy? %>
-            <%= link_to Icon(icon: "trash", label: translate("general.delete")), model_path(@model), method: :delete, data: {confirm: t("models.destroy.confirm")}, class: "hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border border-secondary-300 dark:border-secondary-500 bg-white dark:bg-secondary-800 hover:bg-secondary-50 dark:hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-primary-500 outline-none", aria: {label: translate("components.model_card.delete_button.label", name: @model.name)} %>
+            <%= link_to Icon(icon: "trash", label: translate("general.delete")), model_path(@model), method: :delete, data: {confirm: t("models.destroy.confirm")}, class: secondary_action_class(visibility: "hidden lg:inline-flex"), aria: {label: translate("components.model_card.delete_button.label", name: @model.name)} %>
           <% end %>
           <% if policy(@model).scan? %>
-            <%= link_to Icon(icon: "radar", label: t(".rescan")), scan_model_path(@model), method: :post, class: "hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border border-secondary-300 dark:border-secondary-500 bg-white dark:bg-secondary-800 hover:bg-secondary-50 dark:hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-primary-500 outline-none" %>
+            <%= link_to Icon(icon: "radar", label: t(".rescan")), scan_model_path(@model), method: :post, class: secondary_action_class(visibility: "hidden lg:inline-flex") %>
           <% end %>
           <% if SiteSettings.multiuser_enabled? %>
-            <%= link_to Icon(icon: "flag", label: translate("general.report", type: "")), new_model_report_path(@model), class: "hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border border-secondary-300 dark:border-secondary-500 bg-white dark:bg-secondary-800 hover:bg-secondary-50 dark:hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-primary-500 outline-none" %>
+            <%= link_to Icon(icon: "flag", label: translate("general.report", type: "")), new_model_report_path(@model), class: secondary_action_class(visibility: "hidden lg:inline-flex") %>
           <% end %>
           <% if policy(@model).edit? %>
-            <%= link_to Icon(icon: "pencil", label: t(".files_card.bulk_edit")), bulk_edit_model_model_files_path(@model), class: "hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border border-secondary-300 dark:border-secondary-500 bg-white dark:bg-secondary-800 hover:bg-secondary-50 dark:hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-primary-500 outline-none" %>
+            <%= link_to Icon(icon: "pencil", label: t(".files_card.bulk_edit")), bulk_edit_model_model_files_path(@model), class: secondary_action_class(visibility: "hidden lg:inline-flex") %>
           <% end %>
           <div class="lg:hidden relative" data-controller="dropdown">
-            <button type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border border-secondary-300 dark:border-secondary-500 bg-white dark:bg-secondary-800 hover:bg-secondary-50 dark:hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-primary-500 outline-none min-w-[44px] min-h-[44px]" data-action="click->dropdown#toggle" aria-expanded="false" aria-haspopup="menu" aria-label="<%= t("general.menu") %>">
+            <button type="button" class="<%= secondary_action_class %> min-w-[44px] min-h-[44px]" data-action="click->dropdown#toggle" aria-expanded="false" aria-haspopup="menu" aria-label="<%= t("general.menu") %>">
               <%= Icon(icon: "list", label: t("general.menu")) %>
             </button>
             <ul class="absolute right-0 mt-1 min-w-[10rem] py-1 bg-white dark:bg-secondary-800 rounded-lg shadow-lg border border-secondary-200 dark:border-secondary-600 z-50 list-none m-0 p-0" data-dropdown-target="menu" role="menu">

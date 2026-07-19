@@ -1,20 +1,13 @@
 <footer class="border-t border-secondary-200 dark:border-secondary-600 mt-10 py-6" id="footer">
   <div class="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-wrap items-center justify-between gap-4">
-    <div class="flex items-center gap-3 flex-wrap">
-      <span class="inline-flex items-center gap-2">
-        <%= image_tag "roundel.svg", class: "h-10 w-10", alt: site_name %>
-        <span class="font-display text-sm font-medium text-secondary-700 dark:text-secondary-300"><%= site_name %></span>
-      </span>
-      <ul class="list-none m-0 p-0 text-sm text-secondary-500 dark:text-secondary-400">
-        <li class="mb-1"><%= t ".powered_by_html", name: t("application.title") %></li>
-        <% if current_user&.is_administrator? %>
-          <li class="mb-1"><%= t ".version" %>:
-            <%= link_to "#{Rails.application.config.app_version} (#{Rails.application.config.git_sha.first(8)})",
-                  "#{Rails.application.config.upstream_repo}/tree/#{Rails.application.config.git_sha}",
-                  target: "_blank", rel: "noreferrer", class: "text-primary-600 dark:text-primary-400 no-underline hover:underline" %>
-          </li>
-        <% end %>
-      </ul>
+    <div class="flex items-center gap-3 flex-wrap text-sm text-secondary-500 dark:text-secondary-400">
+      <% if current_user&.is_administrator? %>
+        <span><%= t ".version" %>:
+          <%= link_to "#{Rails.application.config.app_version} (#{Rails.application.config.git_sha.first(8)})",
+                "#{Rails.application.config.upstream_repo}/tree/#{Rails.application.config.git_sha}",
+                target: "_blank", rel: "noreferrer", class: "text-primary-600 dark:text-primary-400 no-underline hover:underline" %>
+        </span>
+      <% end %>
     </div>
     <div class="flex flex-wrap items-center gap-x-6 gap-y-1">
       <%= link_to t(".about"), about_path, class: "text-sm text-secondary-600 dark:text-secondary-400 no-underline hover:underline" %>
