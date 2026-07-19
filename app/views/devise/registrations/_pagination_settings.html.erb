@@ -5,7 +5,8 @@
       <%= SelectInputRow form: form, attribute: :sort_order, label: t("components.sort_menu.sort-by"), select_options: [
             [t("components.sort_menu.name"), "name"],
             [t("components.sort_menu.recent"), "recent"],
-            [t("components.sort_menu.updated"), "updated"]
+            [t("components.sort_menu.updated"), "updated"],
+            [t("components.sort_menu.random"), "random"]
           ] %>
       <div>
         <%= pagination_settings_form.label :per_page, t(".per_page.label"), class: "block text-sm font-medium text-secondary-700 dark:text-secondary-300" %>
