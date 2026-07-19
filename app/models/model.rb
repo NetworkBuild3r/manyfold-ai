@@ -50,8 +50,6 @@ class Model < ApplicationRecord
     end
   }
 
-  scope :in_random_order, -> { order(Arel.sql("RANDOM()")) }
-
   belongs_to :library
   belongs_to :creator, optional: true
   belongs_to :collection, optional: true

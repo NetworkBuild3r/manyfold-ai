@@ -31,6 +31,7 @@ module Sortable
     when "name"
       scope.order(name_lower: :asc)
     when "random"
+      # ApplicationRecord.in_random_order — works for Model, Creator, Collection, etc.
       scope.in_random_order
     else
       scope

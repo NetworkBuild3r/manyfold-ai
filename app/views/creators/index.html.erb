@@ -5,7 +5,7 @@
 <% content_for :items do %>
   <% if @creators.empty? && (@unassigned_count || 0) == 0 %>
     <%= render "application/empty_state", message: t(".no_results_html"), icon: "people" do %>
-      <% if @filter.any? %>
+      <% if @filter&.any? %>
         <p><%= link_to t(".clear_filters"), creators_path, class: primary_button_class %></p>
       <% end %>
     <% end %>
@@ -17,7 +17,7 @@
           <%= SortMenu(filter: @filter) %>
         </div>
       </div>
-      <% if @filter.any? %>
+      <% if @filter&.any? %>
         <div class="flex flex-wrap gap-2 mb-4" role="group" aria-label="Active filters">
           <% active_filters_list(@filter).each do |entry| %>
             <span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-secondary-200 dark:bg-secondary-600 text-secondary-800 dark:text-secondary-100 text-sm">
