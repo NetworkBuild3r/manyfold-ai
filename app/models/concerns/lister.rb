@@ -7,10 +7,12 @@ module Lister
 
   def list(object, list_name)
     favorite(object, scope: list_name)
+    clear_personal_list_caches!
   end
 
   def delist(object, list_name)
     unfavorite(object, scope: list_name)
+    clear_personal_list_caches!
   end
 
   def set_list_state(object, list_name, listed)
@@ -23,5 +25,11 @@ module Lister
 
   def listed?(object, list_name)
     favorited?(object, scope: list_name)
+  end
+
+  def clear_personal_list_caches!
+    @favorited_model_ids = nil
+    @queued_model_ids = nil
+    @printed_model_ids = nil
   end
 end

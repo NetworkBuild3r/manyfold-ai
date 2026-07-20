@@ -37,21 +37,6 @@ class Components::ModelCard < Components::Base
 
   private
 
-  def printed?
-    return false unless current_user
-    current_user.printed_model_ids.include?(@model.id)
-  end
-
-  def favorited?
-    return false unless current_user
-    current_user.favorited_model_ids.include?(@model.id)
-  end
-
-  def queued?
-    return false unless current_user
-    current_user.queued_model_ids.include?(@model.id)
-  end
-
   def title_row
     div(class: "flex items-start gap-2") do
       div(class: "min-w-0 flex-1 font-semibold text-secondary-900 dark:text-secondary-100 leading-snug line-clamp-2") do
@@ -69,24 +54,7 @@ class Components::ModelCard < Components::Base
         whitespace
         StatusBadges(model: @model)
       end
-      status_pills
-    end
-  end
-
-  def status_pills
-    return unless current_user
-    return unless printed? || favorited? || queued?
-
-    div(class: "flex flex-col items-end gap-0.5 shrink-0") do
-      if queued?
-        span(class: "inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide bg-primary-600 text-white") { translate("components.model_card.queue") }
-      end
-      if printed?
-        span(class: "inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide bg-success/15 text-success") { translate("components.model_card.printed") }
-      end
-      if favorited? && !queued?
-        span(class: "inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide bg-primary-100 text-primary-800 dark:bg-primary-900/40 dark:text-primary-300") { translate("components.model_card.favorite") }
-      end
+      ModelCardStatusPills(model: @model) if current_user
     end
   end
 

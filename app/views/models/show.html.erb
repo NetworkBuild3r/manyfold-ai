@@ -40,18 +40,7 @@
         <% end if @model.notes.present? %>
 
         <div class="flex flex-wrap items-center gap-3 mb-6" role="toolbar" aria-label="Model actions">
-          <% if current_user %>
-            <% queued = current_user.queued_model?(@model) %>
-            <%= button_to toggle_queue_model_path(@model), method: :post, class: queued ? "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-primary-600 text-white border border-primary-700 hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500" : secondary_action_class, form: {class: "inline"} do %>
-              <%= Icon(icon: queued ? "bookmark-fill" : "bookmark", label: queued ? t(".dequeue") : t(".queue")) %>
-              <%= queued ? t(".dequeue") : t(".queue") %>
-            <% end %>
-            <% favorited = current_user.favorited_model?(@model) %>
-            <%= button_to toggle_favorite_model_path(@model), method: :post, class: favorited ? "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-primary-100 text-primary-800 border border-primary-300 hover:bg-primary-200 dark:bg-primary-900/40 dark:text-primary-200 dark:border-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500" : secondary_action_class, form: {class: "inline"} do %>
-              <%= Icon(icon: favorited ? "heart-fill" : "heart", label: favorited ? t(".unfavorite") : t(".favorite")) %>
-              <%= favorited ? t(".unfavorite") : t(".favorite") %>
-            <% end %>
-          <% end %>
+          <%= render "models/show_list_actions" %>
           <%= DownloadButton(model: @model) %>
           <% if policy(@model).edit? %>
             <%= link_to Icon(icon: "pencil", label: translate("general.edit")), edit_model_path(@model), class: secondary_action_class, aria: {label: translate("components.model_card.edit_button.label", name: @model.name)} %>

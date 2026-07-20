@@ -361,7 +361,10 @@ class ModelsController < ApplicationController
       current_user.list(@model, list_name)
       notice = t(added_key)
     end
-    redirect_back_or_to @model, notice: notice
+    respond_to do |format|
+      format.turbo_stream { render "models/toggle_list" }
+      format.html { redirect_back_or_to @model, notice: notice }
+    end
   end
 
   def cached_file_data(file)

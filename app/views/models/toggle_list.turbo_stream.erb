@@ -1,0 +1,9 @@
+<%= turbo_stream.replace Components::ModelListActions.dom_id_for(@model) do %>
+  <%= render Components::ModelListActions.new(model: @model) %>
+<% end %>
+<%= turbo_stream.replace Components::ModelCardStatusPills.dom_id_for(@model) do %>
+  <%= render Components::ModelCardStatusPills.new(model: @model) %>
+<% end %>
+<%= turbo_stream.replace "model_#{@model.to_param}_show_list_actions" do %>
+  <%= render "models/show_list_actions" %>
+<% end %>

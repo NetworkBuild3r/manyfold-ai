@@ -1,0 +1,15 @@
+<%# Shared show-page queue/favorite toolbar; stable id for turbo_stream replace. %>
+<div id="model_<%= @model.to_param %>_show_list_actions" class="contents">
+  <% if current_user %>
+    <% queued = current_user.queued_model?(@model) %>
+    <%= button_to toggle_queue_model_path(@model), method: :post, class: queued ? "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-primary-600 text-white border border-primary-700 hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500" : secondary_action_class, form: {class: "inline"} do %>
+      <%= Icon(icon: queued ? "bookmark-fill" : "bookmark", label: queued ? t("models.show.dequeue") : t("models.show.queue")) %>
+      <%= queued ? t("models.show.dequeue") : t("models.show.queue") %>
+    <% end %>
+    <% favorited = current_user.favorited_model?(@model) %>
+    <%= button_to toggle_favorite_model_path(@model), method: :post, class: favorited ? "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-primary-100 text-primary-800 border border-primary-300 hover:bg-primary-200 dark:bg-primary-900/40 dark:text-primary-200 dark:border-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500" : secondary_action_class, form: {class: "inline"} do %>
+      <%= Icon(icon: favorited ? "heart-fill" : "heart", label: favorited ? t("models.show.unfavorite") : t("models.show.favorite")) %>
+      <%= favorited ? t("models.show.unfavorite") : t("models.show.favorite") %>
+    <% end %>
+  <% end %>
+</div>
