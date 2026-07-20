@@ -10,7 +10,8 @@ class ApplicationController < ActionController::Base
   around_action :switch_locale, if: -> { request.format.html? }
   before_action :check_for_first_use
   before_action :show_security_alerts
-  before_action :check_scan_status
+  # HTML only — file downloads / API must not hit Redis+cache on every image request
+  before_action :check_scan_status, if: -> { request.format.html? }
   before_action :restore_failed_search
 
   protect_from_forgery with: :null_session, if: :is_api_request?
@@ -40,9 +41,18 @@ class ApplicationController < ActionController::Base
   end
 
   def check_scan_status
-    @scan_in_progress = Rails.cache.fetch("manyfold/scan_queue_nonempty", expires_in: 15.seconds) {
-      Sidekiq::Queue.new("scan").size > 0
-    }
+    # Process-local cache — Rails file cache races under concurrent requests
+    # (Errno::ENOENT on rename) and was 500ing image downloads when this ran globally.
+    now = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    if defined?(@@scan_queue_checked_at) && @@scan_queue_checked_at && (now - @@scan_queue_checked_at) < 15
+      @scan_in_progress = @@scan_queue_busy
+      return
+    end
+    @@scan_queue_busy = Sidekiq::Queue.new("scan").size > 0
+    @@scan_queue_checked_at = now
+    @scan_in_progress = @@scan_queue_busy
+  rescue StandardError
+    @scan_in_progress = false
   end
 
   private

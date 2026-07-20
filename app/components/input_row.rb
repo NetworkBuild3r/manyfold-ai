@@ -37,8 +37,15 @@ class Components::InputRow < Components::Base
 
   def help
     return unless @help
-    # help_html translations include <a> tags; raw so links render, themed via CSS base `a`.
-    span(class: "text-sm text-secondary-500 dark:text-secondary-300 mt-1 block") { raw(@help) } # rubocop:disable Rails/OutputSafety
+    # help_html translations include <a> tags; only raw when already html_safe.
+    # Plain t(".foo.help") strings must not go through raw — Phlex raises ArgumentError.
+    span(class: "text-sm text-secondary-500 dark:text-secondary-300 mt-1 block") do
+      if @help.respond_to?(:html_safe?) && @help.html_safe?
+        raw(@help) # rubocop:disable Rails/OutputSafety
+      else
+        @help.to_s
+      end
+    end
   end
 
   def errors_for(object, attribute)

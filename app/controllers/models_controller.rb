@@ -256,6 +256,7 @@ class ModelsController < ApplicationController
   def destroy
     @model.delete_from_disk_and_destroy
     respond_to do |format|
+      format.turbo_stream { redirect_to models_path, status: :see_other, notice: t(".success") }
       format.html do
         if request.referer && (URI.parse(request.referer).path == model_path(@model))
           # If we're coming from the model page itself, we can't go back there
