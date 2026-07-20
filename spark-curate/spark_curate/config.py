@@ -79,6 +79,10 @@ class CurateConfig:
     # Max image edge for API (resize before base64)
     max_image_edge: int = 1024
     jpeg_quality: int = 85
+    # Merge mode: auto-apply threshold (plan always written)
+    min_merge_confidence: float = 0.80
+    # Cap merge candidate pairs per run
+    max_merge_pairs: int = 200
 
     def resolved_work_dir(self) -> Path:
         if self.work_dir:

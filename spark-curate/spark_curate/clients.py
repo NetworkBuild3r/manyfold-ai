@@ -108,19 +108,17 @@ def chat_completions(
 def gemma_vision(
     cfg: SparkConfig,
     prompt: str,
-    image_jpeg: bytes,
+    image_jpeg: bytes | list[bytes],
 ) -> str:
-    b64 = base64.b64encode(image_jpeg).decode("ascii")
-    data_url = f"data:image/jpeg;base64,{b64}"
-    messages = [
-        {
-            "role": "user",
-            "content": [
-                {"type": "text", "text": prompt},
-                {"type": "image_url", "image_url": {"url": data_url}},
-            ],
-        }
-    ]
+    """Vision chat with one or more JPEG images."""
+    images = image_jpeg if isinstance(image_jpeg, list) else [image_jpeg]
+    content: list[dict[str, Any]] = [{"type": "text", "text": prompt}]
+    for jpeg in images:
+        b64 = base64.b64encode(jpeg).decode("ascii")
+        content.append(
+            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}}
+        )
+    messages = [{"role": "user", "content": content}]
     return chat_completions(
         cfg.gemma_url,
         cfg.gemma_model,

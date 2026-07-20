@@ -13,9 +13,12 @@ _PKG_ROOT = Path(__file__).resolve().parent.parent
 if str(_PKG_ROOT) not in sys.path:
     sys.path.insert(0, str(_PKG_ROOT))
 
+from spark_curate.apply_merges import write_merge_plans  # noqa: E402
 from spark_curate.apply_moves import apply_decision  # noqa: E402
+from spark_curate.candidates import build_merge_candidates  # noqa: E402
 from spark_curate.config import CurateConfig, SparkConfig, load_config, save_example_config  # noqa: E402
 from spark_curate.decide import decide_one  # noqa: E402
+from spark_curate.decide_merge import decide_merge_pair_safe  # noqa: E402
 from spark_curate.walk import iter_model_folders  # noqa: E402
 
 
@@ -24,7 +27,7 @@ def build_parser() -> argparse.ArgumentParser:
         description=(
             "Organize a Manyfold 3D-Prints library using DGX Spark "
             "(Gemma vision + Qwen curator + NudeNet). "
-            "Never deletes; only rearranges. Default is dry-run."
+            "Never deletes; only rearranges or queues merges. Default is dry-run."
         )
     )
     p.add_argument(
@@ -38,7 +41,13 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="PATH",
         help="Write example config JSON and exit",
     )
-    p.add_argument("--apply", action="store_true", help="Perform moves (default: dry-run)")
+    p.add_argument(
+        "--mode",
+        choices=("organize", "merge"),
+        default="organize",
+        help="organize=folder rearrange (default); merge=duplicate pack merge plans",
+    )
+    p.add_argument("--apply", action="store_true", help="Perform moves / queue merges (default: dry-run)")
     p.add_argument("--limit", type=int, default=0, help="Max model folders (0=all)")
     p.add_argument(
         "--category",
@@ -52,7 +61,19 @@ def build_parser() -> argparse.ArgumentParser:
         "--min-confidence",
         type=float,
         default=None,
-        help="Min confidence to auto-move (default 0.55)",
+        help="Min confidence to auto-move (organize mode, default 0.55)",
+    )
+    p.add_argument(
+        "--min-merge-confidence",
+        type=float,
+        default=None,
+        help="Min confidence to queue merge for Manyfold (default 0.80)",
+    )
+    p.add_argument(
+        "--max-merge-pairs",
+        type=int,
+        default=None,
+        help="Cap merge candidate pairs (default 200)",
     )
     p.add_argument(
         "--skip-good",
@@ -85,32 +106,7 @@ def smoke(spark: SparkConfig) -> int:
     return 0 if ok == 3 else 1
 
 
-def main(argv: list[str] | None = None) -> int:
-    args = build_parser().parse_args(argv)
-
-    if args.write_example_config:
-        path = Path(args.write_example_config)
-        save_example_config(path)
-        print(f"Wrote {path}")
-        return 0
-
-    spark, curate = load_config(args.config)
-    if args.library:
-        curate.library_root = args.library
-    if args.limit:
-        curate.limit = args.limit
-    if args.categories:
-        curate.only_categories = args.categories
-    if args.workers is not None:
-        curate.workers = max(1, args.workers)
-    if args.min_confidence is not None:
-        curate.min_confidence = args.min_confidence
-    if args.skip_good:
-        curate.skip_if_has_preview_and_known_category = True
-
-    if args.smoke:
-        return smoke(spark)
-
+def run_organize(args: argparse.Namespace, spark: SparkConfig, curate: CurateConfig) -> int:
     work = curate.resolved_work_dir()
     work.mkdir(parents=True, exist_ok=True)
     thumb_cache = work / "thumbs"
@@ -122,7 +118,7 @@ def main(argv: list[str] | None = None) -> int:
 
     print(f"Library:  {curate.library_root}")
     print(f"Work dir: {work}")
-    print(f"Mode:     {'APPLY' if args.apply else 'DRY-RUN'}")
+    print(f"Mode:     organize {'APPLY' if args.apply else 'DRY-RUN'}")
     print(f"Min conf: {curate.min_confidence}")
     print(f"Workers:  {curate.workers}")
 
@@ -180,7 +176,6 @@ def main(argv: list[str] | None = None) -> int:
             if done % 5 == 0 or done == len(folders):
                 print(f"  decided {done}/{len(folders)} …", flush=True)
 
-    # Stable order
     decisions.sort(key=lambda d: d.source_path.lower())
 
     with decisions_path.open("w", encoding="utf-8") as fh:
@@ -192,7 +187,7 @@ def main(argv: list[str] | None = None) -> int:
     with log_path.open("w", encoding="utf-8") as log_fh, audit_path.open(
         "w", encoding="utf-8"
     ) as audit_fh:
-        log_fh.write(f"run={run_id} apply={args.apply}\n")
+        log_fh.write(f"run={run_id} apply={args.apply} mode=organize\n")
         for d in decisions:
             rec = apply_decision(curate, d, do_apply=args.apply, log_fh=log_fh)
             audit_fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
@@ -209,6 +204,7 @@ def main(argv: list[str] | None = None) -> int:
 
     summary = {
         "run_id": run_id,
+        "mode": "organize",
         "library": curate.library_root,
         "apply": args.apply,
         "folders": len(folders),
@@ -229,6 +225,115 @@ def main(argv: list[str] | None = None) -> int:
         "Then in Manyfold: Scan for new files / Detect filesystem changes."
     )
     return 0 if errors == 0 else 2
+
+
+def run_merge(args: argparse.Namespace, spark: SparkConfig, curate: CurateConfig) -> int:
+    work = curate.resolved_work_dir()
+    work.mkdir(parents=True, exist_ok=True)
+    thumb_cache = work / "thumbs"
+    thumb_cache.mkdir(exist_ok=True)
+    run_id = time.strftime("%Y%m%d-%H%M%S")
+    log_path = work / f"merge-run-{run_id}.log"
+
+    print(f"Library:  {curate.library_root}")
+    print(f"Work dir: {work}")
+    print(f"Mode:     merge {'APPLY(queue pending)' if args.apply else 'DRY-RUN'}")
+    print(f"Min merge conf: {curate.min_merge_confidence}")
+    print(f"Max pairs: {curate.max_merge_pairs}")
+    print(f"Workers:  {curate.workers}")
+
+    candidates = build_merge_candidates(curate, max_pairs=curate.max_merge_pairs)
+    print(f"Found {len(candidates)} merge candidate pairs")
+    if not candidates:
+        print("Nothing to do.")
+        return 0
+
+    decisions = []
+    with ThreadPoolExecutor(max_workers=curate.workers) as ex:
+        futs = {
+            ex.submit(decide_merge_pair_safe, c, spark, curate, thumb_cache): c
+            for c in candidates
+        }
+        done = 0
+        for fut in as_completed(futs):
+            decisions.append(fut.result())
+            done += 1
+            if done % 5 == 0 or done == len(candidates):
+                print(f"  decided {done}/{len(candidates)} …", flush=True)
+
+    decisions.sort(key=lambda d: (d.rel_a.lower(), d.rel_b.lower()))
+
+    with log_path.open("w", encoding="utf-8") as log_fh:
+        log_fh.write(
+            f"run={run_id} apply={args.apply} mode=merge "
+            f"min_merge_confidence={curate.min_merge_confidence}\n"
+        )
+        result = write_merge_plans(
+            curate,
+            decisions,
+            do_apply=args.apply,
+            run_id=run_id,
+            log_fh=log_fh,
+        )
+
+    merge_n = sum(1 for d in decisions if d.decision == "merge")
+    approved = sum(1 for d in decisions if d.approved_for_apply)
+    summary = {
+        "run_id": run_id,
+        "mode": "merge",
+        "library": curate.library_root,
+        "apply": args.apply,
+        "candidates": len(candidates),
+        "merge_suggested": merge_n,
+        "approved_ge_threshold": approved,
+        "log_path": str(log_path),
+        **result,
+    }
+    summary_path = work / f"merge-summary-{run_id}.json"
+    summary_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    print(json.dumps(summary, indent=2))
+    print(
+        "\nNext: review merges-*.jsonl. With --apply, approved pairs go to "
+        "merges-pending.jsonl for Manyfold:\n"
+        "  rake manyfold:apply_spark_merges\n"
+        "Same character alone never merges; structural signals + vision gate apply."
+    )
+    return 0 if result.get("errors", 0) == 0 else 2
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = build_parser().parse_args(argv)
+
+    if args.write_example_config:
+        path = Path(args.write_example_config)
+        save_example_config(path)
+        print(f"Wrote {path}")
+        return 0
+
+    spark, curate = load_config(args.config)
+    if args.library:
+        curate.library_root = args.library
+    if args.limit:
+        curate.limit = args.limit
+    if args.categories:
+        curate.only_categories = args.categories
+    if args.workers is not None:
+        curate.workers = max(1, args.workers)
+    if args.min_confidence is not None:
+        curate.min_confidence = args.min_confidence
+    if args.min_merge_confidence is not None:
+        curate.min_merge_confidence = args.min_merge_confidence
+    if args.max_merge_pairs is not None:
+        curate.max_merge_pairs = max(1, args.max_merge_pairs)
+    if args.skip_good:
+        curate.skip_if_has_preview_and_known_category = True
+
+    if args.smoke:
+        return smoke(spark)
+
+    if args.mode == "merge":
+        return run_merge(args, spark, curate)
+    return run_organize(args, spark, curate)
 
 
 if __name__ == "__main__":

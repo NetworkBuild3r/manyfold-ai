@@ -12,7 +12,48 @@ It only needs:
 1. A **volume** with your `3D-Prints` tree  
 2. Network access to **DGX Spark** (Gemma vision, Qwen curator, NudeNet)
 
-**Never deletes** data — only rearranges via `move`. Default is **dry-run**.
+**Never deletes** data — only rearranges via `move`, or queues Manyfold merges. Default is **dry-run**.
+
+---
+
+## Modes
+
+| `MODE` | What it does |
+|--------|----------------|
+| `organize` (default) | Vision rename/move folders into Category/Model |
+| `merge` | Find duplicate packs (`Foo` / `Foo (2)`, shared digests) and queue merges |
+
+**Same character ≠ same model.** Two Batmans stay separate unless structural signals + vision say they are the *same product* (confidence ≥ 0.80).
+
+### Merge dry-run / apply
+
+```bash
+# Plan only (writes /library/.spark-curate/merges-*.jsonl)
+MODE=merge ONLY_CATEGORIES=DC LIMIT=50 docker compose run --rm curate
+
+# Queue approved pairs (confidence >= 0.80) into merges-pending.jsonl
+MODE=merge APPLY=1 ONLY_CATEGORIES=DC LIMIT=50 docker compose run --rm curate
+```
+
+Then in Manyfold (same NFS at `/models`):
+
+```bash
+# Preview
+DRY_RUN=1 bundle exec rake manyfold:apply_spark_merges
+# Apply Model#merge! (undo via MergeHistory for 30 days)
+bundle exec rake manyfold:apply_spark_merges
+```
+
+Cluster:
+
+```bash
+kubectl create job -n manyfold spark-curate-merge --from=cronjob/spark-curate
+kubectl set env job/spark-curate-merge -n manyfold MODE=merge APPLY=0 ONLY_CATEGORIES=DC LIMIT=50
+# After reviewing plans:
+kubectl set env job/spark-curate-merge -n manyfold APPLY=1   # or new job
+kubectl exec -n manyfold deploy/manyfold -- env DRY_RUN=1 bundle exec rake manyfold:apply_spark_merges
+kubectl exec -n manyfold deploy/manyfold -- bundle exec rake manyfold:apply_spark_merges
+```
 
 ---
 
@@ -91,8 +132,11 @@ docker compose up -d
 | Variable | Default | Meaning |
 |----------|---------|---------|
 | `LIBRARY_HOST_PATH` | (required) | Host path bind-mounted to `/library` |
-| `APPLY` | `0` | `1` = perform moves |
-| `MIN_CONFIDENCE` | `0.55` | Min vision confidence to move |
+| `APPLY` | `0` | `1` = perform moves / queue merges |
+| `MODE` | `organize` | `organize` or `merge` |
+| `MIN_CONFIDENCE` | `0.55` | Min vision confidence to move (organize) |
+| `MIN_MERGE_CONFIDENCE` | `0.80` | Min confidence to queue merge for Manyfold |
+| `MAX_MERGE_PAIRS` | `200` | Cap merge candidate pairs per run |
 | `WORKERS` | `2` | Parallel Gemma jobs |
 | `LIMIT` | `0` | Max folders (`0` = all) |
 | `ONLY_CATEGORIES` | | Comma list e.g. `Cosplay,Anime` |
@@ -114,6 +158,10 @@ Written on the library volume (survives container):
   audit-*.jsonl
   run-*.log
   summary-*.json
+  merges-*.jsonl          # merge mode plans
+  merges-pending.jsonl    # approved for Manyfold apply
+  merges-applied.jsonl
+  merges-failed.jsonl
   thumbs/                 # zip-extracted previews (cache only)
 ```
 
@@ -129,6 +177,8 @@ Written on the library volume (survives container):
 | No preview | Leave folder in place |
 | Low confidence | Leave in place |
 | Flagged junk | Leave in place (noted only) |
+| Merge franchise-only | Forced `keep_separate` |
+| Merge confidence &lt; 0.80 | Plan only; never queue pending |
 
 ---
 
@@ -137,6 +187,8 @@ Written on the library volume (survives container):
 ```bash
 docker compose run --rm curate --library /library --category Anime --limit 10
 docker compose run --rm curate --library /library --apply --min-confidence 0.7
+docker compose run --rm curate --mode merge --category DC --limit 50
+docker compose run --rm curate --mode merge --apply --min-merge-confidence 0.80
 ```
 
 ---

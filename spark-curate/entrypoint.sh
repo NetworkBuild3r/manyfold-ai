@@ -32,6 +32,8 @@ curate = {
     "library_root": os.environ.get("LIBRARY_ROOT", "/library"),
     "work_dir": os.environ.get("WORK_DIR", ""),
     "min_confidence": float(os.environ.get("MIN_CONFIDENCE", "0.55")),
+    "min_merge_confidence": float(os.environ.get("MIN_MERGE_CONFIDENCE", "0.80")),
+    "max_merge_pairs": int(os.environ.get("MAX_MERGE_PAIRS", "200")),
     "never_delete": True,
     "workers": int(os.environ.get("WORKERS", "2")),
     "limit": int(os.environ.get("LIMIT", "0")),
@@ -44,7 +46,10 @@ curate = {
 path = Path(os.environ.get("CONFIG_PATH", "/app/runtime-config.json"))
 path.write_text(json.dumps({"spark": spark, "curate": curate}, indent=2), encoding="utf-8")
 print(f"Wrote {path}")
-print(f"library_root={curate['library_root']} workers={curate['workers']} min_confidence={curate['min_confidence']}")
+print(
+    f"library_root={curate['library_root']} workers={curate['workers']} "
+    f"min_confidence={curate['min_confidence']} mode={os.environ.get('MODE', 'organize')}"
+)
 PY
 
 # Loop mode: re-run periodically (seconds). 0 = run once and exit.
@@ -59,6 +64,8 @@ fi
 # If user passed no args (or only image default), build from env.
 if [[ ${#ARGS[@]} -eq 0 ]] || [[ "${ARGS[*]}" == "--library /library" ]]; then
   ARGS=(--library "${LIBRARY_ROOT:-/library}" --config "${CONFIG_PATH}")
+  MODE="${MODE:-organize}"
+  ARGS+=(--mode "${MODE}")
   if [[ -n "${LIMIT:-}" && "${LIMIT}" != "0" ]]; then
     ARGS+=(--limit "${LIMIT}")
   fi
@@ -71,6 +78,12 @@ if [[ ${#ARGS[@]} -eq 0 ]] || [[ "${ARGS[*]}" == "--library /library" ]]; then
   fi
   if [[ "${SKIP_GOOD:-0}" == "1" || "${SKIP_GOOD:-}" == "true" ]]; then
     ARGS+=(--skip-good)
+  fi
+  if [[ -n "${MIN_MERGE_CONFIDENCE:-}" ]]; then
+    ARGS+=(--min-merge-confidence "${MIN_MERGE_CONFIDENCE}")
+  fi
+  if [[ -n "${MAX_MERGE_PAIRS:-}" ]]; then
+    ARGS+=(--max-merge-pairs "${MAX_MERGE_PAIRS}")
   fi
 else
   has_config=0
@@ -98,9 +111,8 @@ if [[ "${INTERVAL}" == "0" || -z "${INTERVAL}" ]]; then
 else
   echo "[spark-curate] loop every ${INTERVAL}s"
   while true; do
-    python -m spark_curate "${ARGS[@]}" || echo "[spark-curate] run failed (exit $?) Ã¢â‚¬â€ will retry"
+    python -m spark_curate "${ARGS[@]}" || echo "[spark-curate] run failed (exit $?) — will retry"
     echo "[spark-curate] sleeping ${INTERVAL}s"
     sleep "${INTERVAL}"
   done
 fi
-
