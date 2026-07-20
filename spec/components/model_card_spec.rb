@@ -19,6 +19,7 @@ RSpec.describe Components::ModelCard, type: :component do
   it "renders with model-card class" do
     html = render described_class.new(model: model)
     expect(html).to include("model-card")
+    expect(html).to include(%(id="#{described_class.dom_id_for(model)}"))
   end
 
   it "renders ModelCardPreview and ModelCardActions" do

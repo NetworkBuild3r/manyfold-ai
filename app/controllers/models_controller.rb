@@ -254,12 +254,20 @@ class ModelsController < ApplicationController
   end
 
   def destroy
+    model_param = @model.to_param
+    from_show_page = destroy_referer_is_show_page?
     @model.delete_from_disk_and_destroy
     respond_to do |format|
-      format.turbo_stream { redirect_to models_path, status: :see_other, notice: t(".success") }
+      format.turbo_stream do
+        if from_show_page
+          # Model page is gone — leave the library, don't try to remove a card.
+          redirect_to models_path, status: :see_other, notice: t(".success")
+        else
+          render turbo_stream: turbo_stream.remove(Components::ModelCard.dom_id_for_param(model_param))
+        end
+      end
       format.html do
-        if request.referer && (URI.parse(request.referer).path == model_path(@model))
-          # If we're coming from the model page itself, we can't go back there
+        if from_show_page
           redirect_to root_path, notice: t(".success")
         else
           redirect_back_or_to root_path, notice: t(".success")
@@ -365,6 +373,14 @@ class ModelsController < ApplicationController
       format.turbo_stream { render "models/toggle_list" }
       format.html { redirect_back_or_to @model, notice: notice }
     end
+  end
+
+  def destroy_referer_is_show_page?
+    return false if request.referer.blank?
+
+    URI.parse(request.referer).path == model_path(@model)
+  rescue URI::InvalidURIError
+    false
   end
 
   def cached_file_data(file)

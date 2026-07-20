@@ -23,7 +23,7 @@ class Components::ModelCard < Components::Base
     classes = "model-card relative flex flex-col rounded-xl overflow-hidden bg-surface dark:bg-surface-dark border border-secondary-200 dark:border-secondary-600 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
     classes += " content-visibility-auto" unless @eager_preview
 
-    div(class: classes) do
+    div(id: self.class.dom_id_for(@model), class: classes, role: "listitem") do
       div(class: "absolute top-0 left-0 right-0 z-10 px-2 py-1 bg-secondary-200/90 dark:bg-secondary-700/90 text-sm") { server_indicator @model } if @model.remote?
       ModelCardPreview(model: @model, editable: @editable, actor: @actor, eager_preview: @eager_preview, gallery: @gallery)
       div(class: "p-3 flex flex-col gap-1 grow") do
@@ -33,6 +33,14 @@ class Components::ModelCard < Components::Base
       end
       ModelCardActions(model: @model, editable: @editable, actor: @actor)
     end
+  end
+
+  def self.dom_id_for(model)
+    "model_#{model.to_param}"
+  end
+
+  def self.dom_id_for_param(param)
+    "model_#{param}"
   end
 
   private
