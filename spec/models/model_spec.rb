@@ -238,6 +238,13 @@ RSpec.describe Model do
       expect(parent.contains?(child)).to be true
     end
 
+    it "cascades delete to nested models" do
+      child_id = child.id
+      parent.delete_from_disk_and_destroy
+      expect { Model.find(child_id) }.to raise_error(ActiveRecord::RecordNotFound)
+      expect { parent.reload }.to raise_error(ActiveRecord::RecordNotFound)
+    end
+
     it "child does not contain parent" do
       expect(child.contains?(parent)).to be false
     end
