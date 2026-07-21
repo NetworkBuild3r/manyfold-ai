@@ -15,14 +15,18 @@ class Components::ModelCardPreview < Components::Base
   end
 
   def view_template
-    div(class: "relative w-full aspect-[4/3]") do
+    # Outer aspect box owns the reserved height; fill link/button must be absolute
+    # so nested PreviewFrame cannot collapse the slot before the image loads.
+    div(class: "relative w-full aspect-[4/3] overflow-hidden bg-secondary-100 dark:bg-secondary-800") do
       selection_bubble if @editable
       ModelListActions(model: @model) if current_user
       if @actor && !@actor.local
-        PreviewFrame(object: @model, lite: true, eager: @eager_preview)
+        div(class: "absolute inset-0") do
+          PreviewFrame(object: @model, lite: true, eager: @eager_preview)
+        end
       elsif @gallery && gallery_eligible?
         button type: "button",
-          class: "block w-full h-full p-0 m-0 border-0 bg-transparent cursor-zoom-in focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500",
+          class: "absolute inset-0 block w-full h-full p-0 m-0 border-0 bg-transparent cursor-zoom-in focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500",
           data: {
             action: "click->model-gallery#open",
             model_gallery_model_url_param: model_path(@model),
@@ -33,7 +37,7 @@ class Components::ModelCardPreview < Components::Base
           PreviewFrame(object: @model, lite: true, eager: @eager_preview)
         end
       else
-        link_to @model, class: "block no-underline", data: {turbo_frame: "_top"}, aria: {label: translate("components.model_card.open_button.label", name: @model.name)} do
+        link_to @model, class: "absolute inset-0 block no-underline", data: {turbo_frame: "_top"}, aria: {label: translate("components.model_card.open_button.label", name: @model.name)} do
           PreviewFrame(object: @model, lite: true, eager: @eager_preview)
         end
       end

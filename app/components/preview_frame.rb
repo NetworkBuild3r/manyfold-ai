@@ -36,11 +36,17 @@ class Components::PreviewFrame < Components::Base
   end
 
   def preview_container_class
-    "block w-full aspect-[4/3] bg-secondary-100 dark:bg-secondary-800"
+    # Lite cards sit inside ModelCardPreview's reserved 4:3 slot — fill it absolutely
+    # so the image cannot change card height when it loads.
+    if @lite
+      "absolute inset-0 overflow-hidden bg-secondary-100 dark:bg-secondary-800"
+    else
+      "relative block w-full aspect-[4/3] overflow-hidden bg-secondary-100 dark:bg-secondary-800"
+    end
   end
 
   def image_class
-    "w-full h-full object-cover" + (needs_hiding? ? " sensitive" : "")
+    "absolute inset-0 w-full h-full object-cover" + (needs_hiding? ? " sensitive" : "")
   end
 
   def render_local
@@ -56,7 +62,10 @@ class Components::PreviewFrame < Components::Base
           class: image_class,
           alt: @file.name,
           loading: @eager ? "eager" : "lazy",
-          decoding: "async"
+          decoding: "async",
+          # Intrinsic size hint (4:3) so the browser can reserve space even without CSS.
+          width: 480,
+          height: 360
         }
         opts[:fetchpriority] = "high" if @eager
         opts[:sizes] = "(max-width: 640px) 50vw, 240px" if @lite
@@ -78,8 +87,8 @@ class Components::PreviewFrame < Components::Base
 
   def renderable_placeholder
     div(class: "#{preview_container_class} flex flex-col items-center justify-center gap-2 text-secondary-400 #{"sensitive" if needs_hiding?}") do
-      i(class: "bi bi-box-fill text-4xl opacity-60", "aria-hidden": "true")
-      span(class: "text-xs font-medium uppercase tracking-wide") { t("components.model_card.model_preview") }
+      i(class: "bi bi-box-fill text-4xl opacity-60 relative z-10", "aria-hidden": "true")
+      span(class: "text-xs font-medium uppercase tracking-wide relative z-10") { t("components.model_card.model_preview") }
     end
   end
 
@@ -93,7 +102,9 @@ class Components::PreviewFrame < Components::Base
           class: image_class,
           alt: sanitize(preview_data["summary"]),
           loading: @eager ? "eager" : "lazy",
-          decoding: "async"
+          decoding: "async",
+          width: 480,
+          height: 360
         }
         opts[:fetchpriority] = "high" if @eager
         image_tag sanitize(preview_data["url"]), **opts
@@ -108,7 +119,7 @@ class Components::PreviewFrame < Components::Base
             "</body></html>"
           ].join),
           title: sanitize(preview_data["summary"]),
-          class: "w-full h-full object-cover"
+          class: "absolute inset-0 w-full h-full object-cover border-0"
         )
       end
     else
@@ -129,7 +140,12 @@ class Components::PreviewFrame < Components::Base
   end
 
   def empty
-    div(class: "flex items-center justify-center block w-full aspect-[4/3] bg-secondary-100 dark:bg-secondary-800 text-secondary-400") do
+    classes = if @lite
+      "absolute inset-0 flex items-center justify-center overflow-hidden bg-secondary-100 dark:bg-secondary-800 text-secondary-400"
+    else
+      "relative flex items-center justify-center w-full aspect-[4/3] overflow-hidden bg-secondary-100 dark:bg-secondary-800 text-secondary-400"
+    end
+    div(class: classes) do
       p(class: "text-sm") { t("components.model_card.no_preview") }
     end
   end

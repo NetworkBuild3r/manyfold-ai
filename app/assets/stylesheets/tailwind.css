@@ -233,7 +233,7 @@ dialog.modal::backdrop {
   background-color: white;
 }
 
-/* ——— Infinite scroll: cards are direct grid children; sentinel spans full row ——— */
+# ——— Infinite scroll: cards are direct grid children; sentinel spans full row ——— */
 
 #model-card-grid .models-scroll-sentinel {
   grid-column: 1 / -1;
@@ -247,6 +247,15 @@ dialog.modal::backdrop {
 
 #model-card-grid .models-scroll-sentinel[hidden] {
   display: none !important;
+}
+
+/* Preview media must never push card height when the image loads. */
+#model-card-grid .model-card .aspect-\[4\/3\] {
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+}
+#model-card-grid .model-card img {
+  max-width: none;
 }
 
 /* Label only visible while a page fetch is in flight */

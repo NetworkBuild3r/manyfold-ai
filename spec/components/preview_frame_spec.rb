@@ -15,6 +15,9 @@ RSpec.describe Components::PreviewFrame, type: :component do
     expect_any_instance_of(ModelFile).not_to receive(:exists_on_storage?) # rubocop:disable RSpec/AnyInstance
     html = render described_class.new(object: model.reload, lite: true)
     expect(html).to include("<img")
+    expect(html).to include('width="480"')
+    expect(html).to include('height="360"')
+    expect(html).to include("absolute inset-0")
   end
 
   it "renders the empty placeholder when a non-lite preview is missing on storage" do
