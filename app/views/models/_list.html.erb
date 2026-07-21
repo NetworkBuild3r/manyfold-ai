@@ -197,11 +197,9 @@
         </div>
       </div>
 
-      <% current = @models.try(:current_page) || 1 %>
       <% next_url = @models.next_page ? models_page_url(@models.next_page, @filter) : "" %>
       <div data-controller="infinite-scroll"
            data-infinite-scroll-next-url-value="<%= next_url %>"
-           data-infinite-scroll-start-page-value="<%= current %>"
            data-infinite-scroll-per-page-value="<%= pagination_settings["per_page"] %>"
            data-infinite-scroll-end-message-value="<%= t(".end_of_results") %>"
            class="library-infinite">

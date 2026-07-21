@@ -5,7 +5,6 @@ const FILL_BUFFER_PX = 600
 const PREFETCH_ROOT_MARGIN = '1400px 0px'
 const SCROLL_FALLBACK_PX = 1000
 const MAX_FILL_PAGES = 20
-const URL_SYNC_DEBOUNCE_MS = 400
 const SCROLL_RESTORE_KEY_PREFIX = 'scroll_models_'
 const MAX_TRANSIENT_RETRIES = 3
 const RETRY_BASE_MS = 400
@@ -17,19 +16,17 @@ const BACK_TO_TOP_SHOW_PX = 800
  * GET next page with Accept: text/vnd.turbo-stream.html
  * Server inserts cards before #models-scroll-sentinel and replaces the sentinel.
  *
- * Also: viewport fill, URL page sync, sessionStorage scroll restore on back,
- * transient error retry, end-of-list status, optional back-to-top control.
+ * Browser URL stays a single infinite browse (no ?page=N). Scroll position is
+ * restored via sessionStorage on back navigation.
  */
 export default class extends Controller {
   static targets = ['sentinel', 'status', 'backToTop', 'grid']
   static values = {
     nextUrl: { type: String, default: '' },
-    startPage: { type: Number, default: 1 },
     perPage: { type: Number, default: 24 }
   }
 
   declare nextUrlValue: string
-  declare startPageValue: number
   declare perPageValue: number
   declare sentinelTarget: HTMLElement
   declare hasSentinelTarget: boolean
@@ -47,7 +44,6 @@ export default class extends Controller {
   private boundOnBeforeVisit: () => void
   private boundOnBackToTop: (e: Event) => void
   private scrollTicking = false
-  private urlSyncTimer: ReturnType<typeof setTimeout> | null = null
   private abortController: AbortController | null = null
   private lastLoadedUrl = ''
   private transientFailures = 0
@@ -63,6 +59,7 @@ export default class extends Controller {
       this.backToTopTarget.addEventListener('click', this.boundOnBackToTop)
     }
 
+    this.stripPageFromUrl()
     this.syncNextUrlFromSentinel()
     this.setupObserver()
     this.updateStatus('')
@@ -79,7 +76,6 @@ export default class extends Controller {
     this.observer?.disconnect()
     this.observer = null
     this.abortInFlight()
-    if (this.urlSyncTimer != null) clearTimeout(this.urlSyncTimer)
   }
 
   /** Turbo replace may recreate the sentinel — re-observe after each load. */
@@ -235,6 +231,7 @@ export default class extends Controller {
       this.lastLoadedUrl = url
       this.transientFailures = 0
       renderStreamMessage(html)
+      this.dedupeModelCards()
 
       // After streams: sentinel replaced — read next URL from new node
       this.syncNextUrlFromSentinel()
@@ -264,6 +261,18 @@ export default class extends Controller {
     }
   }
 
+  /** Drop later duplicates if the same model card id already exists in the grid. */
+  private dedupeModelCards (): void {
+    const seen = new Set<string>()
+    this.gridEl().querySelectorAll<HTMLElement>('.model-card[id]').forEach((card) => {
+      if (seen.has(card.id)) {
+        card.remove()
+      } else {
+        seen.add(card.id)
+      }
+    })
+  }
+
   private delay (ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms))
   }
@@ -279,12 +288,6 @@ export default class extends Controller {
         }
       })
     }
-
-    if (this.urlSyncTimer != null) clearTimeout(this.urlSyncTimer)
-    this.urlSyncTimer = setTimeout(() => {
-      this.urlSyncTimer = null
-      this.syncUrlQuietly()
-    }, URL_SYNC_DEBOUNCE_MS)
   }
 
   private updateBackToTop (): void {
@@ -299,30 +302,21 @@ export default class extends Controller {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  private syncUrlQuietly (): void {
-    const cards = this.gridEl().querySelectorAll<HTMLElement>('.model-card')
-    if (cards.length === 0) return
-    const perPage = this.perPageValue > 0 ? this.perPageValue : 24
-    const firstVisible = Array.from(cards).findIndex((c) => c.getBoundingClientRect().bottom > 80)
-    const index = firstVisible >= 0 ? firstVisible : 0
-    const page = Math.floor(index / perPage) + this.startPageValue
-
+  /** Keep the address bar as one infinite browse — never surface ?page=N. */
+  private stripPageFromUrl (): void {
     const url = new URL(window.location.href)
-    const current = parseInt(url.searchParams.get('page') ?? String(this.startPageValue), 10)
-    if (page === current) return
-    if (page <= 1) url.searchParams.delete('page')
-    else url.searchParams.set('page', String(page))
+    if (!url.searchParams.has('page')) return
+    url.searchParams.delete('page')
     history.replaceState(history.state, '', url.toString())
   }
 
   private onBeforeVisit (): void {
-    this.syncUrlQuietly()
     this.persistScrollY()
   }
 
   private storageKey (): string {
     const url = new URL(window.location.href)
-    // Restore against path + filters, ignore page (handled separately)
+    // Restore against path + filters, ignore page
     url.searchParams.delete('page')
     const q = url.searchParams.toString()
     return SCROLL_RESTORE_KEY_PREFIX + url.pathname + (q.length > 0 ? `?${q}` : '')

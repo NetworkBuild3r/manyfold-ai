@@ -18,11 +18,13 @@ module ModelListable
     @unrelated_tag_count = nil unless @filter.any?
 
     per_page = helpers.pagination_settings["per_page"]
-    page = params[:page] || 1
-
-    # Always serve a single page. Multi-page "restore" preloads (up to 50 pages)
-    # blew browser memory on back-navigation. Infinite scroll + windowing handles
-    # forward load; ?page=N lands on that page and scrolls from there.
+    # Full HTML browse always starts at page 1 (one infinite page in the address bar).
+    # Only turbo-stream / X-Infinite-Scroll fetches advance via ?page=N.
+    page = if request.format.turbo_stream? || request.headers["X-Infinite-Scroll"].present?
+      params[:page].presence || 1
+    else
+      1
+    end
     @models = @models.page(page).per(per_page)
     @models = @models.includes [:creator, :collection, :tags]
     # preview_file only — avoid preloading every model_file on index
