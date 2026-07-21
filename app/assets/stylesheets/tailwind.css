@@ -235,6 +235,19 @@ dialog.modal::backdrop {
 
 # ——— Infinite scroll: cards are direct grid children; sentinel spans full row ——— */
 
+/*
+ * items-start: when page N+1 fills an incomplete last row, do NOT stretch existing
+ * cards to the new tallest neighbor — that reflow is what feels like "tiles jumping".
+ */
+#model-card-grid {
+  align-items: start;
+}
+
+#model-card-grid .model-card {
+  width: 100%;
+  overflow-anchor: none;
+}
+
 #model-card-grid .models-scroll-sentinel {
   grid-column: 1 / -1;
   min-height: 2.5rem;
@@ -243,6 +256,7 @@ dialog.modal::backdrop {
   align-items: center;
   justify-content: center;
   pointer-events: none;
+  overflow-anchor: none;
 }
 
 #model-card-grid .models-scroll-sentinel[hidden] {

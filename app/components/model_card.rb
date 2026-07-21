@@ -27,6 +27,7 @@ class Components::ModelCard < Components::Base
     div(id: self.class.dom_id_for(@model), class: classes, role: "listitem") do
       div(class: "absolute top-0 left-0 right-0 z-10 px-2 py-1 bg-secondary-200/90 dark:bg-secondary-700/90 text-sm") { server_indicator @model } if @model.remote?
       ModelCardPreview(model: @model, editable: @editable, actor: @actor, eager_preview: @eager_preview, gallery: @gallery)
+      # Fixed min-heights so missing creator/tags don't change card height vs neighbors.
       div(class: "p-3 flex flex-col gap-1 grow") do
         title_row
         creator_line
@@ -47,7 +48,7 @@ class Components::ModelCard < Components::Base
   private
 
   def title_row
-    div(class: "flex items-start gap-2") do
+    div(class: "flex items-start gap-2 min-h-[2.75rem]") do
       div(class: "min-w-0 flex-1 font-semibold text-secondary-900 dark:text-secondary-100 leading-snug line-clamp-2") do
         if @editable
           EditableSpan(fieldname: "model[name]", path: model_path(@model), text: @model.name)
@@ -73,9 +74,9 @@ class Components::ModelCard < Components::Base
     else
       @model.creator&.name
     end
-    return if name.blank? && @model.collection.blank?
 
-    div(class: "text-xs text-secondary-500 dark:text-secondary-400 truncate") do
+    # Always render (even empty) so cards without creator/collection keep the same body height.
+    div(class: "text-xs text-secondary-500 dark:text-secondary-400 truncate min-h-[1rem]") do
       if name.present?
         if @model.creator
           link_to name.careful_titleize, @model.creator, class: "text-inherit no-underline hover:underline", data: {turbo_frame: "_top"}
@@ -92,9 +93,7 @@ class Components::ModelCard < Components::Base
 
   def tag_peek
     tags = @model.tags.first(3)
-    return if tags.empty?
-
-    div(class: "flex flex-wrap gap-1 mt-auto pt-0.5") do
+    div(class: "flex flex-wrap gap-1 mt-auto pt-0.5 min-h-[1.5rem]") do
       tags.each do |tag|
         link_to tag.name,
           models_path(tag: [tag.name]),

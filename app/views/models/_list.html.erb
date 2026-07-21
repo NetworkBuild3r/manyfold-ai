@@ -205,7 +205,7 @@
            data-infinite-scroll-per-page-value="<%= pagination_settings["per_page"] %>"
            data-infinite-scroll-end-message-value="<%= t(".end_of_results") %>"
            class="library-infinite">
-        <div class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,10.5rem),1fr))] sm:grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-3 sm:gap-3.5 mb-2"
+        <div class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,10.5rem),1fr))] sm:grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-3 sm:gap-3.5 mb-2 items-start"
              id="model-card-grid"
              role="list"
              aria-label="<%= Model.model_name.human(count: 100) %>"
