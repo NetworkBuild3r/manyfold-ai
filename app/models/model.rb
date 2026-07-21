@@ -293,18 +293,28 @@ class Model < ApplicationRecord
     self.skip_problem_check = true
 
     Current.set(skip_problem_checks: true) do
-      # Remove all presupported_version relationships first, they get in the way
-      # This will go away later when we do proper file relationships rather than linking the tables directly
-      model_files.update_all(presupported_version_id: nil) # rubocop:disable Rails/SkipsModelValidations
-      # Trigger deletion for each file separately, to make sure cleanup happens
-      model_files.each { |f| f.delete_from_disk_and_destroy }
-      # Remove tags first - sometimes this causes problems if we don't do it beforehand
-      update!(tags: [])
-      # Delete directory corresponding to model
-      library.storage.delete_prefixed(path)
-      # Remove from DB
-      destroy
+      # Cascade nested models deepest-first so delete is not blocked when a folder
+      # contains sub-models (common after deep library scans).
+      contained_models.order(Arel.sql("LENGTH(#{self.class.quoted_table_name}.path) DESC")).to_a.each do |child|
+        child.delete_from_disk_and_destroy_without_cascade
+      end
+      delete_from_disk_and_destroy_without_cascade
     end
+  end
+
+  def delete_from_disk_and_destroy_without_cascade
+    self.skip_problem_check = true
+    # Remove all presupported_version relationships first, they get in the way
+    # This will go away later when we do proper file relationships rather than linking the tables directly
+    model_files.update_all(presupported_version_id: nil) # rubocop:disable Rails/SkipsModelValidations
+    # Trigger deletion for each file separately, to make sure cleanup happens
+    model_files.each { |f| f.delete_from_disk_and_destroy }
+    # Remove tags first - sometimes this causes problems if we don't do it beforehand
+    update!(tags: [])
+    # Delete directory corresponding to model
+    library.storage.delete_prefixed(path)
+    # Remove from DB
+    destroy
   end
 
   def contained_models

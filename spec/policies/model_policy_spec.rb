@@ -21,9 +21,9 @@ describe ModelPolicy do
       expect(policy).to permit(moderator, model)
     end
 
-    it "denies deletion for models that contain others" do
+    it "allows deletion for models that contain others (cascade)" do
       create(:model, library: model.library, path: model.path + "/nested")
-      expect(policy).not_to permit(moderator, model.reload)
+      expect(policy).to permit(moderator, model.reload)
     end
   end
 
