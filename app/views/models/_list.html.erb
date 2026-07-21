@@ -1,6 +1,5 @@
 <% content_for :browse_chrome do %>
   <% total = @models.try(:total_count) %>
-  <% list = @filter&.parameter(:list).to_s %>
   <div class="flex flex-col gap-2.5 max-w-screen-2xl mx-auto">
     <div class="flex flex-wrap items-center gap-2 sm:gap-3">
       <button type="button"
@@ -49,14 +48,7 @@
     </div>
 
     <% if current_user %>
-      <% list_chip = ->(active) { "shrink-0 inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold no-underline transition-colors #{active ? "bg-secondary-900 text-surface dark:bg-surface dark:text-secondary-900" : "bg-surface dark:bg-secondary-900 border border-secondary-200 dark:border-secondary-700 text-secondary-700 dark:text-secondary-300 hover:border-primary-400"}" } %>
-      <div class="flex gap-1.5 overflow-x-auto scrollbar-thin py-0.5 -mx-0.5 px-0.5" role="tablist" aria-label="<%= t(".personal_lists") %>">
-        <%= link_to t("application.navbar.library"), models_path((@filter&.to_params || {}).except(:list)), class: list_chip.call(list.blank?), role: "tab", "aria-selected": list.blank? %>
-        <%= link_to t("application.navbar.queue"), models_path((@filter&.to_params || {}).merge(list: "queue")), class: list_chip.call(list == "queue"), role: "tab", "aria-selected": list == "queue" %>
-        <%= link_to t("application.navbar.unprinted"), models_path((@filter&.to_params || {}).merge(list: "unprinted")), class: list_chip.call(list == "unprinted"), role: "tab", "aria-selected": list == "unprinted" %>
-        <%= link_to t("application.navbar.favorites"), models_path((@filter&.to_params || {}).merge(list: "favorite")), class: list_chip.call(list == "favorite"), role: "tab", "aria-selected": list == "favorite" %>
-        <%= link_to t("application.navbar.printed"), models_path((@filter&.to_params || {}).merge(list: "printed")), class: list_chip.call(list == "printed"), role: "tab", "aria-selected": list == "printed" %>
-      </div>
+      <%= render "list_chips", variant: :chrome %>
     <% end %>
 
     <% if @filter.any? %>
@@ -197,28 +189,28 @@
         </div>
       </div>
 
-      <% next_url = @models.next_page ? models_page_url(@models.next_page, @filter) : "" %>
+      <% cols = @browse_columns || browse_grid_columns %>
+      <% per_page = @browse_per_page || browse_grid_page_size %>
+      <% next_url = @models.next_page ? models_page_url(@models.next_page, @filter, per_page: per_page) : "" %>
       <div data-controller="infinite-scroll"
            data-infinite-scroll-next-url-value="<%= next_url %>"
-           data-infinite-scroll-per-page-value="<%= pagination_settings["per_page"] %>"
+           data-infinite-scroll-per-page-value="<%= per_page %>"
+           data-infinite-scroll-sentinel-id-value="models-scroll-sentinel"
+           data-infinite-scroll-card-selector-value=".model-card"
+           data-infinite-scroll-storage-key-prefix-value="scroll_models_"
            data-infinite-scroll-end-message-value="<%= t(".end_of_results") %>"
            class="library-infinite">
-        <div class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,10.5rem),1fr))] sm:grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-3 sm:gap-3.5 mb-2 items-start"
+        <div class="grid grid-cols-2 gap-3 sm:gap-3.5 mb-2 items-start"
              id="model-card-grid"
+             style="--browse-cols: <%= cols %>"
              role="list"
              aria-label="<%= Model.model_name.human(count: 100) %>"
+             data-browse-columns="<%= cols %>"
              data-infinite-scroll-target="grid">
           <% @models.each_with_index do |model, index| %>
             <%= render Components::ModelCard.new(model: model, eager_preview: index < 8, gallery: true) %>
           <% end %>
-          <div id="models-scroll-sentinel"
-               class="models-scroll-sentinel col-span-full"
-               data-infinite-scroll-target="sentinel"
-               <% if next_url.present? %>data-next-url="<%= next_url %>" data-has-more="true"<% end %>
-               <% if next_url.blank? %>data-has-more="false" hidden<% end %>
-               aria-hidden="true">
-            <span class="models-scroll-sentinel__label"><%= t(".loading_more") %></span>
-          </div>
+          <%= render "scroll_sentinel", next_url: next_url %>
         </div>
         <div class="library-infinite__end py-10 text-center">
           <p id="models-scroll-status"

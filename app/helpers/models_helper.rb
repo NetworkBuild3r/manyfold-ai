@@ -1,9 +1,21 @@
 module ModelsHelper
-  # URL for models index with a given page, preserving filter and sort params (for infinite-scroll sentinel frames).
-  def models_page_url(page, filter = nil)
+  # URL for models index with a given page, preserving filter/sort and aligned per_page.
+  def models_page_url(page, filter = nil, per_page: nil)
+    settings = pagination_settings
+    cols = BrowseGrid.columns(settings)
+    size = per_page.presence || BrowseGrid.page_size_for_settings(settings)
+    size = BrowseGrid.aligned_page_size(size, cols)
     base = filter&.to_params || {}
     sort = request.query_parameters.slice("order", "direction")
-    models_path(base.merge(page: page).merge(sort))
+    models_path(base.merge(page: page, per_page: size).merge(sort))
+  end
+
+  def browse_grid_columns
+    BrowseGrid.columns(pagination_settings)
+  end
+
+  def browse_grid_page_size
+    BrowseGrid.page_size_for_settings(pagination_settings)
   end
 
   def group(files)

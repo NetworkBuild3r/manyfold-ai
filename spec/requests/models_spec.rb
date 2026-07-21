@@ -341,14 +341,14 @@ RSpec.describe "Models" do
           expect(response.media_type).to eq("text/vnd.turbo-stream.html")
           expect(response.body).to include("turbo-stream")
           expect(response.body).to include("models-scroll-sentinel")
+          expect(response.body).not_to include("model-grid-page-break")
         end
 
-        it "serves flat HTML page fragments when X-Infinite-Scroll is set" do # rubocop:todo RSpec/MultipleExpectations
-          get "/models",
-            params: {library: library.to_param, page: 1},
-            headers: {"X-Infinite-Scroll" => "1"}
+        it "includes aligned per_page from BrowseGrid on the index" do
+          get "/models?library=#{library.to_param}"
           expect(response).to have_http_status(:success)
-          expect(response.body).to include("model-stream-page").or include("model-card")
+          expect(response.body).to include("data-browse-columns=")
+          expect(response.body).to include("--browse-cols:")
         end
       end
 

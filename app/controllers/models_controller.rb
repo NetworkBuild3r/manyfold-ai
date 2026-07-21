@@ -32,13 +32,7 @@ class ModelsController < ApplicationController
     set_indexable @models
     respond_to do |format|
       format.turbo_stream { render "models/page" }
-      format.html do
-        if turbo_frame_request? || request.headers["X-Infinite-Scroll"].present?
-          render partial: "list_page", layout: false
-        else
-          render layout: "card_list_page"
-        end
-      end
+      format.html { render layout: "card_list_page" }
       format.manyfold_api_v0 { render json: ManyfoldApi::V0::ModelListSerializer.new(@models).serialize }
     end
   end

@@ -5,32 +5,34 @@ const FILL_BUFFER_PX = 600
 const PREFETCH_ROOT_MARGIN = '500px 0px'
 const SCROLL_FALLBACK_PX = 1000
 const MAX_FILL_PAGES = 20
-const SCROLL_RESTORE_KEY_PREFIX = 'scroll_models_'
 const MAX_TRANSIENT_RETRIES = 3
 const RETRY_BASE_MS = 400
 const BACK_TO_TOP_SHOW_PX = 800
-const SPACER_ID = 'models-scroll-spacer'
 
 /**
- * Real infinite scroll for the models grid via Turbo Streams.
+ * Infinite scroll for a card grid via Turbo Streams.
  *
  * GET next page with Accept: text/vnd.turbo-stream.html
- * Server inserts a row page-break + cards before #models-scroll-sentinel.
+ * Server inserts cards before the sentinel and replaces the sentinel.
  *
- * Browser URL stays a single infinite browse (no ?page=N). Scroll position is
- * restored via sessionStorage on back navigation. While a page loads we reserve
- * height below the fold; content is appended only after the spacer is removed
- * so spacer and cards never stack (no scroll pin — that fought in-flight scrolling).
+ * Page size and columns are owned by BrowseGrid on the server; this controller
+ * only loads nextUrl from the sentinel. Address bar stays filter/sort only (no ?page=).
  */
 export default class extends Controller {
   static targets = ['sentinel', 'status', 'backToTop', 'grid']
   static values = {
     nextUrl: { type: String, default: '' },
-    perPage: { type: Number, default: 24 }
+    perPage: { type: Number, default: 24 },
+    sentinelId: { type: String, default: 'models-scroll-sentinel' },
+    cardSelector: { type: String, default: '.model-card' },
+    storageKeyPrefix: { type: String, default: 'scroll_models_' }
   }
 
   declare nextUrlValue: string
   declare perPageValue: number
+  declare sentinelIdValue: string
+  declare cardSelectorValue: string
+  declare storageKeyPrefixValue: string
   declare sentinelTarget: HTMLElement
   declare hasSentinelTarget: boolean
   declare statusTarget: HTMLElement
@@ -79,7 +81,6 @@ export default class extends Controller {
     this.observer?.disconnect()
     this.observer = null
     this.abortInFlight()
-    this.removeSpacer()
   }
 
   /** Turbo replace may recreate the sentinel — re-observe after each load. */
@@ -90,6 +91,10 @@ export default class extends Controller {
 
   private get hasMore (): boolean {
     return !this.exhausted && this.nextUrlValue.length > 0
+  }
+
+  private sentinelEl (): HTMLElement | null {
+    return document.getElementById(this.sentinelIdValue)
   }
 
   private abortInFlight (): void {
@@ -106,8 +111,7 @@ export default class extends Controller {
 
   private setupObserver (): void {
     this.observer?.disconnect()
-    // Prefer getElementById: turbo_stream.replace recreates the node
-    const el = document.getElementById('models-scroll-sentinel')
+    const el = this.sentinelEl()
     if (el == null || el.hasAttribute('hidden')) return
 
     this.observer = new IntersectionObserver(
@@ -122,8 +126,7 @@ export default class extends Controller {
   }
 
   private syncNextUrlFromSentinel (): void {
-    // Prefer live DOM after turbo_stream.replace
-    const el = document.getElementById('models-scroll-sentinel')
+    const el = this.sentinelEl()
     if (el == null) return
     const fromDom = el.dataset.nextUrl
     if (typeof fromDom === 'string' && fromDom.length > 0) {
@@ -138,8 +141,6 @@ export default class extends Controller {
   }
 
   private endMessage (): string {
-    // Stimulus maps data-infinite-scroll-end-message-value → endMessageValue when declared;
-    // fall back to reading the attribute so we don't need a typed value for i18n text.
     return this.element.getAttribute('data-infinite-scroll-end-message-value') ||
       'End of results'
   }
@@ -182,7 +183,6 @@ export default class extends Controller {
     if (this.loading || !this.hasMore) return false
 
     const url = this.nextUrlValue
-    // Guard against double-fetch of the same page (IO + scroll race)
     if (url.length === 0 || url === this.lastLoadedUrl) return false
 
     this.loading = true
@@ -191,12 +191,10 @@ export default class extends Controller {
     this.abortInFlight()
     this.abortController = new AbortController()
 
-    this.insertLoadingSpacer()
-
     try {
       const response = await fetch(url, {
         headers: {
-          Accept: 'text/vnd.turbo-stream.html, text/html',
+          Accept: 'text/vnd.turbo-stream.html',
           'X-Infinite-Scroll': '1'
         },
         credentials: 'same-origin',
@@ -205,14 +203,12 @@ export default class extends Controller {
 
       if (!response.ok) {
         console.warn('[infinite-scroll] HTTP', response.status, url)
-        this.removeSpacer()
         if (response.status === 401 || response.status === 403 || response.status === 404) {
           this.exhausted = true
           this.nextUrlValue = ''
           this.updateStatus(this.endMessage())
           return false
         }
-        // Transient 5xx / 429 — retry later without permanent exhaust
         this.transientFailures += 1
         if (this.transientFailures >= MAX_TRANSIENT_RETRIES) {
           this.updateStatus('Could not load more. Scroll to retry.')
@@ -228,8 +224,6 @@ export default class extends Controller {
 
       if (!contentType.includes('turbo-stream') && !html.includes('<turbo-stream')) {
         console.warn('[infinite-scroll] expected turbo-stream, got', contentType.slice(0, 80))
-        this.removeSpacer()
-        // Full HTML (e.g. login) — stop rather than loop
         this.exhausted = true
         this.nextUrlValue = ''
         this.updateStatus('')
@@ -238,14 +232,10 @@ export default class extends Controller {
 
       this.lastLoadedUrl = url
       this.transientFailures = 0
-      // Drop spacer before insert so reservation and cards never stack in one layout.
-      this.removeSpacer()
       renderStreamMessage(html)
-      this.dedupeModelCards()
+      this.dedupeCards()
 
-      // After streams: sentinel replaced — read next URL from new node
       this.syncNextUrlFromSentinel()
-      // Target may have been recreated; re-bind IO
       this.setupObserver()
 
       if (!this.hasMore) {
@@ -259,7 +249,6 @@ export default class extends Controller {
 
       return true
     } catch (e) {
-      this.removeSpacer()
       if ((e as Error)?.name === 'AbortError') return false
       console.warn('[infinite-scroll] load error', e)
       this.transientFailures += 1
@@ -272,45 +261,10 @@ export default class extends Controller {
     }
   }
 
-  private columnCount (): number {
-    const raw = getComputedStyle(this.gridEl()).gridTemplateColumns
-    if (!raw || raw === 'none') return 1
-    const cols = raw.split(/\s+/).filter((p) => p.length > 0).length
-    return Math.max(1, cols)
-  }
-
-  private estimatedPageHeightPx (): number {
-    const cards = this.gridEl().querySelectorAll<HTMLElement>('.model-card')
-    const sample = cards.length > 0 ? cards[cards.length - 1] : null
-    const cardH = sample != null ? sample.getBoundingClientRect().height : 280
-    const styles = getComputedStyle(this.gridEl())
-    const rowGap = parseFloat(styles.rowGap || styles.gap || '0') || 0
-    const cols = this.columnCount()
-    const perPage = this.perPageValue > 0 ? this.perPageValue : 24
-    const rows = Math.max(1, Math.ceil(perPage / cols))
-    return Math.round(rows * (cardH + rowGap))
-  }
-
-  private insertLoadingSpacer (): void {
-    this.removeSpacer()
-    const sentinel = document.getElementById('models-scroll-sentinel')
-    if (sentinel == null || sentinel.parentElement == null) return
-    const spacer = document.createElement('div')
-    spacer.id = SPACER_ID
-    spacer.className = 'models-scroll-spacer'
-    spacer.setAttribute('aria-hidden', 'true')
-    spacer.style.height = `${this.estimatedPageHeightPx()}px`
-    sentinel.parentElement.insertBefore(spacer, sentinel)
-  }
-
-  private removeSpacer (): void {
-    document.getElementById(SPACER_ID)?.remove()
-  }
-
-  /** Drop later duplicates if the same model card id already exists in the grid. */
-  private dedupeModelCards (): void {
+  private dedupeCards (): void {
+    const selector = this.cardSelectorValue || '.model-card'
     const seen = new Set<string>()
-    this.gridEl().querySelectorAll<HTMLElement>('.model-card[id]').forEach((card) => {
+    this.gridEl().querySelectorAll<HTMLElement>(`${selector}[id]`).forEach((card) => {
       if (seen.has(card.id)) {
         card.remove()
       } else {
@@ -348,7 +302,6 @@ export default class extends Controller {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  /** Keep the address bar as one infinite browse — never surface ?page=N. */
   private stripPageFromUrl (): void {
     const url = new URL(window.location.href)
     if (!url.searchParams.has('page')) return
@@ -362,10 +315,9 @@ export default class extends Controller {
 
   private storageKey (): string {
     const url = new URL(window.location.href)
-    // Restore against path + filters, ignore page
     url.searchParams.delete('page')
     const q = url.searchParams.toString()
-    return SCROLL_RESTORE_KEY_PREFIX + url.pathname + (q.length > 0 ? `?${q}` : '')
+    return this.storageKeyPrefixValue + url.pathname + (q.length > 0 ? `?${q}` : '')
   }
 
   private persistScrollY (): void {
@@ -389,7 +341,6 @@ export default class extends Controller {
       return
     }
     if (!Number.isFinite(y) || y < 1) return
-    // After fillViewport the document is taller; restore on next frame
     requestAnimationFrame(() => {
       window.scrollTo(0, y)
       this.updateBackToTop()

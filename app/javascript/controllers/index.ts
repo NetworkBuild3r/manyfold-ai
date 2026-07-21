@@ -42,8 +42,6 @@ application.register('filter-drawer', FilterDrawerController)
 application.register('editable', EditableController)
 application.register('i18n', I18nController)
 application.register('infinite-scroll', InfiniteScrollController)
-// Alias for any cached markup still using the old controller name
-application.register('infinite-scroll-restore', InfiniteScrollController)
 application.register('model-gallery', ModelGalleryController)
 application.register('obfuscated-text', ObfuscatedTextController)
 application.register('renderer', RendererController)

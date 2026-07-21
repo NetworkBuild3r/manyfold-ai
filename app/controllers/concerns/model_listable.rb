@@ -17,10 +17,21 @@ module ModelListable
     @tags, @kv_tags = split_key_value_tags(@tags)
     @unrelated_tag_count = nil unless @filter.any?
 
-    per_page = helpers.pagination_settings["per_page"]
+    settings = helpers.pagination_settings
+    cols = BrowseGrid.columns(settings)
+    # Aligned page size (multiple of columns) so every batch fills complete rows.
+    preferred = if infinite_scroll_or_stream_request? && params[:per_page].present?
+      params[:per_page]
+    else
+      settings["per_page"]
+    end
+    per_page = BrowseGrid.aligned_page_size(preferred, cols)
+    @browse_columns = cols
+    @browse_per_page = per_page
+
     # Full HTML browse always starts at page 1 (one infinite page in the address bar).
-    # Only turbo-stream / X-Infinite-Scroll fetches advance via ?page=N.
-    page = if request.format.turbo_stream? || request.headers["X-Infinite-Scroll"].present?
+    # Only turbo-stream / infinite-scroll fetches advance via ?page=N.
+    page = if infinite_scroll_or_stream_request?
       params[:page].presence || 1
     else
       1
@@ -39,7 +50,7 @@ module ModelListable
     return unless controller_name == "models"
     return unless %w[index filter_facets].include?(action_name)
     return if action_name == "index" && (
-      turbo_frame_request? || request.headers["X-Infinite-Scroll"].present?
+      turbo_frame_request? || request.format.turbo_stream? || request.headers["X-Infinite-Scroll"].present?
     )
     return unless request.format.html?
 

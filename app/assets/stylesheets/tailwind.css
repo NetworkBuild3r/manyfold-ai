@@ -238,32 +238,21 @@ dialog.modal::backdrop {
 /*
  * items-start: when page N+1 fills an incomplete last row, do NOT stretch existing
  * cards to the new tallest neighbor — that reflow is what feels like "tiles jumping".
+ * BrowseGrid keeps per_page a multiple of columns so mid-browse rows stay full.
  */
 #model-card-grid {
   align-items: start;
 }
 
+/* sm+: columns from --browse-cols (pagination_settings.grid_columns via BrowseGrid) */
+@media (min-width: 640px) {
+  #model-card-grid {
+    grid-template-columns: repeat(var(--browse-cols, 3), minmax(0, 1fr));
+  }
+}
+
 #model-card-grid .model-card {
   width: 100%;
-  overflow-anchor: none;
-}
-
-/* Zero-height full-width break: next page of cards starts on a fresh row. */
-#model-card-grid .model-grid-page-break {
-  grid-column: 1 / -1;
-  height: 0;
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-  pointer-events: none;
-  overflow-anchor: none;
-}
-
-/* Temporary height reservation while a page fetch is in flight. */
-#model-card-grid .models-scroll-spacer {
-  grid-column: 1 / -1;
-  width: 100%;
-  pointer-events: none;
   overflow-anchor: none;
 }
 
@@ -342,7 +331,7 @@ dialog.modal::backdrop {
   transition: opacity 0.2s ease;
 }
 
-/* Keep auto-fill column count stable when the vertical scrollbar appears. */
+/* Keep layout stable when the vertical scrollbar appears. */
 .library-browse-page {
   scrollbar-gutter: stable;
 }
@@ -360,23 +349,6 @@ dialog.modal::backdrop {
   display: flex;
   flex-direction: column;
   margin: auto;
-}
-
-.models-scroll-sentinel {
-  min-height: 3rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1.5rem 0 3rem;
-}
-
-.models-scroll-sentinel[hidden] {
-  display: none !important;
-}
-
-.models-scroll-sentinel__label {
-  font-size: 0.8125rem;
-  color: var(--color-secondary-400);
 }
 
 /* Mobile filter drawer (desktop = sticky sidebar) */

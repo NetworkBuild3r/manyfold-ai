@@ -1,0 +1,32 @@
+<%# Personal list chips (library / queue / favorites / …). variant: :chrome | :sidebar %>
+<% if current_user %>
+  <%
+    list = @filter&.parameter(:list).to_s
+    base = @filter&.to_params || {}
+    variant = local_assigns.fetch(:variant, :chrome).to_sym
+    chrome_chip = ->(active) {
+      "shrink-0 inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold no-underline transition-colors #{active ? "bg-secondary-900 text-surface dark:bg-surface dark:text-secondary-900" : "bg-surface dark:bg-secondary-900 border border-secondary-200 dark:border-secondary-700 text-secondary-700 dark:text-secondary-300 hover:border-primary-400"}"
+    }
+    sidebar_chip = ->(active) {
+      "inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium no-underline #{active ? "bg-primary-100 text-primary-800 dark:bg-primary-900/40 dark:text-primary-200" : "bg-secondary-100 dark:bg-secondary-800 text-secondary-700 dark:text-secondary-300 hover:bg-secondary-200 dark:hover:bg-secondary-700"}"
+    }
+    chip = (variant == :sidebar) ? sidebar_chip : chrome_chip
+  %>
+  <% if variant == :chrome %>
+    <div class="flex gap-1.5 overflow-x-auto scrollbar-thin py-0.5 -mx-0.5 px-0.5" role="tablist" aria-label="<%= t("models.list.personal_lists") %>">
+      <%= link_to t("application.navbar.library"), models_path(base.except(:list)), class: chip.call(list.blank?), role: "tab", "aria-selected": list.blank? %>
+      <%= link_to t("application.navbar.queue"), models_path(base.merge(list: "queue")), class: chip.call(list == "queue"), role: "tab", "aria-selected": list == "queue" %>
+      <%= link_to t("application.navbar.unprinted"), models_path(base.merge(list: "unprinted")), class: chip.call(list == "unprinted"), role: "tab", "aria-selected": list == "unprinted" %>
+      <%= link_to t("application.navbar.favorites"), models_path(base.merge(list: "favorite")), class: chip.call(list == "favorite"), role: "tab", "aria-selected": list == "favorite" %>
+      <%= link_to t("application.navbar.printed"), models_path(base.merge(list: "printed")), class: chip.call(list == "printed"), role: "tab", "aria-selected": list == "printed" %>
+    </div>
+  <% else %>
+    <div class="flex flex-wrap gap-2 mb-3" role="group" aria-label="<%= t("application.filters_card.list_label") %>">
+      <%= link_to t("application.navbar.library"), models_path(base.except(:list)), class: chip.call(list.blank?) %>
+      <%= link_to t("application.navbar.queue"), models_path(base.merge(list: "queue")), class: chip.call(list == "queue") %>
+      <%= link_to t("application.navbar.unprinted"), models_path(base.merge(list: "unprinted")), class: chip.call(list == "unprinted") %>
+      <%= link_to t("application.navbar.favorites"), models_path(base.merge(list: "favorite")), class: chip.call(list == "favorite") %>
+      <%= link_to t("application.navbar.printed"), models_path(base.merge(list: "printed")), class: chip.call(list == "printed") %>
+    </div>
+  <% end %>
+<% end %>
