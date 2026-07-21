@@ -38,7 +38,7 @@
           </p>
         <% end %>
         <% has_image_on = ActiveModel::Type::Boolean.new.cast(@filter.parameter(:has_image)) %>
-        <%= link_to models_path(has_image_on ? @filter.to_params.except(:has_image) : @filter.to_params.merge(has_image: "1")),
+        <%= link_to models_path(@filter.to_params.merge(has_image: has_image_on ? "0" : "1")),
               class: "inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg focus-visible:ring-2 focus-visible:ring-primary-500 #{has_image_on ? "bg-primary-600 text-white" : "bg-surface dark:bg-secondary-900 text-secondary-900 dark:text-secondary-100 border border-secondary-300 dark:border-secondary-600 hover:border-primary-400"}",
               aria: {pressed: has_image_on ? "true" : "false", label: t(".has_image_filter")} do %>
           <%= Icon icon: "image", label: "" %>

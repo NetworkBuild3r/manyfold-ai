@@ -21,6 +21,10 @@ class ModelsController < ApplicationController
 
   include ModelsController::Merge
 
+  def get_filters
+    @filter = Search::FilterService.new(params, user: current_user, default_has_image: true)
+  end
+
   def index
     @models = @filter.models(policy_scope(Model))
     @search = params[:q].presence

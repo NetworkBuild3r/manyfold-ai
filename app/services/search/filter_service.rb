@@ -4,9 +4,11 @@ class Search::FilterService
   attr_reader :owner
 
   # Get list filters from URL. Optional +user+ enables personal list filters (favorite/printed).
-  def initialize(params, user: nil)
+  # +default_has_image+: when true (models library), omit → with-images; has_image=0 keeps "show all".
+  def initialize(params, user: nil, default_has_image: false)
     @user = user
     params = ActionController::Parameters.new(params) if params.is_a?(Hash)
+    has_image_specified = param_key?(params, :has_image)
     @filters = params.permit(
       :library,
       :collection,
@@ -25,7 +27,7 @@ class Search::FilterService
     end
     @filters.delete(:link) if @filters[:link].blank?
     @filters.delete(:q) if @filters[:q].blank?
-    @filters.delete(:has_image) unless ActiveModel::Type::Boolean.new.cast(@filters[:has_image])
+    normalize_has_image!(has_image_specified: has_image_specified, default_has_image: default_has_image)
     @filters.delete(:list) unless %w[favorite printed queue unprinted].include?(@filters[:list].to_s)
 
     @collection = Collection.find_param(parameter(:collection)) if parameter(:collection).present?
@@ -209,5 +211,23 @@ class Search::FilterService
     ActiveModel::Type::Boolean.new.cast(value)
   rescue ArgumentError
     %w[1 true yes on].include?(value.to_s.downcase)
+  end
+
+  def param_key?(params, key)
+    params.key?(key) || params.key?(key.to_s)
+  end
+
+  # Keep explicit "0" so library default (images on) does not re-apply after the user opts out.
+  def normalize_has_image!(has_image_specified:, default_has_image:)
+    raw = @filters[:has_image]
+    raw = raw.last if raw.is_a?(Array)
+
+    if !has_image_specified && default_has_image
+      @filters[:has_image] = "1"
+    elsif has_image_specified
+      @filters[:has_image] = truthy?(raw) ? "1" : "0"
+    else
+      @filters.delete(:has_image)
+    end
   end
 end

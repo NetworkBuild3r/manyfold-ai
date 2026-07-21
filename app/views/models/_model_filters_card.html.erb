@@ -62,6 +62,7 @@
     </div>
 
     <div class="flex items-start gap-2 pt-1">
+      <%= hidden_field_tag :has_image, "0", id: nil %>
       <%= check_box_tag :has_image, "1", has_image_on,
             id: "filter_has_image",
             class: "mt-1 rounded border-secondary-300 text-primary-600 focus:ring-primary-500 h-4 w-4" %>

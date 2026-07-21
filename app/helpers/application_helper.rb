@@ -320,9 +320,13 @@ module ApplicationHelper
 
   def build_active_filter_entry(filter, key, base_params)
     return unless filter.filtering_by?(key)
-    # has_image only shows when enabled (truthy)
+    # has_image only shows when enabled (truthy); removing sets has_image=0 so the
+    # library default (images on) does not immediately re-apply.
     if key == :has_image
       return unless ActiveModel::Type::Boolean.new.cast(filter.parameter(:has_image))
+      remove_params = base_params.merge(has_image: "0")
+    else
+      remove_params = base_params.except(key)
     end
     type_label, value_html, pill_label = active_filter_label_and_value(filter, key)
     return if type_label.nil?
@@ -332,7 +336,7 @@ module ApplicationHelper
       icon: active_filter_icon(key),
       type_label: type_label,
       value_html: value_html,
-      remove_url: url_for(base_params.except(key)),
+      remove_url: url_for(remove_params),
       aria_remove: t(aria_key, default: t("application.filters_card.remove_filter", default: "Remove filter")),
       pill_label: pill_label
     }

@@ -100,6 +100,23 @@ RSpec.describe Search::FilterService do
     it "ignores has_image when not truthy" do
       service = described_class.new(ActionController::Parameters.new(has_image: "0"))
       expect(service.models(Model.all).count).to eq 4
+      expect(service.parameter(:has_image)).to eq "0"
+    end
+
+    it "defaults to has_image when default_has_image and param omitted" do
+      with_img = Model.find_by!(name: "cat in the hat")
+      jpg = create(:model_file, model: with_img, filename: "cover.jpg")
+      with_img.update!(preview_file: jpg)
+
+      service = described_class.new(ActionController::Parameters.new, default_has_image: true)
+      expect(service.parameter(:has_image)).to eq "1"
+      expect(service.models(Model.all).pluck(:name)).to contain_exactly("cat in the hat")
+    end
+
+    it "keeps show-all when has_image=0 even with default_has_image" do
+      service = described_class.new(ActionController::Parameters.new(has_image: "0"), default_has_image: true)
+      expect(service.parameter(:has_image)).to eq "0"
+      expect(service.models(Model.all).count).to eq 4
     end
 
     it "treats library/creator/collection 'all' as no filter" do
