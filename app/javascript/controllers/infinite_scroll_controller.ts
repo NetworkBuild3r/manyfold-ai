@@ -2,7 +2,7 @@ import { Controller } from '@hotwired/stimulus'
 import { renderStreamMessage } from '@hotwired/turbo'
 
 const FILL_BUFFER_PX = 600
-const PREFETCH_ROOT_MARGIN = '1400px 0px'
+const PREFETCH_ROOT_MARGIN = '500px 0px'
 const SCROLL_FALLBACK_PX = 1000
 const MAX_FILL_PAGES = 20
 const SCROLL_RESTORE_KEY_PREFIX = 'scroll_models_'
@@ -19,7 +19,8 @@ const SPACER_ID = 'models-scroll-spacer'
  *
  * Browser URL stays a single infinite browse (no ?page=N). Scroll position is
  * restored via sessionStorage on back navigation. While a page loads we reserve
- * height and pin the first visible card so the viewport does not jump.
+ * height below the fold; content is appended only after the spacer is removed
+ * so spacer and cards never stack (no scroll pin — that fought in-flight scrolling).
  */
 export default class extends Controller {
   static targets = ['sentinel', 'status', 'backToTop', 'grid']
@@ -190,7 +191,6 @@ export default class extends Controller {
     this.abortInFlight()
     this.abortController = new AbortController()
 
-    const pin = this.captureScrollPin()
     this.insertLoadingSpacer()
 
     try {
@@ -238,10 +238,10 @@ export default class extends Controller {
 
       this.lastLoadedUrl = url
       this.transientFailures = 0
-      renderStreamMessage(html)
+      // Drop spacer before insert so reservation and cards never stack in one layout.
       this.removeSpacer()
+      renderStreamMessage(html)
       this.dedupeModelCards()
-      this.restoreScrollPin(pin)
 
       // After streams: sentinel replaced — read next URL from new node
       this.syncNextUrlFromSentinel()
@@ -269,28 +269,6 @@ export default class extends Controller {
       this.loading = false
       this.gridEl().classList.remove('is-loading-more')
       this.abortController = null
-    }
-  }
-
-  /** First visible card + its viewport Y — used to correct jump after DOM insert. */
-  private captureScrollPin (): { id: string, top: number } | null {
-    const cards = this.gridEl().querySelectorAll<HTMLElement>('.model-card[id]')
-    for (const card of Array.from(cards)) {
-      const rect = card.getBoundingClientRect()
-      if (rect.bottom > 80) {
-        return { id: card.id, top: rect.top }
-      }
-    }
-    return null
-  }
-
-  private restoreScrollPin (pin: { id: string, top: number } | null): void {
-    if (pin == null) return
-    const el = document.getElementById(pin.id)
-    if (el == null) return
-    const delta = el.getBoundingClientRect().top - pin.top
-    if (Math.abs(delta) > 1) {
-      window.scrollBy(0, delta)
     }
   }
 
