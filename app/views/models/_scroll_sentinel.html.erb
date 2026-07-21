@@ -1,22 +1,5 @@
-<%# Shared infinite-scroll sentinel for models grid (initial HTML + turbo-stream replace). %>
-<%
-  next_url = local_assigns.fetch(:next_url, "")
-  has_more = next_url.present?
-  loading_label = local_assigns.fetch(:loading_label, t("models.list.loading_more"))
-%>
-<% if has_more %>
-  <div id="models-scroll-sentinel"
-       class="models-scroll-sentinel col-span-full"
-       data-infinite-scroll-target="sentinel"
-       data-next-url="<%= next_url %>"
-       data-has-more="true"
-       aria-hidden="true">
-    <span class="models-scroll-sentinel__label"><%= loading_label %></span>
-  </div>
-<% else %>
-  <div id="models-scroll-sentinel"
-       class="models-scroll-sentinel models-scroll-sentinel--end col-span-full"
-       data-has-more="false"
-       hidden
-       aria-hidden="true"></div>
-<% end %>
+<%# Thin wrapper — prefer application/browse_scroll_sentinel directly. %>
+<%= render "application/browse_scroll_sentinel",
+      sentinel_id: local_assigns.fetch(:sentinel_id, "models-scroll-sentinel"),
+      next_url: local_assigns.fetch(:next_url, ""),
+      loading_label: local_assigns.fetch(:loading_label, t("models.list.loading_more")) %>

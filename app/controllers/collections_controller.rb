@@ -3,6 +3,7 @@ class CollectionsController < ApplicationController
   include TagListable
   include Permittable
   include ModelListable
+  include BrowseListable
   include LinkableController
   include Sortable
 
@@ -23,20 +24,19 @@ class CollectionsController < ApplicationController
     @tags, @kv_tags = split_key_value_tags(@tags)
     @unrelated_tag_count = nil unless @filter.any?
 
-    # Ordering
     @collections = apply_sort_order(@collections)
+    @collections = prepare_browse_page(@collections)
+    @collections = @collections.includes :collections, :collection, :links, :creator
 
-    page = params[:page] || 1
-    @collections = @collections.page(page).per(helpers.pagination_settings["per_page"])
-    # Eager load
-    @collections = @collections.includes :collections, :collection, :links
-    # Apply tag filters in-place
+    ids = @collections.map(&:id)
+    @model_counts = ids.empty? ? {} : policy_scope(Model).where(collection_id: ids).group(:collection_id).count
+    @subcollection_counts = ids.empty? ? {} : policy_scope(Collection).where(collection_id: ids).group(:collection_id).count
+
     @filter_in_place = true
-
-    # Count unassiged models
     @unassigned_count = policy_scope(Model).where(collection: nil).count
     set_indexable @collections
     respond_to do |format|
+      format.turbo_stream { render "collections/page" }
       format.html { render layout: "card_list_page" }
       format.manyfold_api_v0 { render json: ManyfoldApi::V0::CollectionListSerializer.new(@collections).serialize }
     end

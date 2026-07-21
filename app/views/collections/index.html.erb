@@ -2,6 +2,28 @@
   <%= PageTitle title: Collection.model_name.human(count: 100), heading: false %>
 <% end %>
 
+<% content_for :browse_chrome do %>
+  <div class="flex flex-col gap-2.5 max-w-screen-2xl mx-auto">
+    <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+      <button type="button"
+              class="lg:hidden inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg border border-secondary-300 dark:border-secondary-600 bg-surface dark:bg-secondary-900 text-secondary-900 dark:text-secondary-100 hover:border-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500"
+              data-action="click->filter-drawer#open"
+              aria-controls="sidebar"
+              aria-expanded="false">
+        <%= Icon icon: "funnel", label: "" %>
+        <span><%= t("layouts.card_list_page.filters_heading", default: "Filters") %></span>
+        <% if @filter&.any? %>
+          <span class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full bg-primary-600 text-white text-xs font-semibold"><%= active_filters_list(@filter).size %></span>
+        <% end %>
+      </button>
+      <div class="flex items-center gap-2 ml-auto">
+        <%= SortMenu(filter: @filter) %>
+      </div>
+    </div>
+    <%= render "application/active_filter_pills", filter: @filter, clear_path: collections_path, clear_label: t(".clear_filters") if @filter&.any? %>
+  </div>
+<% end %>
+
 <% content_for :items do %>
   <% if @collections.empty? && (@unassigned_count || 0) == 0 %>
     <%= render "application/empty_state", message: t(".no_results_html"), icon: "collection" do %>
@@ -11,27 +33,53 @@
     <% end %>
   <% else %>
     <div class="skip-link-container">
-      <div class="flex flex-wrap items-center gap-2 mb-4">
-        <%= skip_link "sidebar", t(".skip_collections") %>
-        <div class="ml-auto">
-          <%= SortMenu(filter: @filter) %>
+      <%= skip_link "sidebar", t(".skip_collections") %>
+      <% cols = @browse_columns || browse_grid_columns %>
+      <% per_page = @browse_per_page || browse_grid_page_size %>
+      <% next_url = @collections.next_page ? collections_page_url(@collections.next_page, @filter, per_page: per_page) : "" %>
+      <% show_unassigned = @unassigned_count.to_i > 0 && @collections.first_page? && !(@filter&.filtering_by?(:collection) || @filter&.filtering_by?(:creator)) %>
+      <div data-controller="infinite-scroll"
+           data-infinite-scroll-next-url-value="<%= next_url %>"
+           data-infinite-scroll-per-page-value="<%= per_page %>"
+           data-infinite-scroll-sentinel-id-value="collections-scroll-sentinel"
+           data-infinite-scroll-card-selector-value=".collection-card"
+           data-infinite-scroll-storage-key-prefix-value="scroll_collections_"
+           data-infinite-scroll-end-message-value="<%= t(".end_of_results") %>"
+           class="library-infinite">
+        <div class="browse-card-grid grid grid-cols-2 gap-3 sm:gap-3.5 mb-2 items-start"
+             id="collection-card-grid"
+             style="--browse-cols: <%= cols %>"
+             role="list"
+             aria-label="<%= Collection.model_name.human(count: 100) %>"
+             data-browse-columns="<%= cols %>"
+             data-infinite-scroll-target="grid">
+          <%= render "unassigned" if show_unassigned %>
+          <%= render @collections %>
+          <%= render "application/browse_scroll_sentinel",
+                sentinel_id: "collections-scroll-sentinel",
+                next_url: next_url,
+                loading_label: t(".loading_more") %>
         </div>
-      </div>
-      <% if @filter&.any? %>
-        <div class="flex flex-wrap gap-2 mb-4" role="group" aria-label="Active filters">
-          <% active_filters_list(@filter).each do |entry| %>
-            <span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-secondary-200 dark:bg-secondary-600 text-secondary-800 dark:text-secondary-100 text-sm">
-              <span class="truncate max-w-[200px]"><%= entry[:pill_label] %></span>
-              <%= link_to "×", entry[:remove_url], class: "flex-shrink-0 rounded-full p-0.5 hover:bg-secondary-300 dark:hover:bg-secondary-500 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none", aria: {label: entry[:aria_remove]} %>
-            </span>
-          <% end %>
+        <div class="library-infinite__end py-10 text-center">
+          <p id="collections-scroll-status"
+             class="browse-scroll-status"
+             data-infinite-scroll-target="status"
+             role="status"
+             aria-live="polite"
+             hidden></p>
+          <p class="mt-2 text-sm text-secondary-500 dark:text-secondary-400 library-infinite__hint">
+            <%= t(".scroll_hint") %>
+          </p>
         </div>
-      <% end %>
-      <div class="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4 mb-4" role="list" aria-label="Collections">
-        <%= render "unassigned" if @unassigned_count > 0 && @collections.first_page? && !(@filter&.filtering_by?(:collection) || @filter&.filtering_by?(:creator)) %>
-        <%= render @collections %>
+        <button type="button"
+                class="models-back-to-top"
+                data-infinite-scroll-target="backToTop"
+                hidden
+                aria-label="<%= t(".back_to_top") %>">
+          <i class="bi bi-arrow-up" aria-hidden="true"></i>
+          <span><%= t(".back_to_top") %></span>
+        </button>
       </div>
-      <%= paginate @collections %>
     </div>
   <% end %>
 <% end %>

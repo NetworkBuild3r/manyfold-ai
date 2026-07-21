@@ -8,6 +8,10 @@ const MAX_FILL_PAGES = 20
 const MAX_TRANSIENT_RETRIES = 3
 const RETRY_BASE_MS = 400
 const BACK_TO_TOP_SHOW_PX = 800
+const DEFAULT_GAP_PX = 14
+const DEFAULT_ROW_HEIGHT_PX = 320
+
+type BufferedCard = { id: string, html: string }
 
 /**
  * Infinite scroll for a card grid via Turbo Streams.
@@ -15,8 +19,8 @@ const BACK_TO_TOP_SHOW_PX = 800
  * GET next page with Accept: text/vnd.turbo-stream.html
  * Server inserts cards before the sentinel and replaces the sentinel.
  *
- * Page size and columns are owned by BrowseGrid on the server; this controller
- * only loads nextUrl from the sentinel. Address bar stays filter/sort only (no ?page=).
+ * When virtualize=true (models), only a viewport+overscan window stays in the DOM;
+ * loaded cards live in a logical buffer. Near the buffer end, next-page fetch continues.
  */
 export default class extends Controller {
   static targets = ['sentinel', 'status', 'backToTop', 'grid']
@@ -25,7 +29,9 @@ export default class extends Controller {
     perPage: { type: Number, default: 24 },
     sentinelId: { type: String, default: 'models-scroll-sentinel' },
     cardSelector: { type: String, default: '.model-card' },
-    storageKeyPrefix: { type: String, default: 'scroll_models_' }
+    storageKeyPrefix: { type: String, default: 'scroll_models_' },
+    virtualize: { type: Boolean, default: false },
+    overscanRows: { type: Number, default: 4 }
   }
 
   declare nextUrlValue: string
@@ -33,6 +39,8 @@ export default class extends Controller {
   declare sentinelIdValue: string
   declare cardSelectorValue: string
   declare storageKeyPrefixValue: string
+  declare virtualizeValue: boolean
+  declare overscanRowsValue: number
   declare sentinelTarget: HTMLElement
   declare hasSentinelTarget: boolean
   declare statusTarget: HTMLElement
@@ -54,6 +62,14 @@ export default class extends Controller {
   private transientFailures = 0
   private restoredScroll = false
 
+  private cardBuffer: BufferedCard[] = []
+  private bufferIds = new Set<string>()
+  private cols = 3
+  private rowHeight = DEFAULT_ROW_HEIGHT_PX
+  private gapPx = DEFAULT_GAP_PX
+  private metricsReady = false
+  private virtualWindowStart = 0
+
   connect (): void {
     this.boundOnScroll = this.onScroll.bind(this)
     this.boundOnBeforeVisit = this.onBeforeVisit.bind(this)
@@ -66,6 +82,11 @@ export default class extends Controller {
 
     this.stripPageFromUrl()
     this.syncNextUrlFromSentinel()
+    if (this.virtualizeValue) {
+      this.seedBufferFromDom()
+      this.ensureMetrics()
+      this.applyVirtualWindow()
+    }
     this.setupObserver()
     this.updateStatus('')
     this.updateBackToTop()
@@ -169,6 +190,12 @@ export default class extends Controller {
   }
 
   private viewportSatisfied (): boolean {
+    if (this.virtualizeValue && this.cardBuffer.length > 0) {
+      const totalRows = Math.ceil(this.cardBuffer.length / Math.max(1, this.cols))
+      const logicalHeight = totalRows * this.rowHeight
+      const gridTop = this.gridEl().getBoundingClientRect().top + window.scrollY
+      return gridTop + logicalHeight > window.scrollY + window.innerHeight + FILL_BUFFER_PX
+    }
     const bottom = this.gridEl().getBoundingClientRect().bottom
     return bottom > window.innerHeight + FILL_BUFFER_PX
   }
@@ -233,7 +260,14 @@ export default class extends Controller {
       this.lastLoadedUrl = url
       this.transientFailures = 0
       renderStreamMessage(html)
-      this.dedupeCards()
+
+      if (this.virtualizeValue) {
+        this.harvestCardsFromDom()
+        this.ensureMetrics()
+        this.applyVirtualWindow()
+      } else {
+        this.dedupeCards()
+      }
 
       this.syncNextUrlFromSentinel()
       this.setupObserver()
@@ -273,6 +307,120 @@ export default class extends Controller {
     })
   }
 
+  private seedBufferFromDom (): void {
+    this.cardBuffer = []
+    this.bufferIds.clear()
+    this.harvestCardsFromDom()
+  }
+
+  private harvestCardsFromDom (): void {
+    const selector = this.cardSelectorValue || '.model-card'
+    const cards = Array.from(
+      this.gridEl().querySelectorAll<HTMLElement>(`${selector}[id]`)
+    )
+    cards.forEach((card) => {
+      if (!this.bufferIds.has(card.id)) {
+        this.cardBuffer.push({ id: card.id, html: card.outerHTML })
+        this.bufferIds.add(card.id)
+      }
+      card.remove()
+    })
+  }
+
+  private ensureMetrics (): void {
+    const grid = this.gridEl()
+    const fromData = parseInt(grid.dataset.browseColumns || '', 10)
+    if (Number.isFinite(fromData) && fromData > 0) {
+      this.cols = fromData
+    } else {
+      const styleCols = getComputedStyle(grid).getPropertyValue('--browse-cols').trim()
+      const parsed = parseInt(styleCols, 10)
+      if (Number.isFinite(parsed) && parsed > 0) this.cols = parsed
+    }
+
+    const gapRaw = getComputedStyle(grid).rowGap || getComputedStyle(grid).gap
+    const gapParsed = parseFloat(gapRaw)
+    if (Number.isFinite(gapParsed) && gapParsed > 0) this.gapPx = gapParsed
+
+    // Measure from a temporary sample if buffer has HTML; else keep default.
+    if (this.cardBuffer.length > 0 && !this.metricsReady) {
+      const probe = document.createElement('div')
+      probe.style.cssText = 'position:absolute;visibility:hidden;pointer-events:none;width:100%'
+      probe.innerHTML = this.cardBuffer[0].html
+      grid.appendChild(probe)
+      const sample = probe.firstElementChild as HTMLElement | null
+      if (sample != null) {
+        const h = sample.getBoundingClientRect().height
+        if (h > 40) {
+          this.rowHeight = h + this.gapPx
+          this.metricsReady = true
+        }
+      }
+      probe.remove()
+    }
+
+    // Prefer live card if window already rendered.
+    const live = grid.querySelector<HTMLElement>(this.cardSelectorValue)
+    if (live != null) {
+      const h = live.getBoundingClientRect().height
+      if (h > 40) {
+        this.rowHeight = h + this.gapPx
+        this.metricsReady = true
+      }
+    }
+  }
+
+  private applyVirtualWindow (): void {
+    if (!this.virtualizeValue) return
+    const grid = this.gridEl()
+    const sentinel = this.sentinelEl()
+    if (sentinel == null) return
+
+    this.ensureMetrics()
+    const cols = Math.max(1, this.cols)
+    const total = this.cardBuffer.length
+    const totalRows = Math.ceil(total / cols)
+    const rowH = this.rowHeight
+
+    const gridRect = grid.getBoundingClientRect()
+    const gridTopDoc = gridRect.top + window.scrollY
+    const viewTop = Math.max(0, window.scrollY - gridTopDoc)
+    const viewBottom = viewTop + window.innerHeight
+
+    const startRow = Math.max(0, Math.floor(viewTop / rowH) - this.overscanRowsValue)
+    const endRow = Math.min(totalRows, Math.ceil(viewBottom / rowH) + this.overscanRowsValue)
+    const startIdx = startRow * cols
+    const endIdx = Math.min(total, endRow * cols)
+    this.virtualWindowStart = startIdx
+
+    // Remove current window cards + spacers (keep sentinel + unassigned tiles).
+    grid.querySelectorAll<HTMLElement>(`${this.cardSelectorValue}[id]`).forEach((el) => el.remove())
+    grid.querySelectorAll('.browse-virtual-top-spacer, .browse-virtual-bottom-spacer').forEach((el) => el.remove())
+
+    const topSpacer = document.createElement('div')
+    topSpacer.className = 'browse-virtual-top-spacer'
+    topSpacer.setAttribute('aria-hidden', 'true')
+    topSpacer.style.height = `${startRow * rowH}px`
+
+    const bottomRows = Math.max(0, totalRows - endRow)
+    const bottomSpacer = document.createElement('div')
+    bottomSpacer.className = 'browse-virtual-bottom-spacer'
+    bottomSpacer.setAttribute('aria-hidden', 'true')
+    bottomSpacer.style.cssText = `grid-column:1/-1;width:100%;pointer-events:none;overflow-anchor:none;height:${bottomRows * rowH}px`
+
+    const frag = document.createDocumentFragment()
+    frag.appendChild(topSpacer)
+    for (let i = startIdx; i < endIdx; i++) {
+      const wrap = document.createElement('div')
+      wrap.innerHTML = this.cardBuffer[i].html
+      const node = wrap.firstElementChild
+      if (node != null) frag.appendChild(node)
+    }
+    frag.appendChild(bottomSpacer)
+
+    grid.insertBefore(frag, sentinel)
+  }
+
   private delay (ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms))
   }
@@ -283,7 +431,16 @@ export default class extends Controller {
       requestAnimationFrame(() => {
         this.scrollTicking = false
         this.updateBackToTop()
-        if (this.nearBottom()) {
+        if (this.virtualizeValue) {
+          this.applyVirtualWindow()
+          // Prefetch when the virtual window approaches the end of the buffer.
+          const cols = Math.max(1, this.cols)
+          const nearBufferEnd =
+            this.virtualWindowStart + cols * (this.overscanRowsValue + 6) >= this.cardBuffer.length
+          if (nearBufferEnd || this.nearBottom()) {
+            void this.loadMore()
+          }
+        } else if (this.nearBottom()) {
           void this.loadMore()
         }
       })
@@ -343,6 +500,7 @@ export default class extends Controller {
     if (!Number.isFinite(y) || y < 1) return
     requestAnimationFrame(() => {
       window.scrollTo(0, y)
+      if (this.virtualizeValue) this.applyVirtualWindow()
       this.updateBackToTop()
     })
   }

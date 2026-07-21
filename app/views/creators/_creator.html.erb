@@ -1,63 +1,71 @@
-<div class="mb-4">
-  <div class="rounded-xl border border-secondary-200 dark:border-secondary-600 bg-surface dark:bg-surface-dark overflow-hidden shadow-sm">
-    <% if creator.remote? %>
-      <div class="px-3 py-2 bg-secondary-200 dark:bg-secondary-700 border-b border-secondary-200 dark:border-secondary-600">
-        <%= server_indicator creator %>
-      </div>
-    <% end %>
-    <div class="p-4 <%= "opacity-90" if creator.remote? %>">
-      <div class="flex flex-wrap items-start gap-3">
-        <% if creator.avatar %>
-          <div class="flex-shrink-0">
-            <%= Avatar(url: avatar_creator_path(creator), size: :large) %>
-          </div>
-        <% end %>
-        <div class="min-w-0 flex-1">
-          <div class="font-medium text-secondary-900 dark:text-secondary-100">
-            <%= creator.name %>
-            <%= AccessIndicator object: creator %>
-          </div>
-          <% if creator.caption %>
-            <div class="mt-1">
-              <span class="text-sm text-secondary-600 dark:text-secondary-400"><%= sanitize creator.caption %></span>
-            </div>
-          <% end %>
-          <%= LinkList links: creator.links %>
-        </div>
-      </div>
+<%# Uniform-height creator card for BrowseGrid / infinite scroll. %>
+<%
+  model_count = (@model_counts || {})[creator.id] || 0
+  collection_count = (@collection_counts || {})[creator.id] || 0
+  has_collections = collection_count > 0
+%>
+<div id="<%= dom_id(creator) %>"
+     class="creator-card relative flex flex-col rounded-xl overflow-hidden bg-surface dark:bg-surface-dark border border-secondary-200 dark:border-secondary-600 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-[box-shadow,transform] duration-200 <%= "opacity-90" if creator.remote? %>"
+     role="listitem">
+  <% if creator.remote? %>
+    <div class="absolute inset-x-0 top-0 z-10 px-3 py-1.5 bg-secondary-200/90 dark:bg-secondary-700/90 text-secondary-800 dark:text-secondary-200 text-sm">
+      <%= server_indicator creator %>
     </div>
-    <div class="flex flex-wrap items-center gap-2 px-4 py-3 border-t border-secondary-200 dark:border-secondary-600">
-      <div class="flex flex-wrap items-center gap-2 min-w-0">
-        <% model_count = policy_scope(Model).where(creator: creator).count %>
-        <% collection_count = policy_scope(Collection).where(creator: creator).count %>
-        <%= if policy(creator).show?
-              GoButton(
-                label: "#{model_count} #{Model.model_name.human count: model_count}",
-                aria_label: creator.remote? ?
-                  translate(".models_button.remote_label", name: creator.name) :
-                  translate(".models_button.label", name: creator.name),
-                href: creator_path(creator),
-                variant: "primary"
-              )
-            end %>
-        <%= if policy(creator).show? && !creator.collections.empty?
-              GoButton(
-                label: "#{collection_count} #{Collection.model_name.human count: collection_count}",
-                aria_label: creator.remote? ?
-                  translate(".collections_button.remote_label", name: creator.name) :
-                  translate(".collections_button.label", name: creator.name),
-                href: collections_path(creator: creator),
-                variant: "primary"
-              )
-            end %>
+  <% end %>
+  <div class="aspect-[4/3] bg-secondary-100 dark:bg-secondary-800 relative flex items-center justify-center overflow-hidden">
+    <% if creator.banner.present? %>
+      <img src="<%= banner_creator_path(creator) %>" alt="" class="absolute inset-0 w-full h-full object-cover opacity-35" loading="lazy" decoding="async" />
+    <% end %>
+    <% if creator.avatar.present? %>
+      <div class="relative z-[1]">
+        <%= Avatar(url: avatar_creator_path(creator), size: :large) %>
       </div>
-      <div class="ml-auto">
-        <%= BurgerMenu do %>
-          <%= DropdownItem(icon: "pencil", label: translate("general.edit"), path: edit_creator_path(creator), aria_label: translate(".edit_button.label", name: creator.name)) if policy(creator).edit? %>
-          <%= DropdownItem(icon: "trash", label: translate("general.delete"), path: creator_path(creator), method: :delete, aria_label: translate(".delete_button.label", name: creator.name), confirm: t("creators.destroy.confirm")) if policy(creator).destroy? %>
-          <%= DropdownItem(icon: "flag", label: translate("general.report", type: ""), path: new_creator_report_path(creator)) if SiteSettings.multiuser_enabled? %>
-        <% end %>
-      </div>
+    <% else %>
+      <span class="relative z-[1] text-secondary-400 dark:text-secondary-500 text-4xl" aria-hidden="true">
+        <%= Icon icon: "people", label: "" %>
+      </span>
+    <% end %>
+  </div>
+  <div class="p-3 flex flex-col gap-1 grow">
+    <div class="font-semibold text-secondary-900 dark:text-secondary-100 leading-snug line-clamp-2 min-h-[2.75rem]">
+      <%= creator.name %>
+      <%= AccessIndicator object: creator %>
+    </div>
+    <div class="text-sm text-secondary-600 dark:text-secondary-400 line-clamp-2 min-h-[2.5rem]">
+      <% if creator.caption.present? %>
+        <%= sanitize creator.caption %>
+      <% end %>
+    </div>
+  </div>
+  <div class="flex flex-wrap items-center gap-2 px-3 py-2.5 border-t border-secondary-200 dark:border-secondary-600 min-h-[3.25rem]">
+    <div class="flex flex-wrap items-center gap-2 min-w-0">
+      <%= if policy(creator).show?
+            GoButton(
+              label: "#{model_count} #{Model.model_name.human count: model_count}",
+              aria_label: creator.remote? ?
+                translate(".models_button.remote_label", name: creator.name) :
+                translate(".models_button.label", name: creator.name),
+              href: creator_path(creator),
+              variant: "primary"
+            )
+          end %>
+      <%= if policy(creator).show? && has_collections
+            GoButton(
+              label: "#{collection_count} #{Collection.model_name.human count: collection_count}",
+              aria_label: creator.remote? ?
+                translate(".collections_button.remote_label", name: creator.name) :
+                translate(".collections_button.label", name: creator.name),
+              href: collections_path(creator: creator),
+              variant: "primary"
+            )
+          end %>
+    </div>
+    <div class="ml-auto">
+      <%= BurgerMenu do %>
+        <%= DropdownItem(icon: "pencil", label: translate("general.edit"), path: edit_creator_path(creator), aria_label: translate(".edit_button.label", name: creator.name)) if policy(creator).edit? %>
+        <%= DropdownItem(icon: "trash", label: translate("general.delete"), path: creator_path(creator), method: :delete, aria_label: translate(".delete_button.label", name: creator.name), confirm: t("creators.destroy.confirm")) if policy(creator).destroy? %>
+        <%= DropdownItem(icon: "flag", label: translate("general.report", type: ""), path: new_creator_report_path(creator)) if SiteSettings.multiuser_enabled? %>
+      <% end %>
     </div>
   </div>
 </div>

@@ -233,30 +233,31 @@ dialog.modal::backdrop {
   background-color: white;
 }
 
-# ——— Infinite scroll: cards are direct grid children; sentinel spans full row ——— */
+# ——— Browse card grids (models / creators / collections infinite scroll) ——— */
 
 /*
  * items-start: when page N+1 fills an incomplete last row, do NOT stretch existing
- * cards to the new tallest neighbor — that reflow is what feels like "tiles jumping".
- * BrowseGrid keeps per_page a multiple of columns so mid-browse rows stay full.
+ * cards to the new tallest neighbor. BrowseGrid keeps per_page a multiple of columns.
  */
-#model-card-grid {
+.browse-card-grid {
   align-items: start;
 }
 
 /* sm+: columns from --browse-cols (pagination_settings.grid_columns via BrowseGrid) */
 @media (min-width: 640px) {
-  #model-card-grid {
+  .browse-card-grid {
     grid-template-columns: repeat(var(--browse-cols, 3), minmax(0, 1fr));
   }
 }
 
-#model-card-grid .model-card {
+.browse-card-grid .model-card,
+.browse-card-grid .collection-card,
+.browse-card-grid .creator-card {
   width: 100%;
   overflow-anchor: none;
 }
 
-#model-card-grid .models-scroll-sentinel {
+.browse-card-grid .browse-scroll-sentinel {
   grid-column: 1 / -1;
   min-height: 2.5rem;
   width: 100%;
@@ -267,32 +268,32 @@ dialog.modal::backdrop {
   overflow-anchor: none;
 }
 
-#model-card-grid .models-scroll-sentinel[hidden] {
+.browse-card-grid .browse-scroll-sentinel[hidden] {
   display: none !important;
 }
 
 /* Preview media must never push card height when the image loads. */
-#model-card-grid .model-card .aspect-\[4\/3\] {
+.browse-card-grid .aspect-\[4\/3\] {
   aspect-ratio: 4 / 3;
   overflow: hidden;
 }
-#model-card-grid .model-card img {
+.browse-card-grid img {
   max-width: none;
 }
 
 /* Label only visible while a page fetch is in flight */
-#model-card-grid .models-scroll-sentinel__label {
+.browse-card-grid .browse-scroll-sentinel__label {
   font-size: 0.75rem;
   color: var(--color-secondary-500);
   opacity: 0;
   transition: opacity 0.15s ease;
 }
 
-#model-card-grid.is-loading-more .models-scroll-sentinel__label {
+.browse-card-grid.is-loading-more .browse-scroll-sentinel__label {
   opacity: 1;
 }
 
-#model-card-grid.is-loading-more .models-scroll-sentinel__label::before {
+.browse-card-grid.is-loading-more .browse-scroll-sentinel__label::before {
   content: "";
   display: inline-block;
   width: 1rem;
@@ -302,15 +303,15 @@ dialog.modal::backdrop {
   border: 2px solid var(--color-secondary-300);
   border-top-color: var(--color-primary-500);
   border-radius: 50%;
-  animation: model-grid-spin 0.8s linear infinite;
+  animation: browse-grid-spin 0.8s linear infinite;
 }
 
-@keyframes model-grid-spin {
+@keyframes browse-grid-spin {
   to { transform: rotate(360deg); }
 }
 
 /* Screen-reader / polite live region under the grid */
-.models-scroll-status {
+.browse-scroll-status {
   margin: 0.25rem 0 0.5rem;
   text-align: center;
   font-size: 0.875rem;
@@ -318,7 +319,7 @@ dialog.modal::backdrop {
   min-height: 1.25rem;
 }
 
-.models-scroll-status[hidden] {
+.browse-scroll-status[hidden] {
   display: none !important;
 }
 
@@ -338,6 +339,15 @@ dialog.modal::backdrop {
 
 .library-browse-page .library-infinite.is-exhausted .library-infinite__hint {
   display: none;
+}
+
+/* Top/bottom spacers for virtualized browse window (Phase 3) */
+.browse-card-grid .browse-virtual-top-spacer,
+.browse-card-grid .browse-virtual-bottom-spacer {
+  grid-column: 1 / -1;
+  width: 100%;
+  pointer-events: none;
+  overflow-anchor: none;
 }
 
 /* Browse preview lightbox */

@@ -1,11 +1,15 @@
-<div class="mb-4">
-  <div class="rounded-xl border border-warning-400 dark:border-warning-500 bg-surface dark:bg-surface-dark overflow-hidden shadow-sm">
-    <div class="p-4">
-      <div class="font-medium text-secondary-900 dark:text-secondary-100"><%= t(".name") %></div>
-      <span class="block mt-2 text-sm text-secondary-600 dark:text-secondary-400"><%= t(".caption") %></span>
-    </div>
-    <div class="px-4 py-3 border-t border-secondary-200 dark:border-secondary-600">
-      <%= link_to "#{@unassigned_count} #{Model.model_name.human count: @unassigned_count}", models_path(creator: ""), class: "inline-flex items-center px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500" %>
-    </div>
+<%# Unassigned creators tile — first page only; grid child (not .creator-card). %>
+<div class="browse-unassigned-card relative flex flex-col rounded-xl overflow-hidden bg-surface dark:bg-surface-dark border border-warning-400 dark:border-warning-500 shadow-sm" role="listitem">
+  <div class="aspect-[4/3] bg-secondary-100 dark:bg-secondary-800 flex items-center justify-center">
+    <span class="text-secondary-400 dark:text-secondary-500 text-4xl" aria-hidden="true">
+      <%= Icon icon: "people", label: "" %>
+    </span>
+  </div>
+  <div class="p-3 flex flex-col gap-1 grow">
+    <div class="font-semibold text-secondary-900 dark:text-secondary-100 leading-snug line-clamp-2 min-h-[2.75rem]"><%= t(".name") %></div>
+    <div class="text-sm text-secondary-600 dark:text-secondary-400 line-clamp-2 min-h-[2.5rem]"><%= t(".caption") %></div>
+  </div>
+  <div class="px-3 py-2.5 border-t border-secondary-200 dark:border-secondary-600 min-h-[3.25rem] flex items-center">
+    <%= link_to "#{@unassigned_count} #{Model.model_name.human count: @unassigned_count}", models_path(creator: ""), class: "inline-flex items-center px-3 py-1.5 rounded-lg bg-primary-600 text-white text-sm hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 no-underline" %>
   </div>
 </div>

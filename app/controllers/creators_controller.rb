@@ -1,5 +1,6 @@
 class CreatorsController < ApplicationController
   include ModelListable
+  include BrowseListable
   include Permittable
   include LinkableController
 
@@ -18,21 +19,20 @@ class CreatorsController < ApplicationController
     @tags, @kv_tags = split_key_value_tags(@tags)
     @unrelated_tag_count = nil unless @filter.any?
 
-    # Ordering
     @creators = apply_sort_order(@creators)
-
-    page = params[:page] || 1
-    @creators = @creators.page(page).per(helpers.pagination_settings["per_page"])
-    # Eager load data
+    @creators = prepare_browse_page(@creators)
     @creators = @creators.includes(:links, :collections)
-    # Apply tag filters in-place
-    @filter_in_place = true
 
-    # Count unassiged models
+    ids = @creators.map(&:id)
+    @model_counts = ids.empty? ? {} : policy_scope(Model).where(creator_id: ids).group(:creator_id).count
+    @collection_counts = ids.empty? ? {} : policy_scope(Collection).where(creator_id: ids).group(:creator_id).count
+
+    @filter_in_place = true
     @unassigned_count = policy_scope(Model).where(creator: nil).count
     set_indexable @creators
 
     respond_to do |format|
+      format.turbo_stream { render "creators/page" }
       format.html { render layout: "card_list_page" }
       format.manyfold_api_v0 { render json: ManyfoldApi::V0::CreatorListSerializer.new(@creators).serialize }
     end
