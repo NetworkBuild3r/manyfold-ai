@@ -9,15 +9,17 @@ const SCROLL_RESTORE_KEY_PREFIX = 'scroll_models_'
 const MAX_TRANSIENT_RETRIES = 3
 const RETRY_BASE_MS = 400
 const BACK_TO_TOP_SHOW_PX = 800
+const SPACER_ID = 'models-scroll-spacer'
 
 /**
  * Real infinite scroll for the models grid via Turbo Streams.
  *
  * GET next page with Accept: text/vnd.turbo-stream.html
- * Server inserts cards before #models-scroll-sentinel and replaces the sentinel.
+ * Server inserts a row page-break + cards before #models-scroll-sentinel.
  *
  * Browser URL stays a single infinite browse (no ?page=N). Scroll position is
- * restored via sessionStorage on back navigation.
+ * restored via sessionStorage on back navigation. While a page loads we reserve
+ * height and pin the first visible card so the viewport does not jump.
  */
 export default class extends Controller {
   static targets = ['sentinel', 'status', 'backToTop', 'grid']
@@ -76,6 +78,7 @@ export default class extends Controller {
     this.observer?.disconnect()
     this.observer = null
     this.abortInFlight()
+    this.removeSpacer()
   }
 
   /** Turbo replace may recreate the sentinel — re-observe after each load. */
@@ -187,6 +190,9 @@ export default class extends Controller {
     this.abortInFlight()
     this.abortController = new AbortController()
 
+    const pin = this.captureScrollPin()
+    this.insertLoadingSpacer()
+
     try {
       const response = await fetch(url, {
         headers: {
@@ -199,6 +205,7 @@ export default class extends Controller {
 
       if (!response.ok) {
         console.warn('[infinite-scroll] HTTP', response.status, url)
+        this.removeSpacer()
         if (response.status === 401 || response.status === 403 || response.status === 404) {
           this.exhausted = true
           this.nextUrlValue = ''
@@ -221,6 +228,7 @@ export default class extends Controller {
 
       if (!contentType.includes('turbo-stream') && !html.includes('<turbo-stream')) {
         console.warn('[infinite-scroll] expected turbo-stream, got', contentType.slice(0, 80))
+        this.removeSpacer()
         // Full HTML (e.g. login) — stop rather than loop
         this.exhausted = true
         this.nextUrlValue = ''
@@ -231,7 +239,9 @@ export default class extends Controller {
       this.lastLoadedUrl = url
       this.transientFailures = 0
       renderStreamMessage(html)
+      this.removeSpacer()
       this.dedupeModelCards()
+      this.restoreScrollPin(pin)
 
       // After streams: sentinel replaced — read next URL from new node
       this.syncNextUrlFromSentinel()
@@ -249,6 +259,7 @@ export default class extends Controller {
 
       return true
     } catch (e) {
+      this.removeSpacer()
       if ((e as Error)?.name === 'AbortError') return false
       console.warn('[infinite-scroll] load error', e)
       this.transientFailures += 1
@@ -259,6 +270,63 @@ export default class extends Controller {
       this.gridEl().classList.remove('is-loading-more')
       this.abortController = null
     }
+  }
+
+  /** First visible card + its viewport Y — used to correct jump after DOM insert. */
+  private captureScrollPin (): { id: string, top: number } | null {
+    const cards = this.gridEl().querySelectorAll<HTMLElement>('.model-card[id]')
+    for (const card of Array.from(cards)) {
+      const rect = card.getBoundingClientRect()
+      if (rect.bottom > 80) {
+        return { id: card.id, top: rect.top }
+      }
+    }
+    return null
+  }
+
+  private restoreScrollPin (pin: { id: string, top: number } | null): void {
+    if (pin == null) return
+    const el = document.getElementById(pin.id)
+    if (el == null) return
+    const delta = el.getBoundingClientRect().top - pin.top
+    if (Math.abs(delta) > 1) {
+      window.scrollBy(0, delta)
+    }
+  }
+
+  private columnCount (): number {
+    const raw = getComputedStyle(this.gridEl()).gridTemplateColumns
+    if (!raw || raw === 'none') return 1
+    const cols = raw.split(/\s+/).filter((p) => p.length > 0).length
+    return Math.max(1, cols)
+  }
+
+  private estimatedPageHeightPx (): number {
+    const cards = this.gridEl().querySelectorAll<HTMLElement>('.model-card')
+    const sample = cards.length > 0 ? cards[cards.length - 1] : null
+    const cardH = sample != null ? sample.getBoundingClientRect().height : 280
+    const styles = getComputedStyle(this.gridEl())
+    const rowGap = parseFloat(styles.rowGap || styles.gap || '0') || 0
+    const cols = this.columnCount()
+    const perPage = this.perPageValue > 0 ? this.perPageValue : 24
+    const rows = Math.max(1, Math.ceil(perPage / cols))
+    return Math.round(rows * (cardH + rowGap))
+  }
+
+  private insertLoadingSpacer (): void {
+    this.removeSpacer()
+    const sentinel = document.getElementById('models-scroll-sentinel')
+    if (sentinel == null || sentinel.parentElement == null) return
+    const spacer = document.createElement('div')
+    spacer.id = SPACER_ID
+    spacer.className = 'models-scroll-spacer'
+    spacer.setAttribute('aria-hidden', 'true')
+    spacer.style.height = `${this.estimatedPageHeightPx()}px`
+    sentinel.parentElement.insertBefore(spacer, sentinel)
+  }
+
+  private removeSpacer (): void {
+    document.getElementById(SPACER_ID)?.remove()
   }
 
   /** Drop later duplicates if the same model card id already exists in the grid. */

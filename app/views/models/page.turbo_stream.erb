@@ -1,5 +1,7 @@
-<%# Insert cards BEFORE the sentinel so they stay siblings in the CSS grid. %>
+<%# Insert cards BEFORE the sentinel so they stay siblings in the CSS grid.
+    Page-break forces a new row so bulk append never fills an incomplete last row. %>
 <%= turbo_stream.before "models-scroll-sentinel" do %>
+  <div class="model-grid-page-break" aria-hidden="true"></div>
   <% @models.each do |model| %>
     <%= render Components::ModelCard.new(model: model, eager_preview: false, gallery: true) %>
   <% end %>

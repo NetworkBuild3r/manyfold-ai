@@ -248,6 +248,25 @@ dialog.modal::backdrop {
   overflow-anchor: none;
 }
 
+/* Zero-height full-width break: next page of cards starts on a fresh row. */
+#model-card-grid .model-grid-page-break {
+  grid-column: 1 / -1;
+  height: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  pointer-events: none;
+  overflow-anchor: none;
+}
+
+/* Temporary height reservation while a page fetch is in flight. */
+#model-card-grid .models-scroll-spacer {
+  grid-column: 1 / -1;
+  width: 100%;
+  pointer-events: none;
+  overflow-anchor: none;
+}
+
 #model-card-grid .models-scroll-sentinel {
   grid-column: 1 / -1;
   min-height: 2.5rem;
