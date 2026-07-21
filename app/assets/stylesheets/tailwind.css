@@ -278,12 +278,6 @@ dialog.modal::backdrop {
   to { transform: rotate(360deg); }
 }
 
-#model-card-grid .model-card.content-visibility-auto,
-#model-card-grid .content-visibility-auto {
-  content-visibility: auto;
-  contain-intrinsic-size: auto 280px;
-}
-
 /* Screen-reader / polite live region under the grid */
 .models-scroll-status {
   margin: 0.25rem 0 0.5rem;
@@ -304,6 +298,11 @@ dialog.modal::backdrop {
 
 .library-infinite__hint {
   transition: opacity 0.2s ease;
+}
+
+/* Keep auto-fill column count stable when the vertical scrollbar appears. */
+.library-browse-page {
+  scrollbar-gutter: stable;
 }
 
 .library-browse-page .library-infinite.is-exhausted .library-infinite__hint {

@@ -20,8 +20,9 @@ class Components::ModelCard < Components::Base
   end
 
   def view_template
-    classes = "model-card relative flex flex-col rounded-xl overflow-hidden bg-surface dark:bg-surface-dark border border-secondary-200 dark:border-secondary-600 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
-    classes += " content-visibility-auto" unless @eager_preview
+    # Only animate shadow/transform — transition-all also animates height when the
+    # CSS grid stretches a last incomplete row as infinite-scroll appends cards.
+    classes = "model-card relative flex flex-col rounded-xl overflow-hidden bg-surface dark:bg-surface-dark border border-secondary-200 dark:border-secondary-600 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-[box-shadow,transform] duration-200"
 
     div(id: self.class.dom_id_for(@model), class: classes, role: "listitem") do
       div(class: "absolute top-0 left-0 right-0 z-10 px-2 py-1 bg-secondary-200/90 dark:bg-secondary-700/90 text-sm") { server_indicator @model } if @model.remote?
