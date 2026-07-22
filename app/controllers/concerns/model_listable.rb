@@ -22,31 +22,32 @@ module ModelListable
     @browse_per_page = per_page
 
     if stream && params[:offset].present?
-      # Offset-based fetch: row-aligned per_page from the client without page-number skew.
       offset = BrowseGrid.offset_for_request(params)
       @browse_offset = offset
       total = @models.count
+      @browse_total_count = total
       @models = @models.offset(offset).limit(per_page)
-      @browse_has_more = (offset + per_page) < total
+      @models = @models.includes([:creator, :collection, :tags]).preload([:preview_file])
+      records = @models.load
+      @browse_returned_count = records.size
+      @browse_has_more_after = (offset + records.size) < total
+      @browse_has_more_before = offset.positive?
+      @browse_window = params[:window].presence_in(%w[before after]) || "after"
     else
-      # Full HTML browse always starts at page 1 (one infinite page in the address bar).
-      # Legacy page=N turbo-stream still works when offset is absent.
       page = if stream
         params[:page].presence || 1
       else
         1
       end
       @models = @models.page(page).per(per_page)
+      @models = @models.includes([:creator, :collection, :tags]).preload([:preview_file])
       @browse_offset = (page.to_i - 1) * per_page
-      @browse_has_more = @models.next_page.present?
+      @browse_total_count = @models.total_count
+      @browse_returned_count = @models.size
+      @browse_has_more_after = @models.next_page.present?
+      @browse_has_more_before = page.to_i > 1
+      @browse_window = "after"
     end
-
-    @models = @models.includes [:creator, :collection, :tags]
-    # preview_file only — avoid preloading every model_file on index
-    @models = @models.preload [:preview_file]
-
-    # Filter sidebar facets load via ModelsController#filter_facets Turbo Frame —
-    # not on the critical path for first byte.
   end
 
   # Options for the models index filter form (lazy Turbo Frame or explicit call).

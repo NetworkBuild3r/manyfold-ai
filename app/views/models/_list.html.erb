@@ -182,24 +182,33 @@
       </div>
 
       <% per_page = @browse_per_page || browse_grid_page_size %>
-      <% next_url = browse_next_url(:models_path, filter: @filter) %>
+      <% meta = browse_window_meta(:models_path, filter: @filter) %>
       <div data-controller="infinite-scroll"
-           data-infinite-scroll-next-url-value="<%= next_url %>"
            data-infinite-scroll-per-page-value="<%= per_page %>"
            data-infinite-scroll-sentinel-id-value="models-scroll-sentinel"
+           data-infinite-scroll-top-sentinel-id-value="models-scroll-sentinel-top"
            data-infinite-scroll-card-selector-value=".model-card"
            data-infinite-scroll-storage-key-prefix-value="scroll_models_"
            data-infinite-scroll-end-message-value="<%= t(".end_of_results") %>"
+           data-infinite-scroll-total-count-value="<%= meta[:total_count] %>"
+           data-infinite-scroll-window-start-value="<%= meta[:offset] %>"
            class="library-infinite">
         <div class="browse-card-grid mb-2"
              id="model-card-grid"
              role="list"
              aria-label="<%= Model.model_name.human(count: 100) %>"
              data-infinite-scroll-target="grid">
+          <%= render "application/browse_scroll_sentinel",
+                sentinel_id: "models-scroll-sentinel-top",
+                position: :top,
+                meta: meta %>
           <% @models.each_with_index do |model, index| %>
             <%= render Components::ModelCard.new(model: model, eager_preview: index < 8, gallery: true) %>
           <% end %>
-          <%= render "application/browse_scroll_sentinel", sentinel_id: "models-scroll-sentinel", next_url: next_url %>
+          <%= render "application/browse_scroll_sentinel",
+                sentinel_id: "models-scroll-sentinel",
+                position: :bottom,
+                meta: meta %>
         </div>
         <div class="library-infinite__end py-10 text-center">
           <p id="models-scroll-status"

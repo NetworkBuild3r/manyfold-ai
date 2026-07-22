@@ -1,46 +1,48 @@
 import { Controller } from '@hotwired/stimulus'
 import { renderStreamMessage } from '@hotwired/turbo'
 
-const FILL_BUFFER_PX = 600
-const PREFETCH_ROOT_MARGIN = '500px 0px'
-const SCROLL_FALLBACK_PX = 1000
-const MAX_FILL_PAGES = 20
+const PREFETCH_ROOT_MARGIN = '400px 0px'
+const SCROLL_EDGE_PX = 800
+const MAX_FILL_ROUNDS = 24
 const MAX_TRANSIENT_RETRIES = 3
 const RETRY_BASE_MS = 400
 const BACK_TO_TOP_SHOW_PX = 800
-
-/** Soft cap on rows kept in the document. */
-const MAX_ROWS_IN_DOM = 30
-/** Rows of buffer above the viewport that must never be pruned. */
-const KEEP_BUFFER_PX = 800
-/** Complete rows loaded per infinite-scroll fetch after first paint. */
-const ROWS_PER_FETCH = 6
+const MIN_ROWS = 8
+const MAX_ROWS = 20
+const ROW_HEIGHT_FALLBACK = 280
+const BUFFER_ROWS = 4
 
 /**
- * Infinite scroll for a card grid via Turbo Streams.
+ * Bidirectional row-window infinite scroll for a card grid.
  *
- * CSS owns layout: card-sized auto-fill tracks on .browse-card-grid.
- * Cards are always direct children. This controller fetches pages and may
- * prune complete rows from the top (never a partial row) with scroll
- * compensation so visible cards do not reflow.
+ * CSS owns layout (card-sized auto-fill). This controller keeps a sliding
+ * window of cols×rows cards: scroll down appends one row and drops one from
+ * the top; scroll up prepends one row and drops one from the bottom.
+ * End-of-list only when the window covers the true end of the result set.
  */
 export default class extends Controller {
-  static targets = ['sentinel', 'status', 'backToTop', 'grid']
+  static targets = ['sentinel', 'topSentinel', 'status', 'backToTop', 'grid']
   static values = {
-    nextUrl: { type: String, default: '' },
     perPage: { type: Number, default: 48 },
     sentinelId: { type: String, default: 'models-scroll-sentinel' },
+    topSentinelId: { type: String, default: 'models-scroll-sentinel-top' },
     cardSelector: { type: String, default: '.model-card' },
-    storageKeyPrefix: { type: String, default: 'scroll_models_' }
+    storageKeyPrefix: { type: String, default: 'scroll_models_' },
+    totalCount: { type: Number, default: 0 },
+    windowStart: { type: Number, default: 0 }
   }
 
-  declare nextUrlValue: string
   declare perPageValue: number
   declare sentinelIdValue: string
+  declare topSentinelIdValue: string
   declare cardSelectorValue: string
   declare storageKeyPrefixValue: string
+  declare totalCountValue: number
+  declare windowStartValue: number
   declare sentinelTarget: HTMLElement
   declare hasSentinelTarget: boolean
+  declare topSentinelTarget: HTMLElement
+  declare hasTopSentinelTarget: boolean
   declare statusTarget: HTMLElement
   declare hasStatusTarget: boolean
   declare backToTopTarget: HTMLElement
@@ -49,22 +51,24 @@ export default class extends Controller {
   declare hasGridTarget: boolean
 
   private loading = false
-  private exhausted = false
+  private mutating = false
+  private hasMoreAfter = true
+  private hasMoreBefore = false
+  private cols = 1
+  private rows = MIN_ROWS
+  private windowSize = MIN_ROWS
+  private cachedColumns: number | null = null
   private observer: IntersectionObserver | null = null
-  private observedSentinel: HTMLElement | null = null
   private resizeObserver: ResizeObserver | null = null
+  private mutationObserver: MutationObserver | null = null
   private boundOnScroll: () => void
   private boundOnBeforeVisit: () => void
   private boundOnBackToTop: (e: Event) => void
   private scrollTicking = false
   private abortController: AbortController | null = null
-  private lastLoadedUrl = ''
   private transientFailures = 0
   private restoredScroll = false
-  /** Live column count from the first grid row; invalidated on resize. */
-  private cachedColumns: number | null = null
-  /** Total models loaded from the server (not reduced when pruning). */
-  private itemsSeen = 0
+  private refillQueued = false
 
   connect (): void {
     this.boundOnScroll = this.onScroll.bind(this)
@@ -77,13 +81,15 @@ export default class extends Controller {
     }
 
     this.stripPageFromUrl()
-    this.syncNextUrlFromSentinel()
-    this.itemsSeen = this.cards().length
-    this.alignFetchUrl()
+    this.syncMetaFromSentinels()
+    this.recomputeWindowSize()
+    this.refreshBounds()
     this.setupObserver()
     this.setupResizeObserver()
+    this.setupMutationObserver()
     this.updateStatus('')
     this.updateBackToTop()
+    this.updateExhaustionUi()
     void this.bootstrap()
   }
 
@@ -95,28 +101,26 @@ export default class extends Controller {
     }
     this.observer?.disconnect()
     this.observer = null
-    this.observedSentinel = null
     this.resizeObserver?.disconnect()
     this.resizeObserver = null
+    this.mutationObserver?.disconnect()
+    this.mutationObserver = null
     this.abortInFlight()
   }
 
-  /** Turbo replace may recreate the sentinel — re-observe after each load. */
   sentinelTargetConnected (): void {
-    this.syncNextUrlFromSentinel()
-    this.alignFetchUrl()
+    this.syncMetaFromSentinels()
+    this.refreshBounds()
+    this.setupObserver()
+    this.updateExhaustionUi()
+  }
+
+  topSentinelTargetConnected (): void {
+    this.syncMetaFromSentinels()
+    this.refreshBounds()
     this.setupObserver()
   }
 
-  private get hasMore (): boolean {
-    return !this.exhausted && this.nextUrlValue.length > 0
-  }
-
-  private sentinelEl (): HTMLElement | null {
-    return document.getElementById(this.sentinelIdValue)
-  }
-
-  /** Abort only on disconnect / navigation — never to cancel a healthy page fetch. */
   private abortInFlight (): void {
     if (this.abortController != null) {
       this.abortController.abort()
@@ -125,9 +129,9 @@ export default class extends Controller {
   }
 
   private async bootstrap (): Promise<void> {
-    await this.fillViewport()
+    await this.fillOrTrimWindow()
     this.restoreScrollIfNeeded()
-    this.pruneTopRows()
+    this.updateExhaustionUi()
   }
 
   private setupResizeObserver (): void {
@@ -135,76 +139,108 @@ export default class extends Controller {
     if (typeof ResizeObserver === 'undefined') return
     this.resizeObserver = new ResizeObserver(() => {
       this.cachedColumns = null
-      this.alignFetchUrl()
+      const prevSize = this.windowSize
+      this.recomputeWindowSize()
+      if (this.windowSize !== prevSize) {
+        void this.fillOrTrimWindow()
+      }
     })
     this.resizeObserver.observe(this.gridEl())
   }
 
+  private setupMutationObserver (): void {
+    this.mutationObserver?.disconnect()
+    if (typeof MutationObserver === 'undefined') return
+    this.mutationObserver = new MutationObserver((records) => {
+      if (this.mutating || this.loading) return
+      let removedCard = false
+      for (const record of records) {
+        record.removedNodes.forEach((node) => {
+          if (!(node instanceof HTMLElement)) return
+          if (node.matches?.(this.cardSelectorValue) || node.querySelector?.(this.cardSelectorValue)) {
+            removedCard = true
+          }
+        })
+      }
+      if (removedCard) {
+        this.queueRefill()
+      }
+    })
+    this.mutationObserver.observe(this.gridEl(), { childList: true, subtree: false })
+  }
+
+  private queueRefill (): void {
+    if (this.refillQueued) return
+    this.refillQueued = true
+    requestAnimationFrame(() => {
+      this.refillQueued = false
+      void this.refillOneAfterDelete()
+    })
+  }
+
   private setupObserver (): void {
-    const el = this.sentinelEl()
-    if (el == null || el.hasAttribute('hidden')) {
-      this.observer?.disconnect()
-      this.observer = null
-      this.observedSentinel = null
-      return
-    }
-
-    if (this.observer != null && this.observedSentinel === el) return
-
     this.observer?.disconnect()
-    this.observedSentinel = el
     this.observer = new IntersectionObserver(
       (entries) => {
-        if (entries.some((e) => e.isIntersecting)) {
-          void this.loadMore()
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue
+          const el = entry.target as HTMLElement
+          if (el.id === this.sentinelIdValue || el === this.bottomSentinelEl()) {
+            void this.fetchRow('after')
+          } else if (el.id === this.topSentinelIdValue || el === this.topSentinelEl()) {
+            void this.fetchRow('before')
+          }
         }
       },
       { root: null, rootMargin: PREFETCH_ROOT_MARGIN, threshold: 0 }
     )
-    this.observer.observe(el)
+    const bottom = this.bottomSentinelEl()
+    const top = this.topSentinelEl()
+    if (bottom != null && this.hasMoreAfter) this.observer.observe(bottom)
+    if (top != null && this.hasMoreBefore) this.observer.observe(top)
   }
 
-  private syncNextUrlFromSentinel (): void {
-    const el = this.sentinelEl()
+  private bottomSentinelEl (): HTMLElement | null {
+    return document.getElementById(this.sentinelIdValue)
+  }
+
+  private topSentinelEl (): HTMLElement | null {
+    return document.getElementById(this.topSentinelIdValue)
+  }
+
+  private syncMetaFromSentinels (): void {
+    const bottom = this.bottomSentinelEl()
+    const top = this.topSentinelEl()
+    const el = bottom ?? top
     if (el == null) return
-    const fromDom = el.dataset.nextUrl
-    if (typeof fromDom === 'string' && fromDom.length > 0) {
-      this.nextUrlValue = fromDom
-      this.exhausted = false
-    } else if (el.hasAttribute('hidden') || el.dataset.hasMore === 'false') {
-      this.nextUrlValue = ''
-      this.exhausted = true
-      this.updateStatus(this.endMessage())
-      this.element.classList.add('is-exhausted')
+
+    const totalRaw = el.dataset.totalCount
+    if (totalRaw != null && totalRaw.length > 0) {
+      const total = parseInt(totalRaw, 10)
+      if (Number.isFinite(total) && total >= 0) {
+        this.totalCountValue = total
+      }
     }
   }
 
-  /**
-   * Rewrite nextUrl to offset=itemsSeen and per_page=cols*ROWS_PER_FETCH so each
-   * fetch is row-aligned and does not skew page-number offsets.
-   */
-  private alignFetchUrl (): void {
-    if (this.nextUrlValue.length === 0) return
-    const cols = this.measureColumns()
-    const perPage = Math.min(96, Math.max(12, cols * ROWS_PER_FETCH))
-    this.perPageValue = perPage
-    try {
-      const url = new URL(this.nextUrlValue, window.location.origin)
-      url.searchParams.delete('page')
-      url.searchParams.set('offset', String(this.itemsSeen))
-      url.searchParams.set('per_page', String(perPage))
-      this.nextUrlValue = url.pathname + url.search
-    } catch {
-      // ignore malformed next urls
+  private refreshBounds (): void {
+    const count = this.cards().length
+    if (this.totalCountValue > 0) {
+      this.hasMoreAfter = this.windowStartValue + count < this.totalCountValue
+      this.hasMoreBefore = this.windowStartValue > 0
+    } else {
+      const bottom = this.bottomSentinelEl()
+      const top = this.topSentinelEl()
+      this.hasMoreAfter = bottom?.dataset.hasMoreAfter === 'true'
+      this.hasMoreBefore = this.windowStartValue > 0 || top?.dataset.hasMoreBefore === 'true'
     }
   }
 
   private cards (): HTMLElement[] {
     const selector = this.cardSelectorValue || '.model-card'
-    return Array.from(this.gridEl().querySelectorAll<HTMLElement>(selector))
+    return Array.from(this.gridEl().querySelectorAll<HTMLElement>(`:scope > ${selector}`))
   }
 
-  /** Live column count from the first grid row. */
   private measureColumns (): number {
     if (this.cachedColumns != null && this.cachedColumns > 0) {
       return this.cachedColumns
@@ -224,102 +260,187 @@ export default class extends Controller {
     return this.cachedColumns
   }
 
-  /**
-   * Remove complete rows from the top when over MAX_ROWS_IN_DOM and those rows
-   * sit well above the viewport. Never removes a partial row.
-   */
-  private pruneTopRows (): void {
-    const cols = this.measureColumns()
+  private measureRows (): number {
     const cards = this.cards()
-    const maxCards = cols * MAX_ROWS_IN_DOM
-    if (cards.length <= maxCards) return
+    let rowHeight = ROW_HEIGHT_FALLBACK
+    if (cards.length > 0) {
+      const first = cards[0]
+      const gap = this.readGap()
+      rowHeight = Math.max(80, first.offsetHeight + gap)
+    }
+    const viewportRows = Math.ceil(window.innerHeight / rowHeight) + BUFFER_ROWS
+    return Math.min(MAX_ROWS, Math.max(MIN_ROWS, viewportRows))
+  }
 
-    const overflow = cards.length - maxCards
-    const pruneCeiling = window.scrollY - KEEP_BUFFER_PX
-    let safeCards = 0
-    for (const card of cards) {
-      const bottom = card.offsetTop + card.offsetHeight
-      if (bottom > pruneCeiling) break
-      safeCards += 1
+  private readGap (): number {
+    const style = getComputedStyle(this.gridEl())
+    const gap = parseFloat(style.rowGap || style.gap || '0')
+    return Number.isFinite(gap) ? gap : 0
+  }
+
+  private recomputeWindowSize (): void {
+    this.cols = this.measureColumns()
+    this.rows = this.measureRows()
+    this.windowSize = this.cols * this.rows
+    this.perPageValue = this.cols
+  }
+
+  private async fillOrTrimWindow (): Promise<void> {
+    this.recomputeWindowSize()
+    this.refreshBounds()
+
+    let cards = this.cards()
+    if (cards.length > this.windowSize) {
+      // Prefer dropping the bottom so windowStart (and visible top) stay stable.
+      this.trimBottomToWindow()
+      cards = this.cards()
     }
 
-    const safeRows = Math.floor(safeCards / cols)
-    const rowsNeeded = Math.ceil(overflow / cols)
-    const rowsToRemove = Math.min(safeRows, rowsNeeded)
-    const removeCount = rowsToRemove * cols
-    if (removeCount < cols) return
-
-    const first = cards[0]
-    const last = cards[removeCount - 1]
-    const top = first.getBoundingClientRect().top + window.scrollY
-    const bottom = last.getBoundingClientRect().bottom + window.scrollY
-    const height = bottom - top
-    if (!(height > 0)) return
-
-    const scrollY = window.scrollY
-    for (let i = 0; i < removeCount; i++) {
-      cards[i].remove()
-    }
-    window.scrollTo(0, Math.max(0, scrollY - height))
-  }
-
-  private endMessage (): string {
-    return this.element.getAttribute('data-infinite-scroll-end-message-value') ||
-      'End of results'
-  }
-
-  private updateStatus (text: string): void {
-    if (!this.hasStatusTarget) return
-    this.statusTarget.textContent = text
-    if (text.length > 0) {
-      this.statusTarget.removeAttribute('hidden')
-    } else {
-      this.statusTarget.setAttribute('hidden', 'hidden')
-    }
-  }
-
-  private clearLoadingUi (): void {
-    this.gridEl().classList.remove('is-loading-more')
-    if (!this.exhausted) this.updateStatus('')
-  }
-
-  private async fillViewport (): Promise<void> {
     let guard = 0
-    while (guard < MAX_FILL_PAGES && this.hasMore && !this.viewportSatisfied()) {
+    while (
+      guard < MAX_FILL_ROUNDS &&
+      this.cards().length < this.windowSize &&
+      this.hasMoreAfter
+    ) {
       guard += 1
-      const ok = await this.loadMore()
+      const need = this.windowSize - this.cards().length
+      const limit = Math.ceil(need / this.cols) * this.cols
+      const ok = await this.fetchCards(limit, 'after')
       if (!ok) break
+      this.refreshBounds()
+    }
+
+    if (this.cards().length > this.windowSize) {
+      this.trimBottomToWindow()
+    }
+
+    this.setupObserver()
+    this.updateExhaustionUi()
+  }
+
+  private trimBottomToWindow (): void {
+    const excess = this.cards().length - this.windowSize
+    if (excess <= 0) return
+    const rowsToDrop = Math.floor(excess / this.cols)
+    if (rowsToDrop < 1) return
+    this.dropRows('bottom', rowsToDrop)
+    this.refreshBounds()
+  }
+
+  /**
+   * After append/prepend, keep at most windowSize cards by dropping complete
+   * rows from the opposite end.
+   */
+  private maintainWindow (direction: 'after' | 'before'): void {
+    const excess = this.cards().length - this.windowSize
+    if (excess <= 0) return
+    const rowsToDrop = Math.floor(excess / this.cols)
+    if (rowsToDrop < 1) return
+
+    if (direction === 'after') {
+      this.dropRows('top', rowsToDrop)
+      this.windowStartValue += rowsToDrop * this.cols
+    } else {
+      this.dropRows('bottom', rowsToDrop)
+    }
+    this.refreshBounds()
+  }
+
+  private dropRows (side: 'top' | 'bottom', rowCount: number): void {
+    const cols = this.cols
+    const removeCount = rowCount * cols
+    if (removeCount < 1) return
+
+    const cards = this.cards()
+    if (cards.length < removeCount) return
+
+    const slice = side === 'top'
+      ? cards.slice(0, removeCount)
+      : cards.slice(cards.length - removeCount)
+
+    let height = 0
+    if (side === 'top' && slice.length > 0) {
+      const first = slice[0]
+      const last = slice[slice.length - 1]
+      const top = first.getBoundingClientRect().top + window.scrollY
+      const bottom = last.getBoundingClientRect().bottom + window.scrollY
+      height = Math.max(0, bottom - top)
+    }
+
+    this.mutating = true
+    try {
+      const scrollY = window.scrollY
+      for (const card of slice) {
+        card.remove()
+      }
+      if (side === 'top' && height > 0) {
+        window.scrollTo(0, Math.max(0, scrollY - height))
+      }
+    } finally {
+      this.mutating = false
     }
   }
 
-  private gridEl (): HTMLElement {
-    return this.hasGridTarget ? this.gridTarget : this.element
+  private buildFetchUrl (offset: number, limit: number, windowDir: 'before' | 'after'): string {
+    const url = new URL(window.location.href)
+    url.searchParams.delete('page')
+    url.searchParams.set('offset', String(Math.max(0, offset)))
+    url.searchParams.set('per_page', String(Math.max(1, limit)))
+    url.searchParams.set('window', windowDir)
+    return url.pathname + url.search
   }
 
-  private viewportSatisfied (): boolean {
-    const bottom = this.gridEl().getBoundingClientRect().bottom
-    return bottom > window.innerHeight + FILL_BUFFER_PX
+  private async fetchRow (direction: 'after' | 'before'): Promise<boolean> {
+    this.recomputeWindowSize()
+    this.refreshBounds()
+
+    if (direction === 'after') {
+      if (!this.hasMoreAfter) {
+        this.updateExhaustionUi()
+        return false
+      }
+      return await this.fetchCards(this.cols, 'after')
+    }
+
+    if (!this.hasMoreBefore || this.windowStartValue <= 0) {
+      return false
+    }
+    const limit = Math.min(this.cols, this.windowStartValue)
+    return await this.fetchCards(limit, 'before')
   }
 
-  private nearBottom (): boolean {
-    const scrollBottom = window.scrollY + window.innerHeight
-    const docHeight = document.documentElement.scrollHeight
-    return docHeight - scrollBottom < SCROLL_FALLBACK_PX
+  private async refillOneAfterDelete (): Promise<void> {
+    this.refreshBounds()
+    if (!this.hasMoreAfter || this.loading) return
+    // Keep window full until true end; do not change windowStart on middle delete.
+    if (this.cards().length >= this.windowSize) return
+    await this.fetchCards(1, 'after')
+    this.updateExhaustionUi()
   }
 
-  private async loadMore (): Promise<boolean> {
-    // Single-flight: never abort a healthy in-flight page fetch to start another.
-    if (this.loading || !this.hasMore) return false
+  private async fetchCards (limit: number, direction: 'after' | 'before'): Promise<boolean> {
+    if (this.loading) return false
 
-    this.alignFetchUrl()
-    const url = this.nextUrlValue
-    if (url.length === 0 || url === this.lastLoadedUrl) return false
+    const offset = direction === 'after'
+      ? this.windowStartValue + this.cards().length
+      : Math.max(0, this.windowStartValue - limit)
+
+    if (direction === 'before' && this.windowStartValue <= 0) return false
+    if (direction === 'after' && this.totalCountValue > 0 && offset >= this.totalCountValue) {
+      this.hasMoreAfter = false
+      this.updateExhaustionUi()
+      return false
+    }
+
+    const url = this.buildFetchUrl(offset, limit, direction)
 
     this.loading = true
     this.gridEl().classList.add('is-loading-more')
-    // Status stays empty while loading — sentinel CSS label shows "Loading more…".
     this.updateStatus('')
     this.abortController = new AbortController()
+
+    const anchor = direction === 'before' ? this.cards()[0] : null
+    const anchorTop = anchor?.getBoundingClientRect().top ?? 0
 
     try {
       const response = await fetch(url, {
@@ -334,9 +455,8 @@ export default class extends Controller {
       if (!response.ok) {
         console.warn('[infinite-scroll] HTTP', response.status, url)
         if (response.status === 401 || response.status === 403 || response.status === 404) {
-          this.exhausted = true
-          this.nextUrlValue = ''
-          this.updateStatus(this.endMessage())
+          this.hasMoreAfter = false
+          this.updateExhaustionUi()
           return false
         }
         this.transientFailures += 1
@@ -354,48 +474,46 @@ export default class extends Controller {
 
       if (!contentType.includes('turbo-stream') && !html.includes('<turbo-stream')) {
         console.warn('[infinite-scroll] expected turbo-stream, got', contentType.slice(0, 80))
-        this.exhausted = true
-        this.nextUrlValue = ''
-        this.updateStatus('')
         return false
       }
 
-      this.lastLoadedUrl = url
       this.transientFailures = 0
       const beforeCount = this.cards().length
-      renderStreamMessage(html)
-      this.dedupeCards()
+
+      this.mutating = true
+      try {
+        renderStreamMessage(html)
+        this.dedupeCards()
+      } finally {
+        this.mutating = false
+      }
+
       const afterCount = this.cards().length
       const added = Math.max(0, afterCount - beforeCount)
-      this.itemsSeen += added
       this.cachedColumns = null
+      this.recomputeWindowSize()
+      this.syncMetaFromSentinels()
 
-      this.syncNextUrlFromSentinel()
-      this.alignFetchUrl()
+      if (direction === 'before' && added > 0) {
+        this.windowStartValue = offset
+        if (anchor != null && document.contains(anchor)) {
+          const delta = anchor.getBoundingClientRect().top - anchorTop
+          if (delta !== 0) {
+            window.scrollBy(0, delta)
+          }
+        }
+        this.maintainWindow('before')
+      } else if (direction === 'after' && added > 0) {
+        this.maintainWindow('after')
+      }
+
+      // Empty batch alone is not end-of-list; only totalCount bounds matter.
+      this.refreshBounds()
       this.setupObserver()
-      this.pruneTopRows()
-
-      if (added === 0) {
-        this.exhausted = true
-        this.nextUrlValue = ''
-        this.updateStatus(this.endMessage())
-        this.element.classList.add('is-exhausted')
-        return true
-      }
-
-      if (!this.hasMore) {
-        this.exhausted = true
-        this.updateStatus(this.endMessage())
-        this.element.classList.add('is-exhausted')
-      } else {
-        this.updateStatus('')
-        this.element.classList.remove('is-exhausted')
-      }
-
-      return true
+      this.updateExhaustionUi()
+      return added > 0 || !this.hasMoreAfter
     } catch (e) {
       if ((e as Error)?.name === 'AbortError') {
-        this.clearLoadingUi()
         return false
       }
       console.warn('[infinite-scroll] load error', e)
@@ -412,7 +530,7 @@ export default class extends Controller {
   private dedupeCards (): void {
     const selector = this.cardSelectorValue || '.model-card'
     const seen = new Set<string>()
-    this.gridEl().querySelectorAll<HTMLElement>(`${selector}[id]`).forEach((card) => {
+    this.gridEl().querySelectorAll<HTMLElement>(`:scope > ${selector}[id]`).forEach((card) => {
       if (seen.has(card.id)) {
         card.remove()
       } else {
@@ -425,16 +543,56 @@ export default class extends Controller {
     return new Promise((resolve) => setTimeout(resolve, ms))
   }
 
+  private endMessage (): string {
+    return this.element.getAttribute('data-infinite-scroll-end-message-value') ||
+      'End of results'
+  }
+
+  private updateStatus (text: string): void {
+    if (!this.hasStatusTarget) return
+    this.statusTarget.textContent = text
+    if (text.length > 0) {
+      this.statusTarget.removeAttribute('hidden')
+    } else {
+      this.statusTarget.setAttribute('hidden', 'hidden')
+    }
+  }
+
+  /** End message only when the window covers the true end of the result set. */
+  private updateExhaustionUi (): void {
+    this.refreshBounds()
+    if (!this.hasMoreAfter) {
+      this.element.classList.add('is-exhausted')
+      // Show once the true end is in the window (short lists or scrolled to last row).
+      this.updateStatus(this.endMessage())
+    } else {
+      this.element.classList.remove('is-exhausted')
+      this.updateStatus('')
+    }
+  }
+
+  private nearBottom (): boolean {
+    const scrollBottom = window.scrollY + window.innerHeight
+    const docHeight = document.documentElement.scrollHeight
+    return docHeight - scrollBottom < SCROLL_EDGE_PX
+  }
+
+  private nearTop (): boolean {
+    return window.scrollY < SCROLL_EDGE_PX
+  }
+
   private onScroll (): void {
     if (!this.scrollTicking) {
       this.scrollTicking = true
       requestAnimationFrame(() => {
         this.scrollTicking = false
         this.updateBackToTop()
-        this.pruneTopRows()
-        if (this.nearBottom()) {
-          void this.loadMore()
+        if (this.nearBottom() && this.hasMoreAfter) {
+          void this.fetchRow('after')
+        } else if (this.nearTop() && this.hasMoreBefore) {
+          void this.fetchRow('before')
         }
+        this.updateExhaustionUi()
       })
     }
   }
@@ -446,13 +604,14 @@ export default class extends Controller {
     this.backToTopTarget.classList.toggle('is-visible', show)
   }
 
-  /**
-   * Pruned cards above are gone — reload page 1 so the top is complete.
-   */
+  /** Jump to true start of the list (reload page 1 window). */
   private onBackToTop (e: Event): void {
     e.preventDefault()
     const url = new URL(window.location.href)
     url.searchParams.delete('page')
+    url.searchParams.delete('offset')
+    url.searchParams.delete('per_page')
+    url.searchParams.delete('window')
     const path = url.pathname + url.search
     const turbo = (window as unknown as { Turbo?: { visit: (loc: string) => void } }).Turbo
     if (turbo?.visit != null) {
@@ -464,9 +623,16 @@ export default class extends Controller {
 
   private stripPageFromUrl (): void {
     const url = new URL(window.location.href)
-    if (!url.searchParams.has('page')) return
-    url.searchParams.delete('page')
-    history.replaceState(history.state, '', url.toString())
+    let changed = false
+    for (const key of ['page', 'offset', 'per_page', 'window']) {
+      if (url.searchParams.has(key)) {
+        url.searchParams.delete(key)
+        changed = true
+      }
+    }
+    if (changed) {
+      history.replaceState(history.state, '', url.toString())
+    }
   }
 
   private onBeforeVisit (): void {
@@ -476,7 +642,9 @@ export default class extends Controller {
 
   private storageKey (): string {
     const url = new URL(window.location.href)
-    url.searchParams.delete('page')
+    for (const key of ['page', 'offset', 'per_page', 'window']) {
+      url.searchParams.delete(key)
+    }
     const q = url.searchParams.toString()
     return this.storageKeyPrefixValue + url.pathname + (q.length > 0 ? `?${q}` : '')
   }
@@ -505,7 +673,10 @@ export default class extends Controller {
     requestAnimationFrame(() => {
       window.scrollTo(0, y)
       this.updateBackToTop()
-      this.pruneTopRows()
     })
+  }
+
+  private gridEl (): HTMLElement {
+    return this.hasGridTarget ? this.gridTarget : this.element
   }
 }

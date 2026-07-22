@@ -31,8 +31,12 @@ RSpec.describe BrowseGrid do
       expect(described_class.page_size_for_request({offset: "48", per_page: "30"}, stream: true)).to eq(30)
     end
 
-    it "clamps per_page to 12..96" do
-      expect(described_class.page_size_for_request({per_page: "3"}, stream: true)).to eq(12)
+    it "allows single-card refill (per_page=1)" do
+      expect(described_class.page_size_for_request({per_page: "1", offset: "10"}, stream: true)).to eq(1)
+    end
+
+    it "clamps per_page to 1..96" do
+      expect(described_class.page_size_for_request({per_page: "0"}, stream: true)).to eq(1)
       expect(described_class.page_size_for_request({per_page: "200"}, stream: true)).to eq(96)
     end
 
@@ -51,7 +55,8 @@ RSpec.describe BrowseGrid do
 
   describe ".clamp_page_size" do
     it "clamps to MIN..MAX" do
-      expect(described_class.clamp_page_size(1)).to eq(12)
+      expect(described_class.clamp_page_size(0)).to eq(1)
+      expect(described_class.clamp_page_size(1)).to eq(1)
       expect(described_class.clamp_page_size(48)).to eq(48)
       expect(described_class.clamp_page_size(999)).to eq(96)
     end

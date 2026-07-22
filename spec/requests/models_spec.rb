@@ -354,7 +354,7 @@ RSpec.describe "Models" do
         end
 
         it "honors offset and clamped per_page on infinite-scroll turbo-stream requests" do
-          # 20 models in library; offset=12 with per_page=12 yields a next page.
+          # 20 models in library; offset=0 with per_page=12 yields a next page.
           get "/models",
             params: {library: library.to_param, offset: 0, per_page: 12},
             headers: {
@@ -365,6 +365,69 @@ RSpec.describe "Models" do
           expect(response.media_type).to eq("text/vnd.turbo-stream.html")
           expect(response.body).to include("offset=12")
           expect(response.body).to include("per_page=12")
+          expect(response.body).to include('data-has-more-after="true"')
+          expect(response.body).to include('data-has-more-before="false"')
+          expect(response.body).to include('data-total-count="20"')
+          expect(response.body).to include("models-scroll-sentinel-top")
+        end
+
+        it "sets has_more_before when offset is past the start" do
+          get "/models",
+            params: {library: library.to_param, offset: 12, per_page: 5, window: "after"},
+            headers: {
+              "Accept" => "text/vnd.turbo-stream.html",
+              "X-Infinite-Scroll" => "1"
+            }
+          expect(response).to have_http_status(:success)
+          expect(response.body).to include('data-has-more-before="true"')
+          expect(response.body).to include('data-has-more-after="true"')
+          expect(response.body).to include('data-offset="12"')
+        end
+
+        it "marks true end only when offset+returned covers total" do
+          get "/models",
+            params: {library: library.to_param, offset: 18, per_page: 5, window: "after"},
+            headers: {
+              "Accept" => "text/vnd.turbo-stream.html",
+              "X-Infinite-Scroll" => "1"
+            }
+          expect(response).to have_http_status(:success)
+          expect(response.body).to include('data-has-more-after="false"')
+          expect(response.body).to include('data-has-more-before="true"')
+          expect(response.body).to include('data-total-count="20"')
+        end
+
+        it "prepends cards when window=before" do
+          get "/models",
+            params: {library: library.to_param, offset: 5, per_page: 5, window: "before"},
+            headers: {
+              "Accept" => "text/vnd.turbo-stream.html",
+              "X-Infinite-Scroll" => "1"
+            }
+          expect(response).to have_http_status(:success)
+          expect(response.body).to include('action="after"')
+          expect(response.body).to include("models-scroll-sentinel-top")
+        end
+
+        it "allows single-card per_page for delete refill" do
+          get "/models",
+            params: {library: library.to_param, offset: 10, per_page: 1, window: "after"},
+            headers: {
+              "Accept" => "text/vnd.turbo-stream.html",
+              "X-Infinite-Scroll" => "1"
+            }
+          expect(response).to have_http_status(:success)
+          expect(response.body).to include("turbo-stream")
+          expect(response.body).to include('data-has-more-after="true"')
+        end
+
+        it "includes top and bottom sentinels on the HTML index" do
+          get "/models?library=#{library.to_param}"
+          expect(response).to have_http_status(:success)
+          expect(response.body).to include("models-scroll-sentinel-top")
+          expect(response.body).to include('data-has-more-after=')
+          expect(response.body).to include("data-total-count=")
+          expect(response.body).to include("data-infinite-scroll-total-count-value=")
         end
       end
 

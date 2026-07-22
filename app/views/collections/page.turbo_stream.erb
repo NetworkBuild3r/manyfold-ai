@@ -1,12 +1,30 @@
-<%= turbo_stream.before "collections-scroll-sentinel" do %>
-  <% @collections.each do |collection| %>
-    <%= render collection %>
+<% meta = browse_window_meta(:collections_path, filter: @filter) %>
+<% if @browse_window == "before" %>
+  <%= turbo_stream.after "collections-scroll-sentinel-top" do %>
+    <% @collections.each do |collection| %>
+      <%= render collection %>
+    <% end %>
   <% end %>
+<% else %>
+  <%= turbo_stream.before "collections-scroll-sentinel" do %>
+    <% @collections.each do |collection| %>
+      <%= render collection %>
+    <% end %>
+  <% end %>
+<% end %>
+
+<%= turbo_stream.replace "collections-scroll-sentinel-top" do %>
+  <%= render "application/browse_scroll_sentinel",
+        sentinel_id: "collections-scroll-sentinel-top",
+        position: :top,
+        meta: meta,
+        loading_label: t("collections.index.loading_more") %>
 <% end %>
 
 <%= turbo_stream.replace "collections-scroll-sentinel" do %>
   <%= render "application/browse_scroll_sentinel",
         sentinel_id: "collections-scroll-sentinel",
-        next_url: browse_next_url(:collections_path, filter: @filter),
+        position: :bottom,
+        meta: meta,
         loading_label: t("collections.index.loading_more") %>
 <% end %>

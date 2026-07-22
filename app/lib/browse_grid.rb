@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-# Card-sized browse: layout is CSS auto-fill (fixed card min/max), not column count.
-# HTML first page uses PAGE_SIZE. Infinite-scroll uses offset + row-aligned per_page.
+# Card-sized browse: layout is CSS auto-fill (fixed card min/max).
+# HTML first page uses PAGE_SIZE. Stream uses offset + limit for a sliding row window.
 module BrowseGrid
   PAGE_SIZE = 48
-  MIN_PAGE_SIZE = 12
+  MIN_PAGE_SIZE = 1
   MAX_PAGE_SIZE = 96
 
   module_function
@@ -13,7 +13,6 @@ module BrowseGrid
     PAGE_SIZE
   end
 
-  # Settings (including legacy grid_columns / per_page) do not control layout.
   def page_size_for_settings(_settings = nil)
     PAGE_SIZE
   end

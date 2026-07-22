@@ -1,23 +1,31 @@
-<%# Infinite-scroll sentinel (initial HTML + turbo-stream replace). %>
+<%# Infinite-scroll sentinel (top or bottom) for bidirectional row window. %>
 <%
-  sentinel_id = local_assigns.fetch(:sentinel_id, "models-scroll-sentinel")
-  next_url = local_assigns.fetch(:next_url, "")
-  has_more = next_url.present?
+  sentinel_id = local_assigns.fetch(:sentinel_id)
+  position = local_assigns.fetch(:position, :bottom) # :top or :bottom
+  meta = local_assigns.fetch(:meta, {})
+  next_url = meta[:next_url].to_s
+  prev_url = meta[:prev_url].to_s
+  has_more_after = ActiveModel::Type::Boolean.new.cast(meta.fetch(:has_more_after, next_url.present?))
+  has_more_before = ActiveModel::Type::Boolean.new.cast(meta.fetch(:has_more_before, prev_url.present?))
+  total_count = meta.fetch(:total_count, 0).to_i
+  offset = meta.fetch(:offset, 0).to_i
   loading_label = local_assigns.fetch(:loading_label, t("models.list.loading_more"))
+  target = (position == :top) ? "topSentinel" : "sentinel"
+  # Top sentinel is an insertion/observe point only — never occupies layout space.
+  show_loader = (position == :bottom && has_more_after)
 %>
-<% if has_more %>
-  <div id="<%= sentinel_id %>"
-       class="browse-scroll-sentinel col-span-full"
-       data-infinite-scroll-target="sentinel"
-       data-next-url="<%= next_url %>"
-       data-has-more="true"
-       aria-hidden="true">
+<div id="<%= sentinel_id %>"
+     class="browse-scroll-sentinel browse-scroll-sentinel--<%= position %> col-span-full<%= " browse-scroll-sentinel--end" unless show_loader %>"
+     data-infinite-scroll-target="<%= target %>"
+     data-next-url="<%= next_url %>"
+     data-prev-url="<%= prev_url %>"
+     data-has-more-after="<%= has_more_after %>"
+     data-has-more-before="<%= has_more_before %>"
+     data-total-count="<%= total_count %>"
+     data-offset="<%= offset %>"
+     <%= "hidden" if position == :bottom && !show_loader %>
+     aria-hidden="true">
+  <% if show_loader %>
     <span class="browse-scroll-sentinel__label"><%= loading_label %></span>
-  </div>
-<% else %>
-  <div id="<%= sentinel_id %>"
-       class="browse-scroll-sentinel browse-scroll-sentinel--end col-span-full"
-       data-has-more="false"
-       hidden
-       aria-hidden="true"></div>
-<% end %>
+  <% end %>
+</div>
