@@ -10,6 +10,8 @@ const RETRY_BASE_MS = 400
 const BACK_TO_TOP_SHOW_PX = 800
 const DEFAULT_GAP_PX = 14
 const DEFAULT_ROW_HEIGHT_PX = 320
+/** Extra rows past the visible window before we prefetch the next page. */
+const BUFFER_PREFETCH_ROWS = 6
 
 type BufferedCard = { id: string, html: string }
 
@@ -53,6 +55,7 @@ export default class extends Controller {
   private loading = false
   private exhausted = false
   private observer: IntersectionObserver | null = null
+  private observedSentinel: HTMLElement | null = null
   private boundOnScroll: () => void
   private boundOnBeforeVisit: () => void
   private boundOnBackToTop: (e: Event) => void
@@ -69,6 +72,8 @@ export default class extends Controller {
   private gapPx = DEFAULT_GAP_PX
   private metricsReady = false
   private virtualWindowStart = 0
+  private lastAppliedStartIdx = -1
+  private lastAppliedEndIdx = -1
 
   connect (): void {
     this.boundOnScroll = this.onScroll.bind(this)
@@ -85,7 +90,7 @@ export default class extends Controller {
     if (this.virtualizeValue) {
       this.seedBufferFromDom()
       this.ensureMetrics()
-      this.applyVirtualWindow()
+      this.applyVirtualWindow(true)
     }
     this.setupObserver()
     this.updateStatus('')
@@ -101,6 +106,7 @@ export default class extends Controller {
     }
     this.observer?.disconnect()
     this.observer = null
+    this.observedSentinel = null
     this.abortInFlight()
   }
 
@@ -118,6 +124,7 @@ export default class extends Controller {
     return document.getElementById(this.sentinelIdValue)
   }
 
+  /** Abort only on disconnect / navigation — never to cancel a healthy page fetch. */
   private abortInFlight (): void {
     if (this.abortController != null) {
       this.abortController.abort()
@@ -131,13 +138,25 @@ export default class extends Controller {
   }
 
   private setupObserver (): void {
-    this.observer?.disconnect()
     const el = this.sentinelEl()
-    if (el == null || el.hasAttribute('hidden')) return
+    if (el == null || el.hasAttribute('hidden')) {
+      this.observer?.disconnect()
+      this.observer = null
+      this.observedSentinel = null
+      return
+    }
 
+    // Same node already observed — do not disconnect/re-observe (avoids re-entry storm).
+    if (this.observer != null && this.observedSentinel === el) return
+
+    this.observer?.disconnect()
+    this.observedSentinel = el
     this.observer = new IntersectionObserver(
       (entries) => {
-        if (entries.some((e) => e.isIntersecting)) {
+        if (!entries.some((e) => e.isIntersecting)) return
+        if (this.virtualizeValue) {
+          if (this.nearBufferEnd()) void this.loadMore()
+        } else {
           void this.loadMore()
         }
       },
@@ -176,6 +195,12 @@ export default class extends Controller {
     }
   }
 
+  private clearLoadingUi (): void {
+    this.gridEl().classList.remove('is-loading-more')
+    // Prefer sentinel CSS label for in-flight; keep status clear unless end/error.
+    if (!this.exhausted) this.updateStatus('')
+  }
+
   private async fillViewport (): Promise<void> {
     let guard = 0
     while (guard < MAX_FILL_PAGES && this.hasMore && !this.viewportSatisfied()) {
@@ -206,7 +231,20 @@ export default class extends Controller {
     return docHeight - scrollBottom < SCROLL_FALLBACK_PX
   }
 
+  /** True when the rendered window is approaching the end of the logical buffer. */
+  private nearBufferEnd (): boolean {
+    if (this.cardBuffer.length === 0) return this.hasMore
+    const cols = Math.max(1, this.cols)
+    const prefetchCards = cols * (this.overscanRowsValue + BUFFER_PREFETCH_ROWS)
+    // Use end of applied window when known; else start + overscan estimate.
+    const windowEnd = this.lastAppliedEndIdx > 0
+      ? this.lastAppliedEndIdx
+      : this.virtualWindowStart + prefetchCards
+    return windowEnd + cols * BUFFER_PREFETCH_ROWS >= this.cardBuffer.length
+  }
+
   private async loadMore (): Promise<boolean> {
+    // Single-flight: never abort a healthy in-flight page fetch to start another.
     if (this.loading || !this.hasMore) return false
 
     const url = this.nextUrlValue
@@ -214,8 +252,8 @@ export default class extends Controller {
 
     this.loading = true
     this.gridEl().classList.add('is-loading-more')
-    this.updateStatus('Loading more…')
-    this.abortInFlight()
+    // Status stays empty while loading — sentinel CSS label shows "Loading more…".
+    this.updateStatus('')
     this.abortController = new AbortController()
 
     try {
@@ -264,12 +302,14 @@ export default class extends Controller {
       if (this.virtualizeValue) {
         this.harvestCardsFromDom()
         this.ensureMetrics()
-        this.applyVirtualWindow()
+        // Force window refresh so newly buffered cards can enter the DOM.
+        this.applyVirtualWindow(true)
       } else {
         this.dedupeCards()
       }
 
       this.syncNextUrlFromSentinel()
+      // Sentinel node may have been replaced by turbo-stream — rebind if needed.
       this.setupObserver()
 
       if (!this.hasMore) {
@@ -283,7 +323,10 @@ export default class extends Controller {
 
       return true
     } catch (e) {
-      if ((e as Error)?.name === 'AbortError') return false
+      if ((e as Error)?.name === 'AbortError') {
+        this.clearLoadingUi()
+        return false
+      }
       console.warn('[infinite-scroll] load error', e)
       this.transientFailures += 1
       this.updateStatus('Could not load more. Scroll to retry.')
@@ -310,6 +353,8 @@ export default class extends Controller {
   private seedBufferFromDom (): void {
     this.cardBuffer = []
     this.bufferIds.clear()
+    this.lastAppliedStartIdx = -1
+    this.lastAppliedEndIdx = -1
     this.harvestCardsFromDom()
   }
 
@@ -338,12 +383,25 @@ export default class extends Controller {
       if (Number.isFinite(parsed) && parsed > 0) this.cols = parsed
     }
 
+    if (this.metricsReady) return
+
     const gapRaw = getComputedStyle(grid).rowGap || getComputedStyle(grid).gap
     const gapParsed = parseFloat(gapRaw)
     if (Number.isFinite(gapParsed) && gapParsed > 0) this.gapPx = gapParsed
 
-    // Measure from a temporary sample if buffer has HTML; else keep default.
-    if (this.cardBuffer.length > 0 && !this.metricsReady) {
+    // Prefer live card if window already rendered.
+    const live = grid.querySelector<HTMLElement>(this.cardSelectorValue)
+    if (live != null) {
+      const h = live.getBoundingClientRect().height
+      if (h > 40) {
+        this.rowHeight = h + this.gapPx
+        this.metricsReady = true
+        return
+      }
+    }
+
+    // Measure once from a temporary sample in the buffer.
+    if (this.cardBuffer.length > 0) {
       const probe = document.createElement('div')
       probe.style.cssText = 'position:absolute;visibility:hidden;pointer-events:none;width:100%'
       probe.innerHTML = this.cardBuffer[0].html
@@ -358,19 +416,13 @@ export default class extends Controller {
       }
       probe.remove()
     }
-
-    // Prefer live card if window already rendered.
-    const live = grid.querySelector<HTMLElement>(this.cardSelectorValue)
-    if (live != null) {
-      const h = live.getBoundingClientRect().height
-      if (h > 40) {
-        this.rowHeight = h + this.gapPx
-        this.metricsReady = true
-      }
-    }
   }
 
-  private applyVirtualWindow (): void {
+  /**
+   * Render only startIdx..endIdx into the grid.
+   * @param force rebuild even when indices are unchanged (e.g. after harvest)
+   */
+  private applyVirtualWindow (force = false): void {
     if (!this.virtualizeValue) return
     const grid = this.gridEl()
     const sentinel = this.sentinelEl()
@@ -379,7 +431,7 @@ export default class extends Controller {
     this.ensureMetrics()
     const cols = Math.max(1, this.cols)
     const total = this.cardBuffer.length
-    const totalRows = Math.ceil(total / cols)
+    const totalRows = Math.ceil(total / cols) || 0
     const rowH = this.rowHeight
 
     const gridRect = grid.getBoundingClientRect()
@@ -392,6 +444,12 @@ export default class extends Controller {
     const startIdx = startRow * cols
     const endIdx = Math.min(total, endRow * cols)
     this.virtualWindowStart = startIdx
+
+    if (!force && startIdx === this.lastAppliedStartIdx && endIdx === this.lastAppliedEndIdx) {
+      return
+    }
+    this.lastAppliedStartIdx = startIdx
+    this.lastAppliedEndIdx = endIdx
 
     // Remove current window cards + spacers (keep sentinel + unassigned tiles).
     grid.querySelectorAll<HTMLElement>(`${this.cardSelectorValue}[id]`).forEach((el) => el.remove())
@@ -432,12 +490,9 @@ export default class extends Controller {
         this.scrollTicking = false
         this.updateBackToTop()
         if (this.virtualizeValue) {
-          this.applyVirtualWindow()
-          // Prefetch when the virtual window approaches the end of the buffer.
-          const cols = Math.max(1, this.cols)
-          const nearBufferEnd =
-            this.virtualWindowStart + cols * (this.overscanRowsValue + 6) >= this.cardBuffer.length
-          if (nearBufferEnd || this.nearBottom()) {
+          this.applyVirtualWindow(false)
+          // Prefetch only at buffer end — nearBottom is wrong when spacers shrink the doc.
+          if (this.nearBufferEnd()) {
             void this.loadMore()
           }
         } else if (this.nearBottom()) {
@@ -468,6 +523,7 @@ export default class extends Controller {
 
   private onBeforeVisit (): void {
     this.persistScrollY()
+    this.abortInFlight()
   }
 
   private storageKey (): string {
@@ -500,7 +556,7 @@ export default class extends Controller {
     if (!Number.isFinite(y) || y < 1) return
     requestAnimationFrame(() => {
       window.scrollTo(0, y)
-      if (this.virtualizeValue) this.applyVirtualWindow()
+      if (this.virtualizeValue) this.applyVirtualWindow(true)
       this.updateBackToTop()
     })
   }
