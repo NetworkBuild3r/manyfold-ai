@@ -15,10 +15,15 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <%= csrf_meta_tags %>
     <%= tag.meta name: "csp-nonce", content: content_security_policy_nonce if content_security_policy_nonce %>
-    <%# No Manyfold roundel fallback — only a custom site_icon from Appearance settings. %>
+    <%# Favicon: Appearance site_icon overrides; otherwise a neutral cube (not Manyfold roundel).
+        Cache-bust query so browsers drop the old purple hexagon. %>
     <% if site_icon.present? %>
       <%= favicon_link_tag site_icon %>
       <%= tag.link rel: "apple-touch-icon", href: site_icon %>
+    <% else %>
+      <%= tag.link rel: "icon", href: "/icon.svg?v=3dprints1", type: "image/svg+xml" %>
+      <%= tag.link rel: "icon", href: "/favicon.ico?v=3dprints1", sizes: "any" %>
+      <%= tag.link rel: "apple-touch-icon", href: "/apple-touch-icon.png?v=3dprints1" %>
     <% end %>
     <%= tag.meta name: "apple-mobile-web-app-title", content: site_name %>
     <%# Fonts: system stack only — Traefik/cluster CSP blocks fonts.googleapis.com,

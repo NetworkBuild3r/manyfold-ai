@@ -40,7 +40,8 @@ module ApplicationHelper
     SiteSettings.site_tagline.presence || t("application.tagline")
   end
 
-  # Only show a custom icon when an admin set one; never fall back to the Manyfold roundel.
+  # Custom icon from Appearance settings. When blank, layouts use public/icon.svg
+  # (neutral cube) — never the upstream Manyfold purple roundel.
   def site_icon
     SiteSettings.site_icon.presence
   end
