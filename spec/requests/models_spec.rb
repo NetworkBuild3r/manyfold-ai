@@ -344,11 +344,13 @@ RSpec.describe "Models" do
           expect(response.body).not_to include("model-grid-page-break")
         end
 
-        it "includes aligned per_page from BrowseGrid on the index" do
+        it "uses fixed BrowseGrid page size on the index" do
           get "/models?library=#{library.to_param}"
           expect(response).to have_http_status(:success)
-          expect(response.body).to include("data-browse-columns=")
-          expect(response.body).to include("--browse-cols:")
+          expect(response.body).to include("browse-card-grid")
+          expect(response.body).to include(%(data-infinite-scroll-per-page-value="#{BrowseGrid::PAGE_SIZE}"))
+          expect(response.body).not_to include("data-browse-columns=")
+          expect(response.body).not_to include("--browse-cols:")
         end
       end
 

@@ -236,22 +236,31 @@ dialog.modal::backdrop {
 /* ——— Browse card grids (models / creators / collections infinite scroll) ——— */
 
 /*
- * Layout contract: always a CSS grid. Cards are always direct children.
- * Views also apply homepage auto-fill utilities (grid + grid-cols-[...]) so
- * density matches / even if custom rules are incomplete. Sentinel / card chrome
- * lives here; column count utilities win via the utilities layer.
+ * Card-sized grid: tracks stay between --browse-card-min and --browse-card-max.
+ * Wider viewports gain columns; cards never grow into hero tiles (no 1fr share).
+ * Cards are always direct children. Stimulus only appends; never owns layout.
  */
+:root {
+  --browse-card-min: 11rem; /* ~176px phones */
+  --browse-card-max: 17.5rem; /* 280px hard cap */
+}
+
+@media (min-width: 640px) {
+  :root {
+    --browse-card-min: 15rem; /* 240px */
+  }
+}
+
 @layer components {
   .browse-card-grid {
     display: grid;
     align-items: start;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  @media (min-width: 640px) {
-    .browse-card-grid {
-      grid-template-columns: repeat(var(--browse-cols, 3), minmax(0, 1fr));
-    }
+    justify-content: start;
+    gap: 1rem;
+    grid-template-columns: repeat(
+      auto-fill,
+      minmax(var(--browse-card-min), var(--browse-card-max))
+    );
   }
 
   .browse-card-grid .model-card,

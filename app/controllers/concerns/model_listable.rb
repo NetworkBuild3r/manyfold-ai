@@ -17,16 +17,8 @@ module ModelListable
     @tags, @kv_tags = split_key_value_tags(@tags)
     @unrelated_tag_count = nil unless @filter.any?
 
-    settings = helpers.pagination_settings
-    cols = BrowseGrid.columns(settings)
-    # Aligned page size (multiple of columns) so every batch fills complete rows.
-    preferred = if infinite_scroll_or_stream_request? && params[:per_page].present?
-      params[:per_page]
-    else
-      settings["per_page"]
-    end
-    per_page = BrowseGrid.aligned_page_size(preferred, cols)
-    @browse_columns = cols
+    # Card-sized grid: fixed batch size. CSS auto-fill owns column count.
+    per_page = BrowseGrid.page_size
     @browse_per_page = per_page
 
     # Full HTML browse always starts at page 1 (one infinite page in the address bar).

@@ -1,5 +1,5 @@
 module ModelsHelper
-  # URL for models index with a given page, preserving filter/sort and aligned per_page.
+  # URL for models index with a given page, preserving filter/sort and fixed per_page.
   def models_page_url(page, filter = nil, per_page: nil)
     browse_page_url(:models_path, page, filter: filter, per_page: per_page)
   end

@@ -181,7 +181,6 @@
         </div>
       </div>
 
-      <% cols = @browse_columns || browse_grid_columns %>
       <% per_page = @browse_per_page || browse_grid_page_size %>
       <% next_url = @models.next_page ? models_page_url(@models.next_page, @filter, per_page: per_page) : "" %>
       <div data-controller="infinite-scroll"
@@ -192,12 +191,10 @@
            data-infinite-scroll-storage-key-prefix-value="scroll_models_"
            data-infinite-scroll-end-message-value="<%= t(".end_of_results") %>"
            class="library-infinite">
-        <div class="browse-card-grid grid grid-cols-[repeat(auto-fill,minmax(min(100%,11rem),1fr))] sm:grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3 sm:gap-4 mb-2"
+        <div class="browse-card-grid mb-2"
              id="model-card-grid"
-             style="--browse-cols: <%= cols %>"
              role="list"
              aria-label="<%= Model.model_name.human(count: 100) %>"
-             data-browse-columns="<%= cols %>"
              data-infinite-scroll-target="grid">
           <% @models.each_with_index do |model, index| %>
             <%= render Components::ModelCard.new(model: model, eager_preview: index < 8, gallery: true) %>

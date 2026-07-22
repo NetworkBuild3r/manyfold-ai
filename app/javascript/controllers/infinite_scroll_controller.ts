@@ -12,15 +12,15 @@ const BACK_TO_TOP_SHOW_PX = 800
 /**
  * Infinite scroll for a card grid via Turbo Streams.
  *
- * Server owns layout: cards are always direct children of .browse-card-grid.
- * This controller only fetches the next page and applies the turbo-stream
- * (insert before sentinel). No DOM restructuring, no virtualization.
+ * CSS owns layout: card-sized auto-fill tracks on .browse-card-grid.
+ * Cards are always direct children. This controller only fetches the next page
+ * and applies the turbo-stream (insert before sentinel). No DOM restructuring.
  */
 export default class extends Controller {
   static targets = ['sentinel', 'status', 'backToTop', 'grid']
   static values = {
     nextUrl: { type: String, default: '' },
-    perPage: { type: Number, default: 24 },
+    perPage: { type: Number, default: 48 },
     sentinelId: { type: String, default: 'models-scroll-sentinel' },
     cardSelector: { type: String, default: '.model-card' },
     storageKeyPrefix: { type: String, default: 'scroll_models_' }

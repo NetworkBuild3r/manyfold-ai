@@ -8,15 +8,7 @@ module BrowseListable
   private
 
   def prepare_browse_page(scope)
-    settings = helpers.pagination_settings
-    cols = BrowseGrid.columns(settings)
-    preferred = if infinite_scroll_or_stream_request? && params[:per_page].present?
-      params[:per_page]
-    else
-      settings["per_page"]
-    end
-    per_page = BrowseGrid.aligned_page_size(preferred, cols)
-    @browse_columns = cols
+    per_page = BrowseGrid.page_size
     @browse_per_page = per_page
 
     page = if infinite_scroll_or_stream_request?
