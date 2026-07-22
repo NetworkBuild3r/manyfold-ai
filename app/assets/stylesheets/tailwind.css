@@ -233,83 +233,87 @@ dialog.modal::backdrop {
   background-color: white;
 }
 
-# ——— Browse card grids (models / creators / collections infinite scroll) ——— */
+/* ——— Browse card grids (models / creators / collections infinite scroll) ——— */
 
 /*
- * Single layout contract: always a CSS grid. Cards are always direct children.
- * Columns: 2 on mobile; sm+ from --browse-cols (BrowseGrid / pagination_settings).
- * items-start: do not stretch cards when a later page fills an incomplete row.
+ * Layout contract: always a CSS grid. Cards are always direct children.
+ * Views also apply homepage auto-fill utilities (grid + grid-cols-[...]) so
+ * density matches / even if custom rules are incomplete. Sentinel / card chrome
+ * lives here; column count utilities win via the utilities layer.
  */
-.browse-card-grid {
-  display: grid;
-  align-items: start;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-@media (min-width: 640px) {
+@layer components {
   .browse-card-grid {
-    grid-template-columns: repeat(var(--browse-cols, 3), minmax(0, 1fr));
+    display: grid;
+    align-items: start;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-}
 
-.browse-card-grid .model-card,
-.browse-card-grid .collection-card,
-.browse-card-grid .creator-card {
-  width: 100%;
-  overflow-anchor: none;
-}
+  @media (min-width: 640px) {
+    .browse-card-grid {
+      grid-template-columns: repeat(var(--browse-cols, 3), minmax(0, 1fr));
+    }
+  }
 
-.browse-card-grid .browse-scroll-sentinel {
-  grid-column: 1 / -1;
-  min-height: 2.5rem;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-  overflow-anchor: none;
-}
+  .browse-card-grid .model-card,
+  .browse-card-grid .collection-card,
+  .browse-card-grid .creator-card {
+    width: 100%;
+    overflow-anchor: none;
+  }
 
-.browse-card-grid .browse-scroll-sentinel[hidden] {
-  display: none !important;
-}
+  .browse-card-grid .browse-scroll-sentinel {
+    grid-column: 1 / -1;
+    min-height: 2.5rem;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    overflow-anchor: none;
+  }
 
-/* Preview media must never push card height when the image loads. */
-.browse-card-grid .aspect-\[4\/3\] {
-  aspect-ratio: 4 / 3;
-  overflow: hidden;
-}
-.browse-card-grid img {
-  max-width: none;
-}
+  .browse-card-grid .browse-scroll-sentinel[hidden] {
+    display: none !important;
+  }
 
-/* Label only visible while a page fetch is in flight */
-.browse-card-grid .browse-scroll-sentinel__label {
-  font-size: 0.75rem;
-  color: var(--color-secondary-500);
-  opacity: 0;
-  transition: opacity 0.15s ease;
-}
+  /* Preview media must never push card height when the image loads. */
+  .browse-card-grid .aspect-\[4\/3\] {
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+  }
 
-.browse-card-grid.is-loading-more .browse-scroll-sentinel__label {
-  opacity: 1;
-}
+  .browse-card-grid img {
+    max-width: none;
+  }
 
-.browse-card-grid.is-loading-more .browse-scroll-sentinel__label::before {
-  content: "";
-  display: inline-block;
-  width: 1rem;
-  height: 1rem;
-  margin-right: 0.5rem;
-  vertical-align: -0.15rem;
-  border: 2px solid var(--color-secondary-300);
-  border-top-color: var(--color-primary-500);
-  border-radius: 50%;
-  animation: browse-grid-spin 0.8s linear infinite;
-}
+  /* Label only visible while a page fetch is in flight */
+  .browse-card-grid .browse-scroll-sentinel__label {
+    font-size: 0.75rem;
+    color: var(--color-secondary-500);
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
 
-@keyframes browse-grid-spin {
-  to { transform: rotate(360deg); }
+  .browse-card-grid.is-loading-more .browse-scroll-sentinel__label {
+    opacity: 1;
+  }
+
+  .browse-card-grid.is-loading-more .browse-scroll-sentinel__label::before {
+    content: "";
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    margin-right: 0.5rem;
+    vertical-align: -0.15rem;
+    border: 2px solid var(--color-secondary-300);
+    border-top-color: var(--color-primary-500);
+    border-radius: 50%;
+    animation: browse-grid-spin 0.8s linear infinite;
+  }
+
+  @keyframes browse-grid-spin {
+    to { transform: rotate(360deg); }
+  }
 }
 
 /* Screen-reader / polite live region under the grid */
