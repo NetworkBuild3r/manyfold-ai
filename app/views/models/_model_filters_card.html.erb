@@ -2,7 +2,7 @@
 <%
   fp = @filter&.to_params || {}
   has_image_on = ActiveModel::Type::Boolean.new.cast(@filter&.parameter(:has_image))
-  select_class = "block w-full rounded-lg border border-secondary-300 dark:border-secondary-600 dark:bg-secondary-800 dark:text-secondary-100 px-3 py-2 text-sm shadow-sm focus:ring-2 focus:ring-primary-500"
+  select_class = "block w-full max-w-full min-w-0 rounded-lg border border-secondary-300 dark:border-secondary-600 dark:bg-secondary-800 dark:text-secondary-100 px-3 py-2 text-sm shadow-sm focus:ring-2 focus:ring-primary-500"
   label_class = "block text-sm font-medium text-secondary-700 dark:text-secondary-300 mb-1"
   input_class = select_class
 %>
@@ -63,12 +63,12 @@
       </label>
     </div>
 
-    <div class="flex flex-col gap-2 pt-2">
-      <button type="submit" class="inline-flex w-full items-center justify-center px-3 py-2 text-sm font-medium rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500">
+    <div class="flex flex-col gap-2 pt-2 min-w-0">
+      <button type="submit" class="flex w-full max-w-full items-center justify-center px-3 py-2 text-sm font-medium rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500">
         <%= t(".apply", default: "Apply filters") %>
       </button>
       <%= link_to t(".clear", default: "Clear all"), models_path,
-            class: "inline-flex w-full items-center justify-center px-3 py-2 text-sm font-medium rounded-lg border border-secondary-300 dark:border-secondary-500 bg-white dark:bg-secondary-800 text-secondary-800 dark:text-secondary-100 hover:bg-secondary-50 dark:hover:bg-secondary-700 no-underline focus-visible:ring-2 focus-visible:ring-primary-500" %>
+            class: "flex w-full max-w-full items-center justify-center px-3 py-2 text-sm font-medium rounded-lg border border-secondary-300 dark:border-secondary-500 bg-white dark:bg-secondary-800 text-secondary-800 dark:text-secondary-100 hover:bg-secondary-50 dark:hover:bg-secondary-700 no-underline focus-visible:ring-2 focus-visible:ring-primary-500" %>
     </div>
   <% end %>
 <% end %>

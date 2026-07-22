@@ -152,6 +152,15 @@
   - Icons use currentColor (see Components::Icon text-current) so they follow parent text.
 */
 @layer base {
+  /* No full Tailwind preflight — still need border-box so w-full + padding/border
+     does not overflow card bodies (inputs/links default to content-box). */
+  *,
+  ::before,
+  ::after,
+  ::backdrop {
+    box-sizing: border-box;
+  }
+
   a {
     color: var(--color-primary-700);
   }
@@ -415,10 +424,22 @@ dialog.modal::backdrop {
     position: sticky;
     top: 5.5rem;
     max-height: calc(100vh - 6rem);
+    min-width: 0;
+    overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior: contain;
     align-self: start;
     padding-right: 0.25rem;
+  }
+
+  /* Keep card bodies and full-width controls inside the 280px rail */
+  .library-filter-panel > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .library-filter-panel :is(input, select, textarea, button, a) {
+    max-width: 100%;
   }
 }
 

@@ -107,7 +107,7 @@ module ApplicationHelper
 
   def card(style, title = nil, options = {}, &content)
     id = options[:id] || "card-#{SecureRandom.hex(4)}"
-    card_class = ["rounded-xl", "border", "border-secondary-200", "dark:border-secondary-600", "bg-surface", "dark:bg-surface-dark", "shadow-sm", "mb-4", options[:class]].compact.join(" ")
+    card_class = ["rounded-xl", "border", "border-secondary-200", "dark:border-secondary-600", "bg-surface", "dark:bg-surface-dark", "shadow-sm", "mb-4", "min-w-0", "max-w-full", options[:class]].compact.join(" ")
     card_class += " skip-link-container" if options[:skip_link]
     card_data = options[:data] || {}
     card_data = card_data.merge(controller: "collapse") if options[:collapse]
@@ -137,11 +137,11 @@ module ApplicationHelper
         end,
         (skip_link(options[:skip_link][:target], options[:skip_link][:text]) if options[:skip_link]),
         tag.div(
-          class: ["p-4", ("collapse-md" if options[:collapse] == "md")].compact.join(" "),
+          class: ["p-4", "min-w-0", ("collapse-md" if options[:collapse] == "md")].compact.join(" "),
           id: "#{id}-collapse",
           data: (options[:collapse] ? {collapse_target: "content"} : {})
         ) do
-          tag.div do
+          tag.div(class: "min-w-0") do
             yield
           end
         end
