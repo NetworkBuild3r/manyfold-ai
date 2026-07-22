@@ -10,9 +10,29 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_02_14_240000) do
+ActiveRecord::Schema[8.0].define(version: 2026_07_22_150000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "archive_entries", force: :cascade do |t|
+    t.bigint "model_file_id", null: false
+    t.string "public_id", null: false
+    t.string "pathname", null: false
+    t.bigint "size"
+    t.bigint "compressed_size"
+    t.string "kind", default: "other", null: false
+    t.string "preview_path"
+    t.string "extracted_path"
+    t.string "status", default: "listed", null: false
+    t.text "error_message"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["model_file_id", "kind"], name: "index_archive_entries_on_model_file_id_and_kind"
+    t.index ["model_file_id", "pathname"], name: "index_archive_entries_on_model_file_id_and_pathname", unique: true
+    t.index ["model_file_id", "status"], name: "index_archive_entries_on_model_file_id_and_status"
+    t.index ["model_file_id"], name: "index_archive_entries_on_model_file_id"
+    t.index ["public_id"], name: "index_archive_entries_on_public_id", unique: true
+  end
 
   create_table "altcha_solutions", force: :cascade do |t|
     t.string "algorithm"
@@ -339,6 +359,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_14_240000) do
     t.string "public_id"
     t.virtual "filename_lower", type: :string, as: "lower((filename)::text)", stored: true
     t.boolean "previewable", default: false, null: false
+    t.boolean "archive_entries_truncated", default: false, null: false
+    t.integer "archive_entries_listed_count", default: 0, null: false
     t.index ["digest"], name: "index_model_files_on_digest"
     t.index ["filename", "model_id"], name: "index_model_files_on_filename_and_model_id", unique: true
     t.index ["filename_lower"], name: "index_model_files_on_filename_lower"
@@ -571,6 +593,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_14_240000) do
   add_foreign_key "memberships", "users", on_delete: :cascade
   add_foreign_key "merge_histories", "libraries", column: "source_library_id", on_delete: :nullify
   add_foreign_key "merge_histories", "models", column: "target_model_id"
+  add_foreign_key "archive_entries", "model_files", on_delete: :cascade
   add_foreign_key "model_files", "model_files", column: "presupported_version_id"
   add_foreign_key "model_files", "models"
   add_foreign_key "models", "collections"

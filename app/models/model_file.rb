@@ -11,6 +11,7 @@ class ModelFile < ApplicationRecord
   SPECIAL_FILES = [].freeze
 
   belongs_to :model, touch: true
+  has_many :archive_entries, dependent: :destroy
 
   after_create :attach_existing_file_on_create!
 
@@ -76,6 +77,15 @@ class ModelFile < ApplicationRecord
 
   def is_renderable?
     ["stl", "obj", "3mf", "ply", "gltf", "glb", "drc", "fbx", "3ds", "gcode", "mpd", "ldr", "3dm"].include? extension
+  end
+
+  def is_archive?
+    SupportedMimeTypes.archive_extensions.include?(extension)
+  end
+
+  def scan_archive_later(delay: 0.seconds)
+    return unless is_archive?
+    Scan::ModelFile::ListArchiveJob.set(wait: delay).perform_later(id)
   end
 
   def mime_type

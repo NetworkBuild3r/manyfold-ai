@@ -41,6 +41,9 @@ class SiteSettings < RailsSettings::Base
   field :pregenerate_downloads, type: :boolean, default: false
   field :download_expiry_time_in_hours, type: :integer, default: 24
   field :generate_image_derivatives, type: :boolean, default: false
+  # When true, ParseMetadataJob enqueues archive listing for archives outside discovery scans.
+  field :scan_archives_on_metadata, type: :boolean, default: false
+  field :max_archive_preview_entries, type: :integer, default: 100
 
   field :allow_robots, type: :boolean, default: false
   field :allow_ai_bots, type: :boolean, default: false

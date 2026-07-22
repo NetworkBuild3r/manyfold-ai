@@ -1,0 +1,26 @@
+---
+en:
+  archive_entries:
+    panel:
+      title: Archive contents
+      scan: Scan archive
+      scan_all: Scan archives
+      empty: Not scanned yet. Scan to list files inside this archive.
+      counts: "%{total} entries · %{ready} previews · %{pending} pending · %{failed} failed"
+      truncated: listing truncated
+      open: Open
+      download: Download
+      showing_first: Showing first 200 entries.
+    show:
+      details: Entry details
+      path: Path
+      kind: Kind
+      size: Size
+      status: Status
+      no_preview: No preview available for this entry.
+    scan:
+      started: Archive scan queued. Refresh in a moment to see contents.
+  models:
+    scan_archives:
+      create:
+        started: Archive scans queued for this model.

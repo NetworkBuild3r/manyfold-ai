@@ -1,27 +1,29 @@
-# Task Plan: Fix blank card previews
+# Task Plan: Archive contents scanner
 
 ## Goal
 
-Stop broken card thumbnails when DB `preview_file` points at NFS paths that no longer exist. Harden serve/UI (404 + empty placeholder), heal stale preview pointers, ship on manyfold-ai `main` only.
+Opt-in peek into library archives (zip/7z/rar): list entries, save previews, download single files, live WebGL for meshes — without full extract into the model folder.
 
 ## Phases
 
 | Phase | Status | Notes |
 |-------|--------|-------|
-| A Planning files | complete | Reset task_plan / findings / progress |
-| B Harden serve/UI | complete | 404 missing files; PreviewFrame empty; specs |
-| C Heal previews | complete | resolve_preview_file + HealMissingPreviewsJob + rake |
-| D Ship + run heal | complete | Pin f052fa36; healed 1802; verified |
+| Schema + ModelFile#is_archive? | complete | archive_entries + counters |
+| ArchiveEntryService + list/preview jobs | complete | caps, EXTRACT_SECURE |
+| mesh_thumbnail.mjs + MiniMagick fallback | complete | Node optional; IM placeholder default |
+| Download/content/preview routes | complete | ArchiveEntriesController |
+| UI panels + scan buttons | complete | model + file show |
+| Rake + SiteSetting | complete | scan_archives_on_metadata default false |
+| Specs + ship | in_progress | |
 
 ## Decisions
 
-- Heal + harden only — do not auto-delete orphan missing-folder models.
-- PreviewFrame may call `exists_on_storage?` once per visible card.
-- `send_file_content` returns 404 (not 500) on ENOENT / Shrine::FileNotFound.
+- Do not auto-scan during library discovery (scan_batch_id).
+- Mesh PNG uses MiniMagick info card when Node is absent (runtime image).
+- ArchiveEntry is not a ModelFile (paths under .manyfold only).
 
 ## Errors Encountered
 
 | Error | Attempt | Resolution |
 |-------|---------|------------|
-| `bash` missing in container | 1 | Used `env LIMIT=… bundle exec rake` |
-| Docker smoke-test failed | 1 | Pin digest from successful build job (as before) |
+| | | |

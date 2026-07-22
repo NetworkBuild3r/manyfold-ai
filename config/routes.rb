@@ -140,7 +140,18 @@ Rails.application.routes.draw do
         post "split"
         post "bulk_edit_selected"
       end
+      member do
+        post "scan_archive", to: "archive_entries#scan"
+      end
+      resources :archive_entries, only: [:index, :show] do
+        member do
+          get :download
+          get :content
+          get :preview
+        end
+      end
     end
+    resource :scan_archives, only: [:create], module: :models
   end
   resources :creators do
     concerns :followable, followable_class: "Creator"

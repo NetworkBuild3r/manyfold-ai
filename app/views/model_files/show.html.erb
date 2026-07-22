@@ -92,3 +92,9 @@
 </div>
 
 <%= render "application/problems_card", problematic: @file, problems: @file.problems.visible(problem_settings), duplicates: @duplicates %>
+
+<% if @file.is_archive? %>
+  <div class="mt-6">
+    <%= render "application/archive_contents_panel", file: @file %>
+  </div>
+<% end %>

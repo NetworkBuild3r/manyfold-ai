@@ -20,6 +20,10 @@ class ModelFilePolicy < ApplicationPolicy
     can_update_model?
   end
 
+  def scan_archive?
+    can_update_model? && @record.is_archive?
+  end
+
   def bulk_edit?
     bulk_update?
   end

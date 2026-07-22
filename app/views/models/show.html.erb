@@ -50,6 +50,12 @@
           <% end %>
           <% if policy(@model).scan? %>
             <%= link_to Icon(icon: "radar", label: t(".rescan")), scan_model_path(@model), method: :post, class: secondary_action_class(visibility: "hidden lg:inline-flex"), title: t(".rescan") %>
+            <% if @model.model_files.any?(&:is_archive?) %>
+              <%= button_to t("archive_entries.panel.scan_all", default: "Scan archives"),
+                    model_scan_archives_path(@model),
+                    method: :post,
+                    class: "#{secondary_action_class(visibility: "hidden lg:inline-flex")} border-0 cursor-pointer" %>
+            <% end %>
           <% end %>
           <% if SiteSettings.multiuser_enabled? %>
             <%= link_to Icon(icon: "flag", label: translate("general.report", type: "")), new_model_report_path(@model), class: secondary_action_class(visibility: "hidden lg:inline-flex") %>
@@ -114,6 +120,13 @@
               </div>
             <% end %>
           <% end %>
+        <% end %>
+
+        <% @model.model_files.select(&:is_archive?).each do |archive_file| %>
+          <div class="mb-6">
+            <h2 class="<%= heading_classes(:section) %> mb-3"><%= archive_file.filename %></h2>
+            <%= render "application/archive_contents_panel", file: archive_file %>
+          </div>
         <% end %>
 
         <% if policy(:problem).show? %>

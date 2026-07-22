@@ -28,6 +28,11 @@ class Scan::ModelFile::ParseMetadataJob < ApplicationJob
       # Deep path: single-model scan or upload still analyses immediately.
       defer_analysis = scan_batch_id.present? && ENV.fetch("SCAN_DEFER_ANALYSIS", "1") != "0"
       file.analyse_later unless defer_analysis
+
+      # Opt-in archive peek (never during library discovery fan-out).
+      if file.is_archive? && scan_batch_id.blank? && SiteSettings.scan_archives_on_metadata
+        file.scan_archive_later
+      end
     end
   end
 

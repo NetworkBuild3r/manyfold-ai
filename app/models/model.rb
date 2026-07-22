@@ -433,6 +433,12 @@ class Model < ApplicationRecord
     Scan::CheckModelJob.set(wait: delay).perform_later(id, scan_batch_id: scan_batch_id)
   end
 
+  def scan_archives_later(delay: 0.seconds)
+    model_files.find_each do |file|
+      file.scan_archive_later(delay: delay) if file.is_archive?
+    end
+  end
+
   def check_for_problems_later(delay: 5.seconds)
     return if skip_problem_check || Current.skip_problem_checks
 
