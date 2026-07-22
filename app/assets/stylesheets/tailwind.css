@@ -236,14 +236,16 @@ dialog.modal::backdrop {
 # ——— Browse card grids (models / creators / collections infinite scroll) ——— */
 
 /*
- * items-start: when page N+1 fills an incomplete last row, do NOT stretch existing
- * cards to the new tallest neighbor. BrowseGrid keeps per_page a multiple of columns.
+ * Single layout contract: always a CSS grid. Cards are always direct children.
+ * Columns: 2 on mobile; sm+ from --browse-cols (BrowseGrid / pagination_settings).
+ * items-start: do not stretch cards when a later page fills an incomplete row.
  */
 .browse-card-grid {
+  display: grid;
   align-items: start;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-/* sm+: columns from --browse-cols (pagination_settings.grid_columns via BrowseGrid) */
 @media (min-width: 640px) {
   .browse-card-grid {
     grid-template-columns: repeat(var(--browse-cols, 3), minmax(0, 1fr));
@@ -339,63 +341,6 @@ dialog.modal::backdrop {
 
 .library-browse-page .library-infinite.is-exhausted .library-infinite__hint {
   display: none;
-}
-
-/* Virtualized models browse: outer shell is a tall block; cards live in a translated window. */
-.browse-card-grid.browse-card-grid--virtual {
-  display: block;
-  position: relative;
-  width: 100%;
-  /* height set inline from buffer row count × measured row height */
-}
-
-/*
- * Inner window MUST be a real multi-column grid. Without explicit columns, cards
- * stack as full-width blocks (one giant card per viewport) — unusable for browse.
- */
-.browse-card-grid--virtual > .browse-virtual-window {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.75rem;
-  align-items: start;
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  width: 100%;
-  box-sizing: border-box;
-  will-change: transform;
-}
-
-@media (min-width: 640px) {
-  .browse-card-grid--virtual > .browse-virtual-window {
-    grid-template-columns: repeat(var(--browse-cols, 3), minmax(0, 1fr));
-    gap: 0.875rem;
-  }
-}
-
-.browse-card-grid--virtual > .browse-virtual-window > .model-card {
-  width: 100%;
-  min-width: 0;
-  max-width: 100%;
-}
-
-.browse-card-grid--virtual > .browse-scroll-sentinel {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  grid-column: auto;
-  min-height: 2.5rem;
-}
-
-/* Legacy spacer classes unused by translateY virtualizer; keep harmless if present */
-.browse-card-grid .browse-virtual-top-spacer,
-.browse-card-grid .browse-virtual-bottom-spacer {
-  grid-column: 1 / -1;
-  width: 100%;
-  pointer-events: none;
-  overflow-anchor: none;
 }
 
 /* Browse preview lightbox */
