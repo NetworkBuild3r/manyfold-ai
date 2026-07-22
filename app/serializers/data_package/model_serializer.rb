@@ -2,7 +2,7 @@ module DataPackage
   class ModelSerializer < BaseSerializer
     def serialize
       {
-        "$schema": "https://manyfold.app/profiles/0.0/datapackage.json",
+        "$schema": "https://specs.frictionlessdata.io/schemas/data-package.json",
         name: @object.name.parameterize,
         title: @object.name,
         caption: @object.caption,

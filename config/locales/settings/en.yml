@@ -78,12 +78,12 @@ en:
         title: New Domain Block
     downloads:
       derivatives:
-        description: Manyfold can create alternative versions of some files to increase site performance. Note that this will use more disk space.
+        description: The application can create alternative versions of some files to increase site performance. Note that this will use more disk space.
         heading: File Derivatives
         images:
           help: Generates lower-resolution versions of images that will load quicker on list and model pages.
           label: Image thumbnails
-      description: Manyfold will generate ZIP files of models on request, but for busy sites you may want these available more quickly. Here you can tell Manyfold to create ZIP files immediately, and also set how long they are kept in the download cache. Beware; this may use a lot of disk space!
+      description: The application will generate ZIP files of models on request, but for busy sites you may want these available more quickly. Here you can tell it to create ZIP files immediately, and also set how long they are kept in the download cache. Beware; this may use a lot of disk space!
       expiry:
         help: A setting of 0 means keep forever.
         hours: Hours
@@ -154,30 +154,31 @@ en:
           member: Members (logged-in local accounts)
           private: Private
           public: Public
-      details_html: To change these settings, edit the server's <a href='https://manyfold.app/sysadmin/configuration.html'>environment variables</a> and restart.
+      details_html: To change these settings, edit the server's environment variables and restart.
       email: Email delivery configured?
       federation: Federation enabled?
       heading: Multiuser
       multiuser: Multiuser mode?
-      multiuser_mode: Manyfold is running in multiuser mode.
+      multiuser_mode: The application is running in multiuser mode.
       oidc: OpenID Connect configured?
       permissions: Permissions
       registration: Account registration
       registration_open:
         help: Lets visitors sign up for accounts.
         label: Enable signup
-      single_user_mode: Manyfold is running in single user mode.
+      single_user_mode: The application is running in single user mode.
       user_quotas: Account upload size limit
       user_quotas_enable_quota: Enable account upload storage limit
       user_quotas_site_default: Site default account upload storage limit in MB
     reporting:
       description_html: If you enable usage tracking, the following information will be sent once a day to <code>%{endpoint}</code>. The <code>id</code> is randomly generated when you enable tracking.
       heading: Usage Tracking
+      not_configured_html: Anonymous usage reporting is disabled. To enable it, set the <code>USAGE_TRACKING_URL</code> environment variable to an endpoint you control, then restart the application.
       report_usage:
         label: Enable anonymous usage tracking
-      summary: Let the devs know you're running Manyfold.
-      use_of_data: No other information is sent or stored, and the devs will never use the information for any purpose other than measuring how many instances of Manyfold are running, and what version they are.
-      verification_html: If you want to verify what we send, you can change the <code>USAGE_REPORTING_URL</code> environment variable and send the data somewhere you can inspect it. You can also see exactly what is sent in the log.
+      summary: Optional anonymous usage reporting to an endpoint you configure.
+      use_of_data: No other information is sent by this feature beyond what is shown above.
+      verification_html: Inspect the payload in the application log, or point <code>USAGE_TRACKING_URL</code> at a service you operate.
     reports:
       index:
         description: Content reported by local or Fediverse accounts shows up here for moderation.

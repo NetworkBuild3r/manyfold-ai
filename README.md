@@ -1,19 +1,17 @@
-# Manyfold
+# 3D model library (manyfold-ai)
 
-Self-hosted 3D model library for managing and printing 3D models. Rails 8, Tailwind-only UI, batched scan pipeline, structured problem detection, merge/unmerge with history.
+Self-hosted 3D model library for managing and printing 3D models. Rails 8, Tailwind-only UI, explicit scan pipeline, structured problem detection, merge/unmerge with history.
 
 **Project type:** Web application • **Stack:** Ruby 3.4, Rails 8, Tailwind CSS 4, THREE.js/Mittsu, Sidekiq  
 **Source of truth:** `db/schema.rb`, `config/routes.rb`, `app/models/problems/`, `.cursor/rules/`, `.cursor/skills/`
 
-## Fork status
-
-This repo is a fork of [manyfold3d/manyfold](https://github.com/manyfold3d/manyfold), maintained independently. See [Differences from upstream](#differences-from-upstream) below.
+License notices (including upstream MIT copyright) are in [`LICENSE.md`](LICENSE.md) and [`NOTICE`](NOTICE).
 
 ---
 
-## What is Manyfold?
+## What it does
 
-**Manyfold** is a self-hosted web app that turns folders of 3D model files (STL, 3MF, OBJ, etc.) into a searchable, browsable library. You add **libraries** (root folders on disk); the app scans them, treats each subfolder as a **model**, and stores metadata in a DB. You browse, filter by tags/creators/collections/licenses, view 3D previews, upload files, run **problem detection**, and **merge/unmerge** models. Optional Fediverse (ActivityPub) publishing and multi-user support.
+A self-hosted web app that turns folders of 3D model files (STL, 3MF, OBJ, etc.) into a searchable, browsable library. You add **libraries** (root folders on disk); the app scans them, treats each subfolder as a **model**, and stores metadata in a DB. You browse, filter by tags/creators/collections/licenses, view 3D previews, upload files, run **problem detection**, and **merge/unmerge** models. Optional Fediverse (ActivityPub) publishing and multi-user support.
 
 **Who it's for:** Hobbyists and makers with large model collections who want a self-hosted catalog for 3D printing—search, tags, problem checks, and merge tracking without cloud lock-in.
 
@@ -23,7 +21,7 @@ This repo is a fork of [manyfold3d/manyfold](https://github.com/manyfold3d/manyf
 |--------|-------------|
 | Libraries | Add root folders (disk/NAS); scan keeps each subfolder as a model with files |
 | Browse/search | Filter by tags, creators, collections; sort, paginate; 3D previews and image carousels |
-| Metadata | Edit tags, creators, collections, licenses, links; bulk edit; path templates, README inference |
+| Metadata | Edit tags, creators, collections, licenses, links; bulk edit, path templates, README inference |
 | Problem detection | Flags issues (empty model, missing file, no license, non-manifold mesh); resolve/ignore from UI |
 | Merge/unmerge | Combine models; merge history; undo (unmerge) within configured time window |
 | Upload | Web UI upload; TUS for large files |
@@ -31,26 +29,6 @@ This repo is a fork of [manyfold3d/manyfold](https://github.com/manyfold3d/manyf
 | API | REST-style API, OEmbed, Data Package exports |
 
 **Quick start:** `bin/dev` (local) or `docker compose up` (Docker). App at <http://127.0.0.1:3214>.
-
----
-
-## Differences from upstream
-
-This fork diverges from [manyfold3d/manyfold](https://github.com/manyfold3d/manyfold) with a different architecture and UX approach:
-
-| Aspect | Upstream (manyfold3d) | This fork |
-|--------|------------------------|-----------|
-| UI | Bootstrap 5 | **Tailwind-only** (no Bootstrap/Bootswatch/Sass). Single pipeline: `app/assets/stylesheets/tailwind.css` → `app/assets/builds/tailwind.css`. Light/dark themes. |
-| Scanning | Implicit/cascade | **Explicit batched pipeline**: filesystem detection → create model from path → add files → parse metadata → single finalize step. No `touch`-driven cascades; DB–filesystem sync is predictable. |
-| Problems | Various entry points | **Single entry point**: `Problem.resolve_batch`. Strategy classes in `app/models/problems/`. Turbo Stream responses (removes + optional card replace). Creation/clearing only via `Problem.create_or_clear` and Registry-registered detectors. |
-| Data management | Basic merge | **Merge with history** and time-limited unmerge; path prefix tracking; `db_integrity.rake` for integrity constraints. |
-| Components | ViewComponent + ERB | **Phlex**-based components in `app/components/`; shared `_problems_card.html.erb`; model card refactored (ModelCardActions, ModelCardPreview, DropdownMenu). |
-| Selection/browsing | — | **Base and file-list selection** Stimulus controllers; windowed infinite scroll (recycles off-screen pages); list cards never mount WebGL. |
-| CI | Single-DB | **PostgreSQL-only CI**; lint (StandardRB, Rubocop, erb_lint, TypeScript, i18n-tasks) then RSpec. |
-| Docker | `docker/default.dockerfile` | `docker/manyfold.dockerfile`; Windows one-command: `.\script\start-docker.ps1`. |
-| Docs | Links to manyfold.app | **Fork-first README**; `.cursor/rules/` and `.cursor/skills/` for AI-assisted development. |
-
-**Why this approach:** Fewer hidden side effects, clearer contracts, better AI/contributor onboarding, and consistent Tailwind-first design.
 
 ---
 
@@ -64,6 +42,7 @@ This fork diverges from [manyfold3d/manyfold](https://github.com/manyfold3d/many
 - **3D** — THREE.js (TypeScript) in browser; Mittsu (Ruby) on server.
 - **Database** — PostgreSQL only (production, dev, test, and CI).
 - **Problems** — `Problem` model, `Problems::Registry`, category classes in `app/models/problems/`. Resolution only via `Problem.resolve_batch`; creation/clearing only via `Problem.create_or_clear` and Registry detectors.
+- **Browse** — Bidirectional row-window infinite scroll on library indexes.
 
 ### Key files and locations
 
@@ -91,7 +70,7 @@ This fork diverges from [manyfold3d/manyfold](https://github.com/manyfold3d/many
 bin/dev
 ```
 
-App at <http://127.0.0.1:3214>. Config: `.env.development.local` (see `env.example`). For federation in dev, configure ngrok tunnel `manyfold` or remove it from `Procfile.dev`.
+App at <http://127.0.0.1:3214>. Config: `.env.development.local` (see `env.example`). For federation in dev, configure an ngrok tunnel or remove it from `Procfile.dev`.
 
 ### Running yarn in a container
 
@@ -126,7 +105,7 @@ Doc screenshots: `DOC_SCREENSHOT=true bundle exec rspec` or `-t @documentation`.
 
 ### i18n
 
-Rails I18n; `bundle exec i18n-tasks health`. JS: `bundle exec i18n export -c config/i18n-js.yml`. Translation.io: `rake translation:clobber_and_sync:{locale}`.
+Rails I18n; `bundle exec i18n-tasks health`. JS: `bundle exec i18n export -c config/i18n-js.yml`.
 
 ### Docker
 
@@ -137,7 +116,7 @@ Rails I18n; `bundle exec i18n-tasks health`. JS: `bundle exec i18n export -c con
 | Fresh DB schema | `.\script\dump_schema.ps1` (see `db/SCHEMA_DUMP.md`) |
 | Test | `docker compose --profile test run --rm test` |
 
-Runs as non-root (PUID/PGID, default 1000:1000). Set env vars to match host if needed.
+Runs as non-root (PUID/PGID, default 1000:1000). Set env vars to match host if needed. Published image: `ghcr.io/networkbuild3r/manyfold`.
 
 ### Configuration
 
@@ -152,14 +131,16 @@ Runs as non-root (PUID/PGID, default 1000:1000). Set env vars to match host if n
 | `DEFAULT_WORKER_CONCURRENCY` | Sidekiq default worker threads (default **2**) |
 | `PERFORMANCE_WORKER_CONCURRENCY` | Sidekiq performance queue (mesh jobs; default **1**) |
 | `MAX_MESH_ANALYSIS_BYTES` | Skip manifold analysis above this size (default **100 MiB**) |
+| `SOURCE_REPO` | Git URL for admin version links (default this repository) |
+| `USAGE_TRACKING_URL` | Optional; only if you want anonymous usage posts to an endpoint you control |
 
 See `config/database.yml`, `env.example`, and the app settings UI. Use placeholders in examples; never commit real secrets.
 
 ### Memory notes (self-hosted)
 
-Manyfold can use a lot of RAM if left on “generous” defaults: large STL digests, mesh analysis, zip downloads, and auto-loading 3D previews on every model card.
+The app can use a lot of RAM if left on “generous” defaults: large STL digests, mesh analysis, zip downloads, and auto-loading 3D previews on every model card.
 
-This fork tunes for stability by default:
+Defaults favor stability:
 
 - **Puma** single process / modest threads (`WEB_CONCURRENCY=0`)
 - **Sidekiq** lower concurrency so scan/analysis jobs do not stack multi‑GB buffers
@@ -183,4 +164,4 @@ See [CONTRIBUTING.md](.github/CONTRIBUTING.md). Run lint and tests before submit
 
 ## License
 
-See [LICENSE.md](LICENSE.md).
+See [LICENSE.md](LICENSE.md) and [NOTICE](NOTICE).

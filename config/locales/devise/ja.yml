@@ -111,7 +111,7 @@ ja:
         email_help: 一般に公開されることはなく、ログインとアカウントのセキュリティメールにのみ使用されます。
         guidance: 初回使用時には、メイン管理者アカウントのアカウント名、連絡先メールアドレス、パスワードを設定する必要があります。シングルユーザモードで使用している場合、通常はこれらの情報を入力してサインインする必要はありませんが、マルチユーザモードではこれらの情報がないとManyfoldにアクセスできません。
         password:
-          help_html: デフォルトでは強力パスワードは必要です。プライベートインスタンスでより簡単なパスワードを許可するには、<a href="https://manyfold.app/sysadmin/configuration.html#min_password_score">MIN_PASSWORD_SCORE</a>　env変数を設定する。
+          help_html: デフォルトでは強力パスワードは必要です。プライベートインスタンスでより簡単なパスワードを許可するには、MIN_PASSWORD_SCORE　env変数を設定する。
         submit: 保存
         title: セットアップ
         username_help: 一意のアカウント名です。あらかじめ用意されているものを使用するか、自分で選択してください。

@@ -306,12 +306,9 @@ zh-CN:
     footer:
       about: 关于本实例
       api: 应用程序接口
-      by_html: 由 <a href="https://floppy.org.uk" target="_blank" rel="noreferrer">James</a> 和 <a href="https://github.com/manyfold3d/manyfold/graphs/contributors" target="_blank" rel="noreferrer">贡献者们</a> 的帮助下设计和制作。
       community: 加入社区
       instance_heading: 实例信息
       issues: 报告问题
-      open_source_html: 根据 <a href="https://github.com/manyfold3d/manyfold/blob/main/LICENSE.md" target="_blank" rel="noreferrer" rel="license">MIT 许可</a> <a href="https://github.com/manyfold3d/manyfold" target="_blank" rel="noreferrer">开源</a>。
-      powered_by_html: 由<a href="https://manyfold.app">%{name}</a>提供
       sponsor: 赞助
       support: 支持此实例
       version: 版本
@@ -780,9 +777,7 @@ zh-CN:
       title: 发布
     support:
       content: 每个人都可以自由运行 Manyfold 实例！如果您觉得这个实例有用，可以点击下面的链接帮助它继续运行。
-      manyfold_html: 您可以在<a href="https://opencollective.com/manyfold">OpenCollective</a> 上支持 Manyfold 软件的开发。
       support_link: 支持此实例
-      support_manyfold:
       title: 支持
     uploading:
       quota: 您最多可以上传 %{quota} 个内容，可随时在设置页面上查看当前配额使用情况。
@@ -915,7 +910,7 @@ zh-CN:
     create:
       success: 扫描已开始。
   security:
-    running_as_root_html: Manyfold 以 root 用户身份运行，存在安全隐患。通过设置 <code>PUID</code> 和 <code>PGID</code> 环境变量，以不同的系统用户身份运行。详情请查看 <a href='https://manyfold.app/sysadmin/configuration.html#required'>配置文档</a>。
+    running_as_root_html: Manyfold 以 root 用户身份运行，存在安全隐患。通过设置 <code>PUID</code> 和 <code>PGID</code> 环境变量，以不同的系统用户身份运行。详情请查看 <a href=''>配置文档</a>。
   sites:
     cgtrader: CGTrader
     comicsgamesandthings: Comics, Games, and Things

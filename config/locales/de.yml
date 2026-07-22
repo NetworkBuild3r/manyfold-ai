@@ -306,12 +306,9 @@ de:
     footer:
       about: Über diese Instanz
       api: Erkunde unsere API
-      by_html: Entworfen und erstellt von <a href="https://floppy.org.uk" target="_blank" rel="noreferrer">James</a> mit Hilfe <a href="https://github.com/manyfold3d/manyfold/graphs/contributors" target="_blank" rel="noreferrer">unserer Mitwirkenden</a>.
       community: Tritt der Community bei
       instance_heading: Details zur Instanz
       issues: Einen Fehler melden
-      open_source_html: <a href="https://github.com/manyfold3d/manyfold" target="_blank" rel="noreferrer">Open Source</a> unter der <a href="https://github.com/manyfold3d/manyfold/blob/main/LICENSE.md" target="_blank" rel="noreferrer" rel="license">MIT-Lizenz</a>.
-      powered_by_html: Powered by <a href="https://manyfold.app">%{name}</a>
       sponsor: Entwickler unterstützen
       support: Diese Instanz unterstützen
       version: Version
@@ -696,7 +693,7 @@ de:
       title: Folge %{name}
     search_form:
       help: Du kannst öffentlichen Authoren, Sammlungen oder Modellen auf einem anderen Manyfold-Server folgen, und zwar jedem öffentlichen Konto im Fediverse! Gib einfach den Namen des Accounts in das Suchfeld ein!
-      placeholder: Gib ein Fediverse-Konto oder eine URL ein, z. B. @admin@try.manyfold.app
+      placeholder: Gib ein Fediverse-Konto oder eine URL ein, z. B. @admin@example.com
       submit: Suche
     unfollow_remote_actor:
       unfollowed: "%{actor} nicht mehr Folgen"
@@ -782,9 +779,7 @@ de:
       title: Veröffentlichung
     support:
       content: Viele Instanzen werden von Menschen wie Ihnen betrieben! Wenn du diese Instanz nützlich findest, könntest du helfen, sie am Laufen zu halten, indem du unten klickst.
-      manyfold_html: Manyfold ist eine 100% freie und quelloffene Software. Du kannst helfen, sie zu verbessern, indem du eine Spende machst!
       support_link: Diese Instanz unterstützen
-      support_manyfold: Manyfold unterstützen
       title: Unterstützen
     uploading:
       quota: Du kannst bis zu %{quota} Inhalte hochladen, und du kannst deinen aktuellen Kontingentverbrauch jederzeit auf deiner Einstellungsseite einsehen.
@@ -917,7 +912,7 @@ de:
     create:
       success: Scan gestartet.
   security:
-    running_as_root_html: Manyfold wird als root ausgeführt, was ein Sicherheitsrisiko darstellt. Führe Manyfold als einen anderen Systembenutzer aus, indem du die Umgebungsvariablen <code>PUID</code> und <code>PGID</code> setzt. Einzelheiten findest du in <a href='https://manyfold.app/sysadmin/configuration.html#required'>der Konfigurationsdokumentation</a>.
+    running_as_root_html: Manyfold wird als root ausgeführt, was ein Sicherheitsrisiko darstellt. Führe Manyfold als einen anderen Systembenutzer aus, indem du die Umgebungsvariablen <code>PUID</code> und <code>PGID</code> setzt. Einzelheiten findest du in <a href=''>der Konfigurationsdokumentation</a>.
   sites:
     cgtrader: CGTrader
     comicsgamesandthings: Comics, Games, and Things

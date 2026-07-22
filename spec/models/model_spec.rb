@@ -575,11 +575,11 @@ RSpec.describe Model do
     end
 
     it "merges links from both" do # rubocop:disable RSpec/MultipleExpectations, RSpec/ExampleLength
-      model = create(:model, links_attributes: [{url: "https://manyfold.app"}, {url: "https://example.com"}])
+      model = create(:model, links_attributes: [{url: "https://example.com/models/1"}, {url: "https://example.com"}])
       target = create(:model, links_attributes: [{url: "https://bbc.co.uk"}, {url: "https://example.com"}])
       target.merge!(model)
       expect(target.links.count).to eq 3
-      expect(target.links.map(&:url)).to include "https://manyfold.app"
+      expect(target.links.map(&:url)).to include "https://example.com/models/1"
       expect(target.links.map(&:url)).to include "https://bbc.co.uk"
     end
   end

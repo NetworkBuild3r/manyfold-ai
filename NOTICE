@@ -1,0 +1,22 @@
+# Third-party notices
+
+This software includes code originally published under the MIT License by
+James Smith. The copyright notice and permission text are preserved in
+`LICENSE.md`.
+
+## Upstream origin
+
+Substantial portions of this application are derived from the MIT-licensed
+Manyfold project (copyright James Smith). Product branding, public UI credit,
+and outbound links to upstream project sites are not required by MIT and are
+not used in this distribution.
+
+## Notable dependencies
+
+Ruby gems and npm packages retain their own licenses (see `Gemfile.lock` and
+`package-lock.json`). Dependencies historically published under the manyfold3d
+GitHub organization (each keeps its own license notice):
+
+- `threejs-webworker-3mf-loader` (npm)
+- `caber` (gem, GitHub source)
+- `rubocop-pundit` (gem, GitHub source, development only)

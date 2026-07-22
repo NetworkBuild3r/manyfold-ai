@@ -9,9 +9,5 @@
       <%= t ".content" %>
     </p>
     <%= content_tag(:p) { t ".more_access" } if current_user && !current_user&.is_contributor? %>
-    <div class="text-right mt-2">
-      <%= GoButton(label: t(".manual_link"), href: "https://manyfold.app/manual", variant: :primary, icon: "box-arrow-up-right", target: "_manyfold_user_guide") %>
-    </div>
   </div>
-
 </div>

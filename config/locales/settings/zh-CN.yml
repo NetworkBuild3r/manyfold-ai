@@ -141,7 +141,7 @@ zh-CN:
           member: 成员（登录的本地账户）
           private: 私密
           public: 公开
-      details_html: 要更改这些设置，请编辑服务器的<a href='https://manyfold.app/sysadmin/configuration.html'>环境变量</a>并重新启动。
+      details_html: 要更改这些设置，请编辑服务器的<a href=''>环境变量</a>并重新启动。
       email: 是否配置了电子邮件发送功能？
       federation:
       heading: 多用户

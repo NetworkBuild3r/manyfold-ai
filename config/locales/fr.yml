@@ -306,12 +306,9 @@ fr:
     footer:
       about: À propos de cette instance
       api: Découvrez notre API
-      by_html: Conçu et réalisé par <a href="https://floppy.org.uk" target="_blank">James</a> avec l'aide de <a href="https://github.com/manyfold3d/manyfold/graphs/contributors" target="_blank">nos contributeurs</a>.
       community: Rejoindre la communauté
       instance_heading: Détails de l'instance
       issues: Problèmes
-      open_source_html: Open Source sous <a href="https://github.com/manyfold3d/manyfold/blob/main/LICENSE.md" target="_blank" rel="license">licence MIT.</a>
-      powered_by_html:
       sponsor: Sponsor
       support:
       version: Version
@@ -783,9 +780,7 @@ fr:
       title:
     support:
       content:
-      manyfold_html:
       support_link:
-      support_manyfold:
       title:
     uploading:
       quota:
@@ -918,7 +913,7 @@ fr:
     create:
       success:
   security:
-    running_as_root_html: Manyfold s'exécute en tant que root, ce qui constitue un risque pour la sécurité. Exécute-le en tant qu'utilisateur différent en définissant les variables d'environnement <code>PUID</code> et <code>PGID</code>. Voir <a href='https://manyfold.app/sysadmin/configuration.html#required'>la documentation de configuration</a> pour plus de détails.
+    running_as_root_html: Manyfold s'exécute en tant que root, ce qui constitue un risque pour la sécurité. Exécute-le en tant qu'utilisateur différent en définissant les variables d'environnement <code>PUID</code> et <code>PGID</code>. Voir <a href=''>la documentation de configuration</a> pour plus de détails.
   sites:
     cgtrader: CGTrader
     comicsgamesandthings: Bandes dessinées, jeux et objets

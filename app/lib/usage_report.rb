@@ -1,6 +1,14 @@
+# frozen_string_literal: true
+
+# Optional anonymous usage reporting. Disabled unless USAGE_TRACKING_URL is set
+# to an endpoint you control. No default third-party tracker.
 module UsageReport
   def self.endpoint
-    ENV.fetch("USAGE_TRACKING_URL", "https://tracking.manyfold.app")
+    ENV["USAGE_TRACKING_URL"].presence
+  end
+
+  def self.configured?
+    endpoint.present?
   end
 
   def self.generate
@@ -18,7 +26,7 @@ module UsageReport
   def self.set_schedule!
     SiteSettings.clear_cache
     jobname = "usage"
-    if SiteSettings.anonymous_usage_id.present?
+    if SiteSettings.anonymous_usage_id.present? && configured?
       Sidekiq::Cron::Job.create(
         name: jobname,
         cron: "every day",
@@ -30,6 +38,8 @@ module UsageReport
   end
 
   def self.enable!
+    return unless configured?
+
     SiteSettings.anonymous_usage_id ||= SecureRandom.uuid
     set_schedule!
   end

@@ -18,22 +18,22 @@ RSpec.configure do |config|
     "v0/openapi.json" => {
       openapi: "3.0.1",
       info: {
-        title: "Manyfold API",
+        title: "Library API",
         version: "0",
         description: <<~EOF
-          This document describes the REST API for this [Manyfold](https://manyfold.app) instance.
+          This document describes the REST API for this library instance.
 
           Warning! This API...
 
           * ... is not complete! Functionality is limited for now, but future releases will add more capabilities.
           * ... is not yet at v1! It's subject to breaking changes at any time.
-          * ... is only valid for this host! Other Manyfold instances running different software versions may expose a different set of API functionality.
+          * ... is only valid for this host! Other instances running different software versions may expose a different set of API functionality.
         EOF
       },
       paths: {},
       servers: [
         {
-          url: "https://try.manyfold.app"
+          url: "http://localhost:3214"
         }
       ],
       components: {
@@ -72,7 +72,7 @@ RSpec.configure do |config|
               title: {type: :string, example: "Model Title"},
               author_name: {type: :string, example: "Creator Name"},
               author_url: {type: :string, example: "https://example.com/creators/bob"},
-              provider_name: {type: :string, example: "Manyfold"},
+              provider_name: {type: :string, example: "Library"},
               provider_url: {type: :string, example: "https://example.com"},
               cache_age: {type: :integer, example: 86400}
             },
@@ -89,7 +89,7 @@ RSpec.configure do |config|
               title: {type: :string, example: "Model Title"},
               author_name: {type: :string, example: "Creator Name"},
               author_url: {type: :string, example: "https://example.com/creators/bob"},
-              provider_name: {type: :string, example: "Manyfold"},
+              provider_name: {type: :string, example: "Library"},
               provider_url: {type: :string, example: "https://example.com"},
               cache_age: {type: :integer, example: 86400}
             },
@@ -106,7 +106,7 @@ RSpec.configure do |config|
               title: {type: :string, example: "Model Title"},
               author_name: {type: :string, example: "Creator Name"},
               author_url: {type: :string, example: "https://example.com/creators/bob"},
-              provider_name: {type: :string, example: "Manyfold"},
+              provider_name: {type: :string, example: "Library"},
               provider_url: {type: :string, example: "https://example.com"},
               cache_age: {type: :integer, example: 86400}
             },
@@ -123,7 +123,7 @@ RSpec.configure do |config|
               title: {type: :string, example: "Model Title"},
               author_name: {type: :string, example: "Creator Name"},
               author_url: {type: :string, example: "https://example.com/creators/bob"},
-              provider_name: {type: :string, example: "Manyfold"},
+              provider_name: {type: :string, example: "Library"},
               provider_url: {type: :string, example: "https://example.com"},
               cache_age: {type: :integer, example: 86400}
             },

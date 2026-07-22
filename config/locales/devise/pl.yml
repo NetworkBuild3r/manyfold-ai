@@ -111,7 +111,7 @@ pl:
         email_help: Nigdy nie pokazywany publicznie; używany tylko do logowania i wiadomości e-mail dotyczących bezpieczeństwa konta.
         guidance: Przy pierwszym użyciu należy ustawić nazwę konta, kontaktowy adres e-mail i hasło dla konta głównego administratora. Jeśli korzystasz z trybu pojedynczego użytkownika, zwykle nie będziesz musiał wprowadzać tych danych, aby się zalogować, ale w trybie wielu użytkowników nie będziesz mógł uzyskać dostępu do Manyfold bez nich.
         password:
-          help_html: Domyślnie wymagamy silnego hasła; aby zezwolić na prostsze hasło w prywatnej instancji, należy ustawić zmienną środowiskową <a href="https://manyfold.app/sysadmin/configuration.html#min_password_score">MIN_PASSWORD_SCORE</a>.
+          help_html: Domyślnie wymagamy silnego hasła; aby zezwolić na prostsze hasło w prywatnej instancji, należy ustawić zmienną środowiskową MIN_PASSWORD_SCORE.
         submit: Zapisz
         title: Konfiguracja
         username_help: Unikalna nazwa konta; użyj wstępnie wygenerowanej lub wybierz własną.

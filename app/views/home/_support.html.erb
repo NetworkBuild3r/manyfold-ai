@@ -1,23 +1,15 @@
-<div class="rounded-xl border border-secondary-200 dark:border-secondary-600 bg-white dark:bg-secondary-800 shadow-sm overflow-hidden">
-  <h2 class="px-4 py-3 bg-secondary-600 text-white m-0 font-medium flex items-center gap-2">
-    <%= Icon icon: "piggy-bank" %>
-    <%= t ".title" %>
-  </h2>
+<% if SiteSettings.support_link.presence %>
+  <div class="rounded-xl border border-secondary-200 dark:border-secondary-600 bg-white dark:bg-secondary-800 shadow-sm overflow-hidden">
+    <h2 class="px-4 py-3 bg-secondary-600 text-white m-0 font-medium flex items-center gap-2">
+      <%= Icon icon: "piggy-bank" %>
+      <%= t ".title" %>
+    </h2>
 
-  <div class="p-4">
-    <% if SiteSettings.support_link.presence %>
-      <div class="mb-4">
-        <p><%= t ".content" %></p>
-        <div class="text-right">
-          <%= GoButton(label: t(".support_link"), href: SiteSettings.support_link, variant: :primary, icon: "box-arrow-up-right", target: "_manyfold_support") %>
-        </div>
+    <div class="p-4">
+      <p><%= t ".content" %></p>
+      <div class="text-right mt-2">
+        <%= GoButton(label: t(".support_link"), href: SiteSettings.support_link, variant: :primary, icon: "box-arrow-up-right", target: "_instance_support") %>
       </div>
-      <hr class="border-secondary-200 dark:border-secondary-600 my-4">
-    <% end %>
-    <p><%= t ".manyfold_html" %></p>
-    <div class="text-right mt-2">
-      <%= GoButton(label: t(".support_manyfold"), href: "https://opencollective.com/manyfold", variant: :primary, icon: "box-arrow-up-right", target: "_manyfold_donate") %>
     </div>
   </div>
-
-</div>
+<% end %>

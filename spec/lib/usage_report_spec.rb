@@ -31,8 +31,8 @@ RSpec.describe UsageReport do
     end
 
     it "includes image type" do
-      ClimateControl.modify DOCKER_TAG: "ghcr.io/manyfold3d/manyfold:latest" do
-        expect(JSON.parse(described_class.generate)["version"]["image"]).to eq "ghcr.io/manyfold3d/manyfold"
+      ClimateControl.modify DOCKER_TAG: "ghcr.io/networkbuild3r/manyfold:latest" do
+        expect(JSON.parse(described_class.generate)["version"]["image"]).to eq "ghcr.io/networkbuild3r/manyfold"
       end
     end
 
@@ -47,15 +47,17 @@ RSpec.describe UsageReport do
     end
   end
 
-  it "specifies a default endpoint" do
+  it "has no default third-party endpoint" do
     ClimateControl.modify USAGE_TRACKING_URL: nil do
-      expect(described_class.endpoint).to eq "https://tracking.manyfold.app"
+      expect(described_class.endpoint).to be_nil
+      expect(described_class).not_to be_configured
     end
   end
 
   it "allows custom endpoint in ENV" do
     ClimateControl.modify USAGE_TRACKING_URL: "http://example.com" do
       expect(described_class.endpoint).to eq "http://example.com"
+      expect(described_class).to be_configured
     end
   end
 end

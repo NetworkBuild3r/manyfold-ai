@@ -111,7 +111,7 @@ es:
         email_help: Nunca se muestra públicamente; sólo se utiliza para los correos electrónicos de inicio de sesión y seguridad de su cuenta.
         guidance: En el primer uso, necesitas establecer un nombre de usuario, un correo electrónico de contacto y una contraseña para el usuario administrador. Si estás ejecutando el modo usuario único, normalmente no necesitarás ingresar estos datos para iniciar sesión, pero en modo multiusuario no podrás acceder a Manyfold sin ellos
         password:
-          help_html: Pedimos una contraseña segura por defecto. Para permitir una contraseña más simple en una instancia privada, establezca la variable de entorno <a href="https://manyfold.app/sysadmin/configuration.html#min_password_score">MIN_PASSWORD_SCORE</a>.
+          help_html: Pedimos una contraseña segura por defecto. Para permitir una contraseña más simple en una instancia privada, establezca la variable de entorno MIN_PASSWORD_SCORE.
         submit: Guardar
         title: Instalación
         username_help: Un nombre de usuario único; utilice el preestablecido o cree el suyo propio.

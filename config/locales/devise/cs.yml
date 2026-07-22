@@ -111,7 +111,7 @@ cs:
         email_help: Nikdy se nezobrazuje veřejně; používá se pouze pro přihlašovací a bezpečnostní e-maily.
         guidance: Při prvním použití je třeba nastavit uživatelské jméno, kontaktní e-mail a heslo hlavního administrátora. Pokud používáte jednouživatelský režim, nemusíte tyto údaje pro přihlášení běžně zadávat, ale ve víceuživatelském režimu bez nich nebudete mít přístup k aplikaci Manyfold.
         password:
-          help_html: Ve výchozím nastavení požadujeme silné heslo; chcete-li v soukromé instanci povolit jednodušší heslo, nastavte proměnnou prostředí <a href="https://manyfold.app/sysadmin/configuration.html#min_password_score">MIN_PASSWORD_SCORE</a>.
+          help_html: Ve výchozím nastavení požadujeme silné heslo; chcete-li v soukromé instanci povolit jednodušší heslo, nastavte proměnnou prostředí MIN_PASSWORD_SCORE.
         submit: Uložit
         title: Nastavení
         username_help: Jedinečné uživatelské jméno; použijte předem vygenerované nebo si zvolte vlastní.

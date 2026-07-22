@@ -2,13 +2,13 @@ version: "3"
 
 services:
   app:
-    image: ghcr.io/manyfold3d/manyfold:latest
+    image: ghcr.io/networkbuild3r/manyfold:latest
     ports:
       - 3214:3214
     volumes:
       # Uncomment to add a filesystem volume for your model library (or multiple if
       # you want multiple libraries), in the form <local_path>:<container_path>.
-      # The local path could be a folder that already contains models, in which case Manyfold
+      # The local path could be a folder that already contains models, in which case the app
       # will scan and import them, or it could be empty.
       # The container path can be anything; you will need to enter it in the "new library" form.
       # - /local/path/to/your/models:/models
@@ -36,8 +36,8 @@ services:
       # and make sure it's on a persistent volume! Host, user and password aren't required.
       # DATABASE_URL: sqlite3:/config/manyfold.sqlite3
 
-      # For details of other optional environment variables, including features such
-      # as multiuser mode, visit https://manyfold.app/sysadmin/configuration.html
+      # Optional: SOURCE_REPO for admin version links; USAGE_TRACKING_URL only if you
+      # want anonymous usage posts to an endpoint you control (no default tracker).
     depends_on:
       - postgres
       - redis

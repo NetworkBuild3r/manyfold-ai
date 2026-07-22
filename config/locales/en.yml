@@ -316,12 +316,9 @@ en:
     footer:
       about: About this instance
       api: Explore our API
-      by_html: Designed and built by <a href="https://floppy.org.uk" target="_blank" rel="noreferrer">James</a> with help from <a href="https://github.com/manyfold3d/manyfold/graphs/contributors" target="_blank" rel="noreferrer">our contributors</a>.
       community: Join the community
       instance_heading: Instance Details
       issues: Report a problem
-      open_source_html: <a href="https://github.com/manyfold3d/manyfold" target="_blank" rel="noreferrer">Open Source</a> under the <a href="https://github.com/manyfold3d/manyfold/blob/main/LICENSE.md" target="_blank" rel="noreferrer" rel="license">MIT license</a>.
-      powered_by_html: Powered by <a href="https://manyfold.app">%{name}</a>
       sponsor: Sponsor development
       support: Support this instance
       take_the_tour: Take the tour
@@ -389,7 +386,7 @@ en:
       'yes': 'Yes'
   components:
     actor_card:
-      non_manyfold_account: This is not a Manyfold account; you can follow it, but probably nothing interesting will happen, at least for now.
+      non_manyfold_account: This is not a library account on this network; you can follow it, but probably nothing interesting will happen, at least for now.
     altcha_widget:
       help: privacy-friendly spam protection by ALTCHA
     column_header:
@@ -627,7 +624,7 @@ en:
         label: Scopes
       submit: Save API key details
     index:
-      description: API keys allow you to access Manyfold resources from other services via our API.
+      description: API keys allow you to access library resources from other services via our API.
       moderator_notice: As you are a moderator, you can access all users' API keys in this interface. A separate view for key moderation will be available in future to make it easier to manage just your own keys.
       new: New API key
       title: API keys
@@ -636,7 +633,7 @@ en:
     show:
       destroy: Delete
       edit: Edit
-      oauth_help: You can access the Manyfold API via the OAuth client_credentials flow, using the security details below.
+      oauth_help: You can access the library API via the OAuth client_credentials flow, using the security details below.
       revoke:
         confirm: Are you sure you want to revoke this access token? Any application currently using it will be unable to authenticate.
         label: Revoke
@@ -693,7 +690,7 @@ en:
         heading: FASP Services
         provider_list_title: Registered FASPs
         registered_at: Registered at
-        search_3dprint_social_html: We recommend connecting the <a href="https://search.3dprint.social/registration/new" rel="noreferrer">search.3dprint.social</a> FASP; it's run by the Manyfold developers, and is specifically configured for 3d content search.
+        search_3dprint_social_html: You can connect the <a href="https://search.3dprint.social/registration/new" rel="noreferrer">search.3dprint.social</a> FASP if you trust that provider; it is configured for 3d content search.
         status: Status
         url: URL
   follows:
@@ -716,12 +713,12 @@ en:
     remote_follow:
       help: You don't need an account on this server to follow %{name}; enter your own account name here, and we'll send you home to complete the process.
       no_results_html: We couldn't find your home account; did you enter it correctly?
-      placeholder: Your Fediverse handle, e.g. @manyfold@3dp.chat
+      placeholder: Your Fediverse handle, e.g. @you@example.com
       submit: Take me home
       title: Follow %{name}
     search_form:
-      help: You can follow public creators, collections or models on another Manyfold server, in fact any public account in the Fediverse! Just enter the account name in the search box!
-      placeholder: Enter a Fediverse account or URL, e.g. @admin@try.manyfold.app
+      help: You can follow public creators, collections or models on another library server, or any public account in the Fediverse! Just enter the account name in the search box!
+      placeholder: Enter a Fediverse account or URL, e.g. @admin@example.com
       submit: Search
     unfollow_remote_actor:
       unfollowed: Unfollowed %{actor}
@@ -785,12 +782,12 @@ en:
       title: Browsing
     federation:
       account_handle: Account handle
-      content_html: This instance is part of the <a href="https://jointhefediverse.net">Fediverse</a>, a network of different sites that all work together. That means that if you have an account here, you can follow content on other Manyfold instances, or people can follow your content from other platforms like Mastodon.
+      content_html: This instance is part of the <a href="https://jointhefediverse.net">Fediverse</a>, a network of different sites that all work together. That means that if you have an account here, you can follow content on other library instances, or people can follow your content from other platforms like Mastodon.
       creator_handle: Creator handle
       creator_handle_html: 'We''ve automatically set up a creator profile for you. This handle is what people should follow to see what you publish:'
       handle_html: 'If you need to enter your handle into another site in order to follow something, you''ll want to use your personal account handle:'
       title: The Fediverse
-      users_v_creators: Unlike many Fediverse platforms, you don't just have one handle on Manyfold. Every model, creator and collection has its own handle for people to follow, as does the account you sign in with. This means you can manage more than one creator profile!
+      users_v_creators: Unlike many Fediverse platforms, you don't just have one handle on this site. Every model, creator and collection has its own handle for people to follow, as does the account you sign in with. This means you can manage more than one creator profile!
     index:
       browse_models: Browse all models
       no_activities: There are no models in your library yet.
@@ -843,23 +840,21 @@ en:
         content: 'If you''re publishing your own work, you will probably want to set up your own creator profile:'
       title: Publishing
     support:
-      content: Manyfold instances are run by people like you! If you find this instance useful, you can help keep it running by clicking below.
-      manyfold_html: Manyfold is 100% free and open source software. You can help make it better by making a donation!
+      content: If you find this instance useful, you can help keep it running by clicking below.
       support_link: Support this instance
-      support_manyfold: Support Manyfold
       title: Support
     uploading:
       quota: You can upload up to %{quota} of content, and you can always view your current quota usage on your settings page.
       title: Uploading
     welcome:
-      lead: This site is running Manyfold, software for managing and sharing 3D models; here's a quick guide...
+      lead: This site is a library for managing and sharing 3D models; here's a quick guide...
       title: Welcome to %{site_name}!
   imports:
     bad_url: We couldn't get any useful information from that URL; it could be incorrect or unsupported.
     create:
       success: Imported requested; the results should appear shortly.
     new:
-      description: From some sites, Manyfold can download models for you with just a link!
+      description: From some sites, this library can download models for you with just a link!
       heading: Import from a link
       import: Import this link
       import_capabilities: We can import models, creators and collections from various other hosting sites. Exactly what we can import for your URL will be displayed after you enter it.
@@ -981,7 +976,7 @@ en:
     create:
       success: Scan started.
   security:
-    running_as_root_html: Manyfold is running as root, which is a security risk. Run as a different system user by setting the <code>PUID</code> and <code>PGID</code> environment variables. See <a href='https://manyfold.app/sysadmin/configuration.html#required'>the configuration documentation</a> for details.
+    running_as_root_html: The application is running as root, which is a security risk. Run as a different system user by setting the <code>PUID</code> and <code>PGID</code> environment variables.
   sites:
     cgtrader: CGTrader
     comicsgamesandthings: Comics, Games, and Things

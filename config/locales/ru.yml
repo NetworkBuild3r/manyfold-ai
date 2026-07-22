@@ -306,12 +306,9 @@ ru:
     footer:
       about:
       api:
-      by_html:
       community:
       instance_heading:
       issues:
-      open_source_html:
-      powered_by_html:
       sponsor:
       support:
       version:
@@ -780,9 +777,7 @@ ru:
       title:
     support:
       content:
-      manyfold_html:
       support_link:
-      support_manyfold:
       title:
     uploading:
       quota:

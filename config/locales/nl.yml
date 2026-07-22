@@ -306,12 +306,9 @@ nl:
     footer:
       about:
       api:
-      by_html: Ontworpen en gebouwd door <a href="https://floppy.org.uk" target="_blank">James</a> met hulp van <a href="https://github.com/manyfold3d/manyfold/graphs/contributors" target="_blank">onze bijdragers</a>.
       community:
       instance_heading:
       issues: Problemen
-      open_source_html: Open Source onder de <a href="https://github.com/manyfold3d/manyfold/blob/main/LICENSE.md" target="_blank" rel="license">MIT-licentie</a>.
-      powered_by_html:
       sponsor: Sponsor
       support:
       version: Versie
@@ -780,9 +777,7 @@ nl:
       title:
     support:
       content:
-      manyfold_html:
       support_link:
-      support_manyfold:
       title:
     uploading:
       quota:
@@ -915,7 +910,7 @@ nl:
     create:
       success:
   security:
-    running_as_root_html: Manyfold draait als root, wat een beveiligingsrisico is. Draai als een andere systeemgebruiker door de <code>PUID</code> en <code>PGID</code> omgevingsvariabelen in te stellen. Zie <a href='https://manyfold.app/sysadmin/configuration.html#required'>de configuratiedocumentatie</a> voor details.
+    running_as_root_html: Manyfold draait als root, wat een beveiligingsrisico is. Draai als een andere systeemgebruiker door de <code>PUID</code> en <code>PGID</code> omgevingsvariabelen in te stellen. Zie <a href=''>de configuratiedocumentatie</a> voor details.
   sites:
     cgtrader: CGTrader
     comicsgamesandthings: Comics, Games, and Things

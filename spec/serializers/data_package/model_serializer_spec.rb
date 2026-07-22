@@ -95,7 +95,7 @@ RSpec.describe DataPackage::ModelSerializer do
 
     context "with extension fields" do
       it "includes link to extension schema" do
-        expect(output[:$schema]).to eq "https://manyfold.app/profiles/0.0/datapackage.json"
+        expect(output[:$schema]).to eq "https://specs.frictionlessdata.io/schemas/data-package.json"
       end
 
       it "includes links" do
