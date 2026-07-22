@@ -341,7 +341,34 @@ dialog.modal::backdrop {
   display: none;
 }
 
-/* Top/bottom spacers for virtualized browse window (Phase 3) */
+/* Virtualized models browse: outer shell is a tall block; cards live in a translated window. */
+.browse-card-grid.browse-card-grid--virtual {
+  display: block;
+  position: relative;
+  width: 100%;
+  /* height set inline from buffer row count × measured row height */
+}
+
+.browse-card-grid--virtual > .browse-virtual-window {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  will-change: transform;
+  align-items: start;
+}
+
+.browse-card-grid--virtual > .browse-scroll-sentinel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  grid-column: auto;
+  min-height: 2.5rem;
+}
+
+/* Legacy spacer classes unused by translateY virtualizer; keep harmless if present */
 .browse-card-grid .browse-virtual-top-spacer,
 .browse-card-grid .browse-virtual-bottom-spacer {
   grid-column: 1 / -1;
