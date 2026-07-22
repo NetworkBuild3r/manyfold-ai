@@ -242,10 +242,17 @@ class ArchiveEntryService
   end
 
   def write_mesh_placeholder_preview!(entry, dest_path)
-    # Runtime image has ImageMagick but not Node; draw a neutral info card.
+    # Prefer ImageMagick; fall back to a tiny generated PNG (runtime may lack `convert`).
     label = entry.extension.upcase.presence || "MESH"
     size_label = entry.size.to_i.positive? ? ActiveSupport::NumberHelper.number_to_human_size(entry.size) : "?"
     name = entry.basename.to_s[0, 40]
+    if write_mesh_placeholder_via_imagemagick!(label, name, size_label, dest_path)
+      return true
+    end
+    write_minimal_png!(dest_path, 640, 480, [28, 24, 20], [232, 168, 90])
+  end
+
+  def write_mesh_placeholder_via_imagemagick!(label, name, size_label, dest_path)
     MiniMagick::Tool::Convert.new do |convert|
       convert.size "640x480"
       convert << "xc:#1c1814"
@@ -261,6 +268,31 @@ class ArchiveEntryService
       convert << dest_path
     end
     File.file?(dest_path)
+  rescue
+    false
+  end
+
+  def write_minimal_png!(path, width, height, bg_rgb, fg_rgb)
+    require "zlib"
+    raw = +""
+    height.times do |y|
+      raw << "\x00"
+      width.times do |x|
+        color = (y > height / 2 - 20 && y < height / 2 + 20) ? fg_rgb : bg_rgb
+        raw << color.pack("C*") << "\xFF"
+      end
+    end
+    chunk = ->(tag, data) {
+      [data.bytesize].pack("N") + tag + data + [Zlib.crc32(tag + data)].pack("N")
+    }
+    ihdr = [width, height, 8, 6, 0, 0, 0].pack("NNCCCCC")
+    png = "\x89PNG\r\n\x1a\n".b
+    png << chunk.call("IHDR", ihdr)
+    png << chunk.call("IDAT", Zlib::Deflate.deflate(raw))
+    png << chunk.call("IEND", "".b)
+    FileUtils.mkdir_p(File.dirname(path))
+    File.binwrite(path, png)
+    File.file?(path)
   rescue
     false
   end
