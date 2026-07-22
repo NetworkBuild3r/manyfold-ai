@@ -349,14 +349,35 @@ dialog.modal::backdrop {
   /* height set inline from buffer row count × measured row height */
 }
 
+/*
+ * Inner window MUST be a real multi-column grid. Without explicit columns, cards
+ * stack as full-width blocks (one giant card per viewport) — unusable for browse.
+ */
 .browse-card-grid--virtual > .browse-virtual-window {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  align-items: start;
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   width: 100%;
+  box-sizing: border-box;
   will-change: transform;
-  align-items: start;
+}
+
+@media (min-width: 640px) {
+  .browse-card-grid--virtual > .browse-virtual-window {
+    grid-template-columns: repeat(var(--browse-cols, 3), minmax(0, 1fr));
+    gap: 0.875rem;
+  }
+}
+
+.browse-card-grid--virtual > .browse-virtual-window > .model-card {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .browse-card-grid--virtual > .browse-scroll-sentinel {

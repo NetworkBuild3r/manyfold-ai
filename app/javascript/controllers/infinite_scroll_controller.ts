@@ -411,10 +411,8 @@ export default class extends Controller {
     let win = grid.querySelector<HTMLElement>(':scope > .browse-virtual-window')
     if (win == null) {
       win = document.createElement('div')
-      win.className = 'browse-virtual-window browse-card-grid grid grid-cols-2 gap-3 sm:gap-3.5 items-start'
+      win.className = 'browse-virtual-window'
       win.setAttribute('role', 'presentation')
-      const colsVar = grid.style.getPropertyValue('--browse-cols') || String(this.cols)
-      win.style.setProperty('--browse-cols', colsVar)
       if (sentinel != null) {
         grid.insertBefore(win, sentinel)
       } else {
@@ -422,6 +420,21 @@ export default class extends Controller {
       }
     }
     this.windowEl = win
+    this.applyWindowGridLayout(win)
+  }
+
+  /** Force multi-column tracks — never fall back to full-width stacked cards. */
+  private applyWindowGridLayout (win: HTMLElement): void {
+    const cols = Math.max(2, this.cols)
+    this.cols = cols
+    const colsVar = this.gridEl().style.getPropertyValue('--browse-cols') || String(cols)
+    win.style.setProperty('--browse-cols', colsVar)
+    win.style.display = 'grid'
+    win.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`
+    win.style.gap = `${this.gapPx}px`
+    win.style.alignItems = 'start'
+    win.style.width = '100%'
+    win.style.boxSizing = 'border-box'
   }
 
   private scheduleRowHeightRemeasure (): void {
@@ -431,10 +444,16 @@ export default class extends Controller {
       this.remasurePending = false
       const win = this.windowEl
       if (win == null) return
+      // Measure only after grid columns are applied (card is cell-width, not full bleed).
+      this.applyWindowGridLayout(win)
       const live = win.querySelector<HTMLElement>(this.cardSelectorValue)
       if (live == null) return
       const h = live.getBoundingClientRect().height
+      const w = live.getBoundingClientRect().width
       if (h < 40) return
+      // Guard: if card is still full-bleed, layout failed — do not lock a giant rowHeight.
+      const gridW = this.gridEl().getBoundingClientRect().width
+      if (gridW > 0 && w > gridW * 0.8) return
       const next = h + this.gapPx
       if (!this.metricsReady || Math.abs(next - this.rowHeight) > 4) {
         this.rowHeight = next
@@ -457,8 +476,10 @@ export default class extends Controller {
     this.ensureVirtualShell()
     const win = this.windowEl
     if (win == null) return
+    this.applyWindowGridLayout(win)
 
-    const cols = Math.max(1, this.cols)
+    const cols = Math.max(2, this.cols)
+    this.cols = cols
     const total = this.cardBuffer.length
     const totalRows = Math.max(1, Math.ceil(total / cols) || 1)
     const rowH = this.rowHeight
@@ -472,7 +493,8 @@ export default class extends Controller {
     const startRow = Math.max(0, Math.floor(viewTop / rowH) - this.overscanRowsValue)
     const endRow = Math.min(totalRows, Math.ceil(viewBottom / rowH) + this.overscanRowsValue)
     const startIdx = Math.min(total, startRow * cols)
-    const endIdx = Math.min(total, Math.max(startIdx, endRow * cols))
+    // Always render at least one full row of cards.
+    const endIdx = Math.min(total, Math.max(startIdx + cols, endRow * cols))
     this.virtualWindowStart = startIdx
 
     if (
@@ -497,8 +519,12 @@ export default class extends Controller {
     for (let i = startIdx; i < endIdx; i++) {
       const wrap = document.createElement('div')
       wrap.innerHTML = this.cardBuffer[i].html
-      const node = wrap.firstElementChild
-      if (node != null) win.appendChild(node)
+      const node = wrap.firstElementChild as HTMLElement | null
+      if (node != null) {
+        node.style.minWidth = '0'
+        node.style.maxWidth = '100%'
+        win.appendChild(node)
+      }
     }
 
     // Keep sentinel as last child of the outer shell for turbo-stream + IO.
