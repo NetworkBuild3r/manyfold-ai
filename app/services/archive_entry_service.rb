@@ -274,16 +274,18 @@ class ArchiveEntryService
 
   def write_minimal_png!(path, width, height, bg_rgb, fg_rgb)
     require "zlib"
-    raw = +""
+    raw = "".b
     height.times do |y|
-      raw << "\x00"
-      width.times do |x|
+      raw << "\x00".b
+      width.times do
         color = (y > height / 2 - 20 && y < height / 2 + 20) ? fg_rgb : bg_rgb
-        raw << color.pack("C*") << "\xFF"
+        raw << color.pack("C*") << "\xFF".b
       end
     end
     chunk = ->(tag, data) {
-      [data.bytesize].pack("N") + tag + data + [Zlib.crc32(tag + data)].pack("N")
+      tag_b = tag.b
+      data_b = data.b
+      [data_b.bytesize].pack("N") + tag_b + data_b + [Zlib.crc32(tag_b + data_b)].pack("N")
     }
     ihdr = [width, height, 8, 6, 0, 0, 0].pack("NNCCCCC")
     png = "\x89PNG\r\n\x1a\n".b
@@ -292,7 +294,7 @@ class ArchiveEntryService
     png << chunk.call("IEND", "".b)
     FileUtils.mkdir_p(File.dirname(path))
     File.binwrite(path, png)
-    File.file?(path)
+    File.file?(path) && File.size(path).positive?
   rescue
     false
   end
