@@ -55,38 +55,10 @@ class Scan::Model::ParseMetadataJob < ApplicationJob
 
   private
 
-  # Prefer an on-disk image. Keep a missing image only when no on-disk image
-  # exists (HealMissingPreviewsJob clears those). Upgrade nil/mesh → image.
+  # Prefer an on-disk image (preview/cover/thumb names first). Keep a missing
+  # image only when no on-disk image exists. Upgrade nil/mesh → image.
   def resolve_preview_file(model)
-    identified = identify_preview_file(model)
-    current = model.preview_file
-    on_disk_image = model.model_files
-      .select { |f| f.is_image? && f.exists_on_storage? }
-      .min_by { |f| preview_priority(f) }
-
-    preview = if current&.is_image? && current.exists_on_storage?
-      current
-    elsif on_disk_image
-      on_disk_image
-    elsif current&.is_image?
-      current
-    elsif identified&.is_image?
-      identified
-    else
-      current.presence || identified
-    end
-
-    {preview_file: preview}
-  end
-
-  def identify_preview_file(model)
-    model.model_files.min_by { |it| preview_priority(it) }
-  end
-
-  def preview_priority(file)
-    return 0 if file.is_image?
-    return 1 if file.is_renderable?
-    100
+    {preview_file: PreviewFilePicker.new(model).call}
   end
 
   def tags_from_directory_name(path)

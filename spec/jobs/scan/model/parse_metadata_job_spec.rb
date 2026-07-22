@@ -21,6 +21,13 @@ RSpec.describe Scan::Model::ParseMetadataJob do
         .to change { model.reload.preview_file&.filename }.to("cover.jpg")
     end
 
+    it "prefers preview/cover/thumb image names over other images" do
+      create(:model_file, model: model, filename: "other.png")
+      create(:model_file, model: model, filename: "preview.jpg")
+      expect { described_class.perform_now(model.id) }
+        .to change { model.reload.preview_file&.filename }.to("preview.jpg")
+    end
+
     it "upgrades a mesh preview to an image when one appears" do
       mesh = model.model_files.find_by!(filename: "part_2.obj")
       model.update!(preview_file: mesh)
