@@ -7,9 +7,6 @@
   input_class = select_class
 %>
 <%= card :secondary, t(".title", default: "Filter models") do %>
-  <% if current_user %>
-    <%= render "list_chips", variant: :sidebar %>
-  <% end %>
   <%= form_with url: models_path, method: :get, local: true, class: "space-y-3", html: {id: "models-filter-form"} do %>
     <%# Preserve sort + active tags across Apply %>
     <% if params[:order].present? %>

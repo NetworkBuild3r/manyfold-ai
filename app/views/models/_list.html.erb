@@ -54,76 +54,76 @@
     <% if @filter.any? %>
       <%= render "application/active_filter_pills", filter: @filter, clear_path: models_path %>
     <% end %>
-
-    <%# Facet rails: tags first (taste), then creators / collections %>
-    <% top_tags = Array(@tags).first(14) %>
-    <% creators = Array(@filter_creators).first(12) %>
-    <% collections = Array(@filter_collections).first(10) %>
-    <% if top_tags.any? || creators.any? || collections.any? %>
-      <div class="flex flex-col gap-1.5">
-        <% if top_tags.any? %>
-          <div class="flex items-center gap-2 min-w-0">
-            <span class="shrink-0 text-xs font-semibold uppercase tracking-wide text-secondary-500 dark:text-secondary-400"><%= ActsAsTaggableOn::Tag.model_name.human(count: 100) %></span>
-            <div class="flex gap-1.5 overflow-x-auto scrollbar-thin py-0.5">
-              <% active_tags = Array(@filter.parameter(:tag)).map(&:to_s) %>
-              <% top_tags.each do |tag| %>
-                <% name = tag.respond_to?(:name) ? tag.name : tag.to_s %>
-                <% selected = active_tags.include?(name) %>
-                <% next_tags = selected ? (active_tags - [name]) : (active_tags + [name]) %>
-                <%= link_to name,
-                      models_path(@filter.to_params.merge(tag: next_tags.presence).compact),
-                      class: "shrink-0 inline-flex max-w-[9rem] truncate px-2.5 py-1 rounded-lg text-xs font-medium no-underline #{selected ? "bg-primary-600 text-white" : "bg-surface dark:bg-secondary-900 border border-secondary-200 dark:border-secondary-700 text-secondary-700 dark:text-secondary-300 hover:border-primary-400"}",
-                      title: name %>
-              <% end %>
-            </div>
-          </div>
-        <% end %>
-        <% if creators.any? %>
-          <div class="flex items-center gap-2 min-w-0">
-            <span class="shrink-0 text-xs font-semibold uppercase tracking-wide text-secondary-500 dark:text-secondary-400"><%= Creator.model_name.human(count: 100) %></span>
-            <div class="flex gap-1.5 overflow-x-auto scrollbar-thin py-0.5">
-              <% active_creator = @filter.parameter(:creator).to_s %>
-              <%= link_to t(".any_creator"),
-                    models_path(@filter.to_params.except(:creator)),
-                    class: "shrink-0 inline-flex px-2.5 py-1 rounded-lg text-xs font-medium no-underline #{active_creator.blank? ? "bg-secondary-900 text-surface dark:bg-surface dark:text-secondary-900" : "bg-surface dark:bg-secondary-900 border border-secondary-200 dark:border-secondary-700 text-secondary-700 dark:text-secondary-300 hover:border-primary-400"}" %>
-              <% creators.each do |creator| %>
-                <% selected = active_creator == creator.to_param %>
-                <%= link_to creator.name.careful_titleize,
-                      models_path(@filter.to_params.merge(creator: creator.to_param)),
-                      class: "shrink-0 inline-flex max-w-[10rem] truncate px-2.5 py-1 rounded-lg text-xs font-medium no-underline #{selected ? "bg-primary-600 text-white" : "bg-surface dark:bg-secondary-900 border border-secondary-200 dark:border-secondary-700 text-secondary-700 dark:text-secondary-300 hover:border-primary-400"}",
-                      title: creator.name.careful_titleize %>
-              <% end %>
-              <%= link_to t(".more_creators"), creators_path(@filter.to_params(except: :creator)),
-                    class: "shrink-0 inline-flex px-2.5 py-1 rounded-lg text-xs font-medium text-primary-700 dark:text-primary-400 no-underline hover:underline" %>
-            </div>
-          </div>
-        <% end %>
-        <% if collections.any? %>
-          <div class="flex items-center gap-2 min-w-0">
-            <span class="shrink-0 text-xs font-semibold uppercase tracking-wide text-secondary-500 dark:text-secondary-400"><%= Collection.model_name.human(count: 100) %></span>
-            <div class="flex gap-1.5 overflow-x-auto scrollbar-thin py-0.5">
-              <% active_collection = @filter.parameter(:collection).to_s %>
-              <%= link_to t(".any_collection"),
-                    models_path(@filter.to_params.except(:collection)),
-                    class: "shrink-0 inline-flex px-2.5 py-1 rounded-lg text-xs font-medium no-underline #{active_collection.blank? ? "bg-secondary-900 text-surface dark:bg-surface dark:text-secondary-900" : "bg-surface dark:bg-secondary-900 border border-secondary-200 dark:border-secondary-700 text-secondary-700 dark:text-secondary-300 hover:border-primary-400"}" %>
-              <% collections.each do |collection| %>
-                <% selected = active_collection == collection.to_param %>
-                <%= link_to collection.name,
-                      models_path(@filter.to_params.merge(collection: collection.to_param)),
-                      class: "shrink-0 inline-flex max-w-[10rem] truncate px-2.5 py-1 rounded-lg text-xs font-medium no-underline #{selected ? "bg-primary-600 text-white" : "bg-surface dark:bg-secondary-900 border border-secondary-200 dark:border-secondary-700 text-secondary-700 dark:text-secondary-300 hover:border-primary-400"}",
-                      title: collection.name %>
-              <% end %>
-              <%= link_to t(".more_collections"), collections_path(@filter.to_params(except: :collection)),
-                    class: "shrink-0 inline-flex px-2.5 py-1 rounded-lg text-xs font-medium text-primary-700 dark:text-primary-400 no-underline hover:underline" %>
-            </div>
-          </div>
-        <% end %>
-      </div>
-    <% end %>
   </div>
 <% end %>
 
 <% content_for :items do %>
+  <%# Facet rails live in the card column only (not full-bleed chrome over the sidebar). %>
+  <% top_tags = Array(@tags).first(14) %>
+  <% creators = Array(@filter_creators).first(12) %>
+  <% collections = Array(@filter_collections).first(10) %>
+  <% if top_tags.any? || creators.any? || collections.any? %>
+    <div class="library-browse__column-chrome mb-3 space-y-1.5 min-w-0">
+      <% if top_tags.any? %>
+        <div class="flex items-center gap-2 min-w-0">
+          <span class="shrink-0 text-xs font-semibold uppercase tracking-wide text-secondary-500 dark:text-secondary-400"><%= ActsAsTaggableOn::Tag.model_name.human(count: 100) %></span>
+          <div class="flex gap-1.5 overflow-x-auto scrollbar-thin py-0.5 min-w-0">
+            <% active_tags = Array(@filter.parameter(:tag)).map(&:to_s) %>
+            <% top_tags.each do |tag| %>
+              <% name = tag.respond_to?(:name) ? tag.name : tag.to_s %>
+              <% selected = active_tags.include?(name) %>
+              <% next_tags = selected ? (active_tags - [name]) : (active_tags + [name]) %>
+              <%= link_to name,
+                    models_path(@filter.to_params.merge(tag: next_tags.presence).compact),
+                    class: "shrink-0 inline-flex max-w-[9rem] truncate px-2.5 py-1 rounded-lg text-xs font-medium no-underline #{selected ? "bg-primary-600 text-white" : "bg-surface dark:bg-secondary-900 border border-secondary-200 dark:border-secondary-700 text-secondary-700 dark:text-secondary-300 hover:border-primary-400"}",
+                    title: name %>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+      <% if creators.any? %>
+        <div class="flex items-center gap-2 min-w-0">
+          <span class="shrink-0 text-xs font-semibold uppercase tracking-wide text-secondary-500 dark:text-secondary-400"><%= Creator.model_name.human(count: 100) %></span>
+          <div class="flex gap-1.5 overflow-x-auto scrollbar-thin py-0.5 min-w-0">
+            <% active_creator = @filter.parameter(:creator).to_s %>
+            <%= link_to t(".any_creator"),
+                  models_path(@filter.to_params.except(:creator)),
+                  class: "shrink-0 inline-flex px-2.5 py-1 rounded-lg text-xs font-medium no-underline #{active_creator.blank? ? "bg-secondary-900 text-surface dark:bg-surface dark:text-secondary-900" : "bg-surface dark:bg-secondary-900 border border-secondary-200 dark:border-secondary-700 text-secondary-700 dark:text-secondary-300 hover:border-primary-400"}" %>
+            <% creators.each do |creator| %>
+              <% selected = active_creator == creator.to_param %>
+              <%= link_to creator.name.careful_titleize,
+                    models_path(@filter.to_params.merge(creator: creator.to_param)),
+                    class: "shrink-0 inline-flex max-w-[10rem] truncate px-2.5 py-1 rounded-lg text-xs font-medium no-underline #{selected ? "bg-primary-600 text-white" : "bg-surface dark:bg-secondary-900 border border-secondary-200 dark:border-secondary-700 text-secondary-700 dark:text-secondary-300 hover:border-primary-400"}",
+                    title: creator.name.careful_titleize %>
+            <% end %>
+            <%= link_to t(".more_creators"), creators_path(@filter.to_params(except: :creator)),
+                  class: "shrink-0 inline-flex px-2.5 py-1 rounded-lg text-xs font-medium text-primary-700 dark:text-primary-400 no-underline hover:underline" %>
+          </div>
+        </div>
+      <% end %>
+      <% if collections.any? %>
+        <div class="flex items-center gap-2 min-w-0">
+          <span class="shrink-0 text-xs font-semibold uppercase tracking-wide text-secondary-500 dark:text-secondary-400"><%= Collection.model_name.human(count: 100) %></span>
+          <div class="flex gap-1.5 overflow-x-auto scrollbar-thin py-0.5 min-w-0">
+            <% active_collection = @filter.parameter(:collection).to_s %>
+            <%= link_to t(".any_collection"),
+                  models_path(@filter.to_params.except(:collection)),
+                  class: "shrink-0 inline-flex px-2.5 py-1 rounded-lg text-xs font-medium no-underline #{active_collection.blank? ? "bg-secondary-900 text-surface dark:bg-surface dark:text-secondary-900" : "bg-surface dark:bg-secondary-900 border border-secondary-200 dark:border-secondary-700 text-secondary-700 dark:text-secondary-300 hover:border-primary-400"}" %>
+            <% collections.each do |collection| %>
+              <% selected = active_collection == collection.to_param %>
+              <%= link_to collection.name,
+                    models_path(@filter.to_params.merge(collection: collection.to_param)),
+                    class: "shrink-0 inline-flex max-w-[10rem] truncate px-2.5 py-1 rounded-lg text-xs font-medium no-underline #{selected ? "bg-primary-600 text-white" : "bg-surface dark:bg-secondary-900 border border-secondary-200 dark:border-secondary-700 text-secondary-700 dark:text-secondary-300 hover:border-primary-400"}",
+                    title: collection.name %>
+            <% end %>
+            <%= link_to t(".more_collections"), collections_path(@filter.to_params(except: :collection)),
+                  class: "shrink-0 inline-flex px-2.5 py-1 rounded-lg text-xs font-medium text-primary-700 dark:text-primary-400 no-underline hover:underline" %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
   <div data-controller="model-gallery">
   <% if @models.empty? %>
     <% list = @filter&.parameter(:list).to_s %>
