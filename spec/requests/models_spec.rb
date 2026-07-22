@@ -352,6 +352,20 @@ RSpec.describe "Models" do
           expect(response.body).not_to include("data-browse-columns=")
           expect(response.body).not_to include("--browse-cols:")
         end
+
+        it "honors offset and clamped per_page on infinite-scroll turbo-stream requests" do
+          # 20 models in library; offset=12 with per_page=12 yields a next page.
+          get "/models",
+            params: {library: library.to_param, offset: 0, per_page: 12},
+            headers: {
+              "Accept" => "text/vnd.turbo-stream.html",
+              "X-Infinite-Scroll" => "1"
+            }
+          expect(response).to have_http_status(:success)
+          expect(response.media_type).to eq("text/vnd.turbo-stream.html")
+          expect(response.body).to include("offset=12")
+          expect(response.body).to include("per_page=12")
+        end
       end
 
       describe "POST /models/merge" do

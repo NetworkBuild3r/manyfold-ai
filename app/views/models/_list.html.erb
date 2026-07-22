@@ -182,7 +182,7 @@
       </div>
 
       <% per_page = @browse_per_page || browse_grid_page_size %>
-      <% next_url = @models.next_page ? models_page_url(@models.next_page, @filter, per_page: per_page) : "" %>
+      <% next_url = browse_next_url(:models_path, filter: @filter) %>
       <div data-controller="infinite-scroll"
            data-infinite-scroll-next-url-value="<%= next_url %>"
            data-infinite-scroll-per-page-value="<%= per_page %>"

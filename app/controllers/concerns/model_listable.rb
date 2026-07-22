@@ -17,18 +17,30 @@ module ModelListable
     @tags, @kv_tags = split_key_value_tags(@tags)
     @unrelated_tag_count = nil unless @filter.any?
 
-    # Card-sized grid: fixed batch size. CSS auto-fill owns column count.
-    per_page = BrowseGrid.page_size
+    stream = infinite_scroll_or_stream_request?
+    per_page = BrowseGrid.page_size_for_request(params, stream: stream)
     @browse_per_page = per_page
 
-    # Full HTML browse always starts at page 1 (one infinite page in the address bar).
-    # Only turbo-stream / infinite-scroll fetches advance via ?page=N.
-    page = if infinite_scroll_or_stream_request?
-      params[:page].presence || 1
+    if stream && params[:offset].present?
+      # Offset-based fetch: row-aligned per_page from the client without page-number skew.
+      offset = BrowseGrid.offset_for_request(params)
+      @browse_offset = offset
+      total = @models.count
+      @models = @models.offset(offset).limit(per_page)
+      @browse_has_more = (offset + per_page) < total
     else
-      1
+      # Full HTML browse always starts at page 1 (one infinite page in the address bar).
+      # Legacy page=N turbo-stream still works when offset is absent.
+      page = if stream
+        params[:page].presence || 1
+      else
+        1
+      end
+      @models = @models.page(page).per(per_page)
+      @browse_offset = (page.to_i - 1) * per_page
+      @browse_has_more = @models.next_page.present?
     end
-    @models = @models.page(page).per(per_page)
+
     @models = @models.includes [:creator, :collection, :tags]
     # preview_file only — avoid preloading every model_file on index
     @models = @models.preload [:preview_file]

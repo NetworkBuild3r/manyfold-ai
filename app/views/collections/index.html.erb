@@ -35,7 +35,7 @@
     <div class="skip-link-container">
       <%= skip_link "sidebar", t(".skip_collections") %>
       <% per_page = @browse_per_page || browse_grid_page_size %>
-      <% next_url = @collections.next_page ? collections_page_url(@collections.next_page, @filter, per_page: per_page) : "" %>
+      <% next_url = browse_next_url(:collections_path, filter: @filter) %>
       <% show_unassigned = @unassigned_count.to_i > 0 && @collections.first_page? && !(@filter&.filtering_by?(:collection) || @filter&.filtering_by?(:creator)) %>
       <div data-controller="infinite-scroll"
            data-infinite-scroll-next-url-value="<%= next_url %>"

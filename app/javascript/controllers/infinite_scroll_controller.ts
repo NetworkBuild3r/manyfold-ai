@@ -9,12 +9,20 @@ const MAX_TRANSIENT_RETRIES = 3
 const RETRY_BASE_MS = 400
 const BACK_TO_TOP_SHOW_PX = 800
 
+/** Soft cap on rows kept in the document. */
+const MAX_ROWS_IN_DOM = 30
+/** Rows of buffer above the viewport that must never be pruned. */
+const KEEP_BUFFER_PX = 800
+/** Complete rows loaded per infinite-scroll fetch after first paint. */
+const ROWS_PER_FETCH = 6
+
 /**
  * Infinite scroll for a card grid via Turbo Streams.
  *
  * CSS owns layout: card-sized auto-fill tracks on .browse-card-grid.
- * Cards are always direct children. This controller only fetches the next page
- * and applies the turbo-stream (insert before sentinel). No DOM restructuring.
+ * Cards are always direct children. This controller fetches pages and may
+ * prune complete rows from the top (never a partial row) with scroll
+ * compensation so visible cards do not reflow.
  */
 export default class extends Controller {
   static targets = ['sentinel', 'status', 'backToTop', 'grid']
@@ -44,6 +52,7 @@ export default class extends Controller {
   private exhausted = false
   private observer: IntersectionObserver | null = null
   private observedSentinel: HTMLElement | null = null
+  private resizeObserver: ResizeObserver | null = null
   private boundOnScroll: () => void
   private boundOnBeforeVisit: () => void
   private boundOnBackToTop: (e: Event) => void
@@ -52,6 +61,10 @@ export default class extends Controller {
   private lastLoadedUrl = ''
   private transientFailures = 0
   private restoredScroll = false
+  /** Live column count from the first grid row; invalidated on resize. */
+  private cachedColumns: number | null = null
+  /** Total models loaded from the server (not reduced when pruning). */
+  private itemsSeen = 0
 
   connect (): void {
     this.boundOnScroll = this.onScroll.bind(this)
@@ -65,7 +78,10 @@ export default class extends Controller {
 
     this.stripPageFromUrl()
     this.syncNextUrlFromSentinel()
+    this.itemsSeen = this.cards().length
+    this.alignFetchUrl()
     this.setupObserver()
+    this.setupResizeObserver()
     this.updateStatus('')
     this.updateBackToTop()
     void this.bootstrap()
@@ -80,12 +96,15 @@ export default class extends Controller {
     this.observer?.disconnect()
     this.observer = null
     this.observedSentinel = null
+    this.resizeObserver?.disconnect()
+    this.resizeObserver = null
     this.abortInFlight()
   }
 
   /** Turbo replace may recreate the sentinel — re-observe after each load. */
   sentinelTargetConnected (): void {
     this.syncNextUrlFromSentinel()
+    this.alignFetchUrl()
     this.setupObserver()
   }
 
@@ -108,6 +127,17 @@ export default class extends Controller {
   private async bootstrap (): Promise<void> {
     await this.fillViewport()
     this.restoreScrollIfNeeded()
+    this.pruneTopRows()
+  }
+
+  private setupResizeObserver (): void {
+    this.resizeObserver?.disconnect()
+    if (typeof ResizeObserver === 'undefined') return
+    this.resizeObserver = new ResizeObserver(() => {
+      this.cachedColumns = null
+      this.alignFetchUrl()
+    })
+    this.resizeObserver.observe(this.gridEl())
   }
 
   private setupObserver (): void {
@@ -147,6 +177,90 @@ export default class extends Controller {
       this.updateStatus(this.endMessage())
       this.element.classList.add('is-exhausted')
     }
+  }
+
+  /**
+   * Rewrite nextUrl to offset=itemsSeen and per_page=cols*ROWS_PER_FETCH so each
+   * fetch is row-aligned and does not skew page-number offsets.
+   */
+  private alignFetchUrl (): void {
+    if (this.nextUrlValue.length === 0) return
+    const cols = this.measureColumns()
+    const perPage = Math.min(96, Math.max(12, cols * ROWS_PER_FETCH))
+    this.perPageValue = perPage
+    try {
+      const url = new URL(this.nextUrlValue, window.location.origin)
+      url.searchParams.delete('page')
+      url.searchParams.set('offset', String(this.itemsSeen))
+      url.searchParams.set('per_page', String(perPage))
+      this.nextUrlValue = url.pathname + url.search
+    } catch {
+      // ignore malformed next urls
+    }
+  }
+
+  private cards (): HTMLElement[] {
+    const selector = this.cardSelectorValue || '.model-card'
+    return Array.from(this.gridEl().querySelectorAll<HTMLElement>(selector))
+  }
+
+  /** Live column count from the first grid row. */
+  private measureColumns (): number {
+    if (this.cachedColumns != null && this.cachedColumns > 0) {
+      return this.cachedColumns
+    }
+    const cards = this.cards()
+    if (cards.length === 0) {
+      this.cachedColumns = 1
+      return 1
+    }
+    const y0 = cards[0].offsetTop
+    let cols = 0
+    for (const card of cards) {
+      if (card.offsetTop !== y0) break
+      cols += 1
+    }
+    this.cachedColumns = Math.max(1, cols)
+    return this.cachedColumns
+  }
+
+  /**
+   * Remove complete rows from the top when over MAX_ROWS_IN_DOM and those rows
+   * sit well above the viewport. Never removes a partial row.
+   */
+  private pruneTopRows (): void {
+    const cols = this.measureColumns()
+    const cards = this.cards()
+    const maxCards = cols * MAX_ROWS_IN_DOM
+    if (cards.length <= maxCards) return
+
+    const overflow = cards.length - maxCards
+    const pruneCeiling = window.scrollY - KEEP_BUFFER_PX
+    let safeCards = 0
+    for (const card of cards) {
+      const bottom = card.offsetTop + card.offsetHeight
+      if (bottom > pruneCeiling) break
+      safeCards += 1
+    }
+
+    const safeRows = Math.floor(safeCards / cols)
+    const rowsNeeded = Math.ceil(overflow / cols)
+    const rowsToRemove = Math.min(safeRows, rowsNeeded)
+    const removeCount = rowsToRemove * cols
+    if (removeCount < cols) return
+
+    const first = cards[0]
+    const last = cards[removeCount - 1]
+    const top = first.getBoundingClientRect().top + window.scrollY
+    const bottom = last.getBoundingClientRect().bottom + window.scrollY
+    const height = bottom - top
+    if (!(height > 0)) return
+
+    const scrollY = window.scrollY
+    for (let i = 0; i < removeCount; i++) {
+      cards[i].remove()
+    }
+    window.scrollTo(0, Math.max(0, scrollY - height))
   }
 
   private endMessage (): string {
@@ -197,6 +311,7 @@ export default class extends Controller {
     // Single-flight: never abort a healthy in-flight page fetch to start another.
     if (this.loading || !this.hasMore) return false
 
+    this.alignFetchUrl()
     const url = this.nextUrlValue
     if (url.length === 0 || url === this.lastLoadedUrl) return false
 
@@ -247,11 +362,26 @@ export default class extends Controller {
 
       this.lastLoadedUrl = url
       this.transientFailures = 0
+      const beforeCount = this.cards().length
       renderStreamMessage(html)
       this.dedupeCards()
+      const afterCount = this.cards().length
+      const added = Math.max(0, afterCount - beforeCount)
+      this.itemsSeen += added
+      this.cachedColumns = null
 
       this.syncNextUrlFromSentinel()
+      this.alignFetchUrl()
       this.setupObserver()
+      this.pruneTopRows()
+
+      if (added === 0) {
+        this.exhausted = true
+        this.nextUrlValue = ''
+        this.updateStatus(this.endMessage())
+        this.element.classList.add('is-exhausted')
+        return true
+      }
 
       if (!this.hasMore) {
         this.exhausted = true
@@ -301,6 +431,7 @@ export default class extends Controller {
       requestAnimationFrame(() => {
         this.scrollTicking = false
         this.updateBackToTop()
+        this.pruneTopRows()
         if (this.nearBottom()) {
           void this.loadMore()
         }
@@ -315,9 +446,20 @@ export default class extends Controller {
     this.backToTopTarget.classList.toggle('is-visible', show)
   }
 
+  /**
+   * Pruned cards above are gone — reload page 1 so the top is complete.
+   */
   private onBackToTop (e: Event): void {
     e.preventDefault()
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    const url = new URL(window.location.href)
+    url.searchParams.delete('page')
+    const path = url.pathname + url.search
+    const turbo = (window as unknown as { Turbo?: { visit: (loc: string) => void } }).Turbo
+    if (turbo?.visit != null) {
+      turbo.visit(path)
+    } else {
+      window.location.assign(path)
+    }
   }
 
   private stripPageFromUrl (): void {
@@ -363,6 +505,7 @@ export default class extends Controller {
     requestAnimationFrame(() => {
       window.scrollTo(0, y)
       this.updateBackToTop()
+      this.pruneTopRows()
     })
   }
 }
