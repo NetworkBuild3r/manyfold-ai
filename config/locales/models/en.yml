@@ -66,6 +66,7 @@ en:
       bulk_edit: Edit All Models
       clear_filters: Clear filters
       end_of_results: You've reached the end of this list
+      load_error: Could not load more. Scroll to retry.
       filters: Filters
       has_image_filter: With images only
       has_image_filter_on: With images

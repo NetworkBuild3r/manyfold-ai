@@ -31,7 +31,9 @@ export default class extends Controller {
     cardSelector: { type: String, default: '.model-card' },
     storageKeyPrefix: { type: String, default: 'scroll_models_' },
     totalCount: { type: Number, default: 0 },
-    windowStart: { type: Number, default: 0 }
+    windowStart: { type: Number, default: 0 },
+    endMessage: { type: String, default: '' },
+    errorMessage: { type: String, default: '' }
   }
 
   declare perPageValue: number
@@ -41,6 +43,8 @@ export default class extends Controller {
   declare storageKeyPrefixValue: string
   declare totalCountValue: number
   declare windowStartValue: number
+  declare endMessageValue: string
+  declare errorMessageValue: string
   declare sentinelTarget: HTMLElement
   declare hasSentinelTarget: boolean
   declare topSentinelTarget: HTMLElement
@@ -74,6 +78,8 @@ export default class extends Controller {
   private chainAfterQueued = false
   private chainAfterDepth = 0
   private consecutiveDupeSkips = 0
+  /** Absolute index into the full result set for the next after-fetch. Independent of windowStart. */
+  private afterFetchCursor = 0
 
   connect (): void {
     this.boundOnScroll = this.onScroll.bind(this)
@@ -88,6 +94,7 @@ export default class extends Controller {
     this.stripPageFromUrl()
     this.syncMetaFromSentinels()
     this.recomputeWindowSize()
+    this.afterFetchCursor = this.windowStartValue + this.cards().length
     this.refreshBounds()
     this.setupObserver()
     this.setupResizeObserver()
@@ -333,6 +340,7 @@ export default class extends Controller {
     const rowsToDrop = Math.floor(excess / this.cols)
     if (rowsToDrop < 1) return
     this.dropRows('bottom', rowsToDrop)
+    this.afterFetchCursor = this.windowStartValue + this.cards().length
     this.refreshBounds()
   }
 
@@ -351,6 +359,7 @@ export default class extends Controller {
       this.windowStartValue += rowsToDrop * this.cols
     } else {
       this.dropRows('bottom', rowsToDrop)
+      this.afterFetchCursor = this.windowStartValue + this.cards().length
     }
     this.refreshBounds()
   }
@@ -431,7 +440,7 @@ export default class extends Controller {
     if (this.loading) return false
 
     const offset = direction === 'after'
-      ? this.windowStartValue + this.cards().length
+      ? this.afterFetchCursor
       : Math.max(0, this.windowStartValue - limit)
 
     if (direction === 'before' && this.windowStartValue <= 0) return false
@@ -471,7 +480,7 @@ export default class extends Controller {
         }
         this.transientFailures += 1
         if (this.transientFailures >= MAX_TRANSIENT_RETRIES) {
-          this.updateStatus('Could not load more. Scroll to retry.')
+          this.updateStatus(this.errorMessage())
           this.transientFailures = 0
         } else {
           await this.delay(RETRY_BASE_MS * this.transientFailures)
@@ -517,6 +526,7 @@ export default class extends Controller {
         this.consecutiveDupeSkips = 0
       } else if (direction === 'after' && added > 0) {
         this.maintainWindow('after')
+        this.afterFetchCursor = this.windowStartValue + this.cards().length
         this.consecutiveDupeSkips = 0
       }
 
@@ -524,9 +534,8 @@ export default class extends Controller {
       this.refreshBounds()
 
       if (direction === 'after' && added === 0) {
-        // All-dupe or empty batch: advance past this offset so we cannot spin.
-        // After refreshBounds so a forced stop is not overwritten.
-        this.advancePastDeadAfterOffset(limit, streamHadCards)
+        // Advance fetch cursor only — never inflate windowStart without matching cards.
+        this.advancePastDeadAfterOffset(offset, limit, streamHadCards)
       }
 
       this.setupObserver()
@@ -545,7 +554,7 @@ export default class extends Controller {
       }
       console.warn('[infinite-scroll] load error', e)
       this.transientFailures += 1
-      this.updateStatus('Could not load more. Scroll to retry.')
+      this.updateStatus(this.errorMessage())
       return false
     } finally {
       this.loading = false
@@ -571,17 +580,18 @@ export default class extends Controller {
   }
 
   /**
-   * When a bottom fetch adds no new unique cards, skip forward so the next
-   * request cannot reuse the same offset (duplicate storm / soft stall).
+   * When a bottom fetch adds no new unique cards, advance the fetch cursor past
+   * this offset without moving windowStart (DOM window origin). Inflating
+   * windowStart here would skip result indices.
    */
-  private advancePastDeadAfterOffset (limit: number, streamHadCards: boolean): void {
+  private advancePastDeadAfterOffset (offset: number, limit: number, streamHadCards: boolean): void {
     const step = Math.max(1, limit)
-    this.windowStartValue += step
+    this.afterFetchCursor = Math.max(this.afterFetchCursor, offset + step)
     this.consecutiveDupeSkips += 1
 
     if (
       this.consecutiveDupeSkips >= MAX_DUPE_SKIPS ||
-      (this.totalCountValue > 0 && this.windowStartValue >= this.totalCountValue) ||
+      (this.totalCountValue > 0 && this.afterFetchCursor >= this.totalCountValue) ||
       (!streamHadCards && this.totalCountValue <= 0)
     ) {
       this.hasMoreAfter = false
@@ -644,8 +654,11 @@ export default class extends Controller {
   }
 
   private endMessage (): string {
-    return this.element.getAttribute('data-infinite-scroll-end-message-value') ||
-      'End of results'
+    return this.endMessageValue
+  }
+
+  private errorMessage (): string {
+    return this.errorMessageValue
   }
 
   private updateStatus (text: string): void {

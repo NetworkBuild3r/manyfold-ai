@@ -10,7 +10,8 @@ en:
       truncated: listing truncated
       open: Open
       download: Download
-      showing_first: Showing first 200 entries.
+      load_more: Load more entries
+      showing_chunk: Showing %{shown} of %{total} entries
     show:
       details: Entry details
       path: Path

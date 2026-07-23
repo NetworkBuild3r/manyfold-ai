@@ -1,0 +1,3 @@
+<%# Non-Turbo fallback: redirect back to the file page which embeds the panel. %>
+<% content_for :title, t("archive_entries.panel.title") %>
+<%= render "application/archive_contents_panel", file: @file %>

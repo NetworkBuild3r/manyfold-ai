@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class ArchiveEntriesController < ApplicationController
+  PAGE_SIZE = 100
+
   before_action :get_model
   before_action :get_file
   before_action :get_entry, except: [:index, :scan]
@@ -8,7 +10,14 @@ class ArchiveEntriesController < ApplicationController
 
   def index
     authorize @file, :show?
-    @entries = @file.archive_entries.order(:pathname)
+    @offset = [params[:offset].to_i, 0].max
+    requested = params[:per_page].to_i
+    @per_page = (requested.positive? ? [requested, PAGE_SIZE].min : PAGE_SIZE)
+    scope = @file.archive_entries.order(:pathname)
+    @total_count = scope.count
+    @entries = scope.offset(@offset).limit(@per_page).to_a
+    @next_offset = @offset + @entries.size
+    @has_more = @next_offset < @total_count
   end
 
   def show

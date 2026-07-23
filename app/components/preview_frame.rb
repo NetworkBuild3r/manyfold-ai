@@ -111,11 +111,13 @@ class Components::PreviewFrame < Components::Base
       end
     when "Document"
       div(class: "#{preview_container_class} #{"sensitive" if needs_hiding?}") do
+        # Sanitize federated HTML — never wrap remote content in safe() raw.
+        body = sanitize(preview_data["content"].to_s)
         iframe(
           scrolling: "no",
           srcdoc: safe([
             "<html><body style=\"margin: 0; padding: 0; aspect-ratio: 1\">",
-            preview_data["content"],
+            body,
             "</body></html>"
           ].join),
           title: sanitize(preview_data["summary"]),

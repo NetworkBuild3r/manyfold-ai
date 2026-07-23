@@ -1,79 +1,56 @@
 <%# Archive contents panel — list entries, previews, scan / download actions. %>
 <%
   file = local_assigns.fetch(:file)
-  entries = file.archive_entries.order(:pathname)
-  pending = entries.where(status: %w[listed preview_pending]).count
-  ready = entries.where(status: "preview_ready").count
-  failed = entries.where(status: "preview_failed").count
+  page_size = ArchiveEntriesController::PAGE_SIZE
+  entries_scope = file.archive_entries.order(:pathname)
+  total = entries_scope.count
+  entries = entries_scope.limit(page_size).to_a
+  pending = file.archive_entries.where(status: %w[listed preview_pending]).count
+  ready = file.archive_entries.where(status: "preview_ready").count
+  failed = file.archive_entries.where(status: "preview_failed").count
+  grid_id = "archive-entries-grid-#{file.to_param}"
+  load_more_id = "archive-entries-load-more-#{file.to_param}"
+  next_offset = entries.size
+  has_more = next_offset < total
 %>
-<%= card :secondary, t("archive_entries.panel.title", default: "Archive contents") do %>
+<%= card :secondary, t("archive_entries.panel.title") do %>
   <div class="flex flex-wrap items-center gap-2 mb-3">
     <% if policy(file).scan_archive? %>
-      <%= button_to t("archive_entries.panel.scan", default: "Scan archive"),
+      <%= button_to t("archive_entries.panel.scan"),
             scan_archive_model_model_file_path(file.model, file),
             method: :post,
             class: "inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500" %>
     <% end %>
-    <% if entries.any? %>
+    <% if total.positive? %>
       <p class="text-sm text-secondary-600 dark:text-secondary-400">
         <%= t("archive_entries.panel.counts",
-              default: "%{total} entries · %{ready} previews · %{pending} pending · %{failed} failed",
-              total: entries.size,
+              total: total,
               ready: ready,
               pending: pending,
               failed: failed) %>
         <% if file.archive_entries_truncated? %>
-          <span class="text-warning"> · <%= t("archive_entries.panel.truncated", default: "listing truncated") %></span>
+          <span class="text-warning"> · <%= t("archive_entries.panel.truncated") %></span>
         <% end %>
       </p>
     <% else %>
       <p class="text-sm text-secondary-600 dark:text-secondary-400">
-        <%= t("archive_entries.panel.empty", default: "Not scanned yet. Scan to list files inside this archive.") %>
+        <%= t("archive_entries.panel.empty") %>
       </p>
     <% end %>
   </div>
 
   <% if entries.any? %>
-    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+    <div id="<%= grid_id %>" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
       <% entries.each do |entry| %>
-        <div class="rounded-lg border border-secondary-200 dark:border-secondary-700 overflow-hidden bg-surface dark:bg-secondary-900 min-w-0">
-          <div class="aspect-[4/3] bg-secondary-100 dark:bg-secondary-800 relative flex items-center justify-center">
-            <% if entry.preview_exists? %>
-              <%= image_tag preview_model_model_file_archive_entry_path(file.model, file, entry),
-                    alt: entry.name,
-                    class: "absolute inset-0 w-full h-full object-cover",
-                    loading: "lazy" %>
-            <% elsif entry.is_renderable? %>
-              <i class="bi bi-box-fill text-3xl text-secondary-400" aria-hidden="true"></i>
-            <% elsif entry.is_image? %>
-              <i class="bi bi-image text-3xl text-secondary-400" aria-hidden="true"></i>
-            <% else %>
-              <i class="bi bi-file-earmark text-3xl text-secondary-400" aria-hidden="true"></i>
-            <% end %>
-          </div>
-          <div class="p-2 space-y-1">
-            <p class="text-xs font-medium text-secondary-900 dark:text-secondary-100 truncate" title="<%= entry.pathname %>"><%= entry.pathname %></p>
-            <p class="text-[11px] text-secondary-500 dark:text-secondary-400">
-              <span class="uppercase"><%= entry.kind %></span>
-              <% if entry.size %>· <%= number_to_human_size(entry.size, precision: 2) %><% end %>
-              · <%= entry.status.humanize %>
-            </p>
-            <div class="flex flex-wrap gap-1 pt-1">
-              <% if entry.is_renderable? || entry.is_image? %>
-                <%= link_to t("archive_entries.panel.open", default: "Open"),
-                      model_model_file_archive_entry_path(file.model, file, entry),
-                      class: "text-xs text-primary-700 dark:text-primary-400 no-underline hover:underline" %>
-              <% end %>
-              <%= link_to t("archive_entries.panel.download", default: "Download"),
-                    download_model_model_file_archive_entry_path(file.model, file, entry),
-                    class: "text-xs text-primary-700 dark:text-primary-400 no-underline hover:underline" %>
-            </div>
-          </div>
-        </div>
+        <%= render Components::ArchiveEntryCard.new(entry: entry, file: file) %>
       <% end %>
     </div>
-    <% if entries.size > 200 %>
-      <p class="mt-2 text-sm text-secondary-500"><%= t("archive_entries.panel.showing_first", default: "Showing first 200 entries.") %></p>
-    <% end %>
+    <div id="<%= load_more_id %>" class="mt-3">
+      <%= render "application/archive_entries_load_more",
+            file: file,
+            next_offset: next_offset,
+            has_more: has_more,
+            per_page: page_size %>
+    </div>
   <% end %>
 <% end %>

@@ -1,0 +1,12 @@
+<%= turbo_stream.append "archive-entries-grid-#{@file.to_param}" do %>
+  <% @entries.each do |entry| %>
+    <%= render Components::ArchiveEntryCard.new(entry: entry, file: @file) %>
+  <% end %>
+<% end %>
+<%= turbo_stream.update "archive-entries-load-more-#{@file.to_param}" do %>
+  <%= render "application/archive_entries_load_more",
+        file: @file,
+        next_offset: @next_offset,
+        has_more: @has_more,
+        per_page: @per_page %>
+<% end %>

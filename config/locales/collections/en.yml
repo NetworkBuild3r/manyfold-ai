@@ -32,6 +32,7 @@ en:
       skip_collections: Skip collection list
       loading_more: Loading more…
       end_of_results: You've reached the end of this list
+      load_error: Could not load more. Scroll to retry.
       scroll_hint: Keep scrolling — more collections load automatically.
       back_to_top: Back to top
     show:

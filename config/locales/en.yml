@@ -964,6 +964,7 @@ en:
       load: Load Error
       webglrenderer: Could not create renderer!
     load: Load
+    loading_progress: Loading progress
     processing: Reticulating splines...
   reports:
     create:

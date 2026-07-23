@@ -42,14 +42,16 @@ class Components::Renderer < Components::Base
           background_colour: @settings["background_colour"],
           object_colour: @settings["object_colour"],
           render_style: @settings["render_style"],
-          auto_load: auto_load? ? "true" : "false"
+          auto_load: auto_load? ? "true" : "false",
+          progress_aria_label: t("renderer.loading_progress"),
+          load_label: t("renderer.load")
         }
       div class: "object-preview-progress absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 px-4 py-2 rounded-lg bg-secondary-200 dark:bg-secondary-700 border border-secondary-300 dark:border-secondary-600",
         role: "presentation" do
         div class: "progress-bar h-2 bg-primary-500 rounded overflow-hidden mb-2",
           role: "progressbar",
           style: "width: 0%",
-          aria: {label: "Loading progress", valuenow: "0", valuemin: "0", valuemax: "100"}
+          aria: {label: t("renderer.loading_progress"), valuenow: "0", valuemin: "0", valuemax: "100"}
         span class: "progress-label text-sm font-medium block", role: "button" do
           span { t("renderer.load") }
           whitespace

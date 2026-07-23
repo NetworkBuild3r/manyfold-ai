@@ -43,7 +43,7 @@ export default class extends Controller {
     if (this.hasFrameTarget) {
       // Clear first so Turbo always fetches (same frame id reuse)
       this.frameTarget.removeAttribute('src')
-      this.frameTarget.innerHTML = `<p class="text-sm text-secondary-400 text-center py-12 m-0">${this.loadingLabel()}</p>`
+      this.setLoadingFrame()
       this.frameTarget.setAttribute('src', galleryUrl)
     }
 
@@ -72,10 +72,19 @@ export default class extends Controller {
     return this.hasFrameTarget ? (this.frameTarget.dataset.loadingLabel ?? '') : ''
   }
 
+  private setLoadingFrame (): void {
+    if (!this.hasFrameTarget) return
+    this.frameTarget.replaceChildren()
+    const p = document.createElement('p')
+    p.className = 'text-sm text-secondary-400 text-center py-12 m-0'
+    p.textContent = this.loadingLabel()
+    this.frameTarget.appendChild(p)
+  }
+
   private clearFrame (): void {
     if (!this.hasFrameTarget) return
     this.frameTarget.removeAttribute('src')
-    this.frameTarget.innerHTML = `<p class="text-sm text-secondary-400 text-center py-12 m-0">${this.loadingLabel()}</p>`
+    this.setLoadingFrame()
   }
 
   private focusFirstFocusable (): void {
