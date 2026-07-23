@@ -27,4 +27,12 @@ RSpec.describe Scan::ModelFile::ListArchiveJob do
     }.to have_enqueued_job(Scan::ModelFile::PreviewArchiveEntryJob)
     expect(@file.archive_entries.count).to eq(1)
   end
+
+  it "skips mesh preview jobs when preview_images_only" do
+    expect {
+      described_class.perform_now(@file.id, preview_images_only: true)
+    }.not_to have_enqueued_job(Scan::ModelFile::PreviewArchiveEntryJob)
+    expect(@file.archive_entries.count).to eq(1)
+    expect(@file.archive_entries.first.status).to eq("listed")
+  end
 end

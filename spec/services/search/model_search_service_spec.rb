@@ -110,6 +110,20 @@ RSpec.describe Search::ModelSearchService do
       create(:model, name: "untitled figure", path: "Anime/Rogue (Marvel)")
       expect(service.search("marvel").pluck(:name)).to include("untitled figure")
     end
+
+    it "searches pathnames inside listed archives" do
+      model = create(:model, name: "zip only model", path: "zips/pack")
+      file = create(:model_file, model: model, filename: "pack.zip")
+      ArchiveEntry.create!(
+        model_file: file,
+        pathname: "parts/rogue_bust.stl",
+        kind: "mesh",
+        status: "listed",
+        size: 100
+      )
+      expect(service.search("rogue_bust").pluck(:name)).to include("zip only model")
+      expect(service.search("inside ~ rogue_bust").pluck(:name)).to include("zip only model")
+    end
   end
 
   context "with fuzzy typo tolerance" do

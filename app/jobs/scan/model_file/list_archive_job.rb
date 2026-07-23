@@ -4,7 +4,7 @@ class Scan::ModelFile::ListArchiveJob < ApplicationJob
   queue_as :scan
   unique :until_executed, lock_ttl: 1.hour
 
-  def perform(file_id)
+  def perform(file_id, preview_images_only: false)
     file = ModelFile.find(file_id)
     return unless file.is_archive?
     return unless file.exists_on_storage?
@@ -13,7 +13,7 @@ class Scan::ModelFile::ListArchiveJob < ApplicationJob
 
     service = ArchiveEntryService.new(file)
     service.list!
-    service.enqueue_previews!
+    service.enqueue_previews!(images_only: preview_images_only)
   rescue Errno::ENOENT, Shrine::FileNotFound => e
     Rails.logger.warn("[ListArchiveJob] archive missing for ModelFile##{file_id}: #{e.message}")
   end

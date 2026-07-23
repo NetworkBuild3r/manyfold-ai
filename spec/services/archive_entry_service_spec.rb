@@ -54,6 +54,16 @@ RSpec.describe ArchiveEntryService do
         service.enqueue_previews!
       }.to have_enqueued_job(Scan::ModelFile::PreviewArchiveEntryJob).at_least(:twice)
     end
+
+    it "skips mesh previews when images_only" do
+      service = described_class.new(@file)
+      service.list!
+      expect {
+        service.enqueue_previews!(images_only: true)
+      }.to have_enqueued_job(Scan::ModelFile::PreviewArchiveEntryJob).once
+      expect(@file.archive_entries.find_by(pathname: "pics/shot.png").status).to eq("preview_pending")
+      expect(@file.archive_entries.find_by(pathname: "parts/widget.stl").status).to eq("listed")
+    end
   end
 
   describe "#extract_to_cache!" do

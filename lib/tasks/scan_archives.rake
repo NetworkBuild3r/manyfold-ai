@@ -1,25 +1,33 @@
 # frozen_string_literal: true
 
 namespace :manyfold do
-  desc "List archives and enqueue entry previews. MODEL_ID=public_id or all"
+  desc "Enqueue background archive listing for the library. " \
+       "LIMIT=0 (all), BATCH=100, IMAGES_ONLY=1 (default), FORCE=0, MODEL_ID=public_id"
   task scan_archives: :environment do
-    scope = if ENV["MODEL_ID"].present?
-      Model.where(public_id: ENV["MODEL_ID"])
-    elsif ARGV[1].present? && ARGV[1] != "all"
-      Model.where(public_id: ARGV[1])
-    else
-      Model.all
-    end
+    images_only = ActiveModel::Type::Boolean.new.cast(ENV.fetch("IMAGES_ONLY", "1"))
 
-    count = 0
-    scope.find_each do |model|
+    if ENV["MODEL_ID"].present?
+      model = Model.find_by!(public_id: ENV["MODEL_ID"])
+      count = 0
       model.model_files.find_each do |file|
         next unless file.is_archive?
-        file.scan_archive_later
+        file.scan_archive_later(preview_images_only: images_only)
         count += 1
         puts "queued ListArchiveJob for model=#{model.public_id} file=#{file.filename}"
       end
+      puts "queued #{count} archive scan(s) for model=#{model.public_id}"
+    else
+      limit = Integer(ENV.fetch("LIMIT", "0"))
+      batch = Integer(ENV.fetch("BATCH", Scan::EnqueueArchiveScansJob::DEFAULT_BATCH.to_s))
+      force = ActiveModel::Type::Boolean.new.cast(ENV.fetch("FORCE", "0"))
+      Scan::EnqueueArchiveScansJob.perform_later(
+        limit: limit,
+        batch_size: batch,
+        preview_images_only: images_only,
+        force: force
+      )
+      puts "enqueued EnqueueArchiveScansJob limit=#{limit == 0 ? "all" : limit} " \
+           "batch=#{batch} images_only=#{images_only} force=#{force}"
     end
-    puts "queued #{count} archive scan(s)"
   end
 end

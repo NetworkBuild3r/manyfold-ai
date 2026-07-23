@@ -83,9 +83,10 @@ class ModelFile < ApplicationRecord
     SupportedMimeTypes.archive_extensions.include?(extension)
   end
 
-  def scan_archive_later(delay: 0.seconds)
+  def scan_archive_later(delay: 0.seconds, preview_images_only: false)
     return unless is_archive?
-    Scan::ModelFile::ListArchiveJob.set(wait: delay).perform_later(id)
+    Scan::ModelFile::ListArchiveJob.set(wait: delay)
+      .perform_later(id, preview_images_only: preview_images_only)
   end
 
   def mime_type

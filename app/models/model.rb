@@ -55,6 +55,7 @@ class Model < ApplicationRecord
   belongs_to :collection, optional: true
   belongs_to :preview_file, class_name: "ModelFile", optional: true
   has_many :model_files, dependent: :destroy
+  has_many :archive_entries, through: :model_files
   has_many :merge_histories, foreign_key: :target_model_id, dependent: :destroy, inverse_of: :target_model
   acts_as_taggable_on :tags
 
@@ -92,6 +93,8 @@ class Model < ApplicationRecord
   scoped_search relation: :model_files, on: :filename, rename: :filename, only_explicit: true
   # Folder paths often carry character/set names — include in bare q=.
   scoped_search on: :path
+  # Files inside zip/7z/rar (after archive scan) — bare q= and inside~name.
+  scoped_search relation: :archive_entries, on: :pathname, rename: :inside
 
   def parents
     Pathname.new(path).parent.descend.filter_map do |path|

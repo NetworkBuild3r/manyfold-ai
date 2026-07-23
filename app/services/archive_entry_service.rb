@@ -77,10 +77,14 @@ class ArchiveEntryService
     listed
   end
 
-  def enqueue_previews!(entries = nil)
+  def enqueue_previews!(entries = nil, images_only: false)
     entries ||= @model_file.archive_entries.previewable.where.not(status: %w[too_large skipped])
     images = entries.select(&:is_image?).sort_by { |e| e.size.to_i }.first(MAX_IMAGE_PREVIEWS)
-    meshes = entries.select(&:is_renderable?).sort_by { |e| e.size.to_i }.first(MAX_MESH_PREVIEWS)
+    meshes = if images_only
+      []
+    else
+      entries.select(&:is_renderable?).sort_by { |e| e.size.to_i }.first(MAX_MESH_PREVIEWS)
+    end
 
     (images + meshes).each do |entry|
       next if entry.status == "too_large"

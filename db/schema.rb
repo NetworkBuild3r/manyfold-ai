@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_07_23_011000) do
+ActiveRecord::Schema[8.0].define(version: 2026_07_23_020000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "fuzzystrmatch"
   enable_extension "pg_catalog.plpgsql"
@@ -33,6 +33,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_23_011000) do
     t.index ["model_file_id", "pathname"], name: "index_archive_entries_on_model_file_id_and_pathname", unique: true
     t.index ["model_file_id", "status"], name: "index_archive_entries_on_model_file_id_and_status"
     t.index ["model_file_id"], name: "index_archive_entries_on_model_file_id"
+    t.index ["pathname"], name: "index_archive_entries_on_pathname_trgm", opclass: :gin_trgm_ops, using: :gin
     t.index ["public_id"], name: "index_archive_entries_on_public_id", unique: true
   end
 
