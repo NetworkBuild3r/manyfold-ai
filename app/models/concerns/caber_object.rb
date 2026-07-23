@@ -64,6 +64,16 @@ module CaberObject
     @permission_preset == "public" || caber_relations.find { |it| it.subject.nil? }
   end
 
+  # True only when transitioning to public (preset or new/changed public grant).
+  # Already-public models must not re-run publishability checks on every save —
+  # e.g. tag clears during delete, or metadata edits after a bulk public grant.
+  def becoming_public?
+    return false unless caber_ready?
+    return true if @permission_preset.to_s == "public"
+
+    caber_relations.any? { |rel| rel.subject.nil? && (rel.new_record? || rel.has_changes_to_save?) }
+  end
+
   def matching_permission_preset
     total = caber_relations.count
     if total == 1 && caber_relations.where(permission: "own").one?

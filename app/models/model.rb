@@ -62,7 +62,7 @@ class Model < ApplicationRecord
   accepts_nested_attributes_for :creator
 
   before_validation :strip_separators_from_path, if: :path_changed?
-  before_validation :publish_creator, if: :will_be_public?
+  before_validation :publish_creator, if: :becoming_public?
   before_validation :normalize_license, if: -> { respond_to? :license }
   # In Rails 7.1 we will be able to do this instead:
   # normalizes :license, with: -> license { license.blank? ? nil : license }
@@ -314,8 +314,10 @@ class Model < ApplicationRecord
     model_files.update_all(presupported_version_id: nil) # rubocop:disable Rails/SkipsModelValidations
     # Trigger deletion for each file separately, to make sure cleanup happens
     model_files.each { |f| f.delete_from_disk_and_destroy }
-    # Remove tags first - sometimes this causes problems if we don't do it beforehand
-    update!(tags: [])
+    # Remove tags first - sometimes this causes problems if we don't do it beforehand.
+    # Do not use update!(tags: []) — public models missing license/creator fail
+    # validate_publishable and surface a misleading 422 "rejected" page.
+    taggings.delete_all
     # Delete directory corresponding to model
     library.storage.delete_prefixed(path)
     # Remove from DB
@@ -589,8 +591,9 @@ class Model < ApplicationRecord
   end
 
   def validate_publishable
-    # If the model will be public
-    return unless will_be_public?
+    # Enforce publish requirements only when becoming public — not on every
+    # save of an already-public model (delete tag clears, metadata edits, etc.).
+    return unless becoming_public?
     # Check required fields
     errors.add :license, :blank if license.nil?
     errors.add :creator, :blank if creator.nil?

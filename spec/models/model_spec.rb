@@ -859,6 +859,13 @@ RSpec.describe Model do
       model.delete_from_disk_and_destroy
       expect(file).to have_received(:delete_from_disk_and_destroy).once
     end
+
+    it "deletes public models that are missing license and creator" do
+      model.grant_permission_to("view", nil)
+      model.update_columns(license: nil, creator_id: nil) # rubocop:disable Rails/SkipsModelValidations
+      expect { model.delete_from_disk_and_destroy }.not_to raise_error
+      expect(Model.where(id: model.id)).not_to exist
+    end
   end
 
   context "when problem check cascade" do
