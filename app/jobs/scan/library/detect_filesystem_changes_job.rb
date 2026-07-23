@@ -51,6 +51,6 @@ class Scan::Library::DetectFilesystemChangesJob < ApplicationJob
   private
 
   def detector
-    @detector ||= Library::FilesystemChangeDetector.new(status: status)
+    @detector ||= Scan::Library::FilesystemChangeDetector.new(status: status)
   end
 end
