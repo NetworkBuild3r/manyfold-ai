@@ -77,4 +77,40 @@ RSpec.describe ArchiveEntryService do
       expect(entry.reload.extracted_path).to eq(rel)
     end
   end
+
+  describe "#extract_mesh_and_preview!" do
+    it "writes a real PNG thumbnail for an STL when node is available" do
+      skip "node not on PATH" unless system("command", "-v", "node", out: File::NULL, err: File::NULL)
+
+      # Replace empty STL with a small cube so the rasterizer has triangles
+      Zip::File.open(@zip_path) do |zip|
+        zip.remove("parts/widget.stl")
+        zip.get_output_stream("parts/widget.stl") do |f|
+          f.write(<<~STL)
+            solid cube
+              facet normal 0 0 1
+                outer loop
+                  vertex 0 0 0
+                  vertex 1 0 0
+                  vertex 0 1 0
+                endloop
+              endfacet
+            endsolid cube
+          STL
+        end
+      end
+      @file.attach_existing_file!(refresh: true)
+
+      service = described_class.new(@file)
+      service.list!
+      entry = @file.archive_entries.find_by!(pathname: "parts/widget.stl")
+      service.extract_mesh_and_preview!(entry)
+      expect(entry.reload.status).to eq("preview_ready")
+      abs = entry.absolute_preview_path
+      expect(File.file?(abs)).to be true
+      expect(File.binread(abs, 8)).to eq("\x89PNG\r\n\x1a\n".b)
+      # Real raster is larger than the 1x1 / minimal stub paths
+      expect(File.size(abs)).to be > 200
+    end
+  end
 end

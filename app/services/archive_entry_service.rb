@@ -132,10 +132,17 @@ class ArchiveEntryService
     preview_abs = File.join(@library.path, preview_rel)
     FileUtils.mkdir_p(File.dirname(preview_abs))
 
-    if run_mesh_thumbnail_script(cache_abs, preview_abs) || write_mesh_placeholder_preview!(entry, preview_abs)
-      entry.update!(preview_path: preview_rel, status: "preview_ready", error_message: nil)
-    else
-      entry.update!(status: "preview_failed", error_message: "thumbnail generation failed")
+    stl_path = mesh_path_for_thumbnail(cache_abs, entry)
+    begin
+      if run_mesh_thumbnail_script(stl_path, preview_abs) || write_mesh_placeholder_preview!(entry, preview_abs)
+        entry.update!(preview_path: preview_rel, status: "preview_ready", error_message: nil)
+      else
+        entry.update!(status: "preview_failed", error_message: "thumbnail generation failed")
+      end
+    ensure
+      if stl_path != cache_abs && stl_path.present? && File.exist?(stl_path)
+        FileUtils.rm_f(stl_path)
+      end
     end
   end
 
@@ -312,12 +319,87 @@ class ArchiveEntryService
     return false unless script.file?
     return false unless system("command", "-v", "node", out: File::NULL, err: File::NULL)
 
-    system(
-      "node", script.to_s, mesh_path, preview_path,
-      out: File::NULL,
-      err: File::NULL
-    ) && File.file?(preview_path)
-  rescue
+    require "open3"
+    stdout, stderr, status = Open3.capture3("node", script.to_s, mesh_path, preview_path)
+    ok = status.success? && File.file?(preview_path) && File.size(preview_path).positive?
+    unless ok
+      Rails.logger.warn(
+        "[ArchiveEntryService] mesh_thumbnail failed status=#{status.exitstatus} " \
+        "mesh=#{mesh_path} out=#{stdout.to_s.truncate(200)} err=#{stderr.to_s.truncate(400)}"
+      )
+    end
+    ok
+  rescue => e
+    Rails.logger.warn("[ArchiveEntryService] mesh_thumbnail error: #{e.class}: #{e.message}")
     false
+  end
+
+  # STL passes through; other mesh formats are converted via Assimp → binary STL tempfile.
+  def mesh_path_for_thumbnail(cache_abs, entry)
+    return cache_abs if entry.extension == "stl"
+    return cache_abs unless defined?(Assimp)
+
+    convert_mesh_to_stl_tempfile!(cache_abs) || cache_abs
+  end
+
+  def convert_mesh_to_stl_tempfile!(source_path)
+    scene = Assimp.import_file(source_path)
+    scene.apply_post_processing(Assimp::PostProcessSteps[
+      :JoinIdenticalVertices,
+      :Triangulate
+    ])
+
+    path = File.join(Dir.tmpdir, "archive-mesh-#{SecureRandom.hex(8)}.stl")
+    File.open(path, "wb") { |io| write_binary_stl!(scene, io) }
+    path
+  rescue => e
+    Rails.logger.warn("[ArchiveEntryService] Assimp→STL failed: #{e.class}: #{e.message}")
+    nil
+  end
+
+  def write_binary_stl!(scene, io)
+    triangles = []
+    scene.meshes.each do |mesh|
+      verts = mesh.vertices
+      next if verts.blank?
+
+      mesh.faces.each do |face|
+        idxs = face.indices
+        next if idxs.nil? || idxs.length < 3
+
+        # Fan-triangulate any leftover polygons
+        (1...(idxs.length - 1)).each do |i|
+          a = verts[idxs[0]]
+          b = verts[idxs[i]]
+          c = verts[idxs[i + 1]]
+          next if a.nil? || b.nil? || c.nil?
+
+          nx = ((b.y - a.y) * (c.z - a.z)) - ((b.z - a.z) * (c.y - a.y))
+          ny = ((b.z - a.z) * (c.x - a.x)) - ((b.x - a.x) * (c.z - a.z))
+          nz = ((b.x - a.x) * (c.y - a.y)) - ((b.y - a.y) * (c.x - a.x))
+          len = Math.sqrt(nx * nx + ny * ny + nz * nz)
+          if len > 1e-12
+            nx /= len
+            ny /= len
+            nz /= len
+          else
+            nx = 0.0
+            ny = 0.0
+            nz = 0.0
+          end
+          triangles << [nx, ny, nz, a.x, a.y, a.z, b.x, b.y, b.z, c.x, c.y, c.z]
+        end
+      end
+    end
+
+    raise "no triangles from Assimp scene" if triangles.empty?
+
+    header = "manyfold archive mesh preview".ljust(80, "\0").b
+    io.write(header)
+    io.write([triangles.length].pack("V"))
+    triangles.each do |t|
+      io.write(t.pack("e12"))
+      io.write([0].pack("v")) # attribute byte count
+    end
   end
 end

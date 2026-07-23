@@ -11,6 +11,7 @@ RUN apk add --no-cache \
   imagemagick-webp \
   imagemagick-heic \
   assimp-dev \
+  nodejs \
   su-exec \
   wget
 
