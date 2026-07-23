@@ -1,7 +1,10 @@
 # frozen_string_literal: true
 
-# Re-queue archive mesh preview jobs so placeholders can be replaced with
-# real software-rendered PNGs (Assimp → STL → mesh_thumbnail.mjs).
+# Re-queue archive mesh preview jobs so placeholders / never-rendered listed
+# entries get real software-rendered PNGs (Assimp → STL → mesh_thumbnail.mjs).
+#
+# Self-chains with a delay so Redis is not flooded with hundreds of thousands
+# of jobs at once — drip ~BATCH every (BATCH * STAGGER) seconds.
 class Scan::EnqueueArchiveMeshPreviewRerendersJob < ApplicationJob
   queue_as :low
   unique :until_executed, lock_ttl: 6.hours
@@ -15,7 +18,7 @@ class Scan::EnqueueArchiveMeshPreviewRerendersJob < ApplicationJob
     stagger_s = stagger.to_f
 
     scope = ArchiveEntry.meshes
-      .where(status: %w[preview_ready preview_failed preview_pending])
+      .where(status: %w[listed preview_ready preview_failed preview_pending])
       .where("archive_entries.id > ?", cursor.to_i)
       .order(:id)
       .limit([batch, max].min)
@@ -41,7 +44,8 @@ class Scan::EnqueueArchiveMeshPreviewRerendersJob < ApplicationJob
     )
 
     if remaining_cap > 0 && entries.size >= batch
-      self.class.perform_later(
+      # Pace the next drip so the performance queue stays bounded.
+      self.class.set(wait: (batch * stagger_s).seconds).perform_later(
         limit: (limit.to_i <= 0) ? 0 : remaining_cap,
         batch_size: batch,
         stagger: stagger_s,

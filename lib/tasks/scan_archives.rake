@@ -31,10 +31,10 @@ namespace :manyfold do
     end
   end
 
-  desc "Re-render archive mesh entry previews (replace placeholders). " \
-       "LIMIT=500, BATCH=100, STAGGER=0.5, CURSOR=0. For new archives use IMAGES_ONLY=0 rake manyfold:scan_archives"
+  desc "Re-render archive mesh entry previews (replace placeholders / listed-only). " \
+       "LIMIT=0 (all), BATCH=100, STAGGER=0.5, CURSOR=0. For new archives use IMAGES_ONLY=0 rake manyfold:scan_archives"
   task rerender_archive_mesh_previews: :environment do
-    limit = Integer(ENV.fetch("LIMIT", "500"))
+    limit = Integer(ENV.fetch("LIMIT", "0"))
     batch = Integer(ENV.fetch("BATCH", Scan::EnqueueArchiveMeshPreviewRerendersJob::DEFAULT_BATCH.to_s))
     stagger = Float(ENV.fetch("STAGGER", Scan::EnqueueArchiveMeshPreviewRerendersJob::DEFAULT_STAGGER.to_s))
     cursor = Integer(ENV.fetch("CURSOR", "0"))

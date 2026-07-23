@@ -16,7 +16,7 @@ RSpec.describe Scan::EnqueueArchiveMeshPreviewRerendersJob do
     end
   end
 
-  it "enqueues preview jobs for mesh entries and marks them pending" do
+  it "enqueues preview jobs for mesh entries including previously listed-only" do
     ready = ArchiveEntry.create!(
       model_file: @file,
       pathname: "a.stl",
@@ -24,11 +24,11 @@ RSpec.describe Scan::EnqueueArchiveMeshPreviewRerendersJob do
       status: "preview_ready",
       size: 100
     )
-    failed = ArchiveEntry.create!(
+    listed = ArchiveEntry.create!(
       model_file: @file,
       pathname: "b.stl",
       kind: "mesh",
-      status: "preview_failed",
+      status: "listed",
       size: 100
     )
     ArchiveEntry.create!(
@@ -44,6 +44,6 @@ RSpec.describe Scan::EnqueueArchiveMeshPreviewRerendersJob do
     }.to have_enqueued_job(Scan::ModelFile::PreviewArchiveEntryJob).exactly(2).times
 
     expect(ready.reload.status).to eq("preview_pending")
-    expect(failed.reload.status).to eq("preview_pending")
+    expect(listed.reload.status).to eq("preview_pending")
   end
 end

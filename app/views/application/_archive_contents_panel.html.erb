@@ -35,7 +35,7 @@
 
   <% if entries.any? %>
     <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-      <% entries.limit(200).each do |entry| %>
+      <% entries.each do |entry| %>
         <div class="rounded-lg border border-secondary-200 dark:border-secondary-700 overflow-hidden bg-surface dark:bg-secondary-900 min-w-0">
           <div class="aspect-[4/3] bg-secondary-100 dark:bg-secondary-800 relative flex items-center justify-center">
             <% if entry.preview_exists? %>

@@ -5,9 +5,8 @@ require "mini_magick"
 # List and selectively extract entries from library archives (zip/7z/rar/…)
 # without expanding the whole archive into the model folder.
 class ArchiveEntryService
-  MAX_LIST_ENTRIES = 2000
-  MAX_MESH_PREVIEWS = 40
-  MAX_IMAGE_PREVIEWS = 60
+  # Soft safety only — personal library may have huge packs; list everything we can.
+  MAX_LIST_ENTRIES = 100_000
 
   class EntryTooLarge < StandardError; end
   class EntryNotFound < StandardError; end
@@ -79,11 +78,11 @@ class ArchiveEntryService
 
   def enqueue_previews!(entries = nil, images_only: false)
     entries ||= @model_file.archive_entries.previewable.where.not(status: %w[too_large skipped])
-    images = entries.select(&:is_image?).sort_by { |e| e.size.to_i }.first(MAX_IMAGE_PREVIEWS)
+    images = entries.select(&:is_image?).sort_by { |e| e.size.to_i }
     meshes = if images_only
       []
     else
-      entries.select(&:is_renderable?).sort_by { |e| e.size.to_i }.first(MAX_MESH_PREVIEWS)
+      entries.select(&:is_renderable?).sort_by { |e| e.size.to_i }
     end
 
     (images + meshes).each do |entry|
