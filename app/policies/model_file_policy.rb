@@ -4,6 +4,12 @@ class ModelFilePolicy < ApplicationPolicy
     @user&.is_moderator? || @record.previewable? || check_permissions(@record.model, ["view", "edit", "own"], @user)
   end
 
+  # Full model view/download — not preview-only. Used for archive member
+  # download/content (and listing non-preview archive contents).
+  def download?
+    ModelPolicy.new(@user, @record.model).download?
+  end
+
   def create?
     can_update_model?
   end

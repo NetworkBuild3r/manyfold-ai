@@ -36,7 +36,8 @@ class ModelFilesController < ApplicationController
   def create
     authorize @model
     if params[:convert]
-      file = ModelFile.find_param(params[:convert][:id])
+      file = policy_scope(@model.model_files).find_param(params[:convert][:id])
+      authorize file, :convert?
       file.convert_later params[:convert][:to]
       redirect_back_or_to [@model, file], notice: t(".conversion_started")
     elsif !(p = upload_params).empty?
@@ -182,7 +183,7 @@ class ModelFilesController < ApplicationController
   end
 
   def get_model
-    @model = Model.find_param(params[:model_id])
+    @model = policy_scope(Model).find_param(params[:model_id])
   end
 
   def get_file

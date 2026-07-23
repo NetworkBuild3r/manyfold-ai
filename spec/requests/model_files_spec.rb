@@ -191,6 +191,14 @@ RSpec.describe "Model Files" do
           follow_redirect!
           expect(response.body).to include "File conversion started"
         end
+
+        it "rejects conversion of a file from another model" do
+          other = create(:model_file, filename: "other.stl")
+          expect {
+            post model_model_files_path(model, params: {convert: {id: other.to_param, to: "threemf"}})
+          }.not_to have_enqueued_job(Analysis::FileConversionJob)
+          expect(response).to have_http_status(:not_found)
+        end
       end
 
       context "when uploading a file" do

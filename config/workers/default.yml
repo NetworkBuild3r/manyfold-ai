@@ -1,5 +1,12 @@
 ---
-# Keep default low: analysis/scan jobs can hold large file buffers. Raise via env if you have RAM.
+# Default worker for local/dev. Production k8s isolates queues — see
+# home_k3/apps/manyfold/manifests/manyfold-workers.yaml:
+#   manyfold-worker            critical, high, default, upgrade
+#   manyfold-scan-worker       critical, scan
+#   manyfold-analysis-worker   low, analysis
+#   manyfold-performance-worker performance
+#
+# Keep default concurrency low: analysis/scan jobs can hold large file buffers.
 :concurrency: <%= ENV.fetch("DEFAULT_WORKER_CONCURRENCY", 2) %>
 :queues:
   - critical

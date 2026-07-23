@@ -119,7 +119,13 @@ class Library < ApplicationRecord
   def list_files(pattern, flags = 0)
     files = case storage_service
     when "filesystem"
-      Dir.glob(pattern, flags, base: path).filter { |it| File.file?(File.join(path, it)) }
+      patterns = Array(pattern).flatten
+      if patterns.any? { |p| p.include?("**") }
+        # Avoid Dir.glob("**") memory bombs on multi-TB NFS trees.
+        stream_filesystem_files(patterns)
+      else
+        Dir.glob(pattern, flags, base: path).filter { |it| File.file?(File.join(path, it)) }
+      end
     when "s3"
       keys = []
       pattern_array = [pattern].flatten
@@ -194,6 +200,30 @@ class Library < ApplicationRecord
   end
 
   private
+
+  def stream_filesystem_files(patterns)
+    require "find"
+    root = File.expand_path(path)
+    results = []
+    flags = File::FNM_EXTGLOB | File::FNM_PATHNAME | File::FNM_DOTMATCH
+
+    Find.find(root) do |abs|
+      base = File.basename(abs)
+      if File.directory?(abs)
+        Find.prune if base.start_with?(".") || base == "#recycle" || base == "@eaDir" || File.symlink?(abs)
+        next
+      end
+      next unless File.file?(abs) && !File.symlink?(abs)
+
+      rel = abs.delete_prefix(root).delete_prefix(File::SEPARATOR).tr("\\", "/")
+      next if rel.blank?
+
+      results << rel if patterns.any? { |p| File.fnmatch?(p, rel, flags) || File.fnmatch?(p, rel) }
+    end
+    results
+  rescue Errno::EACCES, Errno::ENOENT, Errno::EIO
+    []
+  end
 
   def ensure_path_case_is_correct
     # On case-preserving-and-insensitive filesystems (i.e. macOS)

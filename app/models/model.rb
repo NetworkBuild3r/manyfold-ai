@@ -62,7 +62,7 @@ class Model < ApplicationRecord
   accepts_nested_attributes_for :creator
 
   before_validation :strip_separators_from_path, if: :path_changed?
-  before_validation :publish_creator, if: :becoming_public?
+  # Do not auto-publish creators — validate_publishable requires an already-public creator.
   before_validation :normalize_license, if: -> { respond_to? :license }
   # In Rails 7.1 we will be able to do this instead:
   # normalizes :license, with: -> license { license.blank? ? nil : license }
@@ -148,62 +148,7 @@ class Model < ApplicationRecord
   end
 
   def merge!(*models)
-    models = models[0] if models.length == 1 && models[0].is_a?(Enumerable)
-
-    models.each do |other|
-      ActiveRecord::Base.transaction do
-        path_prefix = compute_merge_prefix(other)
-
-        moved_files = []
-        other.model_files.to_a.each do |file|
-          source_filename = file.filename
-          result = adopt_file(file, path_prefix: path_prefix)
-
-          moved_files << {
-            id: file.id,
-            source_filename: source_filename,
-            merged_filename: (result[:status] == :adopted) ? file.filename : nil,
-            deduplicated: result[:status] == :deduplicated,
-            existing_file_id: result[:existing_file_id]
-          }
-        end
-
-        MergeHistory.create!(
-          target_model: self,
-          source_library_id: other.library_id,
-          source_path: other.path,
-          source_name: other.name,
-          path_prefix: path_prefix,
-          source_metadata: {
-            creator_id: other.creator_id,
-            collection_id: other.collection_id,
-            license: other.license,
-            caption: other.caption,
-            notes: other.notes,
-            sensitive: other.sensitive,
-            tag_list: other.tag_list,
-            links: other.links.map(&:url),
-            preview_filename: other.preview_file&.filename
-          },
-          moved_files: moved_files
-        )
-
-        # Merge metadata (target wins for single-value fields)
-        self.creator ||= other.creator
-        self.collection ||= other.collection
-        self.license ||= other.license
-        self.caption ||= other.caption
-        self.notes ||= other.notes
-        self.sensitive ||= other.sensitive
-        tag_list.add(*other.tag_list)
-        self.links_attributes = other.links.map { |it| {url: it.url} }
-        save!
-
-        other.reload
-        other.destroy!
-      end
-      check_for_problems_later
-    end
+    Model::Merge.call(self, *models)
   end
 
   UNMERGE_WINDOW = 30.days
@@ -295,33 +240,11 @@ class Model < ApplicationRecord
   end
 
   def delete_from_disk_and_destroy
-    self.skip_problem_check = true
-
-    Current.set(skip_problem_checks: true) do
-      # Cascade nested models deepest-first so delete is not blocked when a folder
-      # contains sub-models (common after deep library scans).
-      contained_models.order(Arel.sql("LENGTH(#{self.class.quoted_table_name}.path) DESC")).to_a.each do |child|
-        child.delete_from_disk_and_destroy_without_cascade
-      end
-      delete_from_disk_and_destroy_without_cascade
-    end
+    Model::Delete.call(self)
   end
 
   def delete_from_disk_and_destroy_without_cascade
-    self.skip_problem_check = true
-    # Remove all presupported_version relationships first, they get in the way
-    # This will go away later when we do proper file relationships rather than linking the tables directly
-    model_files.update_all(presupported_version_id: nil) # rubocop:disable Rails/SkipsModelValidations
-    # Trigger deletion for each file separately, to make sure cleanup happens
-    model_files.each { |f| f.delete_from_disk_and_destroy }
-    # Remove tags first - sometimes this causes problems if we don't do it beforehand.
-    # Do not use update!(tags: []) — public models missing license/creator fail
-    # validate_publishable and surface a misleading 422 "rejected" page.
-    taggings.delete_all
-    # Delete directory corresponding to model
-    library.storage.delete_prefixed(path)
-    # Remove from DB
-    destroy
+    Model::Delete.delete_without_cascade(self)
   end
 
   def contained_models
@@ -483,8 +406,7 @@ class Model < ApplicationRecord
     end
   end
 
-  private
-
+  # Used by Model::Merge to place files from a source model under this target.
   def compute_merge_prefix(other)
     if contains?(other)
       Pathname.new(other.path).relative_path_from(Pathname.new(path)).to_s
@@ -494,6 +416,8 @@ class Model < ApplicationRecord
       File.basename(other.path)
     end
   end
+
+  private
 
   # Copy physical file from source_file (e.g. target's file) to dest_file (e.g. restored model's new record).
   def copy_file_to_model_file(source_file, dest_file)
@@ -598,9 +522,5 @@ class Model < ApplicationRecord
     errors.add :license, :blank if license.nil?
     errors.add :creator, :blank if creator.nil?
     errors.add :creator, :private if creator && !creator.public?
-  end
-
-  def publish_creator
-    creator&.update!(caber_relations_attributes: [{permission: "view", subject: nil}]) unless creator&.public?
   end
 end

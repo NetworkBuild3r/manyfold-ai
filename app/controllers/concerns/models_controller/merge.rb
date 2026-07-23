@@ -26,7 +26,8 @@ module ModelsController::Merge
       name = File.basename(path).humanize.tr("+", " ").careful_titleize
       @target = Model.create_from(@models.first, name: name, path: path)
     elsif @merge_params[:target]
-      @target = Model.find_param(@merge_params[:target])
+      @target = policy_scope(Model, policy_scope_class: ApplicationPolicy::UpdateScope)
+        .find_param(@merge_params[:target])
     end
     if @target
       authorize @target

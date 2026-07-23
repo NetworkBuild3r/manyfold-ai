@@ -68,6 +68,8 @@ class Scan::Library::DetectFilesystemChangesJob < ApplicationJob
   end
 
   # Known model IDs that gained new indexable files on disk (shallow check).
+  # Uses directory mtime vs last successful detect to avoid O(N) NFS walks on
+  # every scan once a baseline exists (Rails.cache key per library).
   def models_with_new_files(library)
     return [] unless library.storage_service == "filesystem"
 
@@ -75,16 +77,33 @@ class Scan::Library::DetectFilesystemChangesJob < ApplicationJob
     return [] unless root.present? && File.directory?(root)
 
     status[:step] = "jobs.scan.detect_filesystem_changes.checking_known_models"
+    since = last_detect_at(library)
     changed_ids = []
+    checked = 0
+    skipped_fresh = 0
+
     Model.where(library_id: library.id).find_each do |model|
       abs = File.join(root, model.path)
       next unless File.directory?(abs)
       next if File.symlink?(abs)
 
+      unless dir_touched_since?(abs, since)
+        skipped_fresh += 1
+        next
+      end
+
+      checked += 1
       on_disk = shallow_indexable_relative_names(abs)
       existing = model.model_files.without_special.pluck(:filename).to_set
       changed_ids << model.id if (on_disk - existing).any?
     end
+
+    remember_detect_at!(library)
+    Rails.logger.info(
+      "[scan] library=#{library.id} models_with_new_files " \
+      "checked=#{checked} skipped_fresh=#{skipped_fresh} changed=#{changed_ids.size} " \
+      "since=#{since&.iso8601}"
+    )
     changed_ids
   end
 
@@ -345,5 +364,39 @@ class Scan::Library::DetectFilesystemChangesJob < ApplicationJob
       missing << rel unless File.file?(abs)
     end
     model_paths_from_file_paths(missing)
+  end
+
+  def detect_cache_key(library)
+    "manyfold:scan:library:#{library.id}:last_filesystem_detect_at"
+  end
+
+  def last_detect_at(library)
+    Rails.cache.read(detect_cache_key(library))
+  end
+
+  def remember_detect_at!(library)
+    Rails.cache.write(detect_cache_key(library), Time.current, expires_in: 30.days)
+  end
+
+  # Fail open (return true) when mtime cannot be read so we still shallow-check.
+  def dir_touched_since?(abs_dir, since)
+    return true if since.nil?
+
+    begin
+      return true if File.mtime(abs_dir) >= since
+    rescue Errno::ENOENT, Errno::EACCES, Errno::EIO
+      return true
+    end
+
+    safe_children(abs_dir).any? do |name|
+      next false unless common_dir_names.include?(name.downcase)
+
+      path = File.join(abs_dir, name)
+      next false unless File.directory?(path) && !File.symlink?(path)
+
+      File.mtime(path) >= since
+    rescue Errno::ENOENT, Errno::EACCES, Errno::EIO
+      false
+    end
   end
 end

@@ -20,8 +20,11 @@ class Scan::Library::CreateModelFromPathJob < ApplicationJob
     if model.valid?
       model.add_new_files_later(include_all_subfolders: include_all_subfolders, scan_batch_id: scan_batch_id)
     else
-      Rails.logger.error(model.inspect)
-      Rails.logger.error(model.errors.full_messages.inspect)
+      Rails.logger.error(
+        "[CreateModelFromPathJob] invalid model library=#{library_id} path=#{clean_path} " \
+        "errors=#{model.errors.full_messages.inspect}"
+      )
+      raise ActiveRecord::RecordInvalid, model
     end
   end
 

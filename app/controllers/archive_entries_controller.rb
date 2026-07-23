@@ -9,7 +9,8 @@ class ArchiveEntriesController < ApplicationController
   before_action -> { set_indexable @file }
 
   def index
-    authorize @file, :show?
+    # Listing archive members is a full-view action (not preview-only).
+    authorize @file, :download?
     @offset = [params[:offset].to_i, 0].max
     requested = params[:per_page].to_i
     @per_page = (requested.positive? ? [requested, PAGE_SIZE].min : PAGE_SIZE)
@@ -31,16 +32,17 @@ class ArchiveEntriesController < ApplicationController
   end
 
   def download
-    authorize @file, :show?
+    authorize @file, :download?
     send_entry(disposition: :attachment)
   end
 
   def content
-    authorize @file, :show?
+    authorize @file, :download?
     send_entry(disposition: :inline)
   end
 
   def preview
+    # Thumbnail/preview remains available under show? (preview grants OK).
     authorize @file, :show?
     unless @entry.preview_exists?
       head :not_found

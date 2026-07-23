@@ -1,10 +1,16 @@
 require "shellwords"
+require "find"
+require "set"
 
 class Scan::Model::AddNewFilesJob < ApplicationJob
   queue_as :scan
   unique :until_executed, lock_ttl: 30.minutes
 
   def file_list(model_path, library, include_all_subfolders: false)
+    if library.storage_service == "filesystem"
+      return filesystem_file_list(model_path, library, include_all_subfolders: include_all_subfolders)
+    end
+
     glob = include_all_subfolders ?
       [File.join(Shellwords.escape(model_path), "**", ApplicationJob.file_pattern)] :
       [File.join(Shellwords.escape(model_path), ApplicationJob.file_pattern)] +
@@ -66,6 +72,69 @@ class Scan::Model::AddNewFilesJob < ApplicationJob
   end
 
   private
+
+  def filesystem_file_list(model_path, library, include_all_subfolders:)
+    root = library.path
+    abs = File.join(root, model_path)
+    return [] unless root.present? && File.directory?(abs)
+
+    indexable = SupportedMimeTypes.indexable_extensions.map(&:downcase).to_set
+    common = ApplicationJob.common_subfolders.keys.map(&:downcase).to_set
+    results = []
+
+    if include_all_subfolders
+      # Stream Find instead of Dir.glob("**") — avoids memory bombs on deep NFS trees.
+      Find.find(abs) do |path|
+        base = File.basename(path)
+        if File.directory?(path)
+          Find.prune if base.start_with?(".") || base == "#recycle" || base == "@eaDir" || File.symlink?(path)
+          next
+        end
+        next unless File.file?(path) && !File.symlink?(path)
+
+        ext = File.extname(path).delete(".").downcase
+        next unless indexable.include?(ext)
+
+        rel = path.delete_prefix(root).delete_prefix(File::SEPARATOR).tr("\\", "/")
+        next if rel.blank? || SiteSettings.ignored_file?(rel)
+        next if File.basename(rel).casecmp("datapackage.json").zero?
+
+        results << rel
+      end
+    else
+      # Shallow: model dir + one common-subfolder level (same shape as Detect).
+      Dir.children(abs).each do |name|
+        next if name.start_with?(".")
+
+        child = File.join(abs, name)
+        if File.file?(child) && !File.symlink?(child)
+          ext = File.extname(name).delete(".").downcase
+          next unless indexable.include?(ext)
+          next if name.casecmp("datapackage.json").zero?
+
+          results << File.join(model_path, name)
+        elsif File.directory?(child) && !File.symlink?(child) && common.include?(name.downcase)
+          Dir.children(child).each do |fname|
+            next if fname.start_with?(".")
+
+            fpath = File.join(child, fname)
+            next unless File.file?(fpath) && !File.symlink?(fpath)
+
+            ext = File.extname(fname).delete(".").downcase
+            next unless indexable.include?(ext)
+
+            results << File.join(model_path, name, fname)
+          end
+        end
+      rescue Errno::EACCES, Errno::ENOENT, Errno::EIO
+        next
+      end
+    end
+
+    results
+  rescue Errno::EACCES, Errno::ENOENT, Errno::EIO
+    []
+  end
 
   def clear_scan_started_at!(model_id)
     return unless Model.column_names.include?("scan_started_at")

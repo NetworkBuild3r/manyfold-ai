@@ -58,8 +58,9 @@ RSpec.describe Collection do
       collection.validate
     end
 
-    it "makes creator public automatically" do
-      expect(collection.creator).to be_public
+    it "does not silently publish a private creator" do
+      expect(collection.creator).not_to be_public
+      expect(collection.errors[:creator]).to include "must be public"
     end
 
     it "requires collection to be public if set" do
@@ -68,6 +69,18 @@ RSpec.describe Collection do
 
     it "doesn't make collection public if validation failed" do
       expect(collection.reload.public?).to be false
+    end
+
+    it "allows becoming public when creator and parent are already public" do
+      public_creator = create(:creator, :public)
+      public_parent = create(:collection, :public)
+      private = create(:collection)
+      private.update!(
+        caber_relations_attributes: [{subject: nil, permission: "view"}],
+        creator: public_creator,
+        collection: public_parent
+      )
+      expect(private.reload).to be_public
     end
   end
 end

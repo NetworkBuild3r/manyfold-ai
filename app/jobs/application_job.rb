@@ -11,11 +11,15 @@ class ApplicationJob < ActiveJob::Base
   end
 
   before_perform do |job|
+    SiteSettings.clear_cache
     begin
-      SiteSettings.clear_cache
       Library.register_all_storage
-    rescue
-      nil
+    rescue StandardError => e
+      Rails.logger.error(
+        "[ApplicationJob] Library.register_all_storage failed for #{job.class.name}: " \
+        "#{e.class}: #{e.message}"
+      )
+      raise
     end
     job.status.update(started_at: DateTime.now)
   end

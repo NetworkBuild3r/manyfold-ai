@@ -55,6 +55,17 @@ RSpec.describe ArchiveEntryService do
       }.to have_enqueued_job(Scan::ModelFile::PreviewArchiveEntryJob).at_least(:twice)
     end
 
+    it "staggers preview jobs instead of flooding the queue" do
+      service = described_class.new(@file)
+      service.list!
+      expect {
+        service.enqueue_previews!(stagger: 1.0, batch_size: 10)
+      }.to have_enqueued_job(Scan::ModelFile::PreviewArchiveEntryJob).at_least(:twice)
+      jobs = enqueued_jobs.select { |j| j[:job] == Scan::ModelFile::PreviewArchiveEntryJob }
+      waits = jobs.filter_map { |j| j[:at] }
+      expect(waits.size).to be >= 1
+    end
+
     it "skips mesh previews when images_only" do
       service = described_class.new(@file)
       service.list!

@@ -951,10 +951,19 @@ RSpec.describe Model do
       expect(model.errors[:creator]).to include "can't be blank"
     end
 
-    it "make creators public" do
+    it "does not silently publish a private creator" do
       new_creator = create(:creator)
+      expect {
+        model.update!(creator: new_creator, license: "MIT")
+      }.to raise_error(ActiveRecord::RecordInvalid)
+      expect(new_creator.reload).not_to be_public
+      expect(model.reload).not_to be_public
+    end
+
+    it "allows becoming public when creator is already public" do
+      new_creator = create(:creator, :public)
       model.update!(creator: new_creator, license: "MIT")
-      expect(new_creator).to be_public
+      expect(model.reload).to be_public
     end
 
     it "requires a license" do

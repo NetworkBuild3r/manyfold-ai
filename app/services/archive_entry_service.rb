@@ -7,6 +7,8 @@ require "mini_magick"
 class ArchiveEntryService
   # Soft safety only — personal library may have huge packs; list everything we can.
   MAX_LIST_ENTRIES = 100_000
+  DEFAULT_PREVIEW_BATCH = 50
+  DEFAULT_PREVIEW_STAGGER = 0.5
 
   class EntryTooLarge < StandardError; end
   class EntryNotFound < StandardError; end
@@ -76,7 +78,7 @@ class ArchiveEntryService
     listed
   end
 
-  def enqueue_previews!(entries = nil, images_only: false)
+  def enqueue_previews!(entries = nil, images_only: false, batch_size: DEFAULT_PREVIEW_BATCH, stagger: DEFAULT_PREVIEW_STAGGER)
     entries ||= @model_file.archive_entries.previewable.where.not(status: %w[too_large skipped])
     images = entries.select(&:is_image?).sort_by { |e| e.size.to_i }
     meshes = if images_only
@@ -85,13 +87,64 @@ class ArchiveEntryService
       entries.select(&:is_renderable?).sort_by { |e| e.size.to_i }
     end
 
+    batch = [batch_size.to_i, 1].max
+    stagger_s = stagger.to_f
+    queued = 0
+
     (images + meshes).each do |entry|
       next if entry.status == "too_large"
       next if entry.preview_ready? && entry.preview_exists?
 
+      wait = ((queued % batch) * stagger_s).seconds
+      # After each full batch, push the next batch further out so :performance stays bounded.
+      wait += ((queued / batch) * batch * stagger_s).seconds
+
       entry.update!(status: "preview_pending", error_message: nil)
-      Scan::ModelFile::PreviewArchiveEntryJob.perform_later(entry.id)
+      Scan::ModelFile::PreviewArchiveEntryJob.set(wait: wait).perform_later(entry.id)
+      queued += 1
     end
+
+    queued
+  end
+
+  # Extract many pathnames in a single archive open (avoids N full re-walks).
+  def extract_entries_to!(pathname_to_destination)
+    raise ArgumentError, "pathname map required" if pathname_to_destination.blank?
+
+    wanted = pathname_to_destination.transform_keys { |p| normalize_pathname(p) }
+    found = {}
+
+    with_archive_path do |archive_path|
+      Archive::Reader.open_filename(archive_path) do |reader|
+        reader.each_entry do |entry|
+          next unless entry.file?
+
+          pathname = normalize_pathname(entry.pathname)
+          destination = wanted[pathname]
+          next unless destination
+          next if found.key?(pathname)
+
+          raise EntryTooLarge if entry.size.to_i > SiteSettings.max_file_extract_size
+          raise UnsafePath if unsafe_pathname?(pathname)
+
+          Dir.mktmpdir("archive-extract") do |staging|
+            reader.extract(entry, Archive::EXTRACT_SECURE, destination: staging)
+            source = locate_extracted_file(staging, entry.pathname)
+            raise EntryNotFound if source.blank? || !File.file?(source)
+
+            FileUtils.mkdir_p(File.dirname(destination))
+            FileUtils.mv(source, destination)
+          end
+          found[pathname] = destination
+          break if found.size >= wanted.size
+        end
+      end
+    end
+
+    missing = wanted.keys - found.keys
+    raise EntryNotFound, missing.join(", ") if missing.any?
+
+    found
   end
 
   def extract_to_cache!(entry)
@@ -102,7 +155,7 @@ class ArchiveEntryService
     return relative if File.file?(absolute)
 
     FileUtils.mkdir_p(File.dirname(absolute))
-    extract_entry_to!(entry.pathname, absolute)
+    extract_entries_to!(entry.pathname => absolute)
     entry.update!(extracted_path: relative)
     relative
   end
@@ -116,7 +169,7 @@ class ArchiveEntryService
 
     Tempfile.create(["archive-entry", ".#{entry.extension.presence || "bin"}"]) do |tmp|
       tmp.binmode
-      extract_entry_to!(entry.pathname, tmp.path)
+      extract_entries_to!(entry.pathname => tmp.path)
       write_image_preview!(tmp.path, absolute)
     end
 
@@ -150,7 +203,7 @@ class ArchiveEntryService
 
     tmp = Tempfile.new(["archive-dl", ".#{entry.extension.presence || "bin"}"])
     tmp.binmode
-    extract_entry_to!(entry.pathname, tmp.path)
+    extract_entries_to!(entry.pathname => tmp.path)
     tmp.rewind
     tmp
   end
@@ -167,32 +220,7 @@ class ArchiveEntryService
   end
 
   def extract_entry_to!(pathname, destination)
-    found = false
-    with_archive_path do |archive_path|
-      Archive::Reader.open_filename(archive_path) do |reader|
-        reader.each_entry do |entry|
-          next unless entry.file?
-          next unless normalize_pathname(entry.pathname) == pathname
-
-          raise EntryTooLarge if entry.size.to_i > SiteSettings.max_file_extract_size
-          raise UnsafePath if unsafe_pathname?(pathname)
-
-          # libarchive extracts using entry.pathname under destination; use a staging dir
-          # then move the target file into place.
-          Dir.mktmpdir("archive-extract") do |staging|
-            reader.extract(entry, Archive::EXTRACT_SECURE, destination: staging)
-            source = locate_extracted_file(staging, entry.pathname)
-            raise EntryNotFound if source.blank? || !File.file?(source)
-
-            FileUtils.mkdir_p(File.dirname(destination))
-            FileUtils.mv(source, destination)
-          end
-          found = true
-          break
-        end
-      end
-    end
-    raise EntryNotFound, pathname unless found
+    extract_entries_to!(pathname => destination)
   end
 
   def locate_extracted_file(staging, pathname)
