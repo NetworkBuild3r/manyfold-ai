@@ -66,6 +66,7 @@ class Search::ModelSearchService
       max_dist: MAX_LEVENSHTEIN,
       min_len: [term.length - 1, 3].max,
       max_len: term.length + 1)
+      .order(:id)
       .limit(FUZZY_LIMIT)
       .pluck(:id)
   end

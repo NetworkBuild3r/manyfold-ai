@@ -149,6 +149,14 @@ RSpec.describe Search::ModelSearchService do
       # Exact "Rouge" should rank at or above edit-distance "Rogue"
       expect(names.index("Aspan Lohia Rouge Girl")).to be <= names.index("Rogue (Marvel)")
     end
+
+    it "returns fuzzy match ids in stable id order for pagination" do
+      # Create several near-matches so the fuzzy ID set is non-trivial.
+      5.times { |i| create(:model, name: "Rogue Variant #{i}", path: "Comics/Rogue#{i}") }
+      ids = service.send(:fuzzy_match_ids, "rouge")
+      expect(ids).not_to be_empty
+      expect(ids).to eq(ids.sort)
+    end
   end
 
   context "with indexing controls" do

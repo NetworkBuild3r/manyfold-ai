@@ -371,6 +371,20 @@ RSpec.describe "Models" do
           expect(response.body).to include("models-scroll-sentinel-top")
         end
 
+        it "advances offset metadata so clients can skip past a fetched page" do
+          # Client advances windowStart by limit when a batch adds 0 unique cards;
+          # server must expose the next offset consistently for that skip.
+          get "/models",
+            params: {library: library.to_param, offset: 12, per_page: 12, window: "after"},
+            headers: {
+              "Accept" => "text/vnd.turbo-stream.html",
+              "X-Infinite-Scroll" => "1"
+            }
+          expect(response).to have_http_status(:success)
+          expect(response.body).to include('data-offset="12"')
+          expect(response.body).to include("offset=24")
+        end
+
         it "sets has_more_before when offset is past the start" do
           get "/models",
             params: {library: library.to_param, offset: 12, per_page: 5, window: "after"},

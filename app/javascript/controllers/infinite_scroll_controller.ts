@@ -4,6 +4,8 @@ import { renderStreamMessage } from '@hotwired/turbo'
 const PREFETCH_ROOT_MARGIN = '400px 0px'
 const SCROLL_EDGE_PX = 800
 const MAX_FILL_ROUNDS = 24
+const MAX_CHAIN_AFTER = 8
+const MAX_DUPE_SKIPS = 5
 const MAX_TRANSIENT_RETRIES = 3
 const RETRY_BASE_MS = 400
 const BACK_TO_TOP_SHOW_PX = 800
@@ -69,6 +71,9 @@ export default class extends Controller {
   private transientFailures = 0
   private restoredScroll = false
   private refillQueued = false
+  private chainAfterQueued = false
+  private chainAfterDepth = 0
+  private consecutiveDupeSkips = 0
 
   connect (): void {
     this.boundOnScroll = this.onScroll.bind(this)
@@ -141,9 +146,13 @@ export default class extends Controller {
       this.cachedColumns = null
       const prevSize = this.windowSize
       this.recomputeWindowSize()
+      this.setupObserver()
       if (this.windowSize !== prevSize) {
         void this.fillOrTrimWindow()
+        return
       }
+      // Layout twitch without column/row change: still unstick a dead IO edge.
+      this.maybeContinueAfter()
     })
     this.resizeObserver.observe(this.gridEl())
   }
@@ -441,6 +450,7 @@ export default class extends Controller {
 
     const anchor = direction === 'before' ? this.cards()[0] : null
     const anchorTop = anchor?.getBoundingClientRect().top ?? 0
+    let shouldContinueAfter = false
 
     try {
       const response = await fetch(url, {
@@ -479,6 +489,7 @@ export default class extends Controller {
 
       this.transientFailures = 0
       const beforeCount = this.cards().length
+      const streamHadCards = this.turboStreamAppendsCards(html)
 
       this.mutating = true
       try {
@@ -503,14 +514,30 @@ export default class extends Controller {
           }
         }
         this.maintainWindow('before')
+        this.consecutiveDupeSkips = 0
       } else if (direction === 'after' && added > 0) {
         this.maintainWindow('after')
+        this.consecutiveDupeSkips = 0
       }
 
       // Empty batch alone is not end-of-list; only totalCount bounds matter.
       this.refreshBounds()
+
+      if (direction === 'after' && added === 0) {
+        // All-dupe or empty batch: advance past this offset so we cannot spin.
+        // After refreshBounds so a forced stop is not overwritten.
+        this.advancePastDeadAfterOffset(limit, streamHadCards)
+      }
+
       this.setupObserver()
       this.updateExhaustionUi()
+
+      if (direction === 'after' && this.hasMoreAfter) {
+        shouldContinueAfter = true
+      } else if (direction === 'after') {
+        this.chainAfterDepth = 0
+      }
+
       return added > 0 || !this.hasMoreAfter
     } catch (e) {
       if ((e as Error)?.name === 'AbortError') {
@@ -524,7 +551,80 @@ export default class extends Controller {
       this.loading = false
       this.gridEl().classList.remove('is-loading-more')
       this.abortController = null
+      // Chain after loading clears — IO will not re-fire while sentinel stays intersecting.
+      if (shouldContinueAfter) {
+        this.maybeContinueAfter()
+      }
     }
+  }
+
+  /** True when the turbo-stream payload includes card elements (vs empty page). */
+  private turboStreamAppendsCards (html: string): boolean {
+    const selector = this.cardSelectorValue || '.model-card'
+    // Cards use class model-card / collection-card / creator-card.
+    const bare = selector.replace(/^\./, '')
+    return html.includes(`class="${bare}`) ||
+      html.includes(`class='${bare}`) ||
+      html.includes(` ${bare} `) ||
+      html.includes(` ${bare}"`) ||
+      html.includes(` ${bare}'`)
+  }
+
+  /**
+   * When a bottom fetch adds no new unique cards, skip forward so the next
+   * request cannot reuse the same offset (duplicate storm / soft stall).
+   */
+  private advancePastDeadAfterOffset (limit: number, streamHadCards: boolean): void {
+    const step = Math.max(1, limit)
+    this.windowStartValue += step
+    this.consecutiveDupeSkips += 1
+
+    if (
+      this.consecutiveDupeSkips >= MAX_DUPE_SKIPS ||
+      (this.totalCountValue > 0 && this.windowStartValue >= this.totalCountValue) ||
+      (!streamHadCards && this.totalCountValue <= 0)
+    ) {
+      this.hasMoreAfter = false
+      this.consecutiveDupeSkips = 0
+    }
+  }
+
+  /**
+   * IntersectionObserver often does not re-fire while the sentinel stays
+   * intersecting after a sliding-window fetch. Chain another after-fetch when
+   * still at the bottom, capped so we do not hammer the server.
+   */
+  private maybeContinueAfter (): void {
+    if (!this.hasMoreAfter || this.loading || this.chainAfterQueued) return
+    if (this.chainAfterDepth >= MAX_CHAIN_AFTER) {
+      this.chainAfterDepth = 0
+      return
+    }
+    if (!this.nearBottom() && !this.bottomSentinelIntersecting()) return
+
+    this.chainAfterQueued = true
+    requestAnimationFrame(() => {
+      this.chainAfterQueued = false
+      if (!this.hasMoreAfter || this.loading) return
+      if (!this.nearBottom() && !this.bottomSentinelIntersecting()) {
+        this.chainAfterDepth = 0
+        return
+      }
+      this.chainAfterDepth += 1
+      void this.fetchRow('after').then((ok) => {
+        if (!ok || !this.hasMoreAfter) {
+          this.chainAfterDepth = 0
+        }
+      })
+    })
+  }
+
+  private bottomSentinelIntersecting (): boolean {
+    const el = this.bottomSentinelEl()
+    if (el == null || typeof el.getBoundingClientRect !== 'function') return false
+    const rect = el.getBoundingClientRect()
+    const margin = 400
+    return rect.top < window.innerHeight + margin && rect.bottom > -margin
   }
 
   private dedupeCards (): void {
@@ -588,6 +688,7 @@ export default class extends Controller {
         this.scrollTicking = false
         this.updateBackToTop()
         if (this.nearBottom() && this.hasMoreAfter) {
+          this.chainAfterDepth = 0
           void this.fetchRow('after')
         } else if (this.nearTop() && this.hasMoreBefore) {
           void this.fetchRow('before')
