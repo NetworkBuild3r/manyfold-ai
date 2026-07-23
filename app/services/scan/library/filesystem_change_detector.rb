@@ -2,15 +2,16 @@
 
 require "set"
 
-module Library
-  # Discovers new/changed/missing files on disk for a library scan.
-  # Extracted from Scan::Library::DetectFilesystemChangesJob.
-  class FilesystemChangeDetector
-    DEFAULT_MAX_DEPTH = 6
+module Scan
+  module Library
+    # Discovers new/changed/missing files on disk for a library scan.
+    # Extracted from Scan::Library::DetectFilesystemChangesJob.
+    class FilesystemChangeDetector
+      DEFAULT_MAX_DEPTH = 6
 
-    def initialize(status:)
-      @status = status
-    end
+      def initialize(status:)
+        @status = status
+      end
 
     def filenames_on_disk(library)
       if library.storage_service == "filesystem"
@@ -340,6 +341,7 @@ module Library
       rescue Errno::ENOENT, Errno::EACCES, Errno::EIO
         false
       end
+    end
     end
   end
 end
