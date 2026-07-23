@@ -115,7 +115,9 @@ RSpec.describe Search::ModelSearchService do
   context "with fuzzy typo tolerance" do
     before do
       skip "pg_trgm requires PostgreSQL" unless DatabaseDetector.is_postgres?
-      skip "pg_trgm not available" unless ActiveRecord::Base.connection.extension_enabled?("pg_trgm")
+      conn = ActiveRecord::Base.connection
+      skip "pg_trgm not available" unless conn.extension_enabled?("pg_trgm")
+      skip "fuzzystrmatch not available" unless conn.extension_enabled?("fuzzystrmatch")
 
       create(:model, name: "Rogue (Marvel)", path: "Anime/Rogue (Marvel)")
       create(:model, name: "Wolverine Bust", path: "Comics/Wolverine")
@@ -130,6 +132,8 @@ RSpec.describe Search::ModelSearchService do
       names = service.search("rouge").pluck(:name)
       expect(names).to include("Rogue (Marvel)", "Aspan Lohia Rouge Girl")
       expect(names).not_to include("Wolverine Bust")
+      # Exact "Rouge" should rank at or above edit-distance "Rogue"
+      expect(names.index("Aspan Lohia Rouge Girl")).to be <= names.index("Rogue (Marvel)")
     end
   end
 

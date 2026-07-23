@@ -5,6 +5,7 @@ class EnablePgTrgmSearchIndexes < ActiveRecord::Migration[8.0]
 
   def up
     enable_extension "pg_trgm" unless extension_enabled?("pg_trgm")
+    enable_extension "fuzzystrmatch" unless extension_enabled?("fuzzystrmatch")
 
     add_index :models, :name,
       using: :gin,
@@ -24,6 +25,6 @@ class EnablePgTrgmSearchIndexes < ActiveRecord::Migration[8.0]
   def down
     remove_index :models, name: "index_models_on_name_trgm", algorithm: :concurrently, if_exists: true
     remove_index :models, name: "index_models_on_path_trgm", algorithm: :concurrently, if_exists: true
-    # Leave pg_trgm installed — other objects may depend on it.
+    # Leave extensions installed — other objects may depend on them.
   end
 end
