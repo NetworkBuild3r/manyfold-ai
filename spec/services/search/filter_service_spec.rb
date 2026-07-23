@@ -113,6 +113,25 @@ RSpec.describe Search::FilterService do
       expect(service.models(Model.all).pluck(:name)).to contain_exactly("cat in the hat")
     end
 
+    it "skips has_image default when searching so non-image hits still appear" do
+      service = described_class.new(ActionController::Parameters.new(q: "cat"), default_has_image: true)
+      expect(service.parameter(:has_image)).to be_nil
+      expect(service.models(Model.all).pluck(:name)).to contain_exactly("cat in the hat", "hat on the cat")
+    end
+
+    it "still applies has_image when explicitly set during search" do
+      with_img = Model.find_by!(name: "cat in the hat")
+      jpg = create(:model_file, model: with_img, filename: "cover.jpg")
+      with_img.update!(preview_file: jpg)
+
+      service = described_class.new(
+        ActionController::Parameters.new(q: "cat", has_image: "1"),
+        default_has_image: true
+      )
+      expect(service.parameter(:has_image)).to eq "1"
+      expect(service.models(Model.all).pluck(:name)).to contain_exactly("cat in the hat")
+    end
+
     it "keeps show-all when has_image=0 even with default_has_image" do
       service = described_class.new(ActionController::Parameters.new(has_image: "0"), default_has_image: true)
       expect(service.parameter(:has_image)).to eq "0"

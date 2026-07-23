@@ -87,9 +87,11 @@ class Model < ApplicationRecord
   scoped_search relation: :library, on: :name, rename: :library, only_explicit: true, default_operator: :eq
   scoped_search relation: :creator, on: :name, rename: :creator
   scoped_search relation: :collection, on: :name, rename: :collection
-  scoped_search relation: :tags, on: :name, default_operator: :eq, rename: :tag
+  # ILIKE substring in free-text (same as name); explicit tag=foo still uses =.
+  scoped_search relation: :tags, on: :name, rename: :tag
   scoped_search relation: :model_files, on: :filename, rename: :filename, only_explicit: true
-  scoped_search on: :path, only_explicit: true
+  # Folder paths often carry character/set names — include in bare q=.
+  scoped_search on: :path
 
   def parents
     Pathname.new(path).parent.descend.filter_map do |path|

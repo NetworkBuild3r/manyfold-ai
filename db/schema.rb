@@ -10,9 +10,10 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_07_22_150000) do
+ActiveRecord::Schema[8.0].define(version: 2026_07_23_010000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+  enable_extension "pg_trgm"
 
   create_table "archive_entries", force: :cascade do |t|
     t.bigint "model_file_id", null: false
@@ -392,7 +393,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_22_150000) do
     t.index ["created_at"], name: "index_models_on_created_at"
     t.index ["creator_id"], name: "index_models_on_creator_id"
     t.index ["library_id"], name: "index_models_on_library_id"
+    t.index ["name"], name: "index_models_on_name_trgm", opclass: :gin_trgm_ops, using: :gin
     t.index ["name_lower"], name: "index_models_on_name_lower"
+    t.index ["path"], name: "index_models_on_path_trgm", opclass: :gin_trgm_ops, using: :gin
     t.index ["path", "library_id"], name: "index_models_on_path_and_library_id", unique: true
     t.index ["preview_file_id"], name: "index_models_on_preview_file_id"
     t.index ["public_id"], name: "index_models_on_public_id"

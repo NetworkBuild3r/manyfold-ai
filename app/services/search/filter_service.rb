@@ -4,7 +4,8 @@ class Search::FilterService
   attr_reader :owner
 
   # Get list filters from URL. Optional +user+ enables personal list filters (favorite/printed).
-  # +default_has_image+: when true (models library), omit → with-images; has_image=0 keeps "show all".
+  # +default_has_image+: when true (models library browse), omit → with-images; has_image=0 keeps
+  # "show all". Free-text +q+ opts out of that default (search intent > gallery intent).
   def initialize(params, user: nil, default_has_image: false)
     @user = user
     params = ActionController::Parameters.new(params) if params.is_a?(Hash)
@@ -218,11 +219,14 @@ class Search::FilterService
   end
 
   # Keep explicit "0" so library default (images on) does not re-apply after the user opts out.
+  # When the user is searching (+q+), skip the gallery default so name/path hits without
+  # image previews still appear (they can re-enable With images via the chip).
   def normalize_has_image!(has_image_specified:, default_has_image:)
     raw = @filters[:has_image]
     raw = raw.last if raw.is_a?(Array)
+    searching = @filters[:q].present?
 
-    if !has_image_specified && default_has_image
+    if !has_image_specified && default_has_image && !searching
       @filters[:has_image] = "1"
     elsif has_image_specified
       @filters[:has_image] = truthy?(raw) ? "1" : "0"

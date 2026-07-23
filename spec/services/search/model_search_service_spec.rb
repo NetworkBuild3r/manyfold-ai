@@ -105,6 +105,32 @@ RSpec.describe Search::ModelSearchService do
     it "searches in model filenames if specified" do
       expect(service.search("filename ~ big").pluck(:name)).to contain_exactly("bat on a hat")
     end
+
+    it "searches folder paths in free-text queries" do
+      create(:model, name: "untitled figure", path: "Anime/Rogue (Marvel)")
+      expect(service.search("marvel").pluck(:name)).to include("untitled figure")
+    end
+  end
+
+  context "with fuzzy typo tolerance" do
+    before do
+      skip "pg_trgm requires PostgreSQL" unless DatabaseDetector.is_postgres?
+      skip "pg_trgm not available" unless ActiveRecord::Base.connection.extension_enabled?("pg_trgm")
+
+      create(:model, name: "Rogue (Marvel)", path: "Anime/Rogue (Marvel)")
+      create(:model, name: "Wolverine Bust", path: "Comics/Wolverine")
+    end
+
+    it "finds Rogue when searching for the typo rouge" do
+      expect(service.search("rouge").pluck(:name)).to include("Rogue (Marvel)")
+    end
+
+    it "ranks closer name matches ahead of weak hits" do
+      create(:model, name: "Aspan Lohia Rouge Girl", path: "AnySTL/Rouge Girl")
+      names = service.search("rouge").pluck(:name)
+      expect(names).to include("Rogue (Marvel)", "Aspan Lohia Rouge Girl")
+      expect(names).not_to include("Wolverine Bust")
+    end
   end
 
   context "with indexing controls" do
