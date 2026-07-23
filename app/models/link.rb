@@ -50,6 +50,6 @@ class Link < ApplicationRecord
   end
 
   def update_metadata_from_link_later(organize: false)
-    UpdateMetadataFromLinkJob.perform_later(link: self, organize: organize)
+    UpdateMetadataFromLinkJob.perform_later(link_id: id, organize: organize)
   end
 end

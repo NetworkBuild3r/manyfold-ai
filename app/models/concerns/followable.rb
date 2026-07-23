@@ -5,6 +5,8 @@ module Followable
   TIMEOUT = Rails.env.development? ? 1 : 15
 
   included do
+    attr_accessor :suppress_announce unless method_defined?(:suppress_announce)
+
     delegate :following_followers, to: :federails_actor, allow_nil: true
     after_commit :followable_post_creation_activity, on: :create
     after_commit :followable_post_update_activity, on: :update
@@ -28,6 +30,11 @@ module Followable
     user&.federails_actor
   end
 
+  def suppress_federation_announce?
+    return true if respond_to?(:suppress_announce) && suppress_announce
+    false
+  end
+
   private
 
   def recently_posted?
@@ -36,25 +43,15 @@ module Followable
   end
 
   def followable_post_creation_activity
-    return unless SiteSettings.federation_enabled?
-    return if Current.scan_batch_id.present?
-    followable_post_activity("Create")
+    Federation::Announce.followable_create(self)
   end
 
   def followable_post_update_activity
-    return unless SiteSettings.federation_enabled?
-    return if Current.scan_batch_id.present?
-    followable_post_activity("Update") unless recently_posted?
+    Federation::Announce.followable_update(self)
   end
 
   def followable_post_activity(action)
-    return unless owning_actor
-    Federails::Activity.create!(
-      actor: owning_actor,
-      action: action,
-      entity: federails_actor,
-      created_at: updated_at
-    )
+    Federation::Announce.followable_activity(self, action)
   end
 
   def auto_accept(follow)

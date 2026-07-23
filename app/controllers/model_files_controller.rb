@@ -51,7 +51,7 @@ class ModelFilesController < ApplicationController
               filename: Zaru.sanitize!(File.basename(file[:name]))
             }
           },
-          model: @model
+          model_id: @model.id
         )
       end
       respond_to do |format|
@@ -118,21 +118,18 @@ class ModelFilesController < ApplicationController
     hash = bulk_update_params
     ids_to_update = params[:model_files].keep_if { |key, value| value == "1" }.keys
     files = policy_scope(@model.model_files.without_special).where(public_id: ids_to_update)
-    files.each do |file|
-      ActiveRecord::Base.transaction do
-        current_user.set_list_state(file, :printed, params[:printed] === "1")
-        options = {}
-        if params[:pattern].present?
-          options[:filename] =
-            file.filename.split(file.extension).first.gsub(params[:pattern], params[:replacement]) +
-            file.extension
-        end
-        file.update(hash.merge(options))
-      end
-    end
-    if params[:split]
-      new_model = @model.split! files: files
-      redirect_to model_path(new_model), notice: t(".success")
+    result = ModelFile::BulkUpdate.call(
+      model: @model,
+      files: files,
+      attributes: hash,
+      user: current_user,
+      printed: params[:printed],
+      pattern: params[:pattern],
+      replacement: params[:replacement],
+      split: params[:split].present?
+    )
+    if result.split_model
+      redirect_to model_path(result.split_model), notice: t(".success")
     else
       redirect_back_or_to model_path(@model), notice: t(".success")
     end

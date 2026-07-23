@@ -26,8 +26,9 @@ class Scan::Model::AddNewFilesJob < ApplicationJob
   end
 
   def perform(model_id, include_all_subfolders: false, scan_batch_id: nil)
-    Current.set(scan_batch_id: scan_batch_id) do
+    Current.set(scan_batch_id: scan_batch_id, skip_problem_checks: scan_batch_id.present?) do
       model = Model.find(model_id)
+      ScanContext.apply!(model) if scan_batch_id.present?
       return if model.remote?
       return if Problems::MissingModel.detect(model)
 
@@ -46,7 +47,12 @@ class Scan::Model::AddNewFilesJob < ApplicationJob
       on_disk.each do |filename|
         next if existing_names.include?(filename)
 
-        file = model.model_files.create(filename: filename)
+        file = model.model_files.new(filename: filename)
+        if scan_batch_id.present?
+          ScanContext.apply!(file)
+          file.suppress_attachment_refresh = true
+        end
+        file.save
         if file.persisted?
           created += 1
           # Thread scan_batch_id so ParseMetadata can skip AnalyseModelFileJob

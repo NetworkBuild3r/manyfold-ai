@@ -33,7 +33,7 @@ describe "ModelFiles", :after_first_run, :multiuser do # rubocop:disable RSpec/E
             metadata: {
               filename: "test.stl"
             }
-          }, model: model).once
+          }, model_id: model.id).once
         end
       end
 

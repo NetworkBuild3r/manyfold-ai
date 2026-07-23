@@ -10,12 +10,24 @@ class Scan::Library::CreateModelFromPathJob < ApplicationJob
       tag_list: Array(SiteSettings.model_tags_auto_tag_new)
     }
     clean_path = path.trim_path_separators
-    # Current.scan_batch_id suppresses Activity/Federails publish callbacks
-    # and problem-check storms during bulk discovery.
-    model = Current.set(scan_batch_id: scan_batch_id) do
-      library.models.create_with(new_model_properties).find_or_create_by(path: clean_path)
-    rescue ActiveRecord::RecordNotUnique
-      library.models.find_by!(path: clean_path)
+    # Stamp suppress flags on the record (no Current.* reads in models).
+    # Current.set remains for job bookkeeping / legacy observers only.
+    model = Current.set(scan_batch_id: scan_batch_id, skip_problem_checks: true) do
+      existing = library.models.find_by(path: clean_path)
+      if existing
+        ScanContext.apply!(existing)
+        existing
+      else
+        model = library.models.new(new_model_properties.merge(path: clean_path))
+        ScanContext.apply!(model)
+        begin
+          model.save!
+        rescue ActiveRecord::RecordNotUnique
+          model = library.models.find_by!(path: clean_path)
+          ScanContext.apply!(model)
+        end
+        model
+      end
     end
     if model.valid?
       model.add_new_files_later(include_all_subfolders: include_all_subfolders, scan_batch_id: scan_batch_id)

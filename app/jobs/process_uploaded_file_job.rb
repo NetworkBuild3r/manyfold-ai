@@ -1,18 +1,20 @@
+# frozen_string_literal: true
+
 class ProcessUploadedFileJob < ApplicationJob
   queue_as :critical
 
-  def perform(library_id, uploaded_file, name: nil, owner: nil, creator_id: nil, collection_id: nil, tag_list: nil, license: nil, model: nil, sensitive: nil, permission_preset: nil)
+  def perform(library_id, uploaded_file, name: nil, owner: nil, owner_id: nil, creator_id: nil, collection_id: nil, tag_list: nil, license: nil, model: nil, model_id: nil, sensitive: nil, permission_preset: nil)
+    owner = resolve_owner(owner, owner_id)
+    model = resolve_model(model, model_id)
     new_files = []
     new_model = model.nil?
     attachers = []
 
     ActiveRecord::Base.transaction do
-      # Find library
       library = Library.find(library_id)
       return if library.nil?
 
       attachers = Array.wrap(uploaded_file).map do |it|
-        # Attach cached upload file
         attacher = ModelFileUploader::Attacher.new
         attacher.attach_cached(it)
         attacher
@@ -30,7 +32,6 @@ class ProcessUploadedFileJob < ApplicationJob
       end
     end
 
-    # Queue scans to fill in data or update things
     if new_model
       model.add_new_files_later(include_all_subfolders: true)
     else
@@ -38,10 +39,7 @@ class ProcessUploadedFileJob < ApplicationJob
     end
     new_files.flatten.each(&:parse_metadata_later)
 
-    attachers.each do |it|
-      # Discard cached file
-      it.destroy
-    end
+    attachers.each(&:destroy)
   end
 
   def is_archive?(file)
@@ -57,17 +55,17 @@ class ProcessUploadedFileJob < ApplicationJob
       tag_list: tag_list,
       license: license,
       sensitive: sensitive,
-      permission_preset: permission_preset,
-      owner: owner
+      permission_preset: permission_preset
     }.compact
-    # Create model
-    model = library.models.create!(params)
+    model = library.models.new(params)
+    model.owner = owner if owner && model.respond_to?(:owner=)
+    model.save!
+    Permissions::ApplyPreset.call(model, permission_preset: permission_preset, owner: owner)
     model.organize!
     model
   end
 
   def add_single_file_to_model(model, file)
-    # Handle different file types
     case File.extname(file.original_filename).delete(".").downcase
     when *SupportedMimeTypes.indexable_extensions
       new_file = model.model_files.create(filename: file.original_filename, attachment: file)
@@ -78,6 +76,14 @@ class ProcessUploadedFileJob < ApplicationJob
   end
 
   private
+
+  def resolve_owner(owner, owner_id)
+    owner || (User.find(owner_id) if owner_id.present?)
+  end
+
+  def resolve_model(model, model_id)
+    model || (Model.find(model_id) if model_id.present?)
+  end
 
   def unzip_into_model(model, file)
     new_files = []
@@ -90,7 +96,7 @@ class ProcessUploadedFileJob < ApplicationJob
         reader.each_entry do |entry|
           next if !entry.file? || entry.size > SiteSettings.max_file_extract_size
           next if SiteSettings.ignored_file?(entry.pathname)
-          filename = entry.pathname # Stored because pathname gets mutated by the extract and we want the original
+          filename = entry.pathname
           reader.extract(entry, Archive::EXTRACT_SECURE, destination: tmpdir.to_s)
           new_files << model.model_files.create(filename: filename, attachment: ModelFileUploader.uploaded_file(
             storage: :cache,
@@ -104,7 +110,6 @@ class ProcessUploadedFileJob < ApplicationJob
   end
 
   def count_common_path_components(archive)
-    # Generate full list of directories in the archive
     paths = []
     files_in_root = false
     Archive::Reader.open_filename(archive.path) do |reader|
@@ -115,7 +120,6 @@ class ProcessUploadedFileJob < ApplicationJob
     end
     return 0 if files_in_root
     paths = paths.map { |path| path.split(File::SEPARATOR) }
-    # Count the common elements in the paths
     count_common_elements(paths)
   end
 

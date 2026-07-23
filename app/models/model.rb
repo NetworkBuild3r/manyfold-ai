@@ -14,8 +14,9 @@ class Model < ApplicationRecord
 
   broadcasts_refreshes
 
-  # Transient flag to suppress expensive callback cascades (e.g. during bulk deletes).
-  attr_accessor :skip_problem_check
+  # Transient flags to suppress expensive callback cascades (bulk deletes, scan batches).
+  # Prefer these over Current.* — jobs/services set flags on the record before save.
+  attr_accessor :skip_problem_check, :suppress_problem_checks, :suppress_announce
 
   acts_as_federails_actor(
     username_field: :public_id,
@@ -64,20 +65,18 @@ class Model < ApplicationRecord
   before_validation :strip_separators_from_path, if: :path_changed?
   # Do not auto-publish creators — validate_publishable requires an already-public creator.
   before_validation :normalize_license, if: -> { respond_to? :license }
-  # In Rails 7.1 we will be able to do this instead:
-  # normalizes :license, with: -> license { license.blank? ? nil : license }
 
   after_create_commit :post_creation_activity
   after_create :pregenerate_downloads
-  before_update :move_files, if: :need_to_move_files?
+  # Storage moves are explicit via Model::Update / Model::MoveFiles (no before_update).
   after_update_commit :post_update_activity
   after_update :pregenerate_downloads, if: :was_changed?
-  after_commit :check_for_problems_later, on: :update, unless: -> { skip_problem_check || Current.skip_problem_checks || Current.scan_batch_id.present? }
+  after_commit :check_for_problems_later, on: :update, unless: :suppress_problem_checks?
 
   validates :name, presence: true, on: [:create, :update, :single_upload]
   validates :path, presence: true, uniqueness: {scope: :library}, on: [:create, :update]
-  validate :check_for_submodels, on: :update, if: :need_to_move_files?
-  validate :destination_is_vacant, on: :update, if: :need_to_move_files?
+  validate :check_for_submodels, on: :update, if: :needs_storage_move?
+  validate :destination_is_vacant, on: :update, if: :needs_storage_move?
   validates :license, spdx: true, allow_nil: true, if: -> { respond_to? :license }
   validates :public_id, multimodel_uniqueness: {punctuation_sensitive: false, case_sensitive: false, check: FederailsCommon::FEDIVERSE_USERNAMES}, if: -> { respond_to? :public_id }, on: [:create, :update]
 
@@ -153,82 +152,13 @@ class Model < ApplicationRecord
 
   UNMERGE_WINDOW = 30.days
 
-  def unmerge!(merge_history)
-    history = merge_history.is_a?(MergeHistory) ? merge_history : merge_histories.find(merge_history)
-    raise ArgumentError, "merge history does not belong to this model" if history.target_model_id != id
-    raise ArgumentError, "merge already undone" if history.undone_at.present?
-    raise ArgumentError, "merge is too old to undo" if history.created_at < UNMERGE_WINDOW.ago
-    if history.source_library_id.nil?
-      raise ActiveRecord::RecordNotFound,
-        "Cannot unmerge: source library no longer exists (was deleted after merge)"
-    end
+  def unmerge!(merge_history, skip_problem_checks: true)
+    Model::Unmerge.call(self, merge_history, skip_problem_checks: skip_problem_checks)
+  end
 
-    ActiveRecord::Base.transaction do
-      Current.set(skip_problem_checks: true) do
-        library = Library.find(history.source_library_id) # rubocop:disable Pundit/UsePolicyScope -- internal unmerge, not controller
-        source_meta = history.source_metadata || {}
-
-        new_path = history.source_path
-        if library.models.exists?(path: new_path.trim_path_separators)
-          new_path = "#{new_path.trim_path_separators}--unmerged-#{history.id}"
-        end
-
-        # Guard against creator/collection deleted between merge and unmerge
-        creator = Creator.find_by(id: source_meta["creator_id"])
-        collection = Collection.find_by(id: source_meta["collection_id"])
-
-        new_model = library.models.create!(
-          name: history.source_name,
-          path: new_path.trim_path_separators,
-          creator_id: creator&.id,
-          collection_id: collection&.id,
-          license: source_meta["license"],
-          caption: source_meta["caption"],
-          notes: source_meta["notes"],
-          sensitive: source_meta["sensitive"]
-        )
-
-        new_model.tag_list = Array(source_meta["tag_list"])
-        new_model.links_attributes = Array(source_meta["links"]).map { |url| {url: url} }
-        new_model.save!
-
-        Array(history.moved_files).each do |entry|
-          file_id = entry["id"] || entry[:id]
-          source_filename = entry["source_filename"] || entry[:source_filename]
-          was_deduplicated = entry["deduplicated"] || entry[:deduplicated]
-
-          if was_deduplicated
-            existing_id = entry["existing_file_id"] || entry[:existing_file_id]
-            existing_file = ModelFile.find_by(id: existing_id)
-            next unless existing_file && source_filename.present?
-
-            new_file = new_model.model_files.create!(
-              filename: source_filename,
-              digest: existing_file.digest,
-              size: existing_file.size,
-              presupported: existing_file.presupported,
-              y_up: existing_file.y_up,
-              previewable: existing_file.previewable
-            )
-            copy_file_to_model_file(existing_file, new_file)
-          else
-            file = ModelFile.find_by(id: file_id)
-            next unless file && source_filename.present?
-
-            file.filename = source_filename
-            new_model.adopt_file(file)
-          end
-        end
-
-        if (preview_filename = history.source_preview_filename)
-          preview = new_model.model_files.find_by(filename: preview_filename)
-          new_model.update!(preview_file: preview) if preview
-        end
-
-        history.update!(undone_at: Time.current)
-        new_model
-      end
-    end
+  # Used by Model::Unmerge to copy physical bytes when restoring a deduplicated file.
+  def copy_file_to_model_file_for_unmerge(source_file, dest_file)
+    copy_file_to_model_file(source_file, dest_file)
   end
 
   def create_or_update_file_from_url(url:, filename:)
@@ -285,8 +215,9 @@ class Model < ApplicationRecord
   end
 
   def organize!
-    autoupdate_path
-    save!
+    raise ActiveRecord::RecordInvalid, self unless Model::Update.call(self, {path: formatted_path})
+
+    self
   end
 
   def self.create_from(other, link_preview_file: false, name: nil, path: nil)
@@ -370,7 +301,7 @@ class Model < ApplicationRecord
   end
 
   def check_for_problems_later(delay: 5.seconds)
-    return if skip_problem_check || Current.skip_problem_checks
+    return if suppress_problem_checks?
 
     # Debounce: avoid enqueuing multiple identical checks in quick succession.
     begin
@@ -417,6 +348,30 @@ class Model < ApplicationRecord
     end
   end
 
+  # Public API for Model::Update — capture dirty state before save.
+  def needs_storage_move?
+    library_id_changed? ||
+      (path_changed? &&
+        (previous_path.trim_path_separators != path.trim_path_separators)
+      )
+  end
+
+  def storage_move_from_library
+    previous_library
+  end
+
+  def storage_move_from_path
+    previous_path
+  end
+
+  def suppress_problem_checks?
+    !!(skip_problem_check || suppress_problem_checks)
+  end
+
+  def suppress_federation_announce?
+    !!suppress_announce
+  end
+
   private
 
   # Copy physical file from source_file (e.g. target's file) to dest_file (e.g. restored model's new record).
@@ -446,10 +401,7 @@ class Model < ApplicationRecord
   end
 
   def need_to_move_files?
-    library_id_changed? ||
-      (path_changed? &&
-        (previous_path.trim_path_separators != path.trim_path_separators)
-      )
+    needs_storage_move?
   end
 
   def autoupdate_path
@@ -463,40 +415,17 @@ class Model < ApplicationRecord
   end
 
   def destination_is_vacant
-    if exists_on_storage? && need_to_move_files?
+    if exists_on_storage? && needs_storage_move?
       errors.add(:path, :destination_exists)
     end
   end
 
-  def move_files
-    # Move all the files
-    model_files.each(&:reattach!)
-    # Remove the old folder if it's still there
-    previous_library.storage.delete_prefixed(previous_path)
-  end
-
   def post_creation_activity
-    # Skip Fediverse/activity fan-out during library discovery batches
-    # (avoids thousands of Federails::NotifyInboxJob on :default).
-    return if Current.scan_batch_id.present?
-    return unless SiteSettings.federation_enabled?
-
-    Activity::ModelPublishedJob.set(wait: 5.seconds).perform_later(id) if public?
+    Federation::Announce.model_created(self)
   end
 
   def post_update_activity
-    return if Current.scan_batch_id.present?
-    return unless SiteSettings.federation_enabled?
-
-    if creator_previously_changed? && creator&.public?
-      Activity::ModelPublishedJob.set(wait: 5.seconds).perform_later(id)
-    elsif collection_previously_changed? && collection&.public?
-      Activity::ModelCollectedJob.set(wait: 5.seconds).perform_later(id, collection.id)
-    elsif just_became_public?
-      Activity::ModelPublishedJob.set(wait: 5.seconds).perform_later(id)
-    elsif public? && noteworthy_change?
-      Activity::ModelUpdatedJob.set(wait: 5.seconds).perform_later(id)
-    end
+    Federation::Announce.model_updated(self)
   end
 
   def noteworthy_change?

@@ -13,8 +13,10 @@ module CaberObject
     before_validation :ensure_permission_preset_precedence
 
     before_create :set_default_permission_preset
-    after_commit :set_permissions_from_preset
-    after_create_commit :set_owner
+    # Explicit Permissions::ApplyPreset is preferred; these callbacks cover create
+    # paths that do not go through Model::Update yet.
+    after_commit :apply_permissions_from_preset_safely
+    after_create_commit :apply_owner_safely
 
     before_update -> { @was_private = !public? }
   end
@@ -36,28 +38,25 @@ module CaberObject
     @permission_preset ||= SiteSettings.default_viewer_role
   end
 
-  def set_permissions_from_preset
-    case @permission_preset&.to_sym
-    when :public
-      grant_permission_to("view", nil)
-      revoke_permission("view", Role.find_or_create_by(name: "member"))
-    when :member
-      revoke_all_permissions(nil)
-      grant_permission_to("view", Role.find_or_create_by(name: "member"))
-    when :private
-      Caber::Relation.where(object: self, permission: ["preview", "view", "edit"]).destroy_all # rubocop:disable Pundit/UsePolicyScope
-    end
-    # Clear attribute so we don't pollute later operations on the same object
-    @permission_preset = nil
+  def apply_permissions_from_preset_safely
+    return if @permissions_applied
+    return if @permission_preset.blank?
+
+    Permissions::ApplyPreset.call(self)
+    @permissions_applied = true
   end
 
-  def set_owner
-    # Set owner if not already set
-    if permitted_users.with_permission("own").empty?
-      o = @owner || SiteSettings.default_user
-      grant_permission_to("own", o) if o
-    end
+  def apply_owner_safely
+    return if @owner_applied
+    return unless permitted_users.with_permission("own").empty?
+
+    Permissions::ApplyPreset.call(self)
+    @owner_applied = true
   end
+
+  # Legacy method names kept for callers/tests that stub them.
+  alias_method :set_permissions_from_preset, :apply_permissions_from_preset_safely
+  alias_method :set_owner, :apply_owner_safely
 
   def will_be_public?
     return false unless caber_ready?

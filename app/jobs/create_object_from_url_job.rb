@@ -2,29 +2,34 @@ class CreateObjectFromUrlJob < ApplicationJob
   queue_as :low
   unique :until_executed
 
-  def perform(url:, collection_id: nil, owner: nil)
+  def perform(url:, collection_id: nil, owner: nil, owner_id: nil)
     return if Link.find_by(url: url)
-    # Get deserializer
+
+    owner ||= User.find(owner_id) if owner_id.present?
     deserializer = Link.deserializer_for(url: url)
-    # Set up create options common to all
     common_options = {
       name: "Importing from #{url.split("://").last} ...",
-      links_attributes: [{url: url}],
-      owner: owner
-    }.compact
-    # Create new object
+      links_attributes: [{url: url}]
+    }
     object = case deserializer&.capabilities&.dig(:class)&.name
     when "Model"
-      Model.create(common_options.merge({
+      Model.new(common_options.merge({
         library: Library.default,
         path: SecureRandom.uuid,
         collection_id: collection_id
       }))
     when "Creator"
-      Creator.create(common_options)
+      Creator.new(common_options)
     when "Collection"
-      Collection.create(common_options)
+      Collection.new(common_options)
     end
-    object.links.first.update_metadata_from_link_later(organize: true) if object
+    return unless object
+
+    object.owner = owner if owner && object.respond_to?(:owner=)
+    object.save
+    if object.persisted?
+      Permissions::ApplyPreset.call(object, owner: owner)
+      object.links.first.update_metadata_from_link_later(organize: true)
+    end
   end
 end

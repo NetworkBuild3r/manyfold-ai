@@ -678,7 +678,7 @@ RSpec.describe "Models" do
                     filename: "test.stl"
                   }
                 }],
-                owner: User.last,
+                owner_id: User.last.id,
                 creator_id: creator.id.to_s,
                 collection_id: collection.id.to_s,
                 license: "MIT",

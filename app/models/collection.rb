@@ -103,11 +103,11 @@ class Collection < ApplicationRecord
   end
 
   def after_create
-    Activity::CollectionPublishedJob.set(wait: 5.seconds).perform_later(id) if public?
+    Federation::Announce.collection_created(self)
   end
 
   def after_update
-    Activity::CollectionPublishedJob.set(wait: 5.seconds).perform_later(id) if just_became_public?
+    Federation::Announce.collection_updated(self)
   end
 
   def validate_publishable

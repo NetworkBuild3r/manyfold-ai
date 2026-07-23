@@ -224,7 +224,7 @@ RSpec.describe "Model Files" do
               metadata: {
                 filename: "test.stl"
               }
-            }, model: model).once
+            }, model_id: model.id).once
         end
 
         it "rate limits file uploads" do
@@ -257,7 +257,7 @@ RSpec.describe "Model Files" do
               metadata: {
                 filename: "test.stl"
               }
-            }, model: model).once
+            }, model_id: model.id).once
         end
       end
 

@@ -8,6 +8,9 @@ class ModelFile < ApplicationRecord
 
   broadcasts_refreshes
 
+  # Transient flags — set by scan jobs / ScanContext instead of reading Current.*
+  attr_accessor :skip_problem_check, :suppress_problem_checks, :suppress_attachment_refresh
+
   SPECIAL_FILES = [].freeze
 
   belongs_to :model, touch: true
@@ -129,7 +132,12 @@ class ModelFile < ApplicationRecord
 
   # During library discovery, skip NFS metadata refresh here — ParseMetadataJob does it once.
   def attach_existing_file_on_create!
-    attach_existing_file!(refresh: Current.scan_batch_id.blank?)
+    refresh = !(suppress_attachment_refresh || suppress_problem_checks?)
+    attach_existing_file!(refresh: refresh)
+  end
+
+  def suppress_problem_checks?
+    !!(skip_problem_check || suppress_problem_checks || model&.suppress_problem_checks?)
   end
 
   def exists_on_storage?
@@ -268,7 +276,7 @@ class ModelFile < ApplicationRecord
   private
 
   def check_parent_model_for_problems_later
-    return if Current.skip_problem_checks || Current.scan_batch_id.present?
+    return if suppress_problem_checks?
     Model.find_by(id: model_id)&.check_for_problems_later
   end
 

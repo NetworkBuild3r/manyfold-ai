@@ -104,33 +104,10 @@ class ModelsController < ApplicationController
   def create
     authorize :model
     p = upload_params
-    # First, is this a single or multi-model event?
-    multiple = p[:file]&.values&.all? { |it| SupportedMimeTypes.archive_extensions.include? File.extname(it[:name]).delete(".").downcase }
-    # Then run validations on a dummy object
-    common_args = {
-      name: multiple ? nil : p[:name],
-      owner: current_user,
-      creator_id: p[:creator_id],
-      collection_id: p[:collection_id],
-      license: p[:license],
-      sensitive: (p[:sensitive] == "1"),
-      tag_list: p[:tag_list],
-      permission_preset: p[:permission_preset]
-    }
     library = SiteSettings.show_libraries ? Library.find_param(p[:library]) : Library.default
-    @model = Model.new(common_args.merge(library: library)) # dummy model object
-    if @model.valid?(multiple ? :multi_upload : :single_upload)
-      # Handle actual files
-      jobs = if multiple
-        # If this is all separate archives, enqueue separate jobs for each
-        p[:file].values.map { |it| cached_file_data(it) }
-      else
-        # Otherwise, enqueue one job for all files and add name to args
-        [p[:file].values.map { |it| cached_file_data(it) }]
-      end
-      jobs.each do |it|
-        ProcessUploadedFileJob.perform_later(library.id, it, **common_args)
-      end
+    result = Model::Upload.call(library: library, params: p, owner: current_user)
+    @model = result.model
+    if result.valid?
       respond_to do |format|
         format.html { redirect_to models_path, notice: t(".success") }
         format.manyfold_api_v0 { head :accepted }
@@ -147,12 +124,21 @@ class ModelsController < ApplicationController
 
   def update
     hash = model_params
-    organize = hash.delete(:organize) == "true"
-    result = @model.update(hash)
+    hash = hash.respond_to?(:to_unsafe_h) ? hash.to_unsafe_h : hash.to_h
+    hash = hash.deep_stringify_keys
+    result = if hash["permission_preset"].to_s == "public"
+      begin
+        Model::Publish.call(@model, **hash.except("permission_preset").symbolize_keys)
+        true
+      rescue Model::Publish::NotPublishable
+        false
+      end
+    else
+      Model::Update.call(@model, hash)
+    end
     respond_to do |format|
       format.html do
         if result
-          @model.organize_later if organize
           redirect_to @model, notice: t(".success")
         else
           get_creators_and_collections
@@ -224,8 +210,8 @@ class ModelsController < ApplicationController
     authorize Model
     hash = bulk_update_params
     hash[:library_id] = hash.delete(:new_library_id) if hash[:new_library_id]
-    add_tags = Set.new(hash.delete(:add_tags))
-    remove_tags = Set.new(hash.delete(:remove_tags))
+    add_tags = hash.delete(:add_tags) || []
+    remove_tags = hash.delete(:remove_tags) || []
 
     models_to_update = if params.key?(:update_all)
       if session[:bulk_edit_model_ids].present?
@@ -241,13 +227,7 @@ class ModelsController < ApplicationController
       policy_scope(Model, policy_scope_class: ApplicationPolicy::UpdateScope).where(public_id: ids)
     end
 
-    models_to_update.find_each do |model|
-      if model&.update(hash)
-        existing_tags = Set.new(model.tag_list)
-        model.tag_list = existing_tags + add_tags - remove_tags
-        model.save
-      end
-    end
+    Model::BulkUpdate.call(models: models_to_update, attributes: hash, add_tags: add_tags, remove_tags: remove_tags)
     redirect_back_or_to edit_models_path(@filter.to_params), notice: t(".success")
   end
 
@@ -379,15 +359,5 @@ class ModelsController < ApplicationController
     URI.parse(request.referer).path == model_path(@model)
   rescue URI::InvalidURIError
     false
-  end
-
-  def cached_file_data(file)
-    {
-      id: file[:id],
-      storage: "cache",
-      metadata: {
-        filename: Zaru.sanitize!(File.basename(file[:name]))
-      }
-    }
   end
 end

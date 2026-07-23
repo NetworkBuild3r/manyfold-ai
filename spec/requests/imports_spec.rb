@@ -19,7 +19,7 @@ RSpec.describe "Imports", :after_first_run, :thingiverse_api_key do
         it "queues creation job with correct arguments" do
           expect { import }.to have_enqueued_job(CreateObjectFromUrlJob).with(
             url: url,
-            owner: User.with_role(:contributor).first
+            owner_id: User.with_role(:contributor).first.id
           )
         end
       end

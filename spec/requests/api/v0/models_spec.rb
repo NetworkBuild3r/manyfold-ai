@@ -125,7 +125,7 @@ describe "Models", :after_first_run, :multiuser do # rubocop:disable RSpec/Empty
                 }
               }],
               name: "My New Model",
-              owner: User.last,
+              owner_id: User.last.id,
               creator_id: nil,
               collection_id: nil,
               license: "MIT",
