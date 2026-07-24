@@ -43,13 +43,17 @@ class CollectionsController < ApplicationController
   end
 
   def show
+    # INIT-003/SPEC-003: prepare before respond_to so turbo_stream can reuse models/page
+    # (client clones location.href → /collections/:id?offset=&window=).
+    if request.format.html? || request.format.turbo_stream? || request.headers["X-Infinite-Scroll"].present?
+      @models = policy_scope(Model).where(collection: @collection)
+      prepare_model_list
+      @additional_filters = {collection: @collection}
+    end
+
     respond_to do |format|
-      format.html do
-        @models = policy_scope(Model).where(collection: @collection)
-        prepare_model_list
-        @additional_filters = {collection: @collection}
-        render layout: "card_list_page"
-      end
+      format.turbo_stream { render "models/page" }
+      format.html { render layout: "card_list_page" }
       format.oembed { render json: OEmbed::CollectionSerializer.new(@collection, helpers.oembed_params).serialize }
       format.manyfold_api_v0 { render json: ManyfoldApi::V0::CollectionSerializer.new(@collection).serialize }
     end

@@ -204,6 +204,37 @@ RSpec.describe "Creators" do
         get "/creators/#{creator.to_param}"
         expect(response).to have_http_status(:success)
       end
+
+      # INIT-003/SPEC-003 — show must stream models/page (not 406 UnknownFormat)
+      it "serves turbo-stream model windows for infinite scroll" do # rubocop:todo RSpec/MultipleExpectations
+        create_list(:model, 6, creator: creator)
+        get "/creators/#{creator.to_param}",
+          params: {offset: 2, per_page: 2, window: "after"},
+          headers: {
+            "Accept" => "text/vnd.turbo-stream.html",
+            "X-Infinite-Scroll" => "1"
+          }
+        expect(response).to have_http_status(:success)
+        expect(response.media_type).to eq("text/vnd.turbo-stream.html")
+        expect(response.body).to include("turbo-stream")
+        expect(response.body).to include("models-scroll-sentinel")
+        expect(response.body).to include("model-card")
+        expect(response.body).to include('action="replace"')
+      end
+
+      it "does not leak another creator's models via stream offset" do
+        other = create(:creator)
+        create_list(:model, 3, creator: creator)
+        create(:model, creator: other, name: "secret-other-creator-model")
+        get "/creators/#{creator.to_param}",
+          params: {offset: 0, per_page: 10, window: "after"},
+          headers: {
+            "Accept" => "text/vnd.turbo-stream.html",
+            "X-Infinite-Scroll" => "1"
+          }
+        expect(response).to have_http_status(:success)
+        expect(response.body).not_to include("secret-other-creator-model")
+      end
     end
 
     describe "PATCH /creators/:id" do

@@ -39,13 +39,17 @@ class CreatorsController < ApplicationController
   end
 
   def show
+    # INIT-003/SPEC-003: prepare before respond_to so turbo_stream can reuse models/page
+    # (client clones location.href → /creators/:id?offset=&window=).
+    if request.format.html? || request.format.turbo_stream? || request.headers["X-Infinite-Scroll"].present?
+      @models = policy_scope(Model).where(creator: @creator)
+      prepare_model_list
+      @additional_filters = {creator: @creator}
+    end
+
     respond_to do |format|
-      format.html do
-        @models = policy_scope(Model).where(creator: @creator)
-        prepare_model_list
-        @additional_filters = {creator: @creator}
-        render layout: "card_list_page"
-      end
+      format.turbo_stream { render "models/page" }
+      format.html { render layout: "card_list_page" }
       format.oembed { render json: OEmbed::CreatorSerializer.new(@creator, helpers.oembed_params).serialize }
       format.manyfold_api_v0 { render json: ManyfoldApi::V0::CreatorSerializer.new(@creator).serialize }
     end
