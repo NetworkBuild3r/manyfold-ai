@@ -14,8 +14,8 @@ class Scan::Library::DetectFilesystemChangesJob < ApplicationJob
     library = Library.find(library_id)
     return if Problems::MissingLibrary.detect(library)
 
-    if Model.column_names.include?("scan_started_at")
-      Model.where(library_id: library.id)
+    if ::Model.column_names.include?("scan_started_at")
+      ::Model.where(library_id: library.id)
         .where(scan_started_at: ...1.hour.ago)
         .update_all(scan_started_at: nil) # rubocop:disable Rails/SkipsModelValidations
     end
@@ -38,7 +38,7 @@ class Scan::Library::DetectFilesystemChangesJob < ApplicationJob
 
     refresh_model_ids.each_with_index do |model_id, index|
       delay = [index * 0.05, 30.0].min.seconds
-      model = Model.find_by(id: model_id)
+      model = ::Model.find_by(id: model_id)
       next unless model
 
       model.add_new_files_later(delay: delay, scan_batch_id: scan_batch_id)

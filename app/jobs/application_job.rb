@@ -11,7 +11,15 @@ class ApplicationJob < ActiveJob::Base
   end
 
   before_perform do |job|
-    SiteSettings.clear_cache
+    begin
+      SiteSettings.clear_cache
+    rescue Errno::EACCES, Errno::EPERM => e
+      # tmp/cache can be left root-owned after kubectl exec as root; do not fail the job.
+      Rails.logger.warn(
+        "[ApplicationJob] SiteSettings.clear_cache skipped for #{job.class.name}: " \
+        "#{e.class}: #{e.message}"
+      )
+    end
     begin
       Library.register_all_storage
     rescue StandardError => e

@@ -22,7 +22,9 @@ module Scan
     end
 
     def known_filenames(library)
-      ModelFile.without_special
+      # Use ::Model / ::ModelFile — nested `module Scan` would otherwise resolve
+      # Model → Scan::Model (job namespace) and ModelFile → Scan::ModelFile.
+      ::ModelFile.without_special
         .joins(:model)
         .where(models: {library_id: library.id})
         .pluck("models.path", "model_files.filename")
@@ -77,7 +79,7 @@ module Scan
       checked = 0
       skipped_fresh = 0
 
-      Model.where(library_id: library.id).find_each do |model|
+      ::Model.where(library_id: library.id).find_each do |model|
         abs = File.join(root, model.path)
         next unless File.directory?(abs)
         next if File.symlink?(abs)
@@ -186,7 +188,7 @@ module Scan
       root = File.expand_path(root)
       root_real = safe_realpath(root) || root
 
-      known_paths = Model.where(library_id: library.id).pluck(:path).to_set
+      known_paths = ::Model.where(library_id: library.id).pluck(:path).to_set
       known_from_files = known_filenames(library).map { |f| File.dirname(f).sub(common_subfolder_matcher, "") }.to_set
       known = known_paths | known_from_files
 
