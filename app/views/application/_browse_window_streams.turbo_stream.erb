@@ -22,11 +22,13 @@
 <% end %>
 
 <%= turbo_stream.replace top_id do %>
-  <%= render "application/browse_scroll_sentinel",
-        {sentinel_id: top_id, position: :top}.merge(sentinel_locals) %>
+  <%= render partial: "application/browse_scroll_sentinel",
+        formats: [:html],
+        locals: {sentinel_id: top_id, position: :top}.merge(sentinel_locals) %>
 <% end %>
 
 <%= turbo_stream.replace bottom_id do %>
-  <%= render "application/browse_scroll_sentinel",
-        {sentinel_id: bottom_id, position: :bottom}.merge(sentinel_locals) %>
+  <%= render partial: "application/browse_scroll_sentinel",
+        formats: [:html],
+        locals: {sentinel_id: bottom_id, position: :bottom}.merge(sentinel_locals) %>
 <% end %>
