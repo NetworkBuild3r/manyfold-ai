@@ -363,17 +363,16 @@ RSpec.describe "Models" do
             }
           expect(response).to have_http_status(:success)
           expect(response.media_type).to eq("text/vnd.turbo-stream.html")
-          expect(response.body).to include("offset=12")
-          expect(response.body).to include("per_page=12")
+          expect(response.body).to include('data-offset="0"')
           expect(response.body).to include('data-has-more-after="true"')
           expect(response.body).to include('data-has-more-before="false"')
           expect(response.body).to include('data-total-count="20"')
           expect(response.body).to include("models-scroll-sentinel-top")
+          expect(response.body).not_to include("data-next-url=")
         end
 
         it "advances offset metadata so clients can skip past a fetched page" do
-          # Client advances windowStart by limit when a batch adds 0 unique cards;
-          # server must expose the next offset consistently for that skip.
+          # Client advances afterFetchCursor by limit; server exposes current window offset.
           get "/models",
             params: {library: library.to_param, offset: 12, per_page: 12, window: "after"},
             headers: {
@@ -382,7 +381,8 @@ RSpec.describe "Models" do
             }
           expect(response).to have_http_status(:success)
           expect(response.body).to include('data-offset="12"')
-          expect(response.body).to include("offset=24")
+          expect(response.body).to include('data-has-more-after="true"')
+          expect(response.body).to include('data-has-more-before="true"')
         end
 
         it "sets has_more_before when offset is past the start" do

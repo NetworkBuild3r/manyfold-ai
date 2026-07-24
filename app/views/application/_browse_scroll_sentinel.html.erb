@@ -1,24 +1,21 @@
-<%# Infinite-scroll sentinel (top or bottom) for bidirectional row window. %>
+<%# Infinite-scroll sentinel (top or bottom) for bidirectional row window.
+    Client owns fetch URLs; sentinels expose flags/totals/offset only. %>
 <%
   sentinel_id = local_assigns.fetch(:sentinel_id)
   position = local_assigns.fetch(:position, :bottom) # :top or :bottom
   meta = local_assigns.fetch(:meta, {})
-  next_url = meta[:next_url].to_s
-  prev_url = meta[:prev_url].to_s
-  has_more_after = ActiveModel::Type::Boolean.new.cast(meta.fetch(:has_more_after, next_url.present?))
-  has_more_before = ActiveModel::Type::Boolean.new.cast(meta.fetch(:has_more_before, prev_url.present?))
+  has_more_after = ActiveModel::Type::Boolean.new.cast(meta.fetch(:has_more_after, false))
+  has_more_before = ActiveModel::Type::Boolean.new.cast(meta.fetch(:has_more_before, false))
   total_count = meta.fetch(:total_count, 0).to_i
   offset = meta.fetch(:offset, 0).to_i
   loading_label = local_assigns.fetch(:loading_label, t("models.list.loading_more"))
   target = (position == :top) ? "topSentinel" : "sentinel"
-  # Top sentinel is an insertion/observe point only — never occupies layout space.
+  # Top sentinel is an insertion/observe point only — never shows a loader.
   show_loader = (position == :bottom && has_more_after)
 %>
 <div id="<%= sentinel_id %>"
      class="browse-scroll-sentinel browse-scroll-sentinel--<%= position %> col-span-full<%= " browse-scroll-sentinel--end" unless show_loader %>"
      data-infinite-scroll-target="<%= target %>"
-     data-next-url="<%= next_url %>"
-     data-prev-url="<%= prev_url %>"
      data-has-more-after="<%= has_more_after %>"
      data-has-more-before="<%= has_more_before %>"
      data-total-count="<%= total_count %>"

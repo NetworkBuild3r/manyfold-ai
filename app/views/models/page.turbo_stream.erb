@@ -1,29 +1,8 @@
-<%# Insert cards as grid siblings; update both window sentinels. %>
-<% meta = browse_window_meta(:models_path, filter: @filter) %>
-<% if @browse_window == "before" %>
-  <%= turbo_stream.after "models-scroll-sentinel-top" do %>
-    <% @models.each do |model| %>
-      <%= render Components::ModelCard.new(model: model, eager_preview: false, gallery: true) %>
-    <% end %>
+<%= render layout: "application/browse_window_streams", locals: {
+      sentinel_prefix: "models",
+      path_helper: :models_path
+    } do %>
+  <% @models.each do |model| %>
+    <%= render Components::ModelCard.new(model: model, eager_preview: false, gallery: true) %>
   <% end %>
-<% else %>
-  <%= turbo_stream.before "models-scroll-sentinel" do %>
-    <% @models.each do |model| %>
-      <%= render Components::ModelCard.new(model: model, eager_preview: false, gallery: true) %>
-    <% end %>
-  <% end %>
-<% end %>
-
-<%= turbo_stream.replace "models-scroll-sentinel-top" do %>
-  <%= render "application/browse_scroll_sentinel",
-        sentinel_id: "models-scroll-sentinel-top",
-        position: :top,
-        meta: meta %>
-<% end %>
-
-<%= turbo_stream.replace "models-scroll-sentinel" do %>
-  <%= render "application/browse_scroll_sentinel",
-        sentinel_id: "models-scroll-sentinel",
-        position: :bottom,
-        meta: meta %>
 <% end %>

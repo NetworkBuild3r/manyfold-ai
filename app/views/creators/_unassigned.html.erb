@@ -1,5 +1,5 @@
-<%# Unassigned creators tile — first page only; grid child (not .creator-card). %>
-<div class="browse-unassigned-card relative flex flex-col rounded-xl overflow-hidden bg-surface dark:bg-surface-dark border border-warning-400 dark:border-warning-500 shadow-sm" role="listitem">
+<%# Unassigned creators tile — first window chrome above the scroll grid (not a grid child). %>
+<div class="browse-unassigned-card relative flex flex-col rounded-xl overflow-hidden bg-surface dark:bg-surface-dark border border-warning-400 dark:border-warning-500 shadow-sm w-full max-w-[var(--browse-card-max)]">
   <div class="aspect-[4/3] bg-secondary-100 dark:bg-secondary-800 flex items-center justify-center">
     <span class="text-secondary-400 dark:text-secondary-500 text-4xl" aria-hidden="true">
       <%= Icon icon: "people", label: "" %>

@@ -182,57 +182,23 @@
         </div>
       </div>
 
-      <% per_page = @browse_per_page || browse_grid_page_size %>
-      <% meta = browse_window_meta(:models_path, filter: @filter) %>
-      <div data-controller="infinite-scroll"
-           data-infinite-scroll-per-page-value="<%= per_page %>"
-           data-infinite-scroll-sentinel-id-value="models-scroll-sentinel"
-           data-infinite-scroll-top-sentinel-id-value="models-scroll-sentinel-top"
-           data-infinite-scroll-card-selector-value=".model-card"
-           data-infinite-scroll-storage-key-prefix-value="scroll_models_"
-           data-infinite-scroll-end-message-value="<%= t(".end_of_results") %>"
-           data-infinite-scroll-error-message-value="<%= t(".load_error") %>"
-           data-infinite-scroll-loading-message-value="<%= t(".loading_more") %>"
-           data-infinite-scroll-total-count-value="<%= meta[:total_count] %>"
-           data-infinite-scroll-window-start-value="<%= meta[:offset] %>"
-           class="library-infinite">
-        <div class="browse-card-grid mb-2"
-             id="model-card-grid"
-             role="list"
-             aria-label="<%= Model.model_name.human(count: 100) %>"
-             data-infinite-scroll-target="grid">
-          <%= render "application/browse_scroll_sentinel",
-                sentinel_id: "models-scroll-sentinel-top",
-                position: :top,
-                meta: meta %>
-          <% @models.each_with_index do |model, index| %>
-            <%= render Components::ModelCard.new(model: model, eager_preview: index < 8, gallery: true) %>
-          <% end %>
-          <%= render "application/browse_scroll_sentinel",
-                sentinel_id: "models-scroll-sentinel",
-                position: :bottom,
-                meta: meta %>
-        </div>
-        <div class="library-infinite__end py-10 text-center">
-          <p id="models-scroll-status"
-             class="browse-scroll-status"
-             data-infinite-scroll-target="status"
-             role="status"
-             aria-live="polite"
-             hidden></p>
-          <p class="mt-2 text-sm text-secondary-500 dark:text-secondary-400 library-infinite__hint">
-            <%= t(".scroll_hint") %>
-          </p>
-        </div>
-        <button type="button"
-                class="models-back-to-top"
-                data-infinite-scroll-target="backToTop"
-                hidden
-                aria-label="<%= t(".back_to_top") %>">
-          <i class="bi bi-arrow-up" aria-hidden="true"></i>
-          <span><%= t(".back_to_top") %></span>
-        </button>
-      </div>
+      <%= render layout: "application/browse_infinite_grid", locals: {
+            sentinel_prefix: "models",
+            grid_id: "model-card-grid",
+            card_selector: ".model-card",
+            storage_key_prefix: "scroll_models_",
+            aria_label: Model.model_name.human(count: 100),
+            path_helper: :models_path,
+            end_message: t(".end_of_results"),
+            error_message: t(".load_error"),
+            loading_message: t(".loading_more"),
+            scroll_hint: t(".scroll_hint"),
+            back_to_top: t(".back_to_top")
+          } do %>
+        <% @models.each_with_index do |model, index| %>
+          <%= render Components::ModelCard.new(model: model, eager_preview: index < 8, gallery: true) %>
+        <% end %>
+      <% end %>
       <% if @search %>
         <div class="flex flex-wrap items-center gap-2 mt-2 py-3 px-4 rounded-xl bg-secondary-100 dark:bg-secondary-800/60 text-secondary-700 dark:text-secondary-300 text-sm">
           <%= Icon icon: "search", label: "" %>

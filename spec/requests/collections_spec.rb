@@ -71,13 +71,79 @@ RSpec.describe "Collections" do
         create_list(:link, 1, linkable: collection)
         create_list(:model, 1, collection: collection)
       end
+      create(:model, collection: nil)
     end
 
     describe "GET /collections" do
-      it "returns paginated collections", :as_member do # rubocop:todo RSpec/MultipleExpectations
-        get "/collections?page=2"
+      it "returns collections with infinite-scroll chrome", :as_member do # rubocop:todo RSpec/MultipleExpectations
+        get "/collections"
         expect(response).to have_http_status(:success)
-        expect(response.body).to match(/pagination/)
+        expect(response.body).to include('data-controller="infinite-scroll"')
+        expect(response.body).to include("collection-card-grid")
+        expect(response.body).to include("collections-scroll-sentinel-top")
+        expect(response.body).to include("collections-scroll-sentinel")
+        expect(response.body).not_to match(/pagination/)
+      end
+
+      it "keeps unassigned chrome outside the scroll grid", :as_member do
+        get "/collections"
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include("browse-unassigned-chrome")
+        grid_start = response.body.index('id="collection-card-grid"')
+        unassigned = response.body.index("browse-unassigned-chrome")
+        expect(unassigned).to be < grid_start
+      end
+
+      it "serves turbo-stream pages for infinite scroll", :as_member do # rubocop:todo RSpec/MultipleExpectations
+        get "/collections",
+          params: {offset: 0, per_page: 5},
+          headers: {
+            "Accept" => "text/vnd.turbo-stream.html",
+            "X-Infinite-Scroll" => "1"
+          }
+        expect(response).to have_http_status(:success)
+        expect(response.media_type).to eq("text/vnd.turbo-stream.html")
+        expect(response.body).to include("turbo-stream")
+        expect(response.body).to include("collections-scroll-sentinel")
+        expect(response.body).to include('data-has-more-after="true"')
+        expect(response.body).to include('data-offset="0"')
+        expect(response.body).not_to include("data-next-url=")
+      end
+
+      it "sets has_more_before when offset is past the start", :as_member do
+        get "/collections",
+          params: {offset: 5, per_page: 5, window: "after"},
+          headers: {
+            "Accept" => "text/vnd.turbo-stream.html",
+            "X-Infinite-Scroll" => "1"
+          }
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include('data-has-more-before="true"')
+        expect(response.body).to include('data-offset="5"')
+      end
+
+      it "prepends cards when window=before", :as_member do
+        get "/collections",
+          params: {offset: 5, per_page: 5, window: "before"},
+          headers: {
+            "Accept" => "text/vnd.turbo-stream.html",
+            "X-Infinite-Scroll" => "1"
+          }
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include('action="after"')
+        expect(response.body).to include("collections-scroll-sentinel-top")
+      end
+
+      it "marks true end only when offset+returned covers total", :as_member do
+        total = Collection.count
+        get "/collections",
+          params: {offset: [total - 3, 0].max, per_page: 10, window: "after"},
+          headers: {
+            "Accept" => "text/vnd.turbo-stream.html",
+            "X-Infinite-Scroll" => "1"
+          }
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include('data-has-more-after="false"')
       end
     end
 

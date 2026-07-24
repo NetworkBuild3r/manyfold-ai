@@ -25,8 +25,8 @@ class CollectionsController < ApplicationController
     @unrelated_tag_count = nil unless @filter.any?
 
     @collections = apply_sort_order(@collections)
-    @collections = prepare_browse_page(@collections)
     @collections = @collections.includes :collections, :collection, :links, :creator
+    @collections = prepare_browse_page(@collections)
 
     ids = @collections.map(&:id)
     @model_counts = ids.empty? ? {} : policy_scope(Model).where(collection_id: ids).group(:collection_id).count

@@ -20,8 +20,8 @@ class CreatorsController < ApplicationController
     @unrelated_tag_count = nil unless @filter.any?
 
     @creators = apply_sort_order(@creators)
-    @creators = prepare_browse_page(@creators)
     @creators = @creators.includes(:links, :collections)
+    @creators = prepare_browse_page(@creators)
 
     ids = @creators.map(&:id)
     @model_counts = ids.empty? ? {} : policy_scope(Model).where(creator_id: ids).group(:creator_id).count

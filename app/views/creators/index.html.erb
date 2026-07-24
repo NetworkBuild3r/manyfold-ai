@@ -34,58 +34,23 @@
   <% else %>
     <div class="skip-link-container">
       <%= skip_link "sidebar", t(".skip_creators") %>
-      <% per_page = @browse_per_page || browse_grid_page_size %>
-      <% meta = browse_window_meta(:creators_path, filter: @filter) %>
-      <% show_unassigned = @unassigned_count.to_i > 0 && @creators.first_page? %>
-      <div data-controller="infinite-scroll"
-           data-infinite-scroll-per-page-value="<%= per_page %>"
-           data-infinite-scroll-sentinel-id-value="creators-scroll-sentinel"
-           data-infinite-scroll-top-sentinel-id-value="creators-scroll-sentinel-top"
-           data-infinite-scroll-card-selector-value=".creator-card"
-           data-infinite-scroll-storage-key-prefix-value="scroll_creators_"
-           data-infinite-scroll-end-message-value="<%= t(".end_of_results") %>"
-           data-infinite-scroll-error-message-value="<%= t(".load_error") %>"
-           data-infinite-scroll-total-count-value="<%= meta[:total_count] %>"
-           data-infinite-scroll-window-start-value="<%= meta[:offset] %>"
-           class="library-infinite">
-        <div class="browse-card-grid mb-2"
-             id="creator-card-grid"
-             role="list"
-             aria-label="<%= Creator.model_name.human(count: 100) %>"
-             data-infinite-scroll-target="grid">
-          <%= render "application/browse_scroll_sentinel",
-                sentinel_id: "creators-scroll-sentinel-top",
-                position: :top,
-                meta: meta,
-                loading_label: t(".loading_more") %>
-          <%= render "unassigned" if show_unassigned %>
-          <%= render @creators %>
-          <%= render "application/browse_scroll_sentinel",
-                sentinel_id: "creators-scroll-sentinel",
-                position: :bottom,
-                meta: meta,
-                loading_label: t(".loading_more") %>
-        </div>
-        <div class="library-infinite__end py-10 text-center">
-          <p id="creators-scroll-status"
-             class="browse-scroll-status"
-             data-infinite-scroll-target="status"
-             role="status"
-             aria-live="polite"
-             hidden></p>
-          <p class="mt-2 text-sm text-secondary-500 dark:text-secondary-400 library-infinite__hint">
-            <%= t(".scroll_hint") %>
-          </p>
-        </div>
-        <button type="button"
-                class="models-back-to-top"
-                data-infinite-scroll-target="backToTop"
-                hidden
-                aria-label="<%= t(".back_to_top") %>">
-          <i class="bi bi-arrow-up" aria-hidden="true"></i>
-          <span><%= t(".back_to_top") %></span>
-        </button>
-      </div>
+      <% show_unassigned = @unassigned_count.to_i > 0 && @browse_offset.to_i.zero? %>
+      <%= render layout: "application/browse_infinite_grid", locals: {
+            sentinel_prefix: "creators",
+            grid_id: "creator-card-grid",
+            card_selector: ".creator-card",
+            storage_key_prefix: "scroll_creators_",
+            aria_label: Creator.model_name.human(count: 100),
+            path_helper: :creators_path,
+            end_message: t(".end_of_results"),
+            error_message: t(".load_error"),
+            loading_message: t(".loading_more"),
+            scroll_hint: t(".scroll_hint"),
+            back_to_top: t(".back_to_top"),
+            unassigned_html: (show_unassigned ? capture { render "unassigned" } : nil)
+          } do %>
+        <%= render @creators %>
+      <% end %>
     </div>
   <% end %>
 <% end %>

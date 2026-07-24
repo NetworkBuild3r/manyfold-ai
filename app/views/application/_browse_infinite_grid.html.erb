@@ -1,0 +1,86 @@
+<%# Shared infinite-scroll card grid chrome (INIT-003/SPEC-002 / ADR 0001).
+    Use as a layout so only this partial mounts data-controller="infinite-scroll".
+
+    Locals:
+      sentinel_prefix: "models" | "creators" | "collections"
+      grid_id:         DOM id for the card grid
+      card_selector:   Stimulus cardSelector (e.g. ".model-card")
+      storage_key_prefix:
+      aria_label:
+      path_helper:     symbol for browse_window_meta parity
+      end_message:, error_message:, loading_message:, scroll_hint:, back_to_top:
+      unassigned_html: optional SafeBuffer rendered outside the card grid
+%>
+<%
+  sentinel_prefix = local_assigns.fetch(:sentinel_prefix)
+  grid_id = local_assigns.fetch(:grid_id)
+  card_selector = local_assigns.fetch(:card_selector)
+  storage_key_prefix = local_assigns.fetch(:storage_key_prefix)
+  aria_label = local_assigns.fetch(:aria_label)
+  path_helper = local_assigns.fetch(:path_helper)
+  end_message = local_assigns.fetch(:end_message)
+  error_message = local_assigns.fetch(:error_message)
+  loading_message = local_assigns.fetch(:loading_message)
+  scroll_hint = local_assigns.fetch(:scroll_hint)
+  back_to_top = local_assigns.fetch(:back_to_top)
+  unassigned_html = local_assigns[:unassigned_html]
+  per_page = @browse_per_page || browse_grid_page_size
+  meta = browse_window_meta(path_helper, filter: @filter)
+  top_id = "#{sentinel_prefix}-scroll-sentinel-top"
+  bottom_id = "#{sentinel_prefix}-scroll-sentinel"
+  status_id = "#{sentinel_prefix}-scroll-status"
+%>
+<div data-controller="infinite-scroll"
+     data-infinite-scroll-per-page-value="<%= per_page %>"
+     data-infinite-scroll-sentinel-id-value="<%= bottom_id %>"
+     data-infinite-scroll-top-sentinel-id-value="<%= top_id %>"
+     data-infinite-scroll-card-selector-value="<%= card_selector %>"
+     data-infinite-scroll-storage-key-prefix-value="<%= storage_key_prefix %>"
+     data-infinite-scroll-end-message-value="<%= end_message %>"
+     data-infinite-scroll-error-message-value="<%= error_message %>"
+     data-infinite-scroll-loading-message-value="<%= loading_message %>"
+     data-infinite-scroll-total-count-value="<%= meta[:total_count] %>"
+     data-infinite-scroll-window-start-value="<%= meta[:offset] %>"
+     class="library-infinite">
+  <% if unassigned_html.present? %>
+    <div class="browse-unassigned-chrome mb-4">
+      <%= unassigned_html %>
+    </div>
+  <% end %>
+  <div class="browse-card-grid mb-2"
+       id="<%= grid_id %>"
+       role="list"
+       aria-label="<%= aria_label %>"
+       data-infinite-scroll-target="grid">
+    <%= render "application/browse_scroll_sentinel",
+          sentinel_id: top_id,
+          position: :top,
+          meta: meta,
+          loading_label: loading_message %>
+    <%= yield %>
+    <%= render "application/browse_scroll_sentinel",
+          sentinel_id: bottom_id,
+          position: :bottom,
+          meta: meta,
+          loading_label: loading_message %>
+  </div>
+  <div class="library-infinite__end py-10 text-center">
+    <p id="<%= status_id %>"
+       class="browse-scroll-status"
+       data-infinite-scroll-target="status"
+       role="status"
+       aria-live="polite"
+       hidden></p>
+    <p class="mt-2 text-sm text-secondary-500 dark:text-secondary-400 library-infinite__hint">
+      <%= scroll_hint %>
+    </p>
+  </div>
+  <button type="button"
+          class="models-back-to-top"
+          data-infinite-scroll-target="backToTop"
+          hidden
+          aria-label="<%= back_to_top %>">
+    <i class="bi bi-arrow-up" aria-hidden="true"></i>
+    <span><%= back_to_top %></span>
+  </button>
+</div>

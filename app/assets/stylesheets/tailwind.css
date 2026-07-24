@@ -290,16 +290,18 @@ dialog.modal::backdrop {
     overflow-anchor: none;
   }
 
-  /* Top sentinel is an insertion + observe point only — zero layout. */
+  /*
+   * Top sentinel: 1px hit target for IntersectionObserver (zero-area targets
+   * are unreliable). Visually empty; overflow hidden keeps layout quiet.
+   */
   .browse-card-grid .browse-scroll-sentinel--top {
-    min-height: 0;
-    height: 0;
-    max-height: 0;
+    min-height: 1px;
+    height: 1px;
+    max-height: 1px;
     padding: 0;
     margin: 0;
     border: 0;
     overflow: hidden;
-    visibility: hidden;
   }
 
   .browse-card-grid .browse-scroll-sentinel[hidden] {
@@ -324,11 +326,12 @@ dialog.modal::backdrop {
     transition: opacity 0.15s ease;
   }
 
-  .browse-card-grid.is-loading-more .browse-scroll-sentinel__label {
+  /* Bottom sentinel spinner only for after-fetches (status live region covers a11y). */
+  .browse-card-grid.is-loading-more.is-loading-after .browse-scroll-sentinel__label {
     opacity: 1;
   }
 
-  .browse-card-grid.is-loading-more .browse-scroll-sentinel__label::before {
+  .browse-card-grid.is-loading-more.is-loading-after .browse-scroll-sentinel__label::before {
     content: "";
     display: inline-block;
     width: 1rem;
@@ -343,6 +346,14 @@ dialog.modal::backdrop {
 
   @keyframes browse-grid-spin {
     to { transform: rotate(360deg); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .browse-card-grid.is-loading-more.is-loading-after .browse-scroll-sentinel__label::before {
+      animation: none;
+      border-top-color: var(--color-secondary-300);
+      opacity: 0.6;
+    }
   }
 }
 
@@ -492,11 +503,20 @@ dialog.modal::backdrop {
   outline-offset: 2px;
 }
 
-@media (prefers-color-scheme: dark) {
+.dark .models-back-to-top {
+  border-color: var(--color-secondary-600);
+  background: color-mix(in oklch, var(--color-secondary-900, #111827) 90%, transparent);
+  color: var(--color-secondary-100);
+}
+
+@media (prefers-reduced-motion: reduce) {
   .models-back-to-top {
-    border-color: var(--color-secondary-600);
-    background: color-mix(in oklch, var(--color-secondary-900, #111827) 90%, transparent);
-    color: var(--color-secondary-100);
+    transition: none;
+    transform: none;
+  }
+
+  .models-back-to-top.is-visible {
+    transform: none;
   }
 }
 

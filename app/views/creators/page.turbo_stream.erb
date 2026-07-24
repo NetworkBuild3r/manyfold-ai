@@ -1,30 +1,9 @@
-<% meta = browse_window_meta(:creators_path, filter: @filter) %>
-<% if @browse_window == "before" %>
-  <%= turbo_stream.after "creators-scroll-sentinel-top" do %>
-    <% @creators.each do |creator| %>
-      <%= render creator %>
-    <% end %>
+<%= render layout: "application/browse_window_streams", locals: {
+      sentinel_prefix: "creators",
+      path_helper: :creators_path,
+      loading_label: t("creators.index.loading_more")
+    } do %>
+  <% @creators.each do |creator| %>
+    <%= render creator %>
   <% end %>
-<% else %>
-  <%= turbo_stream.before "creators-scroll-sentinel" do %>
-    <% @creators.each do |creator| %>
-      <%= render creator %>
-    <% end %>
-  <% end %>
-<% end %>
-
-<%= turbo_stream.replace "creators-scroll-sentinel-top" do %>
-  <%= render "application/browse_scroll_sentinel",
-        sentinel_id: "creators-scroll-sentinel-top",
-        position: :top,
-        meta: meta,
-        loading_label: t("creators.index.loading_more") %>
-<% end %>
-
-<%= turbo_stream.replace "creators-scroll-sentinel" do %>
-  <%= render "application/browse_scroll_sentinel",
-        sentinel_id: "creators-scroll-sentinel",
-        position: :bottom,
-        meta: meta,
-        loading_label: t("creators.index.loading_more") %>
 <% end %>

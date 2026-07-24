@@ -5,6 +5,7 @@ module ModelListable
     include TagListable
     include Filterable
     include Sortable
+    include BrowseWindowable
   end
 
   private
@@ -17,37 +18,11 @@ module ModelListable
     @tags, @kv_tags = split_key_value_tags(@tags)
     @unrelated_tag_count = nil unless @filter.any?
 
+    # Count before includes (avoids DISTINCT inflation); eager-load before window load.
     stream = infinite_scroll_or_stream_request?
-    per_page = BrowseGrid.page_size_for_request(params, stream: stream)
-    @browse_per_page = per_page
-
-    if stream && params[:offset].present?
-      offset = BrowseGrid.offset_for_request(params)
-      @browse_offset = offset
-      total = @models.count
-      @browse_total_count = total
-      @models = @models.offset(offset).limit(per_page)
-      @models = @models.includes([:creator, :collection, :tags]).preload([:preview_file])
-      records = @models.load
-      @browse_returned_count = records.size
-      @browse_has_more_after = (offset + records.size) < total
-      @browse_has_more_before = offset.positive?
-      @browse_window = params[:window].presence_in(%w[before after]) || "after"
-    else
-      page = if stream
-        params[:page].presence || 1
-      else
-        1
-      end
-      @models = @models.page(page).per(per_page)
-      @models = @models.includes([:creator, :collection, :tags]).preload([:preview_file])
-      @browse_offset = (page.to_i - 1) * per_page
-      @browse_total_count = @models.total_count
-      @browse_returned_count = @models.size
-      @browse_has_more_after = @models.next_page.present?
-      @browse_has_more_before = page.to_i > 1
-      @browse_window = "after"
-    end
+    total = (stream && params[:offset].present?) ? @models.count : nil
+    @models = @models.includes([:creator, :collection, :tags]).preload([:preview_file])
+    @models = prepare_browse_window(@models, total: total)
   end
 
   # Options for the models index filter form (lazy Turbo Frame or explicit call).

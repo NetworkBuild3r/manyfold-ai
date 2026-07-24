@@ -2,17 +2,23 @@ import { Controller } from '@hotwired/stimulus'
 import { renderStreamMessage } from '@hotwired/turbo'
 
 const PREFETCH_ROOT_MARGIN = '400px 0px'
+const PREFETCH_MARGIN_PX = 400
 const SCROLL_EDGE_PX = 800
 const MAX_FILL_ROUNDS = 24
 const MAX_CHAIN_AFTER = 8
+const MAX_CHAIN_BEFORE = 8
 const MAX_DUPE_SKIPS = 5
 const MAX_TRANSIENT_RETRIES = 3
 const RETRY_BASE_MS = 400
+const DEFERRED_CONTINUE_MS = 250
 const BACK_TO_TOP_SHOW_PX = 800
 const MIN_ROWS = 8
 const MAX_ROWS = 20
 const ROW_HEIGHT_FALLBACK = 280
 const BUFFER_ROWS = 4
+
+type StatusMode = 'idle' | 'loading' | 'error' | 'end'
+type FetchDirection = 'after' | 'before'
 
 /**
  * Bidirectional row-window infinite scroll for a card grid.
@@ -21,6 +27,9 @@ const BUFFER_ROWS = 4
  * window of cols×rows cards: scroll down appends one row and drops one from
  * the top; scroll up prepends one row and drops one from the bottom.
  * End-of-list only when the window covers the true end of the result set.
+ *
+ * Fetch URLs are built from window.location (client owns query params).
+ * Sentinels expose has-more flags, total-count, and offset only.
  */
 export default class extends Controller {
   static targets = ['sentinel', 'topSentinel', 'status', 'backToTop', 'grid']
@@ -33,7 +42,8 @@ export default class extends Controller {
     totalCount: { type: Number, default: 0 },
     windowStart: { type: Number, default: 0 },
     endMessage: { type: String, default: '' },
-    errorMessage: { type: String, default: '' }
+    errorMessage: { type: String, default: '' },
+    loadingMessage: { type: String, default: '' }
   }
 
   declare perPageValue: number
@@ -45,6 +55,7 @@ export default class extends Controller {
   declare windowStartValue: number
   declare endMessageValue: string
   declare errorMessageValue: string
+  declare loadingMessageValue: string
   declare sentinelTarget: HTMLElement
   declare hasSentinelTarget: boolean
   declare topSentinelTarget: HTMLElement
@@ -72,14 +83,18 @@ export default class extends Controller {
   private boundOnBackToTop: (e: Event) => void
   private scrollTicking = false
   private abortController: AbortController | null = null
-  private transientFailures = 0
   private restoredScroll = false
   private refillQueued = false
   private chainAfterQueued = false
+  private chainBeforeQueued = false
   private chainAfterDepth = 0
+  private chainBeforeDepth = 0
   private consecutiveDupeSkips = 0
   /** Absolute index into the full result set for the next after-fetch. Independent of windowStart. */
   private afterFetchCursor = 0
+  private statusMode: StatusMode = 'idle'
+  private deferredAfterTimer: number | null = null
+  private deferredBeforeTimer: number | null = null
 
   connect (): void {
     this.boundOnScroll = this.onScroll.bind(this)
@@ -99,7 +114,7 @@ export default class extends Controller {
     this.setupObserver()
     this.setupResizeObserver()
     this.setupMutationObserver()
-    this.updateStatus('')
+    this.setStatusMode('idle')
     this.updateBackToTop()
     this.updateExhaustionUi()
     void this.bootstrap()
@@ -117,6 +132,7 @@ export default class extends Controller {
     this.resizeObserver = null
     this.mutationObserver?.disconnect()
     this.mutationObserver = null
+    this.clearDeferredContinues()
     this.abortInFlight()
   }
 
@@ -140,6 +156,17 @@ export default class extends Controller {
     }
   }
 
+  private clearDeferredContinues (): void {
+    if (this.deferredAfterTimer != null) {
+      window.clearTimeout(this.deferredAfterTimer)
+      this.deferredAfterTimer = null
+    }
+    if (this.deferredBeforeTimer != null) {
+      window.clearTimeout(this.deferredBeforeTimer)
+      this.deferredBeforeTimer = null
+    }
+  }
+
   private async bootstrap (): Promise<void> {
     await this.fillOrTrimWindow()
     this.restoreScrollIfNeeded()
@@ -158,8 +185,8 @@ export default class extends Controller {
         void this.fillOrTrimWindow()
         return
       }
-      // Layout twitch without column/row change: still unstick a dead IO edge.
       this.maybeContinueAfter()
+      this.maybeContinueBefore()
     })
     this.resizeObserver.observe(this.gridEl())
   }
@@ -307,7 +334,6 @@ export default class extends Controller {
 
     let cards = this.cards()
     if (cards.length > this.windowSize) {
-      // Prefer dropping the bottom so windowStart (and visible top) stay stable.
       this.trimBottomToWindow()
       cards = this.cards()
     }
@@ -348,7 +374,7 @@ export default class extends Controller {
    * After append/prepend, keep at most windowSize cards by dropping complete
    * rows from the opposite end.
    */
-  private maintainWindow (direction: 'after' | 'before'): void {
+  private maintainWindow (direction: FetchDirection): void {
     const excess = this.cards().length - this.windowSize
     if (excess <= 0) return
     const rowsToDrop = Math.floor(excess / this.cols)
@@ -399,7 +425,8 @@ export default class extends Controller {
     }
   }
 
-  private buildFetchUrl (offset: number, limit: number, windowDir: 'before' | 'after'): string {
+  /** Client owns fetch URLs — clone current location and set offset/per_page/window. */
+  private buildFetchUrl (offset: number, limit: number, windowDir: FetchDirection): string {
     const url = new URL(window.location.href)
     url.searchParams.delete('page')
     url.searchParams.set('offset', String(Math.max(0, offset)))
@@ -408,7 +435,7 @@ export default class extends Controller {
     return url.pathname + url.search
   }
 
-  private async fetchRow (direction: 'after' | 'before'): Promise<boolean> {
+  private async fetchRow (direction: FetchDirection): Promise<boolean> {
     this.recomputeWindowSize()
     this.refreshBounds()
 
@@ -430,13 +457,12 @@ export default class extends Controller {
   private async refillOneAfterDelete (): Promise<void> {
     this.refreshBounds()
     if (!this.hasMoreAfter || this.loading) return
-    // Keep window full until true end; do not change windowStart on middle delete.
     if (this.cards().length >= this.windowSize) return
     await this.fetchCards(1, 'after')
     this.updateExhaustionUi()
   }
 
-  private async fetchCards (limit: number, direction: 'after' | 'before'): Promise<boolean> {
+  private async fetchCards (limit: number, direction: FetchDirection): Promise<boolean> {
     if (this.loading) return false
 
     const offset = direction === 'after'
@@ -453,124 +479,153 @@ export default class extends Controller {
     const url = this.buildFetchUrl(offset, limit, direction)
 
     this.loading = true
-    this.gridEl().classList.add('is-loading-more')
-    this.updateStatus('')
-    this.abortController = new AbortController()
+    this.setLoadingUi(true, direction)
 
     const anchor = direction === 'before' ? this.cards()[0] : null
     const anchorTop = anchor?.getBoundingClientRect().top ?? 0
     let shouldContinueAfter = false
+    let shouldContinueBefore = false
 
     try {
-      const response = await fetch(url, {
-        headers: {
-          Accept: 'text/vnd.turbo-stream.html',
-          'X-Infinite-Scroll': '1'
-        },
-        credentials: 'same-origin',
-        signal: this.abortController.signal
-      })
+      for (let attempt = 0; attempt <= MAX_TRANSIENT_RETRIES; attempt++) {
+        this.abortController = new AbortController()
 
-      if (!response.ok) {
-        console.warn('[infinite-scroll] HTTP', response.status, url)
-        if (response.status === 401 || response.status === 403 || response.status === 404) {
-          this.hasMoreAfter = false
-          this.updateExhaustionUi()
-          return false
-        }
-        this.transientFailures += 1
-        if (this.transientFailures >= MAX_TRANSIENT_RETRIES) {
-          this.updateStatus(this.errorMessage())
-          this.transientFailures = 0
-        } else {
-          await this.delay(RETRY_BASE_MS * this.transientFailures)
-        }
-        return false
-      }
+        try {
+          const response = await fetch(url, {
+            headers: {
+              Accept: 'text/vnd.turbo-stream.html',
+              'X-Infinite-Scroll': '1'
+            },
+            credentials: 'same-origin',
+            signal: this.abortController.signal
+          })
 
-      const contentType = response.headers.get('Content-Type') ?? ''
-      const html = await response.text()
-
-      if (!contentType.includes('turbo-stream') && !html.includes('<turbo-stream')) {
-        console.warn('[infinite-scroll] expected turbo-stream, got', contentType.slice(0, 80))
-        return false
-      }
-
-      this.transientFailures = 0
-      const beforeCount = this.cards().length
-      const streamHadCards = this.turboStreamAppendsCards(html)
-
-      this.mutating = true
-      try {
-        renderStreamMessage(html)
-        this.dedupeCards()
-      } finally {
-        this.mutating = false
-      }
-
-      const afterCount = this.cards().length
-      const added = Math.max(0, afterCount - beforeCount)
-      this.cachedColumns = null
-      this.recomputeWindowSize()
-      this.syncMetaFromSentinels()
-
-      if (direction === 'before' && added > 0) {
-        this.windowStartValue = offset
-        if (anchor != null && document.contains(anchor)) {
-          const delta = anchor.getBoundingClientRect().top - anchorTop
-          if (delta !== 0) {
-            window.scrollBy(0, delta)
+          if (!response.ok) {
+            console.warn('[infinite-scroll] HTTP', response.status, url)
+            if (response.status === 401 || response.status === 403 || response.status === 404) {
+              this.applyAuthFailure(direction)
+              return false
+            }
+            if (attempt < MAX_TRANSIENT_RETRIES) {
+              await this.delay(RETRY_BASE_MS * (attempt + 1))
+              continue
+            }
+            this.setStatusMode('error', this.errorMessageValue)
+            return false
           }
+
+          const contentType = response.headers.get('Content-Type') ?? ''
+          const html = await response.text()
+
+          if (!contentType.includes('turbo-stream') && !html.includes('<turbo-stream')) {
+            console.warn('[infinite-scroll] expected turbo-stream, got', contentType.slice(0, 80))
+            if (attempt < MAX_TRANSIENT_RETRIES) {
+              await this.delay(RETRY_BASE_MS * (attempt + 1))
+              continue
+            }
+            this.setStatusMode('error', this.errorMessageValue)
+            return false
+          }
+
+          const beforeCount = this.cards().length
+          const streamHadCards = this.turboStreamAppendsCards(html)
+
+          this.mutating = true
+          try {
+            renderStreamMessage(html)
+            this.dedupeCards()
+          } finally {
+            this.mutating = false
+          }
+
+          const afterCount = this.cards().length
+          const added = Math.max(0, afterCount - beforeCount)
+          this.cachedColumns = null
+          this.recomputeWindowSize()
+          this.syncMetaFromSentinels()
+
+          if (direction === 'before' && added > 0) {
+            this.windowStartValue = offset
+            if (anchor != null && document.contains(anchor)) {
+              const delta = anchor.getBoundingClientRect().top - anchorTop
+              if (delta !== 0) {
+                window.scrollBy(0, delta)
+              }
+            }
+            this.maintainWindow('before')
+            this.consecutiveDupeSkips = 0
+          } else if (direction === 'after' && added > 0) {
+            this.maintainWindow('after')
+            this.afterFetchCursor = this.windowStartValue + this.cards().length
+            this.consecutiveDupeSkips = 0
+          }
+
+          this.refreshBounds()
+
+          if (direction === 'after' && added === 0) {
+            this.advancePastDeadAfterOffset(offset, limit, streamHadCards)
+          }
+
+          this.setupObserver()
+          this.clearErrorAndSet('idle')
+          this.updateExhaustionUi()
+
+          if (direction === 'after' && this.hasMoreAfter) {
+            shouldContinueAfter = true
+          } else if (direction === 'after') {
+            this.chainAfterDepth = 0
+          }
+
+          if (direction === 'before' && this.hasMoreBefore) {
+            shouldContinueBefore = true
+          } else if (direction === 'before') {
+            this.chainBeforeDepth = 0
+          }
+
+          return added > 0 || (direction === 'after' ? !this.hasMoreAfter : !this.hasMoreBefore)
+        } catch (e) {
+          if ((e as Error)?.name === 'AbortError') {
+            return false
+          }
+          console.warn('[infinite-scroll] load error', e)
+          if (attempt < MAX_TRANSIENT_RETRIES) {
+            await this.delay(RETRY_BASE_MS * (attempt + 1))
+            continue
+          }
+          this.setStatusMode('error', this.errorMessageValue)
+          return false
+        } finally {
+          this.abortController = null
         }
-        this.maintainWindow('before')
-        this.consecutiveDupeSkips = 0
-      } else if (direction === 'after' && added > 0) {
-        this.maintainWindow('after')
-        this.afterFetchCursor = this.windowStartValue + this.cards().length
-        this.consecutiveDupeSkips = 0
       }
 
-      // Empty batch alone is not end-of-list; only totalCount bounds matter.
-      this.refreshBounds()
-
-      if (direction === 'after' && added === 0) {
-        // Advance fetch cursor only — never inflate windowStart without matching cards.
-        this.advancePastDeadAfterOffset(offset, limit, streamHadCards)
-      }
-
-      this.setupObserver()
-      this.updateExhaustionUi()
-
-      if (direction === 'after' && this.hasMoreAfter) {
-        shouldContinueAfter = true
-      } else if (direction === 'after') {
-        this.chainAfterDepth = 0
-      }
-
-      return added > 0 || !this.hasMoreAfter
-    } catch (e) {
-      if ((e as Error)?.name === 'AbortError') {
-        return false
-      }
-      console.warn('[infinite-scroll] load error', e)
-      this.transientFailures += 1
-      this.updateStatus(this.errorMessage())
+      this.setStatusMode('error', this.errorMessageValue)
       return false
     } finally {
       this.loading = false
-      this.gridEl().classList.remove('is-loading-more')
-      this.abortController = null
-      // Chain after loading clears — IO will not re-fire while sentinel stays intersecting.
+      this.setLoadingUi(false, direction)
       if (shouldContinueAfter) {
         this.maybeContinueAfter()
       }
+      if (shouldContinueBefore) {
+        this.maybeContinueBefore()
+      }
     }
+  }
+
+  private applyAuthFailure (direction: FetchDirection): void {
+    if (direction === 'after') {
+      this.hasMoreAfter = false
+    } else {
+      this.hasMoreBefore = false
+    }
+    this.setStatusMode('error', this.errorMessageValue)
+    this.setupObserver()
   }
 
   /** True when the turbo-stream payload includes card elements (vs empty page). */
   private turboStreamAppendsCards (html: string): boolean {
     const selector = this.cardSelectorValue || '.model-card'
-    // Cards use class model-card / collection-card / creator-card.
     const bare = selector.replace(/^\./, '')
     return html.includes(`class="${bare}`) ||
       html.includes(`class='${bare}`) ||
@@ -581,8 +636,7 @@ export default class extends Controller {
 
   /**
    * When a bottom fetch adds no new unique cards, advance the fetch cursor past
-   * this offset without moving windowStart (DOM window origin). Inflating
-   * windowStart here would skip result indices.
+   * this offset without moving windowStart (DOM window origin).
    */
   private advancePastDeadAfterOffset (offset: number, limit: number, streamHadCards: boolean): void {
     const step = Math.max(1, limit)
@@ -601,13 +655,14 @@ export default class extends Controller {
 
   /**
    * IntersectionObserver often does not re-fire while the sentinel stays
-   * intersecting after a sliding-window fetch. Chain another after-fetch when
-   * still at the bottom, capped so we do not hammer the server.
+   * intersecting after a sliding-window fetch. Chain another fetch when still
+   * at the edge, capped so we do not hammer the server.
    */
   private maybeContinueAfter (): void {
     if (!this.hasMoreAfter || this.loading || this.chainAfterQueued) return
     if (this.chainAfterDepth >= MAX_CHAIN_AFTER) {
       this.chainAfterDepth = 0
+      this.scheduleDeferredContinue('after')
       return
     }
     if (!this.nearBottom() && !this.bottomSentinelIntersecting()) return
@@ -629,11 +684,60 @@ export default class extends Controller {
     })
   }
 
+  private maybeContinueBefore (): void {
+    if (!this.hasMoreBefore || this.loading || this.chainBeforeQueued) return
+    if (this.chainBeforeDepth >= MAX_CHAIN_BEFORE) {
+      this.chainBeforeDepth = 0
+      this.scheduleDeferredContinue('before')
+      return
+    }
+    if (!this.nearTop() && !this.topSentinelIntersecting()) return
+
+    this.chainBeforeQueued = true
+    requestAnimationFrame(() => {
+      this.chainBeforeQueued = false
+      if (!this.hasMoreBefore || this.loading) return
+      if (!this.nearTop() && !this.topSentinelIntersecting()) {
+        this.chainBeforeDepth = 0
+        return
+      }
+      this.chainBeforeDepth += 1
+      void this.fetchRow('before').then((ok) => {
+        if (!ok || !this.hasMoreBefore) {
+          this.chainBeforeDepth = 0
+        }
+      })
+    })
+  }
+
+  private scheduleDeferredContinue (direction: FetchDirection): void {
+    if (direction === 'after') {
+      if (this.deferredAfterTimer != null) return
+      this.deferredAfterTimer = window.setTimeout(() => {
+        this.deferredAfterTimer = null
+        this.maybeContinueAfter()
+      }, DEFERRED_CONTINUE_MS)
+    } else {
+      if (this.deferredBeforeTimer != null) return
+      this.deferredBeforeTimer = window.setTimeout(() => {
+        this.deferredBeforeTimer = null
+        this.maybeContinueBefore()
+      }, DEFERRED_CONTINUE_MS)
+    }
+  }
+
   private bottomSentinelIntersecting (): boolean {
-    const el = this.bottomSentinelEl()
+    return this.sentinelIntersecting(this.bottomSentinelEl())
+  }
+
+  private topSentinelIntersecting (): boolean {
+    return this.sentinelIntersecting(this.topSentinelEl())
+  }
+
+  private sentinelIntersecting (el: HTMLElement | null): boolean {
     if (el == null || typeof el.getBoundingClientRect !== 'function') return false
     const rect = el.getBoundingClientRect()
-    const margin = 400
+    const margin = PREFETCH_MARGIN_PX
     return rect.top < window.innerHeight + margin && rect.bottom > -margin
   }
 
@@ -653,15 +757,46 @@ export default class extends Controller {
     return new Promise((resolve) => setTimeout(resolve, ms))
   }
 
-  private endMessage (): string {
-    return this.endMessageValue
+  private setLoadingUi (busy: boolean, direction?: FetchDirection): void {
+    const grid = this.gridEl()
+    if (busy) {
+      grid.classList.add('is-loading-more')
+      if (direction === 'before') {
+        grid.classList.add('is-loading-before')
+        grid.classList.remove('is-loading-after')
+      } else if (direction === 'after') {
+        grid.classList.add('is-loading-after')
+        grid.classList.remove('is-loading-before')
+      }
+      grid.setAttribute('aria-busy', 'true')
+      this.setStatusMode('loading', this.loadingMessageValue)
+    } else {
+      grid.classList.remove('is-loading-more', 'is-loading-before', 'is-loading-after')
+      grid.removeAttribute('aria-busy')
+      if (this.statusMode === 'loading') {
+        this.clearErrorAndSet('idle')
+      }
+    }
   }
 
-  private errorMessage (): string {
-    return this.errorMessageValue
+  /**
+   * Status modes: error is sticky until clearErrorAndSet (success) or a new
+   * in-flight loading announcement. Exhaustion must never clear an error.
+   */
+  private setStatusMode (mode: StatusMode, text = ''): void {
+    if (this.statusMode === 'error' && mode !== 'loading' && mode !== 'error') {
+      return
+    }
+    this.statusMode = mode
+    this.writeStatus(mode === 'idle' ? '' : text)
   }
 
-  private updateStatus (text: string): void {
+  private clearErrorAndSet (mode: StatusMode, text = ''): void {
+    this.statusMode = mode
+    this.writeStatus(mode === 'idle' ? '' : text)
+  }
+
+  private writeStatus (text: string): void {
     if (!this.hasStatusTarget) return
     this.statusTarget.textContent = text
     if (text.length > 0) {
@@ -676,11 +811,15 @@ export default class extends Controller {
     this.refreshBounds()
     if (!this.hasMoreAfter) {
       this.element.classList.add('is-exhausted')
-      // Show once the true end is in the window (short lists or scrolled to last row).
-      this.updateStatus(this.endMessage())
+      if (this.statusMode !== 'error' && this.statusMode !== 'loading') {
+        this.clearErrorAndSet('end', this.endMessageValue)
+      }
     } else {
       this.element.classList.remove('is-exhausted')
-      this.updateStatus('')
+      if (this.statusMode === 'end') {
+        this.clearErrorAndSet('idle')
+      }
+      // Do not clear error or loading from scroll/exhaustion.
     }
   }
 
@@ -704,6 +843,7 @@ export default class extends Controller {
           this.chainAfterDepth = 0
           void this.fetchRow('after')
         } else if (this.nearTop() && this.hasMoreBefore) {
+          this.chainBeforeDepth = 0
           void this.fetchRow('before')
         }
         this.updateExhaustionUi()
@@ -784,13 +924,16 @@ export default class extends Controller {
       return
     }
     if (!Number.isFinite(y) || y < 1) return
+    // Double rAF lets image/layout settle after the bootstrap fill.
     requestAnimationFrame(() => {
-      window.scrollTo(0, y)
-      this.updateBackToTop()
+      requestAnimationFrame(() => {
+        window.scrollTo(0, y)
+        this.updateBackToTop()
+      })
     })
   }
 
   private gridEl (): HTMLElement {
-    return this.hasGridTarget ? this.gridTarget : this.element
+    return this.hasGridTarget ? this.gridTarget : (this.element as HTMLElement)
   }
 }

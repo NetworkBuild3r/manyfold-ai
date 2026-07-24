@@ -1,0 +1,32 @@
+<%# Shared turbo-stream window update for browse grids (INIT-003/SPEC-002).
+    Locals: sentinel_prefix, path_helper, loading_label (optional)
+    Yields once; caller renders the card HTML for the current window. %>
+<%
+  sentinel_prefix = local_assigns.fetch(:sentinel_prefix)
+  path_helper = local_assigns.fetch(:path_helper)
+  loading_label = local_assigns[:loading_label]
+  meta = browse_window_meta(path_helper, filter: @filter)
+  top_id = "#{sentinel_prefix}-scroll-sentinel-top"
+  bottom_id = "#{sentinel_prefix}-scroll-sentinel"
+  sentinel_locals = {meta: meta}
+  sentinel_locals[:loading_label] = loading_label if loading_label.present?
+%>
+<% if @browse_window == "before" %>
+  <%= turbo_stream.after top_id do %>
+    <%= yield %>
+  <% end %>
+<% else %>
+  <%= turbo_stream.before bottom_id do %>
+    <%= yield %>
+  <% end %>
+<% end %>
+
+<%= turbo_stream.replace top_id do %>
+  <%= render "application/browse_scroll_sentinel",
+        {sentinel_id: top_id, position: :top}.merge(sentinel_locals) %>
+<% end %>
+
+<%= turbo_stream.replace bottom_id do %>
+  <%= render "application/browse_scroll_sentinel",
+        {sentinel_id: bottom_id, position: :bottom}.merge(sentinel_locals) %>
+<% end %>

@@ -1,5 +1,5 @@
-<%# Unassigned collections tile — first page only; grid child (not .collection-card). %>
-<div class="browse-unassigned-card relative flex flex-col rounded-xl overflow-hidden bg-surface dark:bg-surface-dark border border-warning-400 dark:border-warning-500 shadow-sm" role="listitem">
+<%# Unassigned collections tile — first window chrome above the scroll grid (not a grid child). %>
+<div class="browse-unassigned-card relative flex flex-col rounded-xl overflow-hidden bg-surface dark:bg-surface-dark border border-warning-400 dark:border-warning-500 shadow-sm w-full max-w-[var(--browse-card-max)]">
   <div class="flex items-center justify-center aspect-[4/3] bg-secondary-100 dark:bg-secondary-700/50">
     <p class="text-sm text-secondary-600 dark:text-secondary-400 text-center px-4"><%= t "collections.collection.no_preview" %></p>
   </div>
