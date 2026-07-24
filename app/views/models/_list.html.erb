@@ -48,7 +48,8 @@
     </div>
 
     <% if current_user %>
-      <%= render "list_chips", variant: :chrome %>
+      <%# Explicit models/ prefix: this partial is also rendered from creators#show / collections#show %>
+      <%= render "models/list_chips", variant: :chrome %>
     <% end %>
 
     <% if @filter.any? %>
@@ -160,7 +161,7 @@
       <% end %>
       <% if @search %>
         <p class="mt-6 text-sm text-secondary-600 dark:text-secondary-400"><%= t ".search_elsewhere.or_other_sites" %></p>
-        <div class="mt-2"><%= render "search_links" %></div>
+        <div class="mt-2"><%= render "models/search_links" %></div>
       <% end %>
     </div>
   <% else %>
@@ -191,6 +192,7 @@
            data-infinite-scroll-storage-key-prefix-value="scroll_models_"
            data-infinite-scroll-end-message-value="<%= t(".end_of_results") %>"
            data-infinite-scroll-error-message-value="<%= t(".load_error") %>"
+           data-infinite-scroll-loading-message-value="<%= t(".loading_more") %>"
            data-infinite-scroll-total-count-value="<%= meta[:total_count] %>"
            data-infinite-scroll-window-start-value="<%= meta[:offset] %>"
            class="library-infinite">
@@ -235,7 +237,7 @@
         <div class="flex flex-wrap items-center gap-2 mt-2 py-3 px-4 rounded-xl bg-secondary-100 dark:bg-secondary-800/60 text-secondary-700 dark:text-secondary-300 text-sm">
           <%= Icon icon: "search", label: "" %>
           <span><%= t ".search_elsewhere.other_sites" %></span>
-          <%= render "search_links" %>
+          <%= render "models/search_links" %>
         </div>
       <% end %>
     </div>
@@ -289,7 +291,8 @@
 <% end %>
 
 <% content_for :sidebar do %>
-  <%= render "model_filters_card" %>
-  <%= render "filters_card" %>
-  <%= render "tags_card" %>
+  <%# Explicit prefixes so creator/collection show pages resolve the same partials as models#index %>
+  <%= render "models/model_filters_card" %>
+  <%= render "application/filters_card" %>
+  <%= render "application/tags_card" %>
 <% end %>
