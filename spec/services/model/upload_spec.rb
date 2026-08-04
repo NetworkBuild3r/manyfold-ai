@@ -8,10 +8,12 @@ RSpec.describe Model::Upload do
 
   let(:library) { create(:library) }
   let(:owner) { create(:contributor) }
+  let(:creator) { create(:creator, :public) }
   let(:enqueue) { true }
   let(:params) {
     {
       name: "Test Upload Model",
+      creator_id: creator.id,
       license: "MIT",
       sensitive: "0",
       tag_list: ["tag1"],
