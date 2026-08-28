@@ -19,6 +19,10 @@ RSpec.describe Components::PreviewFrame, type: :component do
     expect(html).to include('width="480"')
     expect(html).to include('height="360"')
     expect(html).to include("absolute inset-0")
+  end
+
+  it "uses object-contain on lite card images" do
+    html = render described_class.new(object: model.reload, lite: true)
     expect(html).to include("object-contain")
     expect(html).not_to include("object-cover")
   end

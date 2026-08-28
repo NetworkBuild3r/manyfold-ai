@@ -14,14 +14,22 @@ RSpec.describe "Models gallery" do
       before { model.update!(preview_file: preview) }
 
       describe "GET /models/:id/gallery", :as_member do
-        it "returns a turbo-frame with ImageCarousel prev/next for multi-image models" do
+        it "returns a turbo-frame browse carousel for multi-image models" do
           get gallery_model_path(model)
           expect(response).to have_http_status(:success)
           expect(response.body).to include('turbo-frame id="model-gallery"')
           expect(response.body).to include('id="browseCarousel"')
+          expect(response.body).to include(preview.filename)
+          expect(response.body).to include(extra.filename)
+        end
+
+        it "exposes prev/next controls when two images are present" do
+          get gallery_model_path(model)
           expect(response.body).to include("carousel#prev")
           expect(response.body).to include("carousel#next")
           expect(response.body).to include('data-carousel-interval-value="0"')
+          expect(preview.filename).to eq("cover.jpg")
+          expect(extra.filename).to eq("detail.png")
         end
 
         it "keeps gallery images under policy_scope (authorized success)" do
@@ -29,7 +37,7 @@ RSpec.describe "Models gallery" do
           # for the member proves the action still authorizes via show?/gallery?.
           get gallery_model_path(model)
           expect(response).to have_http_status(:success)
-          expect(response.body).to include("cover.jpg").or include("cover")
+          expect(response.body).to include(preview.filename)
         end
       end
     end
@@ -42,6 +50,7 @@ RSpec.describe "Models gallery" do
     before { model.update!(preview_file: preview) }
 
     it "does not expose private model gallery" do
+      expect(preview).to be_persisted
       get gallery_model_path(model)
       expect(response).to be_not_found
     end
