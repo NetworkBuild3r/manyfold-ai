@@ -9,8 +9,10 @@ RSpec.describe Components::ModelCardPreview, type: :component do
 
   before do
     model.update!(preview_file: file)
-    allow(controller).to receive(:policy).and_return(double(edit?: false, destroy?: false, show?: true))
-    allow(controller).to receive(:current_user).and_return(nil)
+    allow(controller).to receive_messages(
+      policy: double(edit?: false, destroy?: false, show?: true),
+      current_user: nil
+    )
   end
 
   it "opens gallery from the preview control without linking the preview to the model show" do
