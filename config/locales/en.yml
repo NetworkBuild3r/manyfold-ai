@@ -1286,6 +1286,8 @@ en:
       success: Continue command sent.
     create:
       success: Printer registered.
+    destroy:
+      destroyed: Printer removed.
     discover:
       add: Add printer
       description: UDP discovery (SDCP M99999) — scans your network without OctoPrint.
@@ -1354,8 +1356,13 @@ en:
         size: File size
         uploaded: Uploaded
       confirm_delete: Delete %{name} from printer storage?
+      confirm_delete_printer: Remove printer "%{name}" from Manyfold? This does not wipe files on the machine.
+      danger_heading: Remove printer
+      danger_help: Deletes this printer from Manyfold. Jobs and history for this host are removed; on-board storage is left alone.
       delete_file: Delete file
+      delete_printer: Delete printer
       edit_configuration: Edit configuration
+      endpoint_help: SDCP control port is 3030. Use http://IP:3030 — a bare http://IP is rewritten to :3030 on save.
       fields:
         brand: Brand
         build: Build volume
@@ -1368,11 +1375,6 @@ en:
         name: Name
         protocol: Protocol
         resolution: Resolution
-      confirm_delete_printer: Remove printer "%{name}" from Manyfold? This does not wipe files on the machine.
-      danger_heading: Remove printer
-      danger_help: Deletes this printer from Manyfold. Jobs and history for this host are removed; on-board storage is left alone.
-      delete_printer: Delete printer
-      endpoint_help: SDCP control port is 3030. Use http://IP:3030 — a bare http://IP is rewritten to :3030 on save.
       gate:
         aa_detail: Anti-aliasing limit must reside in range 0–4 (aa_max not configured on host)
         aa_title: Slicing AA check
@@ -1444,8 +1446,6 @@ en:
       nothing_to_delete: Nothing to delete.
       unsupported_type: Only CTB/JXS sliced files may be uploaded.
       uploaded: Uploaded %{filename}.
-    destroy:
-      destroyed: Printer removed.
     update:
       updated: Printer configuration saved.
   renderer:
