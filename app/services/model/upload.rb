@@ -20,6 +20,7 @@ class Model::Upload
     multiple = params[:file]&.values&.all? { |it|
       SupportedMimeTypes.archive_extensions.include?(File.extname(it[:name]).delete(".").downcase)
     }
+    # Sidekiq-only owner_id must stay off Model attrs (Caber ownership in the job). INIT-022/SPEC-001
     job_options = {
       owner_id: @owner.id,
       creator_id: params[:creator_id],
@@ -30,10 +31,7 @@ class Model::Upload
       permission_preset: params[:permission_preset],
       name: multiple ? nil : params[:name]
     }
-    dummy = Model.new(job_options.merge(
-      name: multiple ? nil : params[:name],
-      library: @library
-    ))
+    dummy = Model.new(job_options.except(:owner_id).merge(library: @library))
     validation_context = multiple ? :multi_upload : :single_upload
     unless dummy.valid?(validation_context)
       return Result.new(valid?: false, model: dummy, multiple?: multiple, jobs: [], job_options: job_options)
