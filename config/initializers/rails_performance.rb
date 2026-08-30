@@ -1,7 +1,22 @@
+# frozen_string_literal: true
+
+# INIT-013/SPEC-002 — rails_performance collector config + Sidekiq write-path skip (ADR D-5).
+#
+# Deny-listed Sidekiq workers (never written to RP Redis):
+#   - Turbo::Streams::BroadcastStreamJob  (high-churn stream fan-out; not HTTP latency)
+# See Performance::SkippedWorkers::NAMES — primary fix is write-path skip, not read filtering.
+#
+# Skip constants + SidekiqExt prepend load in every env (including test) so RSpec can assert
+# without requiring full RailsPerformance.setup. Redis/duration setup stays out of test /
+# asset precompile.
+
+Performance::SidekiqExtSkip.install! if defined?(RailsPerformance)
+
 if defined?(RailsPerformance) && !Rails.env.test? && ENV["RAILS_ASSETS_PRECOMPILE"].blank?
   RailsPerformance.setup do |config|
     redis_url = ENV.fetch("REDIS_URL", "redis://localhost:6379")
     config.redis = Redis::Namespace.new("#{Rails.env}-rails-performance", redis: Redis.new(url: redis_url))
+    # Retention window (ADR D-6). Skip + prune reduce Sidekiq spam; do not lengthen for chatter.
     config.duration = 4.hours
 
     config.enabled = true
