@@ -2,6 +2,7 @@
 
 # INIT-013/SPEC-002 — KPI / chart read path without Redis KEYS (ADR D-3 / D-4).
 # Percentiles and throughput come from HTTP request samples only — never Sidekiq keys.
+# INIT-013/SPEC-004 — response_series + avg_db_ms for dashboard charts / secondary stats.
 module Performance
   class Telemetry
     REQUEST_MATCH = "performance|*"
@@ -10,7 +11,9 @@ module Performance
     Result = Data.define(
       :p50, :p95, :p99,
       :throughput,
+      :response_series,
       :sample_count,
+      :avg_db_ms,
       :budget_exceeded
     )
 
@@ -46,13 +49,16 @@ module Performance
 
       samples = load_request_samples(client, scan.keys)
       durations = samples.filter_map { |s| s[:duration] }.select { |d| d.is_a?(Numeric) }
+      db_runtimes = samples.filter_map { |s| s[:db_runtime] }.select { |d| d.is_a?(Numeric) }
 
       Result.new(
         p50: percentile(durations, 50),
         p95: percentile(durations, 95),
         p99: percentile(durations, 99),
         throughput: throughput_series(samples),
+        response_series: response_time_series(samples),
         sample_count: samples.size,
+        avg_db_ms: average(db_runtimes),
         budget_exceeded: scan.budget_exceeded
       )
     end
@@ -69,11 +75,10 @@ module Performance
         next if raw.blank?
 
         parsed = parse_json(raw)
-        duration = parsed["duration"]
-        datetime = datetime_from_key(key)
         {
-          duration: duration,
-          datetime: datetime,
+          duration: parsed["duration"],
+          db_runtime: parsed["db_runtime"],
+          datetime: datetime_from_key(key),
           datetimei: datetimei_from_key(key)
         }
       end
@@ -112,6 +117,12 @@ module Performance
       lower + (upper - lower) * (rank - rank.floor)
     end
 
+    def average(values)
+      return nil if values.empty?
+
+      values.sum.to_f / values.size
+    end
+
     # Bucket by minute (RP datetime key YYYYMMDDTHHMM) → rpm points sorted by bucket.
     def throughput_series(samples)
       buckets = Hash.new(0)
@@ -124,17 +135,35 @@ module Performance
       buckets.keys.sort.map { |k| {datetime: k, rpm: buckets[k]} }
     end
 
+    # Per-minute average duration for response-time chart (honest sample means, not invent).
+    def response_time_series(samples)
+      buckets = Hash.new { |h, k| h[k] = [] }
+      samples.each do |sample|
+        bucket = sample[:datetime]
+        next if bucket.blank?
+        next unless sample[:duration].is_a?(Numeric)
+
+        buckets[bucket] << sample[:duration]
+      end
+      buckets.keys.sort.map do |k|
+        vals = buckets[k]
+        {datetime: k, avg: vals.sum.to_f / vals.size}
+      end
+    end
+
     def empty_result(budget_exceeded:)
       Result.new(
         p50: nil, p95: nil, p99: nil,
         throughput: [],
+        response_series: [],
         sample_count: 0,
+        avg_db_ms: nil,
         budget_exceeded: budget_exceeded
       )
     end
 
     def cache_key
-      "performance/telemetry/v1"
+      "performance/telemetry/v2"
     end
   end
 end

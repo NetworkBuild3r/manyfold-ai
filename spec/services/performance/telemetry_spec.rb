@@ -44,6 +44,11 @@ RSpec.describe Performance::Telemetry do
       {datetime: "20260830T0800", rpm: 2},
       {datetime: "20260830T0801", rpm: 1}
     ])
+    expect(result.response_series).to eq([
+      {datetime: "20260830T0800", avg: 15.0},
+      {datetime: "20260830T0801", avg: 30.0}
+    ])
+    expect(result.avg_db_ms).to eq(2.0)
     expect(result.budget_exceeded).to be(false)
     expect(redis).not_to have_received(:keys)
   end

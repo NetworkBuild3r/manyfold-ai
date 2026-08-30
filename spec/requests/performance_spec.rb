@@ -3,6 +3,7 @@
 require "rails_helper"
 
 # INIT-013/SPEC-003 — admin performance HTML shell + KPI JSON authz
+# INIT-013/SPEC-004 — Phlex dashboard region markers / key copy
 RSpec.describe "Admin performance" do
   describe "GET /admin/performance" do
     context "when signed out" do
@@ -38,7 +39,9 @@ RSpec.describe "Admin performance" do
           p95: 40.0,
           p99: 55.0,
           throughput: [{datetime: "20260830T0800", rpm: 2}],
+          response_series: [{datetime: "20260830T0800", avg: 12.5}],
           sample_count: 3,
+          avg_db_ms: 2.0,
           budget_exceeded: false
         )
       end
@@ -48,11 +51,24 @@ RSpec.describe "Admin performance" do
         allow(Performance::Telemetry).to receive(:new).and_return(telemetry)
       end
 
-      it "returns HTML success" do
+      # rubocop:disable RSpec/ExampleLength, RSpec/MultipleExpectations
+      it "renders the Phlex dashboard regions and key copy" do
         get "/admin/performance"
         expect(response).to have_http_status(:success)
-        expect(response.body).to include("Performance dashboard shell")
+        body = response.body
+        expect(body).to include('data-region="performance-dashboard"')
+        expect(body).to include('data-region="performance-sidebar"')
+        expect(body).to include('data-region="performance-kpi-row"')
+        expect(body).to include('data-region="performance-charts"')
+        expect(body).to include('data-region="performance-secondary"')
+        expect(body).to include("Application Performance")
+        expect(body).to include("Throughput Report")
+        expect(body).to include("12.5 ms")
+        # Manyfold primary tokens — not Figma indigo utility classes
+        expect(body).to include("bg-primary-500")
+        expect(body).not_to match(/class="[^"]*\b(bg|text)-indigo-\d+/)
       end
+      # rubocop:enable RSpec/ExampleLength, RSpec/MultipleExpectations
 
       # rubocop:disable RSpec/ExampleLength, RSpec/MultipleExpectations
       it "returns KPI JSON from Performance::Telemetry" do
@@ -64,9 +80,11 @@ RSpec.describe "Admin performance" do
           "p95" => 40.0,
           "p99" => 55.0,
           "sample_count" => 3,
+          "avg_db_ms" => 2.0,
           "budget_exceeded" => false
         )
         expect(json["throughput"]).to eq([{"datetime" => "20260830T0800", "rpm" => 2}])
+        expect(json["response_series"]).to eq([{"datetime" => "20260830T0800", "avg" => 12.5}])
       end
       # rubocop:enable RSpec/ExampleLength, RSpec/MultipleExpectations
     end
