@@ -6,11 +6,15 @@
 #   - Turbo::Streams::BroadcastStreamJob  (high-churn stream fan-out; not HTTP latency)
 # See Performance::SkippedWorkers::NAMES — primary fix is write-path skip, not read filtering.
 #
-# Skip constants + SidekiqExt prepend load in every env (including test) so RSpec can assert
-# without requiring full RailsPerformance.setup. Redis/duration setup stays out of test /
-# asset precompile.
+# Skip constants + SidekiqExt prepend: defer until after_initialize so Zeitwerk can
+# resolve Performance::* during boot. Never touch during assets:precompile (Docker
+# build sets RAILS_ASSETS_PRECOMPILE=1 and would NameError on early constant access).
 
-Performance::SidekiqExtSkip.install! if defined?(RailsPerformance)
+Rails.application.config.after_initialize do
+  next if ENV["RAILS_ASSETS_PRECOMPILE"].present?
+
+  Performance::SidekiqExtSkip.install! if defined?(RailsPerformance)
+end
 
 if defined?(RailsPerformance) && !Rails.env.test? && ENV["RAILS_ASSETS_PRECOMPILE"].blank?
   RailsPerformance.setup do |config|
