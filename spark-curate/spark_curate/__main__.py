@@ -17,6 +17,7 @@ from spark_curate.apply_merges import write_merge_plans  # noqa: E402
 from spark_curate.apply_moves import apply_decision  # noqa: E402
 from spark_curate.archive_index import (  # noqa: E402
     DEFAULT_MAX_MEMBERS_PER_ARCHIVE,
+    build_archive_index,
     run_archive_match,
     summary_dict as archive_match_summary,
 )
@@ -271,7 +272,7 @@ def run_match(args: argparse.Namespace, curate: CurateConfig) -> int:
     summary_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
     print(json.dumps(summary, indent=2))
     print(
-        "\nNext: SPEC-005 wires inverted postings into build_merge_candidates.\n"
+        "\nArchive index ready for merge pre-pass (INIT-018/SPEC-005).\n"
         "Index artifacts use archive-index-* / archive-invert-* under .spark-curate/."
     )
     return 0
@@ -292,7 +293,25 @@ def run_merge(args: argparse.Namespace, spark: SparkConfig, curate: CurateConfig
     print(f"Max pairs: {curate.max_merge_pairs}")
     print(f"Workers:  {curate.workers}")
 
-    candidates = build_merge_candidates(curate, max_pairs=curate.max_merge_pairs)
+    # Merge pre-pass: inverted archive postings → build_merge_candidates (INIT-018/SPEC-005)
+    max_members = max(1, int(getattr(args, "max_archive_members", 5000) or 5000))
+    archive = build_archive_index(
+        curate,
+        max_members_per_archive=max_members,
+        write_artifacts=True,
+        run_id=run_id,
+    )
+    print(
+        f"Archive index: zips={archive.zips_scanned} "
+        f"mesh_sigs={len(archive.inverted_mesh)} "
+        f"truncated={archive.zips_truncated}"
+    )
+    candidates = build_merge_candidates(
+        curate,
+        max_pairs=curate.max_merge_pairs,
+        archive_index=archive,
+        scan_archives=False,
+    )
     print(f"Found {len(candidates)} merge candidate pairs")
     if not candidates:
         print("Nothing to do.")

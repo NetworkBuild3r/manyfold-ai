@@ -2,6 +2,7 @@
 
 Provenance: INIT-018/SPEC-003 — close preview-less name-only auto-merge (ADR D-5);
 typed STRONG / UNCERTAIN / REFUSE bands (ADR D-4); franchise hard gate (ADR D-7).
+INIT-018/SPEC-005 — archive_member_overlap:N / shared_archive_member STRONG recognition.
 """
 from __future__ import annotations
 
@@ -11,14 +12,12 @@ from pathlib import Path
 from typing import Any
 
 from . import clients
-from .candidates import MergeCandidate
+from .candidates import DEFAULT_MESH_OVERLAP_T, MergeCandidate
 from .config import CurateConfig, SparkConfig
 from .decide import _sample_files
 from .preview import best_image, load_image_as_jpeg_bytes, try_extract_preview_from_zip
 
-
-# Default T for archive mesh overlap (ADR D-4). SPEC-005 wires real overlap counts.
-DEFAULT_MESH_OVERLAP_T = 3
+# Re-export for callers / tests (canonical default lives on candidates — INIT-018/SPEC-005).
 
 MERGE_VISION_PROMPT = """You decide whether two Manyfold model folders should be MERGED into one inventory entry.
 
@@ -128,9 +127,11 @@ def _is_strong_structural(
     mesh_t: int = DEFAULT_MESH_OVERLAP_T,
 ) -> bool:
     """
-    STRONG band (ADR D-4): multi-file shared_digest, or ≥T mesh archive overlaps.
+    STRONG band (ADR D-4 / INIT-018/SPEC-005): multi-file shared_digest, or ≥T
+    distinct mesh archive overlaps.
 
-    name_near_dupe alone and archive overlap < T are UNCERTAIN — never STRONG.
+    Not STRONG: name_near_dupe alone; archive overlap < T; (≥1 large mesh +
+    name_near_dupe) — that last pair is UNCERTAIN.
     """
     if "shared_digest" in signals:
         return True
