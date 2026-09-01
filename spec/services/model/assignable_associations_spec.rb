@@ -14,6 +14,15 @@ RSpec.describe Model::AssignableAssociations do
       expect(list).to include(visible)
     end
 
+    it "includes creators without federails_actor rows (mergeable, not .local)" do
+      visible = create(:creator, name: "No Actor Yet")
+      Federails::Actor.where(entity_type: "Creator", entity_id: visible.id).delete_all
+      expect(Creator.local.where(id: visible.id)).to be_empty
+      expect(Creator.mergeable.where(id: visible.id)).to exist
+      list = described_class.new(user: user, model: model).creators
+      expect(list).to include(visible)
+    end
+
     it "includes the model's current creator even when outside the base list" do
       current = create(:creator, name: "Current Outside")
       model.update!(creator: current)

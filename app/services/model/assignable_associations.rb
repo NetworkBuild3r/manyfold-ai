@@ -1,7 +1,9 @@
 # frozen_string_literal: true
 
 # INIT-017/SPEC-002 — Creators/collections a user may assign on model edit.
-# View-permission local scope (not UpdateScope), always including the model's current association.
+# View-permission + mergeable (treated-as-local) scope — not .local INNER JOIN,
+# which empties when federation is off and federails_actor rows were never created.
+# Always includes the model's current association.
 class Model::AssignableAssociations
   def initialize(user:, model: nil)
     @user = user
@@ -31,8 +33,10 @@ class Model::AssignableAssociations
   private
 
   def base_scope(klass)
+    # Use mergeable, not .local: when federation is off, creators have no federails_actor
+    # rows, so .local (INNER JOIN) returns empty while local? still treats them as local.
     scope = Pundit.policy_scope!(@user, klass)
-    scope = scope.local if scope.respond_to?(:local)
+    scope = scope.mergeable if scope.respond_to?(:mergeable)
     scope.order(Arel.sql("LOWER(#{klass.table_name}.name) ASC"))
   end
 

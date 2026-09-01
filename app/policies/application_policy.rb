@@ -87,13 +87,15 @@ class ApplicationPolicy
       result = scope.granted_to(STANDARD_EDIT_PERMISSIONS, [user, nil])
       result = result.or(scope.granted_to(STANDARD_EDIT_PERMISSIONS, user.roles)) if user
       result = result.or(scope.granted_to(STANDARD_EDIT_PERMISSIONS, user.groups)) if user
-      result.local
+      # mergeable matches local? (missing federails_actor ⇒ local). .local INNER JOIN
+      # empties the list when federation is off and actors were never created.
+      result.mergeable
     end
   end
 
   class OwnerScope < Scope
     def resolve
-      scope.granted_to("own", user).local
+      scope.granted_to("own", user).mergeable
     rescue NoMethodError
       scope.none
     end
