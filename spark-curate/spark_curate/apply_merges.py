@@ -1,4 +1,7 @@
-"""Write merge plans and pending handoff for Manyfold ApplySparkMergePlanJob."""
+"""Write merge plans and pending handoff for Manyfold ApplySparkMergePlanJob.
+
+Provenance: INIT-018/SPEC-006 — MERGE_HITL gates auto-queue; audit JSONL always written.
+"""
 from __future__ import annotations
 
 import json
@@ -8,6 +11,7 @@ from typing import Any, TextIO
 
 from .config import CurateConfig
 from .decide_merge import MergeDecision
+from .merge_hitl import classify_hitl_band, should_auto_apply
 
 
 PENDING_NAME = "merges-pending.jsonl"
@@ -26,10 +30,13 @@ def write_merge_plans(
     log_fh: TextIO | None = None,
 ) -> dict[str, Any]:
     """
-    Always write merges-{run_id}.jsonl.
-    When do_apply and approved_for_apply, append to merges-pending.jsonl for Manyfold.
+    Always write merges-{run_id}.jsonl (audit trail, every band).
+
+    When do_apply AND should_auto_apply(decision, MERGE_HITL), append to
+    merges-pending.jsonl for Manyfold. hitl_all never queues (plans only).
     Never deletes library content.
     """
+    merge_hitl = cfg.validated_merge_hitl()
     work = cfg.resolved_work_dir()
     work.mkdir(parents=True, exist_ok=True)
     plans_path = work / f"merges-{run_id}.jsonl"
@@ -39,12 +46,16 @@ def write_merge_plans(
     queued = 0
     kept = 0
     errors = 0
+    skipped_hitl = 0
 
     with plans_path.open("w", encoding="utf-8") as fh:
         for d in decisions:
+            band = classify_hitl_band(d)
             rec = d.to_dict()
             rec["ts"] = time.strftime("%Y-%m-%dT%H:%M:%S")
             rec["run_id"] = run_id
+            rec["hitl_band"] = band
+            rec["merge_hitl"] = merge_hitl
             # Paths Manyfold resolves: relative Category/Model
             rec["path_a"] = d.rel_a
             rec["path_b"] = d.rel_b
@@ -58,7 +69,7 @@ def write_merge_plans(
                 continue
 
             msg = (
-                f"MERGE? conf={d.confidence:.2f} target={d.target} "
+                f"MERGE? band={band} conf={d.confidence:.2f} target={d.target} "
                 f"{d.rel_a} <-> {d.rel_b} | {d.reason}"
             )
             if log_fh:
@@ -66,12 +77,20 @@ def write_merge_plans(
 
             if not do_apply:
                 continue
-            if not d.approved_for_apply:
+
+            if not should_auto_apply(d, merge_hitl):
+                skipped_hitl += 1
                 if log_fh:
-                    log_fh.write(
-                        f"  skip pending: confidence {d.confidence:.2f} "
-                        f"< {cfg.min_merge_confidence}\n"
-                    )
+                    if not d.approved_for_apply:
+                        log_fh.write(
+                            f"  skip pending: confidence {d.confidence:.2f} "
+                            f"< {cfg.min_merge_confidence} or not approved\n"
+                        )
+                    else:
+                        log_fh.write(
+                            f"  skip pending: MERGE_HITL={merge_hitl} "
+                            f"band={band} (HITL / not auto-eligible)\n"
+                        )
                 continue
 
             pending_rec = {
@@ -83,6 +102,8 @@ def write_merge_plans(
                 "confidence": d.confidence,
                 "reason": d.reason,
                 "signals": d.signals,
+                "hitl_band": band,
+                "merge_hitl": merge_hitl,
             }
             with pending.open("a", encoding="utf-8") as pfh:
                 pfh.write(json.dumps(pending_rec, ensure_ascii=False) + "\n")
@@ -96,7 +117,9 @@ def write_merge_plans(
         "planned": planned,
         "queued_for_manyfold": queued,
         "keep_separate": kept,
+        "skipped_hitl": skipped_hitl,
         "errors": errors,
         "apply": do_apply,
+        "merge_hitl": merge_hitl,
         "min_merge_confidence": cfg.min_merge_confidence,
     }

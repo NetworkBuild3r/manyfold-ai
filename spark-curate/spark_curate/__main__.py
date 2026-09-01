@@ -94,6 +94,16 @@ def build_parser() -> argparse.ArgumentParser:
         help="Cap merge candidate pairs (default 200)",
     )
     p.add_argument(
+        "--merge-hitl",
+        default=None,
+        choices=("hitl_all", "hitl_uncertain", "hitl_off"),
+        help=(
+            "MERGE_HITL apply mode (default hitl_all). "
+            "hitl_uncertain auto-queues STRONG; hitl_off also UNCERTAIN when approved. "
+            "Invalid values fail loud via env/config parse."
+        ),
+    )
+    p.add_argument(
         "--skip-good",
         action="store_true",
         help="Skip folders that already have preview.jpg and are not under Unknown",
@@ -289,6 +299,7 @@ def run_merge(args: argparse.Namespace, spark: SparkConfig, curate: CurateConfig
     print(f"Library:  {curate.library_root}")
     print(f"Work dir: {work}")
     print(f"Mode:     merge {'APPLY(queue pending)' if args.apply else 'DRY-RUN'}")
+    print(f"MERGE_HITL: {curate.merge_hitl}")
     print(f"Min merge conf: {curate.min_merge_confidence}")
     print(f"Max pairs: {curate.max_merge_pairs}")
     print(f"Workers:  {curate.workers}")
@@ -335,6 +346,7 @@ def run_merge(args: argparse.Namespace, spark: SparkConfig, curate: CurateConfig
     with log_path.open("w", encoding="utf-8") as log_fh:
         log_fh.write(
             f"run={run_id} apply={args.apply} mode=merge "
+            f"merge_hitl={curate.merge_hitl} "
             f"min_merge_confidence={curate.min_merge_confidence}\n"
         )
         result = write_merge_plans(
@@ -362,8 +374,9 @@ def run_merge(args: argparse.Namespace, spark: SparkConfig, curate: CurateConfig
     summary_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
     print(json.dumps(summary, indent=2))
     print(
-        "\nNext: review merges-*.jsonl. With --apply, approved pairs go to "
-        "merges-pending.jsonl for Manyfold:\n"
+        "\nNext: review merges-*.jsonl. Under MERGE_HITL=hitl_all, APPLY queues nothing "
+        "(plans only). hitl_uncertain auto-queues STRONG; hitl_off also UNCERTAIN when "
+        "approved. Pending → Manyfold:\n"
         "  rake manyfold:apply_spark_merges\n"
         "Same character alone never merges; structural signals + vision gate apply."
     )
@@ -394,6 +407,10 @@ def main(argv: list[str] | None = None) -> int:
         curate.min_merge_confidence = args.min_merge_confidence
     if args.max_merge_pairs is not None:
         curate.max_merge_pairs = max(1, args.max_merge_pairs)
+    if args.merge_hitl is not None:
+        curate.merge_hitl = args.merge_hitl
+    # Fail loud on invalid MERGE_HITL before any library work (INIT-018/SPEC-006)
+    curate.merge_hitl = curate.validated_merge_hitl()
     if args.skip_good:
         curate.skip_if_has_preview_and_known_category = True
 

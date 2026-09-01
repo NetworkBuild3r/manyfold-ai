@@ -34,6 +34,7 @@ curate = {
     "min_confidence": float(os.environ.get("MIN_CONFIDENCE", "0.55")),
     "min_merge_confidence": float(os.environ.get("MIN_MERGE_CONFIDENCE", "0.80")),
     "max_merge_pairs": int(os.environ.get("MAX_MERGE_PAIRS", "200")),
+    "merge_hitl": os.environ.get("MERGE_HITL", "hitl_all"),
     "never_delete": True,
     "workers": int(os.environ.get("WORKERS", "2")),
     "limit": int(os.environ.get("LIMIT", "0")),
@@ -48,7 +49,8 @@ path.write_text(json.dumps({"spark": spark, "curate": curate}, indent=2), encodi
 print(f"Wrote {path}")
 print(
     f"library_root={curate['library_root']} workers={curate['workers']} "
-    f"min_confidence={curate['min_confidence']} mode={os.environ.get('MODE', 'organize')}"
+    f"min_confidence={curate['min_confidence']} mode={os.environ.get('MODE', 'organize')} "
+    f"merge_hitl={curate['merge_hitl']}"
 )
 PY
 
