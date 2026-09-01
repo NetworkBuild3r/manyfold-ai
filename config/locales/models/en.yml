@@ -48,6 +48,21 @@ en:
       preview_file:
         help: The file displayed as a model preview in library pages
       tags: Tags
+    edit:
+      heading: Edit Model Settings
+      discard: Discard Changes
+      save: Save Model
+      save_settings: Save Model Settings
+      sections:
+        basic: Basic Information
+        media: Media & Preview
+        taxonomy: Metadata & Taxonomy
+        publishing: Publishing & Privacy
+      preview:
+        placeholder: Active preview
+        file_name: File name
+        bounding_size: Bounding size
+        tip: Use targeted tags (material, scale, supports) so models stay searchable.
     gallery:
       no_images: No images for this model.
     general:
