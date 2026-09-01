@@ -3,6 +3,7 @@
 Provenance: INIT-018/SPEC-003 — close preview-less name-only auto-merge (ADR D-5);
 typed STRONG / UNCERTAIN / REFUSE bands (ADR D-4); franchise hard gate (ADR D-7).
 INIT-018/SPEC-005 — archive_member_overlap:N / shared_archive_member STRONG recognition.
+INIT-018/SEC-018-02 — multi-file shared_digest:N (N≥2) for digest STRONG.
 """
 from __future__ import annotations
 
@@ -109,11 +110,30 @@ def _archive_member_overlap(signals: list[str]) -> int:
     return 0
 
 
+def _shared_digest_count(signals: list[str]) -> int:
+    """
+    Distinct shared loose-file digests (SEC-018-02 / ADR D-4).
+
+    Prefers counted ``shared_digest:N``. Bare legacy ``shared_digest`` counts as 1
+    (not multi-file → not STRONG).
+    """
+    for s in signals:
+        if s.startswith("shared_digest:"):
+            try:
+                return int(s.split(":", 1)[1])
+            except ValueError:
+                return 0
+    if "shared_digest" in signals:
+        return 1
+    return 0
+
+
 def _has_structural_signal(signals: list[str]) -> bool:
     """True when a non-franchise filesystem/archive signal is present (ADR D-7)."""
     return any(
         s == "name_near_dupe"
         or s == "shared_digest"
+        or s.startswith("shared_digest:")
         or s == "shared_archive_member"
         or s.startswith("basename_size_overlap")
         or s.startswith("archive_member_overlap:")
@@ -127,13 +147,14 @@ def _is_strong_structural(
     mesh_t: int = DEFAULT_MESH_OVERLAP_T,
 ) -> bool:
     """
-    STRONG band (ADR D-4 / INIT-018/SPEC-005): multi-file shared_digest, or ≥T
-    distinct mesh archive overlaps.
+    STRONG band (ADR D-4 / INIT-018/SPEC-005 / SEC-018-02): multi-file
+    shared_digest (≥2 distinct digests), or ≥T distinct mesh archive overlaps.
 
-    Not STRONG: name_near_dupe alone; archive overlap < T; (≥1 large mesh +
-    name_near_dupe) — that last pair is UNCERTAIN.
+    Not STRONG: single shared_digest; name_near_dupe alone; archive overlap < T;
+    (≥1 large mesh + name_near_dupe) — those are UNCERTAIN (or keep_separate
+    when preview-less — ADR D-5).
     """
-    if "shared_digest" in signals:
+    if _shared_digest_count(signals) >= 2:
         return True
     if _archive_member_overlap(signals) >= mesh_t:
         return True
@@ -239,7 +260,11 @@ def decide_merge_pair(
     reason = str(data.get("reason") or "")[:300]
 
     # Post-rule: if signals are only weak overlap and vision says merge with low structural support
-    if decision == "merge" and "name_near_dupe" not in signals and "shared_digest" not in signals:
+    if (
+        decision == "merge"
+        and "name_near_dupe" not in signals
+        and _shared_digest_count(signals) < 1
+    ):
         overlap = 0
         for s in signals:
             if s.startswith("basename_size_overlap:"):

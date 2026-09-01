@@ -47,7 +47,8 @@ def _decision(
 
 
 def _strong(**kwargs: object) -> MergeDecision:
-    return _decision(signals=["shared_digest"], **kwargs)  # type: ignore[arg-type]
+    # Multi-file digest (N≥2) — SEC-018-02 / ADR D-4
+    return _decision(signals=["shared_digest:2"], **kwargs)  # type: ignore[arg-type]
 
 
 def _uncertain(**kwargs: object) -> MergeDecision:
@@ -89,6 +90,12 @@ class ParseMergeHitlTests(unittest.TestCase):
 class ClassifyBandTests(unittest.TestCase):
     def test_strong_from_shared_digest(self) -> None:
         self.assertEqual(classify_hitl_band(_strong()), "STRONG")
+
+    def test_single_shared_digest_is_uncertain(self) -> None:
+        """SEC-018-02: shared_digest:1 alone is not STRONG."""
+        d = _decision(signals=["shared_digest:1"])
+        self.assertEqual(classify_hitl_band(d), "UNCERTAIN")
+        self.assertFalse(should_auto_apply(d, "hitl_uncertain"))
 
     def test_strong_from_mesh_overlap_t(self) -> None:
         d = _decision(signals=["shared_archive_member", "archive_member_overlap:3"])

@@ -16,6 +16,7 @@ from spark_curate.candidates import MergeCandidate  # noqa: E402
 from spark_curate.config import CurateConfig, SparkConfig  # noqa: E402
 from spark_curate.decide_merge import (  # noqa: E402
     _is_strong_structural,
+    _shared_digest_count,
     decide_merge_pair,
 )
 from spark_curate.walk import ModelFolder  # noqa: E402
@@ -46,8 +47,17 @@ class StrongBandHelpersTests(unittest.TestCase):
     def test_name_near_dupe_is_not_strong(self) -> None:
         self.assertFalse(_is_strong_structural(["name_near_dupe"]))
 
-    def test_shared_digest_is_strong(self) -> None:
-        self.assertTrue(_is_strong_structural(["shared_digest"]))
+    def test_single_shared_digest_is_not_strong(self) -> None:
+        """SEC-018-02: one shared digest is UNCERTAIN, not STRONG (ADR D-4)."""
+        self.assertEqual(_shared_digest_count(["shared_digest:1"]), 1)
+        self.assertFalse(_is_strong_structural(["shared_digest:1"]))
+        self.assertFalse(_is_strong_structural(["shared_digest"]))  # legacy bare = 1
+        self.assertFalse(_is_strong_structural(["shared_digest:1", "name_near_dupe"]))
+
+    def test_multi_file_shared_digest_is_strong(self) -> None:
+        self.assertEqual(_shared_digest_count(["shared_digest:2"]), 2)
+        self.assertTrue(_is_strong_structural(["shared_digest:2"]))
+        self.assertTrue(_is_strong_structural(["shared_digest:3", "name_near_dupe"]))
 
     def test_archive_overlap_below_t_is_not_strong(self) -> None:
         self.assertFalse(
@@ -111,10 +121,23 @@ class DecideMergeLandmineTests(unittest.TestCase):
             self.assertFalse(d.approved_for_apply)
             self.assertIn("franchise-only", d.reason)
 
-    def test_strong_shared_digest_previewless_still_merges(self) -> None:
-        """aud-1: multi-file shared_digest may remain STRONG without Gemma."""
+    def test_single_shared_digest_previewless_keep_separate(self) -> None:
+        """SEC-018-02 + ADR D-5: single digest is not STRONG → preview-less refuse."""
         with tempfile.TemporaryDirectory() as tmp:
-            cand = _pair(Path(tmp), signals=["shared_digest", "name_near_dupe"])
+            cand = _pair(Path(tmp), signals=["shared_digest:1", "name_near_dupe"])
+            with patch(
+                "spark_curate.decide_merge._preview_jpeg",
+                return_value=None,
+            ):
+                d = decide_merge_pair(cand, self.spark, self.curate, Path(tmp) / ".thumbs")
+            self.assertEqual(d.decision, "keep_separate")
+            self.assertFalse(d.approved_for_apply)
+            self.assertIn("preview-less", d.reason)
+
+    def test_strong_shared_digest_previewless_still_merges(self) -> None:
+        """aud-1: multi-file shared_digest (≥2) may remain STRONG without Gemma."""
+        with tempfile.TemporaryDirectory() as tmp:
+            cand = _pair(Path(tmp), signals=["shared_digest:2", "name_near_dupe"])
             with patch(
                 "spark_curate.decide_merge._preview_jpeg",
                 return_value=None,

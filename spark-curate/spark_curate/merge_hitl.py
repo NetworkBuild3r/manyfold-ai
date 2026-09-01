@@ -52,9 +52,9 @@ def classify_hitl_band(decision: MergeDecision) -> HitlBand:
     """
     Map a MergeDecision to the HITL band for apply policy.
 
-    STRONG = deterministic structural band (shared_digest or ≥T mesh overlap),
-    not Gemma confidence alone. Non-merge / keep_separate → REFUSE.
-    merge without STRONG signals → UNCERTAIN.
+    STRONG = deterministic structural band (multi-file shared_digest:N with
+    N≥2, or ≥T mesh overlap), not Gemma confidence alone. Non-merge /
+    keep_separate → REFUSE. merge without STRONG signals → UNCERTAIN.
     """
     if decision.decision != "merge":
         return "REFUSE"

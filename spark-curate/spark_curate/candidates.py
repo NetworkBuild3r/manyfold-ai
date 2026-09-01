@@ -108,6 +108,18 @@ def _shared_digests(fa: FolderFingerprint, fb: FolderFingerprint) -> set[str]:
     return fa.digests & fb.digests
 
 
+def _append_shared_digest_signal(signals: list[str], shared: set[str]) -> None:
+    """
+    Emit counted shared_digest:N (distinct digests).
+
+    N=1 is recall / UNCERTAIN; N≥2 is multi-file STRONG (ADR D-4 / SEC-018-02).
+    """
+    n = len(shared)
+    if n < 1:
+        return
+    signals.append(f"shared_digest:{n}")
+
+
 def _basename_size_overlap(fa: FolderFingerprint, fb: FolderFingerprint) -> int:
     """Count filenames that share at least one identical size in both folders."""
     n = 0
@@ -239,9 +251,7 @@ def build_merge_candidates(
                     if fa.folder.name.lower() == fb.folder.name.lower():
                         continue
                 signals = ["name_near_dupe"]
-                shared = _shared_digests(fa, fb)
-                if shared:
-                    signals.append("shared_digest")
+                _append_shared_digest_signal(signals, _shared_digests(fa, fb))
                 overlap = _basename_size_overlap(fa, fb)
                 if overlap >= 1:
                     signals.append(f"basename_size_overlap:{overlap}")
@@ -264,14 +274,13 @@ def build_merge_candidates(
             shared = _shared_digests(fa, fb)
             overlap = _basename_size_overlap(fa, fb)
             signals: list[str] = []
-            if shared:
-                signals.append("shared_digest")
+            _append_shared_digest_signal(signals, shared)
             if overlap >= 3:
                 signals.append(f"basename_size_overlap:{overlap}")
             # Require strong overlap — never pair solely on category/franchise
             if not signals:
                 continue
-            if "shared_digest" not in signals and overlap < 3:
+            if not any(s.startswith("shared_digest:") for s in signals) and overlap < 3:
                 continue
             cand.signals = signals
             seen.add(cand.pair_key)
