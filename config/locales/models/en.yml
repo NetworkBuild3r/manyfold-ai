@@ -34,6 +34,21 @@ en:
     destroy:
       confirm: This will permanently delete this model and any nested models inside its folder, including files on disk. Are you sure you want to continue?
       success: Model deleted!
+    edit:
+      discard: Discard Changes
+      heading: Edit Model Settings
+      preview:
+        bounding_size: Bounding size
+        file_name: File name
+        placeholder: Active preview
+        tip: Use targeted tags (material, scale, supports) so models stay searchable.
+      save: Save Model
+      save_settings: Save Model Settings
+      sections:
+        basic: Basic Information
+        media: Media & Preview
+        publishing: Publishing & Privacy
+        taxonomy: Metadata & Taxonomy
     file:
       delete: Delete file
       edit: Edit file
@@ -48,21 +63,6 @@ en:
       preview_file:
         help: The file displayed as a model preview in library pages
       tags: Tags
-    edit:
-      heading: Edit Model Settings
-      discard: Discard Changes
-      save: Save Model
-      save_settings: Save Model Settings
-      sections:
-        basic: Basic Information
-        media: Media & Preview
-        taxonomy: Metadata & Taxonomy
-        publishing: Publishing & Privacy
-      preview:
-        placeholder: Active preview
-        file_name: File name
-        bounding_size: Bounding size
-        tip: Use targeted tags (material, scale, supports) so models stay searchable.
     gallery:
       no_images: No images for this model.
     general:
