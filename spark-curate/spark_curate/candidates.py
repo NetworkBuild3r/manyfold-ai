@@ -1,14 +1,22 @@
 # candidates.py — build merge candidate pairs from filesystem heuristics
+# Provenance: INIT-018/SPEC-005 — archive-member signals via inverted postings (ADR D-1, D-4).
 from __future__ import annotations
 
 import hashlib
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from .config import CurateConfig
 from .preview import ARCHIVE_EXT, IMAGE_EXT
 from .walk import MODEL_EXT, ModelFolder, iter_model_folders
+
+if TYPE_CHECKING:
+    from .archive_index import ArchiveIndexResult
+
+# Default T for archive mesh overlap — keep aligned with decide_merge.DEFAULT_MESH_OVERLAP_T (ADR D-4).
+DEFAULT_MESH_OVERLAP_T = 3
 
 # Foo (2), Foo (3), Foo_copy, Foo - Copy
 _NEAR_DUPE_SUFFIX = re.compile(
@@ -100,6 +108,18 @@ def _shared_digests(fa: FolderFingerprint, fb: FolderFingerprint) -> set[str]:
     return fa.digests & fb.digests
 
 
+def _append_shared_digest_signal(signals: list[str], shared: set[str]) -> None:
+    """
+    Emit counted shared_digest:N (distinct digests).
+
+    N=1 is recall / UNCERTAIN; N≥2 is multi-file STRONG (ADR D-4 / SEC-018-02).
+    """
+    n = len(shared)
+    if n < 1:
+        return
+    signals.append(f"shared_digest:{n}")
+
+
 def _basename_size_overlap(fa: FolderFingerprint, fb: FolderFingerprint) -> int:
     """Count filenames that share at least one identical size in both folders."""
     n = 0
@@ -110,14 +130,100 @@ def _basename_size_overlap(fa: FolderFingerprint, fb: FolderFingerprint) -> int:
     return n
 
 
+def pair_mesh_overlap_counts(
+    inverted_mesh: dict[str, list[str]],
+) -> dict[tuple[str, str], int]:
+    """
+    Count distinct mesh signatures shared by each folder pair via inverted postings.
+
+    Complexity is O(Σ C(k_s, 2)) over sigs with k_s folder postings — not nested
+    loops over all folders × all members (ADR D-1 / INIT-018/SPEC-005).
+    """
+    counts: dict[tuple[str, str], int] = {}
+    for folders in inverted_mesh.values():
+        if len(folders) < 2:
+            continue
+        # Deterministic pair enumeration within this posting list
+        for i in range(len(folders)):
+            for j in range(i + 1, len(folders)):
+                a, b = folders[i], folders[j]
+                key = tuple(sorted((a.lower(), b.lower())))
+                counts[key] = counts.get(key, 0) + 1
+    return counts
+
+
+def _with_archive_signals(signals: list[str], overlap: int) -> list[str]:
+    """Attach shared_archive_member + archive_member_overlap:N (aud-1)."""
+    if overlap < 1:
+        return list(signals)
+    out = [s for s in signals if not s.startswith("archive_member_overlap:")]
+    if "shared_archive_member" not in out:
+        out.append("shared_archive_member")
+    out.append(f"archive_member_overlap:{overlap}")
+    return out
+
+
+def _apply_archive_postings(
+    out: list[MergeCandidate],
+    seen: set[tuple[str, str]],
+    fps: list[FolderFingerprint],
+    inverted_mesh: dict[str, list[str]],
+    *,
+    mesh_overlap_t: int,
+    cap: int,
+) -> list[MergeCandidate]:
+    """
+    Enrich existing pairs with archive signals; emit new pairs only when overlap ≥ T.
+
+    Single shared mesh CRC alone never creates a candidate (ADR D-3 / ac-2).
+    ≥1 mesh + name_near_dupe stays UNCERTAIN at decide time — not a new STRONG admission.
+    """
+    overlaps = pair_mesh_overlap_counts(inverted_mesh)
+    if not overlaps:
+        return out
+
+    by_rel_lower: dict[str, FolderFingerprint] = {
+        fp.folder.rel_posix.lower(): fp for fp in fps
+    }
+
+    # Enrich candidates already admitted by name/digest passes
+    for cand in out:
+        n = overlaps.get(cand.pair_key, 0)
+        if n >= 1:
+            cand.signals = _with_archive_signals(cand.signals, n)
+
+    # New candidates only for STRONG-threshold mesh overlap (≥ T)
+    t = max(1, int(mesh_overlap_t))
+    for key, n in sorted(overlaps.items()):
+        if n < t:
+            continue
+        if key in seen:
+            continue
+        fa = by_rel_lower.get(key[0])
+        fb = by_rel_lower.get(key[1])
+        if fa is None or fb is None:
+            continue
+        signals = _with_archive_signals([], n)
+        cand = MergeCandidate(a=fa.folder, b=fb.folder, signals=signals)
+        seen.add(cand.pair_key)
+        out.append(cand)
+        if len(out) >= cap:
+            break
+    return out
+
+
 def build_merge_candidates(
     cfg: CurateConfig,
     *,
     max_pairs: int | None = None,
+    archive_index: ArchiveIndexResult | None = None,
+    scan_archives: bool = True,
+    mesh_overlap_t: int = DEFAULT_MESH_OVERLAP_T,
 ) -> list[MergeCandidate]:
     """
     Build candidate pairs. Same franchise/name alone is NOT enough —
-    we require name_near_dupe and/or file overlap signals.
+    we require name_near_dupe and/or file overlap signals and/or ≥T mesh
+    archive overlaps (INIT-018/SPEC-005).
     """
     folders = iter_model_folders(cfg)
     fps = [fingerprint(f) for f in folders]
@@ -145,9 +251,7 @@ def build_merge_candidates(
                     if fa.folder.name.lower() == fb.folder.name.lower():
                         continue
                 signals = ["name_near_dupe"]
-                shared = _shared_digests(fa, fb)
-                if shared:
-                    signals.append("shared_digest")
+                _append_shared_digest_signal(signals, _shared_digests(fa, fb))
                 overlap = _basename_size_overlap(fa, fb)
                 if overlap >= 1:
                     signals.append(f"basename_size_overlap:{overlap}")
@@ -160,6 +264,7 @@ def build_merge_candidates(
                     return out
 
     # Pass 2: strong file overlap without name match (true re-downloads with different folder names)
+    # Note: still O(folders²) on *folder* fingerprints — must not nest raw zip members here.
     for i in range(len(fps)):
         for j in range(i + 1, len(fps)):
             fa, fb = fps[i], fps[j]
@@ -169,19 +274,38 @@ def build_merge_candidates(
             shared = _shared_digests(fa, fb)
             overlap = _basename_size_overlap(fa, fb)
             signals: list[str] = []
-            if shared:
-                signals.append("shared_digest")
+            _append_shared_digest_signal(signals, shared)
             if overlap >= 3:
                 signals.append(f"basename_size_overlap:{overlap}")
             # Require strong overlap — never pair solely on category/franchise
             if not signals:
                 continue
-            if "shared_digest" not in signals and overlap < 3:
+            if not any(s.startswith("shared_digest:") for s in signals) and overlap < 3:
                 continue
             cand.signals = signals
             seen.add(cand.pair_key)
             out.append(cand)
             if len(out) >= cap:
                 return out
+
+    # Pass 3: archive-member recall from inverted mesh postings (not member×folder nested loops)
+    index = archive_index
+    if index is None and scan_archives:
+        from .archive_index import build_archive_index
+
+        index = build_archive_index(
+            cfg,
+            folders=folders,
+            write_artifacts=False,
+        )
+    if index is not None and len(out) < cap:
+        out = _apply_archive_postings(
+            out,
+            seen,
+            fps,
+            index.inverted_mesh,
+            mesh_overlap_t=mesh_overlap_t,
+            cap=cap,
+        )
 
     return out

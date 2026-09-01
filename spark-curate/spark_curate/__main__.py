@@ -15,6 +15,12 @@ if str(_PKG_ROOT) not in sys.path:
 
 from spark_curate.apply_merges import write_merge_plans  # noqa: E402
 from spark_curate.apply_moves import apply_decision  # noqa: E402
+from spark_curate.archive_index import (  # noqa: E402
+    DEFAULT_MAX_MEMBERS_PER_ARCHIVE,
+    build_archive_index,
+    run_archive_match,
+    summary_dict as archive_match_summary,
+)
 from spark_curate.candidates import build_merge_candidates  # noqa: E402
 from spark_curate.config import CurateConfig, SparkConfig, load_config, save_example_config  # noqa: E402
 from spark_curate.decide import decide_one  # noqa: E402
@@ -43,9 +49,21 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument(
         "--mode",
-        choices=("organize", "merge"),
+        choices=("organize", "merge", "match"),
         default="organize",
-        help="organize=folder rearrange (default); merge=duplicate pack merge plans",
+        help=(
+            "organize=folder rearrange (default); merge=duplicate pack merge plans; "
+            "match=archive-member inverted index (zip infolist only, INIT-018/SPEC-004)"
+        ),
+    )
+    p.add_argument(
+        "--max-archive-members",
+        type=int,
+        default=DEFAULT_MAX_MEMBERS_PER_ARCHIVE,
+        help=(
+            "Cap central-directory members listed per zip in MODE=match "
+            f"(default {DEFAULT_MAX_MEMBERS_PER_ARCHIVE})"
+        ),
     )
     p.add_argument("--apply", action="store_true", help="Perform moves / queue merges (default: dry-run)")
     p.add_argument("--limit", type=int, default=0, help="Max model folders (0=all)")
@@ -74,6 +92,16 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         default=None,
         help="Cap merge candidate pairs (default 200)",
+    )
+    p.add_argument(
+        "--merge-hitl",
+        default=None,
+        choices=("hitl_all", "hitl_uncertain", "hitl_off"),
+        help=(
+            "MERGE_HITL apply mode (default hitl_all). "
+            "hitl_uncertain auto-queues STRONG; hitl_off also UNCERTAIN when approved. "
+            "Invalid values fail loud via env/config parse."
+        ),
     )
     p.add_argument(
         "--skip-good",
@@ -227,6 +255,39 @@ def run_organize(args: argparse.Namespace, spark: SparkConfig, curate: CurateCon
     return 0 if errors == 0 else 2
 
 
+def run_match(args: argparse.Namespace, curate: CurateConfig) -> int:
+    """MODE=match — zip infolist → archive-index / archive-invert JSONL (no extract)."""
+    work = curate.resolved_work_dir()
+    work.mkdir(parents=True, exist_ok=True)
+    run_id = time.strftime("%Y%m%d-%H%M%S")
+    max_members = max(1, int(args.max_archive_members))
+
+    print(f"Library:  {curate.library_root}")
+    print(f"Work dir: {work}")
+    print(f"Mode:     match (archive-index; no ZipFile.read)")
+    print(f"Max members/zip: {max_members}")
+
+    result = run_archive_match(
+        curate,
+        max_members_per_archive=max_members,
+        run_id=run_id,
+    )
+    summary = {
+        "run_id": run_id,
+        **archive_match_summary(result),
+        "library": curate.library_root,
+        "max_archive_members": max_members,
+    }
+    summary_path = work / f"archive-match-summary-{run_id}.json"
+    summary_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    print(json.dumps(summary, indent=2))
+    print(
+        "\nArchive index ready for merge pre-pass (INIT-018/SPEC-005).\n"
+        "Index artifacts use archive-index-* / archive-invert-* under .spark-curate/."
+    )
+    return 0
+
+
 def run_merge(args: argparse.Namespace, spark: SparkConfig, curate: CurateConfig) -> int:
     work = curate.resolved_work_dir()
     work.mkdir(parents=True, exist_ok=True)
@@ -238,11 +299,30 @@ def run_merge(args: argparse.Namespace, spark: SparkConfig, curate: CurateConfig
     print(f"Library:  {curate.library_root}")
     print(f"Work dir: {work}")
     print(f"Mode:     merge {'APPLY(queue pending)' if args.apply else 'DRY-RUN'}")
+    print(f"MERGE_HITL: {curate.merge_hitl}")
     print(f"Min merge conf: {curate.min_merge_confidence}")
     print(f"Max pairs: {curate.max_merge_pairs}")
     print(f"Workers:  {curate.workers}")
 
-    candidates = build_merge_candidates(curate, max_pairs=curate.max_merge_pairs)
+    # Merge pre-pass: inverted archive postings → build_merge_candidates (INIT-018/SPEC-005)
+    max_members = max(1, int(getattr(args, "max_archive_members", 5000) or 5000))
+    archive = build_archive_index(
+        curate,
+        max_members_per_archive=max_members,
+        write_artifacts=True,
+        run_id=run_id,
+    )
+    print(
+        f"Archive index: zips={archive.zips_scanned} "
+        f"mesh_sigs={len(archive.inverted_mesh)} "
+        f"truncated={archive.zips_truncated}"
+    )
+    candidates = build_merge_candidates(
+        curate,
+        max_pairs=curate.max_merge_pairs,
+        archive_index=archive,
+        scan_archives=False,
+    )
     print(f"Found {len(candidates)} merge candidate pairs")
     if not candidates:
         print("Nothing to do.")
@@ -266,6 +346,7 @@ def run_merge(args: argparse.Namespace, spark: SparkConfig, curate: CurateConfig
     with log_path.open("w", encoding="utf-8") as log_fh:
         log_fh.write(
             f"run={run_id} apply={args.apply} mode=merge "
+            f"merge_hitl={curate.merge_hitl} "
             f"min_merge_confidence={curate.min_merge_confidence}\n"
         )
         result = write_merge_plans(
@@ -293,8 +374,9 @@ def run_merge(args: argparse.Namespace, spark: SparkConfig, curate: CurateConfig
     summary_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
     print(json.dumps(summary, indent=2))
     print(
-        "\nNext: review merges-*.jsonl. With --apply, approved pairs go to "
-        "merges-pending.jsonl for Manyfold:\n"
+        "\nNext: review merges-*.jsonl. Under MERGE_HITL=hitl_all, APPLY queues nothing "
+        "(plans only). hitl_uncertain auto-queues STRONG; hitl_off also UNCERTAIN when "
+        "approved. Pending → Manyfold:\n"
         "  rake manyfold:apply_spark_merges\n"
         "Same character alone never merges; structural signals + vision gate apply."
     )
@@ -325,12 +407,18 @@ def main(argv: list[str] | None = None) -> int:
         curate.min_merge_confidence = args.min_merge_confidence
     if args.max_merge_pairs is not None:
         curate.max_merge_pairs = max(1, args.max_merge_pairs)
+    if args.merge_hitl is not None:
+        curate.merge_hitl = args.merge_hitl
+    # Fail loud on invalid MERGE_HITL before any library work (INIT-018/SPEC-006)
+    curate.merge_hitl = curate.validated_merge_hitl()
     if args.skip_good:
         curate.skip_if_has_preview_and_known_category = True
 
     if args.smoke:
         return smoke(spark)
 
+    if args.mode == "match":
+        return run_match(args, curate)
     if args.mode == "merge":
         return run_merge(args, spark, curate)
     return run_organize(args, spark, curate)

@@ -83,17 +83,26 @@ class CurateConfig:
     min_merge_confidence: float = 0.80
     # Cap merge candidate pairs per run
     max_merge_pairs: int = 200
+    # Graduated HITL apply policy (INIT-018/SPEC-006). Default hitl_all — never silent hitl_off.
+    merge_hitl: str = "hitl_all"
 
     def resolved_work_dir(self) -> Path:
         if self.work_dir:
             return Path(self.work_dir)
         return Path(self.library_root) / ".spark-curate"
 
+    def validated_merge_hitl(self) -> str:
+        """Fail loud on invalid MERGE_HITL (never coerce to hitl_off)."""
+        from .merge_hitl import parse_merge_hitl
+
+        return parse_merge_hitl(self.merge_hitl)
+
 
 def load_config(path: str | Path | None) -> tuple[SparkConfig, CurateConfig]:
     spark = SparkConfig()
     curate = CurateConfig()
     if not path:
+        curate.merge_hitl = curate.validated_merge_hitl()
         return spark, curate
     p = Path(path)
     if not p.is_file():
@@ -115,6 +124,8 @@ def load_config(path: str | Path | None) -> tuple[SparkConfig, CurateConfig]:
             setattr(spark, k, v)
         elif hasattr(curate, k):
             setattr(curate, k, v)
+    # Validate after load — InvalidMergeHitlError propagates (fail loud)
+    curate.merge_hitl = curate.validated_merge_hitl()
     return spark, curate
 
 
