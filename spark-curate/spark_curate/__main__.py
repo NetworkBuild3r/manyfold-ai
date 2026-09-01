@@ -15,6 +15,11 @@ if str(_PKG_ROOT) not in sys.path:
 
 from spark_curate.apply_merges import write_merge_plans  # noqa: E402
 from spark_curate.apply_moves import apply_decision  # noqa: E402
+from spark_curate.archive_index import (  # noqa: E402
+    DEFAULT_MAX_MEMBERS_PER_ARCHIVE,
+    run_archive_match,
+    summary_dict as archive_match_summary,
+)
 from spark_curate.candidates import build_merge_candidates  # noqa: E402
 from spark_curate.config import CurateConfig, SparkConfig, load_config, save_example_config  # noqa: E402
 from spark_curate.decide import decide_one  # noqa: E402
@@ -43,9 +48,21 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument(
         "--mode",
-        choices=("organize", "merge"),
+        choices=("organize", "merge", "match"),
         default="organize",
-        help="organize=folder rearrange (default); merge=duplicate pack merge plans",
+        help=(
+            "organize=folder rearrange (default); merge=duplicate pack merge plans; "
+            "match=archive-member inverted index (zip infolist only, INIT-018/SPEC-004)"
+        ),
+    )
+    p.add_argument(
+        "--max-archive-members",
+        type=int,
+        default=DEFAULT_MAX_MEMBERS_PER_ARCHIVE,
+        help=(
+            "Cap central-directory members listed per zip in MODE=match "
+            f"(default {DEFAULT_MAX_MEMBERS_PER_ARCHIVE})"
+        ),
     )
     p.add_argument("--apply", action="store_true", help="Perform moves / queue merges (default: dry-run)")
     p.add_argument("--limit", type=int, default=0, help="Max model folders (0=all)")
@@ -227,6 +244,39 @@ def run_organize(args: argparse.Namespace, spark: SparkConfig, curate: CurateCon
     return 0 if errors == 0 else 2
 
 
+def run_match(args: argparse.Namespace, curate: CurateConfig) -> int:
+    """MODE=match — zip infolist → archive-index / archive-invert JSONL (no extract)."""
+    work = curate.resolved_work_dir()
+    work.mkdir(parents=True, exist_ok=True)
+    run_id = time.strftime("%Y%m%d-%H%M%S")
+    max_members = max(1, int(args.max_archive_members))
+
+    print(f"Library:  {curate.library_root}")
+    print(f"Work dir: {work}")
+    print(f"Mode:     match (archive-index; no ZipFile.read)")
+    print(f"Max members/zip: {max_members}")
+
+    result = run_archive_match(
+        curate,
+        max_members_per_archive=max_members,
+        run_id=run_id,
+    )
+    summary = {
+        "run_id": run_id,
+        **archive_match_summary(result),
+        "library": curate.library_root,
+        "max_archive_members": max_members,
+    }
+    summary_path = work / f"archive-match-summary-{run_id}.json"
+    summary_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    print(json.dumps(summary, indent=2))
+    print(
+        "\nNext: SPEC-005 wires inverted postings into build_merge_candidates.\n"
+        "Index artifacts use archive-index-* / archive-invert-* under .spark-curate/."
+    )
+    return 0
+
+
 def run_merge(args: argparse.Namespace, spark: SparkConfig, curate: CurateConfig) -> int:
     work = curate.resolved_work_dir()
     work.mkdir(parents=True, exist_ok=True)
@@ -331,6 +381,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.smoke:
         return smoke(spark)
 
+    if args.mode == "match":
+        return run_match(args, curate)
     if args.mode == "merge":
         return run_merge(args, spark, curate)
     return run_organize(args, spark, curate)
