@@ -1,8 +1,8 @@
 import { Controller } from '@hotwired/stimulus'
 
-// Wraps the native <dialog> element. open/showModal and close with backdrop click and focus restore.
-// Focus trap: focus first focusable on open, trap Tab inside dialog, Escape closes.
-// Connects to data-controller="dialog". Trigger uses data-action="click->dialog#open"; close button uses click->dialog#close.
+// Wraps native <dialog>. Supports one or many dialogs under the same controller:
+// - data-dialog-target="dialog" (legacy single), or
+// - trigger data-dialog-id="<dialog element id>" (INIT-017 multi-modal on edit)
 export default class extends Controller {
   static targets = ['dialog']
 
@@ -10,25 +10,33 @@ export default class extends Controller {
   declare hasDialogTarget: boolean
 
   private lastFocused: HTMLElement | null = null
+  private activeDialog: HTMLDialogElement | null = null
   private readonly boundBackdropClick = (e: MouseEvent): void => this.onBackdropClick(e)
   private readonly boundKeydown = (e: KeyboardEvent): void => this.trapKeydown(e)
 
   open (event: Event): void {
     event.preventDefault()
-    if (!this.hasDialogTarget) return
-    this.lastFocused = (event.currentTarget as HTMLElement) ?? document.activeElement as HTMLElement | null
-    this.dialogTarget.showModal()
-    this.dialogTarget.addEventListener('click', this.boundBackdropClick)
-    this.dialogTarget.addEventListener('keydown', this.boundKeydown)
+    const trigger = event.currentTarget as HTMLElement
+    this.lastFocused = trigger ?? document.activeElement as HTMLElement | null
+    const byId = trigger?.dataset?.dialogId
+    const dialog = (byId != null ? document.getElementById(byId) : null) as HTMLDialogElement | null
+      ?? (this.hasDialogTarget ? this.dialogTarget : null)
+    if (dialog == null) return
+    this.activeDialog = dialog
+    dialog.showModal()
+    dialog.addEventListener('click', this.boundBackdropClick)
+    dialog.addEventListener('keydown', this.boundKeydown)
     this.focusFirstFocusable()
   }
 
   close (event?: Event): void {
     if (event != null) event.preventDefault()
-    if (!this.hasDialogTarget) return
-    this.dialogTarget.removeEventListener('click', this.boundBackdropClick)
-    this.dialogTarget.removeEventListener('keydown', this.boundKeydown)
-    this.dialogTarget.close()
+    const dialog = this.activeDialog ?? (this.hasDialogTarget ? this.dialogTarget : null)
+    if (dialog == null) return
+    dialog.removeEventListener('click', this.boundBackdropClick)
+    dialog.removeEventListener('keydown', this.boundKeydown)
+    dialog.close()
+    this.activeDialog = null
     if (this.lastFocused != null) {
       this.lastFocused.focus()
       this.lastFocused = null
@@ -43,8 +51,10 @@ export default class extends Controller {
   }
 
   private getFocusables (): HTMLElement[] {
+    const dialog = this.activeDialog ?? (this.hasDialogTarget ? this.dialogTarget : null)
+    if (dialog == null) return []
     const sel = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-    return Array.from(this.dialogTarget.querySelectorAll<HTMLElement>(sel))
+    return Array.from(dialog.querySelectorAll<HTMLElement>(sel)).filter((el) => !el.hasAttribute('disabled'))
   }
 
   private trapKeydown (event: KeyboardEvent): void {
@@ -71,7 +81,7 @@ export default class extends Controller {
   }
 
   private onBackdropClick (event: MouseEvent): void {
-    if (event.target === this.dialogTarget) {
+    if (event.target === this.activeDialog) {
       this.close()
     }
   }

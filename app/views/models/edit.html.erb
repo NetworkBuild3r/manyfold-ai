@@ -1,6 +1,107 @@
+<%# INIT-017 — Edit Model Reimagined (Figma 57:647). Provenance: INIT-017/SPEC-004 %>
 <%= PageTitle title: t("models.general.edit"), breadcrumbs: {
       Model.model_name.human(count: 100) => models_path,
       @model.name => model_path(@model)
     } %>
 
-<%= render "form" %>
+<div class="px-4 sm:px-8 pb-24" data-controller="dialog">
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+    <h1 class="text-2xl sm:text-3xl font-bold text-secondary-900 dark:text-secondary-50 m-0">
+      <%= t("models.edit.heading") %>
+    </h1>
+    <div class="flex flex-wrap gap-2">
+      <%= link_to t("models.edit.discard"), model_path(@model),
+            class: "inline-flex items-center px-4 py-2 rounded-lg border border-secondary-300 dark:border-secondary-600 text-secondary-800 dark:text-secondary-100 hover:bg-secondary-100 dark:hover:bg-secondary-800" %>
+      <button type="submit" form="model-edit-form"
+        class="inline-flex items-center px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500">
+        <%= t("models.edit.save") %>
+      </button>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-[minmax(240px,320px)_1fr] gap-6 items-start">
+    <aside class="rounded-xl border border-secondary-200 dark:border-secondary-700 bg-secondary-50 dark:bg-secondary-900/80 p-4 space-y-4 lg:sticky lg:top-4">
+      <div class="rounded-lg bg-secondary-200 dark:bg-secondary-800 overflow-hidden min-h-[200px] flex items-center justify-center">
+        <% if @model.preview_file&.is_image? %>
+          <%= image_tag model_model_file_path(@model, @model.preview_file, format: @model.preview_file.extension),
+                class: "max-w-full max-h-80 object-contain",
+                alt: @model.preview_file.name %>
+        <% elsif @model.preview_file&.is_renderable? %>
+          <%= Renderer(file: @model.preview_file) %>
+        <% else %>
+          <span class="text-xs uppercase tracking-wide text-secondary-500 p-6"><%= t("models.edit.preview.placeholder") %></span>
+        <% end %>
+      </div>
+      <dl class="text-sm space-y-2 text-secondary-700 dark:text-secondary-200">
+        <div>
+          <dt class="text-secondary-500 text-xs uppercase"><%= t("models.edit.preview.file_name") %></dt>
+          <dd class="font-medium truncate"><%= @model.preview_file&.name || t("general.none") %></dd>
+        </div>
+        <% dims = (@model.preview_file&.dimensions rescue nil) %>
+        <% if dims %>
+          <div>
+            <dt class="text-secondary-500 text-xs uppercase"><%= t("models.edit.preview.bounding_size") %></dt>
+            <dd class="font-medium"><%= number_with_precision(dims.x, precision: 1) %> × <%= number_with_precision(dims.y, precision: 1) %> × <%= number_with_precision(dims.z, precision: 1) %> mm</dd>
+          </div>
+        <% end %>
+      </dl>
+      <p class="text-xs text-secondary-500 dark:text-secondary-400 border-t border-secondary-200 dark:border-secondary-700 pt-3">
+        <%= t("models.edit.preview.tip") %>
+      </p>
+    </aside>
+
+    <div class="min-w-0">
+      <%= render "form" %>
+    </div>
+  </div>
+
+  <% if policy(:creator).new? %>
+    <dialog id="new-creator-dialog" class="relative max-w-lg w-full max-h-[90vh] overflow-auto rounded-xl bg-white dark:bg-secondary-800 shadow-xl p-0 border-0"
+      aria-labelledby="new-creator-dialog-label" aria-modal="true" data-dialog-target="dialog">
+      <div class="p-4 sm:p-6 space-y-4">
+        <div class="flex items-center justify-between gap-4">
+          <h2 class="text-lg font-semibold m-0" id="new-creator-dialog-label"><%= t("creators.general.new") %></h2>
+          <button type="button" class="rounded-full p-1 hover:bg-secondary-100 dark:hover:bg-secondary-700" data-action="click->dialog#close" aria-label="<%= t("components.modal.close") %>">×</button>
+        </div>
+        <%= form_with model: Creator.new, url: creators_path, class: "space-y-4" do |cf| %>
+          <div>
+            <%= cf.label :name, class: "block text-sm font-medium mb-1" %>
+            <%= cf.text_field :name, required: true, autofocus: true,
+                  class: "w-full rounded-lg border border-secondary-300 dark:border-secondary-600 bg-white dark:bg-secondary-900 px-3 py-2" %>
+          </div>
+          <div class="flex justify-end gap-2">
+            <button type="button" class="px-3 py-2 rounded-lg border border-secondary-300 dark:border-secondary-600" data-action="click->dialog#close">
+              <%= t("general.cancel") %>
+            </button>
+            <%= cf.submit t("general.save"), class: "px-3 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700" %>
+          </div>
+        <% end %>
+      </div>
+    </dialog>
+  <% end %>
+
+  <% if policy(:collection).new? %>
+    <dialog id="new-collection-dialog" class="relative max-w-lg w-full max-h-[90vh] overflow-auto rounded-xl bg-white dark:bg-secondary-800 shadow-xl p-0 border-0"
+      aria-labelledby="new-collection-dialog-label" aria-modal="true" data-dialog-target="dialog">
+      <div class="p-4 sm:p-6 space-y-4">
+        <div class="flex items-center justify-between gap-4">
+          <h2 class="text-lg font-semibold m-0" id="new-collection-dialog-label"><%= t("collections.general.new") %></h2>
+          <button type="button" class="rounded-full p-1 hover:bg-secondary-100 dark:hover:bg-secondary-700" data-action="click->dialog#close" aria-label="<%= t("components.modal.close") %>">×</button>
+        </div>
+        <%= form_with model: Collection.new, url: collections_path, class: "space-y-4" do |cf| %>
+          <div>
+            <%= cf.label :name, class: "block text-sm font-medium mb-1" %>
+            <%= cf.text_field :name, required: true, autofocus: true,
+                  class: "w-full rounded-lg border border-secondary-300 dark:border-secondary-600 bg-white dark:bg-secondary-900 px-3 py-2" %>
+          </div>
+          <div class="flex justify-end gap-2">
+            <button type="button" class="px-3 py-2 rounded-lg border border-secondary-300 dark:border-secondary-600" data-action="click->dialog#close">
+              <%= t("general.cancel") %>
+            </button>
+            <%= cf.submit t("general.save"), class: "px-3 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700" %>
+          </div>
+        <% end %>
+      </div>
+    </dialog>
+  <% end %>
+</div>

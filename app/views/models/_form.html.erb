@@ -1,48 +1,64 @@
-<%= form_with model: @model, class: "max-w-2xl mx-auto tabular-form" do |form| %>
-  <%= text_input_row form, :name %>
+<%# INIT-017/SPEC-003 + SPEC-004 — sectioned edit form %>
+<%= form_with model: @model, id: "model-edit-form", class: "space-y-6" do |form| %>
+  <section class="rounded-xl border border-secondary-200 dark:border-secondary-700 bg-white dark:bg-secondary-900/40 p-4 sm:p-6 space-y-4">
+    <h2 class="text-lg font-semibold text-secondary-900 dark:text-secondary-50 m-0"><%= t("models.edit.sections.basic") %></h2>
+    <%= text_input_row form, :name %>
+    <%= text_input_row form, :caption %>
+    <%= rich_text_input_row form, :notes, help: t("models.form.notes.help_html") %>
+  </section>
 
-  <%= collection_select_input_row form, :preview_file, @model.valid_preview_files, :id, :name, help: t(".preview_file.help") %>
+  <section class="rounded-xl border border-secondary-200 dark:border-secondary-700 bg-white dark:bg-secondary-900/40 p-4 sm:p-6 space-y-4">
+    <h2 class="text-lg font-semibold text-secondary-900 dark:text-secondary-50 m-0"><%= t("models.edit.sections.media") %></h2>
+    <%= collection_select_input_row form, :preview_file, @model.valid_preview_files, :id, :name, help: t("models.form.preview_file.help") %>
+  </section>
 
-  <%= collection_select_input_row form,
-        :creator, @creators, :id, :name_with_domain,
-        include_blank: t("general.none"),
-        selected: @default_creator&.id,
-        button: (if policy(:creator).new?
-                   {
-                     path: new_creator_path,
-                     label: t("creators.general.new")
-                   }
-                 end) %>
+  <section class="rounded-xl border border-secondary-200 dark:border-secondary-700 bg-white dark:bg-secondary-900/40 p-4 sm:p-6 space-y-4">
+    <h2 class="text-lg font-semibold text-secondary-900 dark:text-secondary-50 m-0"><%= t("models.edit.sections.taxonomy") %></h2>
 
-  <% if SiteSettings.show_libraries || current_user.is_administrator? %>
-    <%= unless @model.contains_other_models?
-          collection_select_input_row form,
-            :library, policy_scope(Library).all, :id, :name
-        end %>
-  <% end %>
+    <%= collection_select_input_row form,
+          :creator, @creators, :id, :name_with_domain,
+          include_blank: t("general.none"),
+          selected: @default_creator&.id,
+          button: (if policy(:creator).new?
+                     {
+                       dialog: "new-creator-dialog",
+                       label: t("creators.general.new")
+                     }
+                   end) %>
 
-  <%= render "tags_edit", form: form, name: "model[tag_list]", value: @model.tags.order(taggings_count: :desc, name: :asc).map { |tag| tag.name }.join(","), label: translate(".tags"), tags: @available_tags %>
+    <% if SiteSettings.show_libraries || current_user.is_administrator? %>
+      <%= unless @model.contains_other_models?
+            collection_select_input_row form,
+              :library, policy_scope(Library).all, :id, :name
+          end %>
+    <% end %>
 
-  <%= collection_select_input_row form,
-        :collection, @collections, :id, :name_with_domain,
-        include_blank: t("general.none"),
-        button: (if policy(:collection).new?
-                   {
-                     path: new_collection_path,
-                     label: t("collections.general.new")
-                   }
-                 end) %>
+    <%= collection_select_input_row form,
+          :collection, @collections, :id, :name_with_domain,
+          include_blank: t("general.none"),
+          button: (if policy(:collection).new?
+                     {
+                       dialog: "new-collection-dialog",
+                       label: t("collections.general.new")
+                     }
+                   end) %>
 
-  <%= render "links_form", form: form %>
-  <%= text_input_row form, :caption %>
-  <%= rich_text_input_row form, :notes, help: t(".notes.help_html") %>
-  <%= select_input_row form, :license, license_select_options(selected: @model.license), include_blank: t("general.none") %>
-  <%= checkbox_input_row form, :sensitive %>
-  <%= select_input_row form, :indexable, indexable_select_options(form.object) %>
-  <%= select_input_row form, :ai_indexable, ai_indexable_select_options(form.object) if SiteSettings.allow_ai_bots %>
-  <%= render "caber_relations_form", form: form %>
+    <%= render "tags_edit", form: form, name: "model[tag_list]", value: @model.tags.order(taggings_count: :desc, name: :asc).map { |tag| tag.name }.join(","), label: translate("models.form.tags"), tags: @available_tags %>
+    <%= render "links_form", form: form %>
+  </section>
 
-  <div>
-    <%= form.submit translate("general.save"), class: "inline-flex items-center px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500" %>
+  <section class="rounded-xl border border-secondary-200 dark:border-secondary-700 bg-white dark:bg-secondary-900/40 p-4 sm:p-6 space-y-4">
+    <h2 class="text-lg font-semibold text-secondary-900 dark:text-secondary-50 m-0"><%= t("models.edit.sections.publishing") %></h2>
+    <%= select_input_row form, :license, license_select_options(selected: @model.license), include_blank: t("general.none") %>
+    <%= checkbox_input_row form, :sensitive %>
+    <%= select_input_row form, :indexable, indexable_select_options(form.object) %>
+    <%= select_input_row form, :ai_indexable, ai_indexable_select_options(form.object) if SiteSettings.allow_ai_bots %>
+    <%= render "caber_relations_form", form: form %>
+  </section>
+
+  <div class="flex flex-wrap justify-end gap-2 pt-2">
+    <%= link_to t("models.edit.discard"), model_path(@model),
+          class: "inline-flex items-center px-4 py-2 rounded-lg border border-secondary-300 dark:border-secondary-600 text-secondary-800 dark:text-secondary-100 hover:bg-secondary-100 dark:hover:bg-secondary-800" %>
+    <%= form.submit t("models.edit.save_settings"), class: "inline-flex items-center px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500" %>
   </div>
 <% end %>

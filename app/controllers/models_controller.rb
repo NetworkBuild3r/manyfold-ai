@@ -126,6 +126,16 @@ class ModelsController < ApplicationController
     hash = model_params
     hash = hash.respond_to?(:to_unsafe_h) ? hash.to_unsafe_h : hash.to_h
     hash = hash.deep_stringify_keys
+    # INIT-017/SPEC-002 — reject creator/collection outside assignable scope
+    unless assignable_associations_ok?(hash)
+      get_creators_and_collections
+      edit
+      respond_to do |format|
+        format.html { render :edit, status: :unprocessable_content }
+        format.manyfold_api_v0 { render json: @model.errors.to_json, status: :unprocessable_content }
+      end
+      return
+    end
     result = if hash["permission_preset"].to_s == "public"
       begin
         Model::Publish.call(@model, **hash.except("permission_preset").symbolize_keys)
@@ -314,10 +324,25 @@ class ModelsController < ApplicationController
   end
 
   def get_creators_and_collections
-    # Creators and collections that we can assign this model to
-    @creators = policy_scope(Creator, policy_scope_class: ApplicationPolicy::UpdateScope).local.order("LOWER(creators.name) ASC")
-    @default_creator = @creators.first if @creators.one?
-    @collections = policy_scope(Collection, policy_scope_class: ApplicationPolicy::UpdateScope).local.order("LOWER(collections.name) ASC")
+    # INIT-017/SPEC-002 — assignable = view scope + local (+ current association)
+    assignables = Model::AssignableAssociations.new(user: current_user, model: @model)
+    @creators = assignables.creators
+    @default_creator = @creators.first if @creators.one? && @model&.creator_id.blank?
+    @collections = assignables.collections
+  end
+
+  def assignable_associations_ok?(hash)
+    assignables = Model::AssignableAssociations.new(user: current_user, model: @model)
+    ok = true
+    if hash.key?("creator_id") && !assignables.assignable_creator_id?(hash["creator_id"])
+      @model.errors.add(:creator, :invalid)
+      ok = false
+    end
+    if hash.key?("collection_id") && !assignables.assignable_collection_id?(hash["collection_id"])
+      @model.errors.add(:collection, :invalid)
+      ok = false
+    end
+    ok
   end
 
   def set_returnable
