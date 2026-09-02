@@ -410,7 +410,7 @@ RSpec.describe Scan::Model::ParseMetadataJob do
       before do
         allow(Model).to receive(:find).with(model.id).and_return(model)
         allow(model).to receive_messages(
-          model_files: instance_double(ActiveRecord::Relation, find_by: readme, min_by: nil)
+          model_files: instance_double(ActiveRecord::Relation, find_by: readme, min_by: nil, to_a: [readme])
         )
         allow(readme).to receive(:attachment).and_return class_double(File, read: "new content")
       end
@@ -424,7 +424,7 @@ RSpec.describe Scan::Model::ParseMetadataJob do
       before do
         allow(Model).to receive(:find).with(model.id).and_return(model)
         allow(model).to receive_messages(
-          model_files: instance_double(ActiveRecord::Relation, find_by: readme, min_by: nil)
+          model_files: instance_double(ActiveRecord::Relation, find_by: readme, min_by: nil, to_a: [readme])
         )
         allow(readme).to receive(:attachment).and_return class_double(File, read: "from readme")
       end
@@ -439,7 +439,7 @@ RSpec.describe Scan::Model::ParseMetadataJob do
         model.update!(notes: "already set")
         allow(Model).to receive(:find).with(model.id).and_return(model)
         allow(model).to receive_messages(
-          model_files: instance_double(ActiveRecord::Relation, find_by: readme, min_by: nil)
+          model_files: instance_double(ActiveRecord::Relation, find_by: readme, min_by: nil, to_a: [readme])
         )
         allow(readme).to receive(:attachment).and_return class_double(File, read: "from readme")
       end
@@ -487,7 +487,7 @@ RSpec.describe Scan::Model::ParseMetadataJob do
       before do
         allow(Model).to receive(:find).with(model.id).and_return(model)
         allow(model).to receive_messages(
-          model_files: instance_double(ActiveRecord::Relation, find_by: readme, min_by: nil)
+          model_files: instance_double(ActiveRecord::Relation, find_by: readme, min_by: nil, to_a: [readme])
         )
         allow(readme).to receive(:attachment).and_return class_double(File, read: content)
         described_class.perform_now(model.id)
@@ -529,7 +529,7 @@ RSpec.describe Scan::Model::ParseMetadataJob do
       before do
         allow(Model).to receive(:find).with(model.id).and_return(model)
         allow(model).to receive_messages(
-          model_files: instance_double(ActiveRecord::Relation, find_by: readme, min_by: nil)
+          model_files: instance_double(ActiveRecord::Relation, find_by: readme, min_by: nil, to_a: [readme])
         )
         allow(readme).to receive(:attachment).and_return class_double(File, read: content)
         described_class.perform_now(model.id)
@@ -563,7 +563,7 @@ RSpec.describe Scan::Model::ParseMetadataJob do
       before do
         allow(Model).to receive(:find).with(model.id).and_return(model)
         allow(model).to receive_messages(
-          model_files: instance_double(ActiveRecord::Relation, find_by: readme, min_by: nil)
+          model_files: instance_double(ActiveRecord::Relation, find_by: readme, min_by: nil, to_a: [readme])
         )
         allow(readme).to receive(:attachment).and_return class_double(File, read: content)
         described_class.perform_now(model.id)
