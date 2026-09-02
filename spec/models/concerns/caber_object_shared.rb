@@ -118,7 +118,8 @@ shared_examples "Caber::Object" do
 
     context "with public preset" do
       before do
-        object.update!(permission_preset: "public")
+        # Reload so after_commit @permissions_applied from create does not skip ApplyPreset.
+        object.reload.update!(permission_preset: "public")
       end
 
       it "grants view permission to public role" do
@@ -132,7 +133,7 @@ shared_examples "Caber::Object" do
 
     context "with member preset" do
       before do
-        object.update!(permission_preset: "member")
+        object.reload.update!(permission_preset: "member")
       end
 
       it "grants view permission to member role" do
@@ -146,7 +147,7 @@ shared_examples "Caber::Object" do
 
     context "with private preset" do
       before do
-        object.update!(permission_preset: "private")
+        object.reload.update!(permission_preset: "private")
       end
 
       it "does not grant view permission to member role" do
@@ -160,7 +161,7 @@ shared_examples "Caber::Object" do
 
     context "with both preset and explicit permissions" do
       before do
-        object.update!(permission_preset: "member", caber_relations_attributes: [{permission: "view", subject: nil}])
+        object.reload.update!(permission_preset: "member", caber_relations_attributes: [{permission: "view", subject: nil}])
       end
 
       it "grants view permission to member role" do
