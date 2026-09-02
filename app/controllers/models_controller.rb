@@ -22,7 +22,9 @@ class ModelsController < ApplicationController
   include ModelsController::Merge
 
   def get_filters
-    @filter = Search::FilterService.new(params, user: current_user, default_has_image: true)
+    # HTML browse defaults to with-image cards (INIT-009). API lists all authorized models.
+    html_browse = !request.format.manyfold_api_v0?
+    @filter = Search::FilterService.new(params, user: current_user, default_has_image: html_browse)
   end
 
   def index
