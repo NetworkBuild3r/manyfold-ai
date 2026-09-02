@@ -48,7 +48,7 @@ RSpec.describe Scan::ApplySparkMergePlanJob do
     expect(File).to exist(File.join(library.path, ".spark-curate", "merges-pending.jsonl"))
   end
 
-  it "applies merge when confidence >= 0.80 and paths exist" do
+  it "applies merge when confidence >= 0.80 and paths exist" do # rubocop:todo RSpec/ExampleLength, RSpec/MultipleExpectations
     target = create(:model, library: library, path: "DC/Batman Pack", name: "Batman Pack")
     source = create(:model, library: library, path: "DC/Batman Pack (2)", name: "Batman Pack (2)")
     create(:model_file, model: target, filename: "model.stl")
@@ -65,7 +65,10 @@ RSpec.describe Scan::ApplySparkMergePlanJob do
     result = described_class.perform_now(library_id: library.id, dry_run: false, limit: 10)
     expect(result[:applied]).to eq 1
     expect(Model.exists?(source.id)).to be false
-    expect(target.reload.model_files.map(&:filename)).to include("extra.stl")
+    # INIT-019/SPEC-004: sibling merge uses a jailed basename prefix, never ../ or a flat steal
+    filenames = target.reload.model_files.map(&:filename)
+    expect(filenames).to include("Batman Pack (2)/extra.stl")
+    expect(filenames).not_to include(a_string_matching(/\.\./))
     expect(MergeHistory.where(target_model: target).count).to eq 1
   end
 
