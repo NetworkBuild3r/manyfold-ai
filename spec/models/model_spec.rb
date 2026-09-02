@@ -1037,7 +1037,7 @@ RSpec.describe Model do
     end
   end
 
-  context "when creating a model" do
+  context "when creating a model", :federated do
     it "queues model publish activity job if the model is public" do
       expect {
         create(:model, :public)
@@ -1088,7 +1088,7 @@ RSpec.describe Model do
     end
   end
 
-  context "when updating a private model" do
+  context "when updating a private model", :federated do
     let!(:model) { create(:model, creator: create(:creator, :public)) }
 
     before do
@@ -1108,7 +1108,7 @@ RSpec.describe Model do
     end
   end
 
-  context "when updating a public model" do
+  context "when updating a public model", :federated do
     let!(:model) { create(:model, :public) }
 
     before do
