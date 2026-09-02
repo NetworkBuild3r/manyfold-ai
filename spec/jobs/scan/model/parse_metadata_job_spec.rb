@@ -48,7 +48,9 @@ RSpec.describe Scan::Model::ParseMetadataJob do
       MockDirectory.create(["m/present.jpg"]) do |path|
         lib = create(:library, path: path)
         m = create(:model, library: lib, path: "m")
-        missing = create(:model_file, model: m, filename: "missing.jpg")
+        # Factory attachment stores at path_within_library; keep this row DB-only.
+        missing = create(:model_file, model: m, filename: "missing.jpg", attachment: nil)
+        FileUtils.rm_f(File.join(path, "m/missing.jpg"))
         present = create(:model_file, model: m, filename: "present.jpg")
         m.update!(preview_file: missing)
         expect { described_class.perform_now(m.id) }
