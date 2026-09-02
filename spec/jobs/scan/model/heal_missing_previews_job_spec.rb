@@ -21,9 +21,16 @@ RSpec.describe Scan::Model::HealMissingPreviewsJob do
     end
   end
 
+  # Factory attachment writes to path_within_library; keep gone.jpg as a DB-only missing file.
+  def create_missing_file(model, filename)
+    file = create(:model_file, model: model, filename: filename, attachment: nil)
+    FileUtils.rm_f(File.join(library.path, file.path_within_library))
+    file
+  end
+
   it "re-picks an on-disk image when the preview is missing" do
     model = create(:model, library: library, path: "good_model")
-    gone = create(:model_file, model: model, filename: "gone.jpg")
+    gone = create_missing_file(model, "gone.jpg")
     create(:model_file, model: model, filename: "ok.jpg")
     model.update!(preview_file: gone)
 
@@ -33,7 +40,7 @@ RSpec.describe Scan::Model::HealMissingPreviewsJob do
 
   it "prefers preview.jpg over other on-disk images when healing" do
     model = create(:model, library: library, path: "good_model")
-    gone = create(:model_file, model: model, filename: "gone.jpg")
+    gone = create_missing_file(model, "gone.jpg")
     create(:model_file, model: model, filename: "ok.jpg")
     create(:model_file, model: model, filename: "preview.jpg")
     model.update!(preview_file: gone)
@@ -44,7 +51,7 @@ RSpec.describe Scan::Model::HealMissingPreviewsJob do
 
   it "clears preview_file when no on-disk image remains" do
     model = create(:model, library: library, path: "good_model")
-    gone = create(:model_file, model: model, filename: "gone.jpg")
+    gone = create_missing_file(model, "gone.jpg")
     model.update!(preview_file: gone)
 
     expect {
