@@ -777,7 +777,8 @@ RSpec.describe Model do
     let(:submodel) { create(:model, library: original_library, name: "sub model", path: "model/submodel") }
 
     it "moves model folder" do # rubocop:todo RSpec/MultipleExpectations
-      expect { model.update! library: new_library }.not_to raise_error
+      # Storage moves are Model::Update / MoveFiles — not a Model.update! callback.
+      expect { Model::Update.call(model, library: new_library) }.not_to raise_error
       expect(Dir.exist?(File.join(original_library.path, "model"))).to be false
       expect(Dir.exist?(File.join(new_library.path, "model"))).to be true
     end
