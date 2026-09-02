@@ -33,7 +33,8 @@ class ModelFile < ApplicationRecord
   has_many :duplicate_unsupported_versions, class_name: "ModelFile", foreign_key: "presupported_version_id",
     inverse_of: :presupported_version, dependent: :nullify
 
-  validates :filename, presence: true, uniqueness: {scope: :model}, stable_mime_type: true, change_case_only: true
+  validates :filename, presence: true, uniqueness: {scope: :model}, stable_mime_type: true, change_case_only: true,
+    library_path_jail: true
   validate :presupported_version_is_presupported
   validate :presupported_files_cannot_have_presupported_version
 
@@ -137,9 +138,14 @@ class ModelFile < ApplicationRecord
   end
 
   def path_within_library(derivative: nil)
-    derivative ?
-      File.join(model.path, ".manyfold", "derivatives", filename, "#{derivative}.#{extension}") :
+    # Fail closed on unsafe filename before join (Ruby 3.4+ File.join is not absolute-preserving).
+    LibraryPathJail.assert_safe_relative!(filename)
+    relative = if derivative
+      File.join(model.path, ".manyfold", "derivatives", filename, "#{derivative}.#{extension}")
+    else
       File.join(model.path, filename)
+    end
+    LibraryPathJail.assert_within!(model.library.path, relative)
   end
 
   def attach_existing_file!(refresh: true, skip_validations: false)

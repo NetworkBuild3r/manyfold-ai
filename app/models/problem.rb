@@ -85,15 +85,7 @@ class Problem < ApplicationRecord
   def self.create_or_clear(problematic, category, should_exist, options = {})
     relation = Problem.unscoped.where(problematic: problematic, category: category) # rubocop:disable Pundit/AvoidUnscoped
     if should_exist
-      problem = relation.first_or_initialize
-      problem.assign_attributes(options)
-      problem.ignored = false
-      # If the user is actively resolving a problem, don't clobber that state from background checks.
-      unless problem.resolving?
-        problem.state = :detected
-        problem.in_progress = false
-      end
-      problem.save!
+      persist_detected!(relation.first_or_initialize, options)
     else
       relation.destroy_all
     end
@@ -103,15 +95,22 @@ class Problem < ApplicationRecord
     problem = relation.first
     return should_exist unless problem
 
+    persist_detected!(problem, options)
+    should_exist
+  end
+
+  # INIT-019/SPEC-005: keep ignored=true when the detector still sees the problem.
+  def self.persist_detected!(problem, options)
+    already_ignored = problem.persisted? && problem.ignored?
     problem.assign_attributes(options)
-    problem.ignored = false
+    problem.ignored = already_ignored
     unless problem.resolving?
       problem.state = :detected
       problem.in_progress = false
     end
     problem.save!
-    should_exist
   end
+  private_class_method :persist_detected!
 
   def parent
     if problematic_type == "ModelFile"
@@ -147,7 +146,7 @@ class Problem < ApplicationRecord
     RESOLUTIONS[category.to_sym] or raise NotImplementedError.new(category)
   end
 
-  # Resolves multiple problems in one transaction. Returns a result hash for the controller.
+  # INIT-019/SPEC-005: resolve independently so one failure does not roll back siblings.
   # When override_action is set (e.g. :ignore), that action is used for every problem.
   # { removed_ids: [...], ignored_ids: [...], redirect: url_or_nil, errors: [...] }
   def self.resolve_batch(problems, override_action: nil)
@@ -157,20 +156,24 @@ class Problem < ApplicationRecord
     errors = []
 
     Current.set(skip_problem_checks: true) do
-      ActiveRecord::Base.transaction do
-        Array(problems).each do |problem|
-          problem_id = problem.id
-          strategy = override_action || problem.resolution_strategy
-          result = if Problems::Registry.registered?(problem.category, problem.problematic_type)
-            klass = Problems::Registry.for(problem.category, problem.problematic_type)
-            klass.new.resolve!(problem, action: strategy)
-          else
-            Problems::LegacyResolver.resolve(problem, action: strategy)
-          end
-          removed_ids << problem_id if result[:removed]
-          ignored_ids << problem_id if result[:ignored]
-          redirect_url ||= result[:redirect]
+      Array(problems).each do |problem|
+        problem_id = problem.id
+        strategy = override_action || problem.resolution_strategy
+        result = if Problems::Registry.registered?(problem.category, problem.problematic_type)
+          klass = Problems::Registry.for(problem.category, problem.problematic_type)
+          klass.new.resolve!(problem, action: strategy)
+        else
+          Problems::LegacyResolver.resolve(problem, action: strategy)
         end
+        removed_ids << problem_id if result[:removed]
+        ignored_ids << problem_id if result[:ignored]
+        redirect_url ||= result[:redirect]
+      rescue => e
+        errors << {
+          id: problem_id,
+          category: problem.category,
+          error: e.class.name
+        }
       end
     end
 

@@ -1,6 +1,8 @@
 class GroupsController < ApplicationController
   before_action :get_creator
   before_action :get_group, except: [:index, :new, :create]
+  # INIT-019/SPEC-007: authorize before invite/create so a denied POST cannot write.
+  before_action :authorize_group_create, only: [:create]
   before_action :find_members, only: [:create, :update] # rubocop:todo Rails/LexicallyScopedActionFilter
   after_action :send_notifications, only: [:create, :update]
 
@@ -38,7 +40,6 @@ class GroupsController < ApplicationController
   def create
     @group = @creator.groups.create group_params
     @new_memberships = @group.reload.memberships if @group.valid?
-    authorize @group
     respond_to do |format|
       format.html do
         if @group.valid?
@@ -93,6 +94,10 @@ class GroupsController < ApplicationController
     @new_memberships&.each do |it|
       NewGroupMemberNotifier.with(membership: it).deliver(it.user)
     end
+  end
+
+  def authorize_group_create
+    authorize Group.new(creator: @creator)
   end
 
   def get_creator

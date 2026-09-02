@@ -45,6 +45,36 @@ RSpec.describe ArchiveEntryService do
       expect(@file.archive_entries.find_by(pathname: "pics/shot.png").kind).to eq("image")
       expect(@file.archive_entries.find_by(pathname: "readme.txt").kind).to eq("other")
     end
+
+    # INIT-019/SPEC-006
+    it "keeps extra archive_entries when the listing is truncated" do
+      leftover = @file.archive_entries.create!(
+        pathname: "old_member.stl",
+        kind: "mesh",
+        status: "listed",
+        size: 10
+      )
+      stub_const("ArchiveEntryService::MAX_LIST_ENTRIES", 1)
+
+      described_class.new(@file).list!
+
+      expect(@file.reload.archive_entries_truncated).to be true
+      expect(@file.archive_entries.find_by(id: leftover.id)).to be_present
+    end
+
+    it "destroys stale archive_entries when the listing completes without truncation" do
+      leftover = @file.archive_entries.create!(
+        pathname: "old_member.stl",
+        kind: "mesh",
+        status: "listed",
+        size: 10
+      )
+
+      described_class.new(@file).list!
+
+      expect(@file.reload.archive_entries_truncated).to be false
+      expect(@file.archive_entries.find_by(id: leftover.id)).to be_nil
+    end
   end
 
   describe "#enqueue_previews!" do

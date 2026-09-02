@@ -374,7 +374,7 @@ RSpec.describe Model do
       create(:model_file, model: parent, filename: "child/collision.stl", digest: nil)
       create(:model_file, model: child, filename: "collision.stl", digest: nil)
       parent.merge!(child)
-      filenames = parent.model_files.map(&:filename)
+      filenames = parent.model_files.reload.map(&:filename)
       expect(filenames).to include("child/collision.stl")
       # Disambiguation uses basename only, producing collision_<hex>.stl (flat)
       disambiguated = filenames.find { |f| f =~ /collision_[a-f0-9]{12}\.stl/ }
@@ -404,7 +404,7 @@ RSpec.describe Model do
 
     it "organizes all files by source prefix" do # rubocop:todo RSpec/MultipleExpectations
       target.merge!(model_a, model_b)
-      expect(target.model_files.pluck(:filename)).to contain_exactly("model_a/part_a.stl", "model_b/part_b.stl")
+      expect(target.model_files.reload.pluck(:filename)).to contain_exactly("model_a/part_a.stl", "model_b/part_b.stl")
     end
 
     it "restores original paths when unmerging sibling merge" do
@@ -589,7 +589,7 @@ RSpec.describe Model do
 
     it "organizes all files by source prefix" do
       target.merge!(m1, m2, m3)
-      expect(target.model_files.pluck(:filename)).to contain_exactly("one/a.stl", "two/b.stl", "three/c.stl")
+      expect(target.model_files.reload.pluck(:filename)).to contain_exactly("one/a.stl", "two/b.stl", "three/c.stl")
     end
   end
 
@@ -615,7 +615,7 @@ RSpec.describe Model do
       history = parent.merge_histories.last
       new_model = parent.unmerge!(history)
       expect(new_model.model_files.pluck(:filename)).to contain_exactly("child.stl")
-      expect(parent.model_files.pluck(:filename)).to contain_exactly("new_after_merge.stl")
+      expect(parent.model_files.reload.pluck(:filename)).to contain_exactly("new_after_merge.stl")
     end
   end
 
@@ -682,7 +682,7 @@ RSpec.describe Model do
       create(:model_file, model: model, filename: "test.stl", digest: "abcd")
       create(:model_file, model: target, filename: "test.stl", digest: "1234")
       target.merge!(model)
-      expect(target.model_files.map(&:filename)).to contain_exactly("source_folder/test.stl", "test.stl")
+      expect(target.model_files.reload.map(&:filename)).to contain_exactly("source_folder/test.stl", "test.stl")
     end
 
     it "deduplicates when identical content at same prefixed path" do

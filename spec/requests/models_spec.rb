@@ -16,6 +16,16 @@ require "rails_helper"
 RSpec.describe "Models" do
   it_behaves_like "Permittable", Model
 
+  # INIT-019/SPEC-007: a download HMAC must not skip authenticate on GET /models.
+  context "when signed out in singleuser mode", :singleuser, :after_first_run do
+    it "still requires authentication for GET /models even with a valid download sig" do
+      file = create(:model_file)
+      sig = file.signed_id(expires_in: 1.minute, purpose: "download")
+      get "/models", params: {sig: sig}
+      expect(response).to redirect_to(new_user_session_path)
+    end
+  end
+
   context "when signed out in multiuser mode", :after_first_run, :multiuser do
     context "with public model" do
       let!(:model) { create(:model, :public) }
@@ -323,6 +333,18 @@ RSpec.describe "Models" do
         it "allows search queries" do
           get "/models?q=#{library.models.first.name}"
           expect(response).to have_http_status(:success)
+        end
+
+        # INIT-019/SPEC-007
+        it "does not follow-redirect a casual email-like mention" do
+          get "/models", params: {q: "painted by jane@studio"}
+          expect(response).to have_http_status(:success)
+          expect(response).not_to redirect_to(new_follow_path(uri: "painted by jane@studio"))
+        end
+
+        it "does not DoubleRender when q is a URL that also contains @" do
+          get "/models", params: {q: "http://user:pass@example.com/models/abc"}
+          expect(response).not_to have_http_status(:internal_server_error)
         end
 
         it "allows tag filters" do

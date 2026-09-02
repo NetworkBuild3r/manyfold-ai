@@ -7,6 +7,9 @@ class ModelFileUploader < ApplicationUploader
 
   def generate_location(io, record: nil, derivative: nil, metadata: {}, **)
     return super unless record&.valid?
-    record.path_within_library(derivative: derivative)
+
+    location = record.path_within_library(derivative: derivative)
+    LibraryPathJail.assert_within!(record.model.library.path, location)
+    location
   end
 end

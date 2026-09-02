@@ -52,32 +52,11 @@ class Model::Unmerge
       new_model.skip_problem_check = true if skip_problem_checks
       new_model.save!
 
-      Array(history.moved_files).each do |entry|
-        file_id = entry["id"] || entry[:id]
-        source_filename = entry["source_filename"] || entry[:source_filename]
-        was_deduplicated = entry["deduplicated"] || entry[:deduplicated]
-
-        if was_deduplicated
-          existing_id = entry["existing_file_id"] || entry[:existing_file_id]
-          existing_file = ModelFile.find_by(id: existing_id)
-          next unless existing_file && source_filename.present?
-
-          new_file = new_model.model_files.create!(
-            filename: source_filename,
-            digest: existing_file.digest,
-            size: existing_file.size,
-            presupported: existing_file.presupported,
-            y_up: existing_file.y_up,
-            previewable: existing_file.previewable
-          )
-          @target.copy_file_to_model_file_for_unmerge(existing_file, new_file)
-        else
-          file = ModelFile.find_by(id: file_id)
-          next unless file && source_filename.present?
-
-          file.filename = source_filename
-          new_model.adopt_file(file)
-        end
+      # INIT-019/SPEC-004 (ADR D-2): undone_at only when every history file was
+      # placed, or deduplicated-with-restored-source. Missing files leave
+      # undone_at nil so Unmerge can retry.
+      placements = Array(history.moved_files).map do |entry|
+        place_history_file!(new_model, entry)
       end
 
       if (preview_filename = history.source_preview_filename)
@@ -85,8 +64,41 @@ class Model::Unmerge
         new_model.update!(preview_file: preview) if preview
       end
 
-      history.update!(undone_at: Time.current)
+      all_placed = placements.empty? || placements.all?
+      history.update!(undone_at: Time.current) if all_placed
       new_model
     end
+  end
+
+  private
+
+  # Returns true when the entry was placed or restored; false when skipped.
+  def place_history_file!(new_model, entry)
+    file_id = entry["id"] || entry[:id]
+    source_filename = entry["source_filename"] || entry[:source_filename]
+    was_deduplicated = entry["deduplicated"] || entry[:deduplicated]
+
+    if was_deduplicated
+      existing_id = entry["existing_file_id"] || entry[:existing_file_id]
+      existing_file = ModelFile.find_by(id: existing_id)
+      return false unless existing_file && source_filename.present?
+
+      new_file = new_model.model_files.create!(
+        filename: source_filename,
+        digest: existing_file.digest,
+        size: existing_file.size,
+        presupported: existing_file.presupported,
+        y_up: existing_file.y_up,
+        previewable: existing_file.previewable
+      )
+      @target.copy_file_to_model_file_for_unmerge(existing_file, new_file)
+    else
+      file = ModelFile.find_by(id: file_id)
+      return false unless file && source_filename.present?
+
+      file.filename = source_filename
+      new_model.adopt_file(file)
+    end
+    true
   end
 end

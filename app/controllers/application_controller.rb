@@ -6,7 +6,9 @@ class ApplicationController < ActionController::Base
   after_action :verify_policy_scoped, only: :index, unless: -> { respond_to?(:fasp_client_controller?) }
   after_action :set_content_security_policy_header, if: -> { request.format.html? }
 
-  before_action :authenticate_user!, unless: -> { SiteSettings.multiuser_enabled? || has_signed_id? }
+  # INIT-019/SPEC-007: HMAC `sig` skips login only for ModelFilesController#show
+  # (signed_download_request?), never for GET /models or other actions.
+  before_action :authenticate_user!, unless: -> { SiteSettings.multiuser_enabled? || signed_download_request? }
   around_action :switch_locale, if: -> { request.format.html? }
   before_action :check_for_first_use
   before_action :show_security_alerts
@@ -65,8 +67,22 @@ class ApplicationController < ActionController::Base
     request.format.manyfold_api_v0?
   end
 
+  ALLOWED_POLYMORPHIC_CLASSES = %w[Model Creator Collection].freeze
+
   def has_signed_id?
-    params[:sig] && ApplicationRecord.signed_id_verifier.valid_message?(params[:sig])
+    params[:sig].present? && ApplicationRecord.signed_id_verifier.valid_message?(params[:sig])
+  end
+
+  def signed_download_request?
+    false
+  end
+
+  # INIT-019/SPEC-007: never constantize raw params.
+  def resolve_allowed_class!(param_key)
+    name = params[param_key].to_s
+    raise ActionController::BadRequest unless ALLOWED_POLYMORPHIC_CLASSES.include?(name)
+
+    name.constantize
   end
 
   def img_src

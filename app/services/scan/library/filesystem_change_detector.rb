@@ -300,18 +300,19 @@ module Scan
         return unless File.directory?(abs)
         return if File.symlink?(abs)
 
-        if rel.present? && known.include?(rel)
-          return
-        end
+        already_known = rel.present? && known.include?(rel)
 
-        if rel.present? && model_dir_has_indexable?(abs) && !known.include?(rel)
+        # INIT-019/SPEC-006: a known model still has unknown child dirs that should
+        # become their own models. Do not return — only skip adding this rel.
+        if rel.present? && model_dir_has_indexable?(abs) && !already_known
           new_folders << rel
         end
 
         return if depth == max_depth
 
         # INIT-016/SPEC-002 D-2: mtime-prune untouched Category trees when watermark present.
-        if rel.present? && !dir_touched_since?(abs, since)
+        # Known model dirs stay walkable so a new nested pack is not missed (INIT-019/SPEC-006).
+        if rel.present? && !already_known && !dir_touched_since?(abs, since)
           pruned[:count] += 1
           return
         end

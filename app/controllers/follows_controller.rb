@@ -104,7 +104,7 @@ class FollowsController < ApplicationController
   end
 
   def get_target
-    followable = params[:followable_class].constantize
+    followable = resolve_allowed_class!(:followable_class)
     followable_param = params[:followable_class].parameterize + "_id"
     id = params[followable_param]
     @target = policy_scope(followable).find_param(id)

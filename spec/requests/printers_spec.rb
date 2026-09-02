@@ -89,5 +89,14 @@ RSpec.describe "Printers API" do
       expect(response).to have_http_status(:success)
       expect(host.reload.name).to eq("Renamed GK3")
     end
+
+    # INIT-019/SPEC-007
+    it "destroys a printer" do
+      host = create(:print_host)
+      expect {
+        delete printer_path(host), as: :json
+      }.to change(PrintHost, :count).by(-1)
+      expect(response).to have_http_status(:no_content)
+    end
   end
 end

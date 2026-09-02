@@ -50,8 +50,12 @@ module Archive
         end
       end
 
-      keep_paths = listed.map(&:pathname)
-      @model_file.archive_entries.where.not(pathname: keep_paths).find_each(&:destroy)
+      # INIT-019/SPEC-006: a truncated walk is a slice, not a complete member set.
+      # Destroying extras here deletes rows the cap never had a chance to see.
+      unless truncated
+        keep_paths = listed.map(&:pathname)
+        @model_file.archive_entries.where.not(pathname: keep_paths).find_each(&:destroy)
+      end
 
       @model_file.update!(
         archive_entries_truncated: truncated,

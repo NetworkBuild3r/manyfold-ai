@@ -180,5 +180,35 @@ RSpec.describe "Groups", :after_first_run do
         expect(response).to have_http_status :forbidden
       end
     end
+
+    # INIT-019/SPEC-007
+    describe "POST /creators/{creator_id}/groups" do
+      let(:params) do
+        {group: {name: "Hijack", memberships_attributes: {"0" => {user_id: "new_user@example.com"}}}}
+      end
+
+      it "does not invite a user or persist a group" do
+        expect(User).not_to receive(:invite!)
+        expect {
+          post "/creators/#{creator.to_param}/groups", params: params
+        }.not_to change(Group, :count)
+        expect(response).to have_http_status :forbidden
+      end
+    end
+  end
+
+  context "when signed out" do
+    describe "POST /creators/{creator_id}/groups" do
+      let(:params) do
+        {group: {name: "Hijack", memberships_attributes: {"0" => {user_id: "new_user@example.com"}}}}
+      end
+
+      it "does not invite a user or persist a group" do
+        expect(User).not_to receive(:invite!)
+        expect {
+          post "/creators/#{creator.to_param}/groups", params: params
+        }.not_to change(Group, :count)
+      end
+    end
   end
 end

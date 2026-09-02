@@ -180,7 +180,14 @@ class ModelFilesController < ApplicationController
   end
 
   def get_model
-    @model = policy_scope(Model).find_param(params[:model_id])
+    # INIT-019/SPEC-007: a download-purpose signed id may load the parent model
+    # without policy_scope so share links work for otherwise-private files.
+    if (signed = signed_download_file)
+      @model = signed.model
+      raise ActiveRecord::RecordNotFound unless @model.to_param == params[:model_id]
+    else
+      @model = policy_scope(Model).find_param(params[:model_id])
+    end
   end
 
   def get_file
@@ -209,5 +216,17 @@ class ModelFilesController < ApplicationController
 
   def embedded?
     params[:embed] == "true"
+  end
+
+  def signed_download_file
+    return @signed_download_file if defined?(@signed_download_file)
+
+    @signed_download_file = if action_name == "show" && params[:sig].present?
+      ModelFile.find_signed(params[:sig], purpose: "download")
+    end
+  end
+
+  def signed_download_request?
+    signed_download_file.present?
   end
 end

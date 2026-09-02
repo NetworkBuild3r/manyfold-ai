@@ -101,6 +101,30 @@ RSpec.describe Problem do
         described_class.create_or_clear model, :no_license, model.license.blank?
       }.not_to change(described_class, :count)
     end
+
+    it "keeps ignored true when the detector still says the problem exists" do
+      described_class.create_or_clear model, :no_license, true
+      problem = described_class.unscoped.find_by!(problematic: model, category: :no_license)
+      problem.update!(ignored: true)
+
+      described_class.create_or_clear model, :no_license, true
+
+      problem.reload
+      expect(problem.ignored).to be(true)
+      expect(described_class.count).to eq(0)
+      expect(described_class.unscoped.where(id: problem.id)).to exist
+    end
+
+    it "still clears an ignored problem when the detector says it is gone" do
+      described_class.create_or_clear model, :no_license, true
+      problem = described_class.unscoped.find_by!(problematic: model, category: :no_license)
+      problem.update!(ignored: true)
+      model.update!(license: "CC-BY-4.0")
+
+      expect {
+        described_class.create_or_clear model, :no_license, model.license.blank?
+      }.to change { described_class.unscoped.where(id: problem.id).count }.from(1).to(0)
+    end
   end
 
   describe ".resolve_batch" do
@@ -143,14 +167,46 @@ RSpec.describe Problem do
     it "does not unique-enqueue FileConversionJob while the batch transaction is open" do
       file = create(:model_file)
       problem = create(:problem, category: :inefficient, problematic: file)
+      problem.problematic = file
       enqueued_in_open_txn = nil
-      allow_any_instance_of(ModelFile).to receive(:convert_later) do
+      allow(file).to receive(:convert_later) do
         enqueued_in_open_txn = ActiveRecord::Base.connection.transaction_open?
       end
 
       described_class.resolve_batch([problem])
 
       expect(enqueued_in_open_txn).to be(false)
+    end
+
+    it "records per-row errors and keeps sibling successes" do
+      ok, bad = mixed_empty_problems
+      stub_empty_resolve_to_fail(bad.id)
+
+      result = described_class.resolve_batch([ok, bad])
+
+      expect(result[:removed_ids]).to eq([ok.id])
+      expect(result[:errors]).to contain_exactly(
+        hash_including(id: bad.id, category: "empty", error: "ArgumentError")
+      )
+      expect(described_class.unscoped.where(id: ok.id)).not_to exist
+      expect(described_class.unscoped.where(id: bad.id)).to exist
+    end
+
+    def mixed_empty_problems
+      ok = create(:problem_on_model, category: :empty, problematic: create(:model))
+      bad = create(:problem_on_model, category: :empty, problematic: create(:model))
+      [ok, bad]
+    end
+
+    def stub_empty_resolve_to_fail(bad_id)
+      original = Problems::EmptyModel.instance_method(:resolve!)
+      resolver = Problems::EmptyModel.new
+      allow(Problems::EmptyModel).to receive(:new).and_return(resolver)
+      allow(resolver).to receive(:resolve!) do |problem, **kwargs|
+        raise ArgumentError, "unsupported" if problem.id == bad_id
+
+        original.bind_call(resolver, problem, **kwargs)
+      end
     end
   end
 end

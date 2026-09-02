@@ -22,7 +22,7 @@ class ReportsController < ApplicationController
   end
 
   def get_reportable
-    reportable = params[:reportable_class].constantize
+    reportable = resolve_allowed_class!(:reportable_class)
     reportable_param = params[:reportable_class].parameterize + "_id"
     id = params[reportable_param]
     @reportable = policy_scope(reportable).find_param(id)
