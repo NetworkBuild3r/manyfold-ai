@@ -2,6 +2,21 @@ require "rails_helper"
 require "support/mock_directory"
 
 RSpec.describe Scan::Model::ParseMetadataJob do
+  # README examples stub attachment#read; PreviewFilePicker also calls is_image? /
+  # exists_on_storage? on the same row. Keep those predicates off the File double.
+  def stub_readme_parse(model, readme, text)
+    allow(Model).to receive(:find).with(model.id).and_return(model)
+    allow(model).to receive_messages(
+      model_files: instance_double(ActiveRecord::Relation, find_by: readme, min_by: nil, to_a: [readme])
+    )
+    allow(readme).to receive_messages(
+      is_image?: false,
+      is_renderable?: false,
+      exists_on_storage?: false,
+      attachment: class_double(File, read: text)
+    )
+  end
+
   context "with a simple model folder" do
     let(:model) { create(:model) }
 
@@ -408,11 +423,7 @@ RSpec.describe Scan::Model::ParseMetadataJob do
 
     context "with nothing in datapackage" do
       before do
-        allow(Model).to receive(:find).with(model.id).and_return(model)
-        allow(model).to receive_messages(
-          model_files: instance_double(ActiveRecord::Relation, find_by: readme, min_by: nil, to_a: [readme])
-        )
-        allow(readme).to receive(:attachment).and_return class_double(File, read: "new content", extension: "txt")
+        stub_readme_parse(model, readme, "new content")
       end
 
       it "adds content to notes field" do
@@ -422,11 +433,7 @@ RSpec.describe Scan::Model::ParseMetadataJob do
 
     context "with description in datapackage" do
       before do
-        allow(Model).to receive(:find).with(model.id).and_return(model)
-        allow(model).to receive_messages(
-          model_files: instance_double(ActiveRecord::Relation, find_by: readme, min_by: nil, to_a: [readme])
-        )
-        allow(readme).to receive(:attachment).and_return class_double(File, read: "from readme", extension: "txt")
+        stub_readme_parse(model, readme, "from readme")
       end
 
       it "prefers notes from README" do
@@ -437,11 +444,7 @@ RSpec.describe Scan::Model::ParseMetadataJob do
     context "with already-set notes" do
       before do
         model.update!(notes: "already set")
-        allow(Model).to receive(:find).with(model.id).and_return(model)
-        allow(model).to receive_messages(
-          model_files: instance_double(ActiveRecord::Relation, find_by: readme, min_by: nil, to_a: [readme])
-        )
-        allow(readme).to receive(:attachment).and_return class_double(File, read: "from readme", extension: "txt")
+        stub_readme_parse(model, readme, "from readme")
       end
 
       it "does not overwrite existing notes" do
@@ -485,11 +488,7 @@ RSpec.describe Scan::Model::ParseMetadataJob do
 
     context "with nothing in datapackage" do
       before do
-        allow(Model).to receive(:find).with(model.id).and_return(model)
-        allow(model).to receive_messages(
-          model_files: instance_double(ActiveRecord::Relation, find_by: readme, min_by: nil, to_a: [readme])
-        )
-        allow(readme).to receive(:attachment).and_return class_double(File, read: content, extension: "txt")
+        stub_readme_parse(model, readme, content)
         described_class.perform_now(model.id)
         model.reload
       end
@@ -527,11 +526,7 @@ RSpec.describe Scan::Model::ParseMetadataJob do
 
     context "with nothing in datapackage" do
       before do
-        allow(Model).to receive(:find).with(model.id).and_return(model)
-        allow(model).to receive_messages(
-          model_files: instance_double(ActiveRecord::Relation, find_by: readme, min_by: nil, to_a: [readme])
-        )
-        allow(readme).to receive(:attachment).and_return class_double(File, read: content, extension: "txt")
+        stub_readme_parse(model, readme, content)
         described_class.perform_now(model.id)
         model.reload
       end
@@ -561,11 +556,7 @@ RSpec.describe Scan::Model::ParseMetadataJob do
 
     context "with nothing in datapackage" do
       before do
-        allow(Model).to receive(:find).with(model.id).and_return(model)
-        allow(model).to receive_messages(
-          model_files: instance_double(ActiveRecord::Relation, find_by: readme, min_by: nil, to_a: [readme])
-        )
-        allow(readme).to receive(:attachment).and_return class_double(File, read: content, extension: "txt")
+        stub_readme_parse(model, readme, content)
         described_class.perform_now(model.id)
         model.reload
       end
