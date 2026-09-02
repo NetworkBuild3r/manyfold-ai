@@ -412,7 +412,7 @@ RSpec.describe Scan::Model::ParseMetadataJob do
         allow(model).to receive_messages(
           model_files: instance_double(ActiveRecord::Relation, find_by: readme, min_by: nil, to_a: [readme])
         )
-        allow(readme).to receive(:attachment).and_return class_double(File, read: "new content")
+        allow(readme).to receive(:attachment).and_return class_double(File, read: "new content", extension: "txt")
       end
 
       it "adds content to notes field" do
@@ -426,7 +426,7 @@ RSpec.describe Scan::Model::ParseMetadataJob do
         allow(model).to receive_messages(
           model_files: instance_double(ActiveRecord::Relation, find_by: readme, min_by: nil, to_a: [readme])
         )
-        allow(readme).to receive(:attachment).and_return class_double(File, read: "from readme")
+        allow(readme).to receive(:attachment).and_return class_double(File, read: "from readme", extension: "txt")
       end
 
       it "prefers notes from README" do
@@ -441,7 +441,7 @@ RSpec.describe Scan::Model::ParseMetadataJob do
         allow(model).to receive_messages(
           model_files: instance_double(ActiveRecord::Relation, find_by: readme, min_by: nil, to_a: [readme])
         )
-        allow(readme).to receive(:attachment).and_return class_double(File, read: "from readme")
+        allow(readme).to receive(:attachment).and_return class_double(File, read: "from readme", extension: "txt")
       end
 
       it "does not overwrite existing notes" do
@@ -489,7 +489,7 @@ RSpec.describe Scan::Model::ParseMetadataJob do
         allow(model).to receive_messages(
           model_files: instance_double(ActiveRecord::Relation, find_by: readme, min_by: nil, to_a: [readme])
         )
-        allow(readme).to receive(:attachment).and_return class_double(File, read: content)
+        allow(readme).to receive(:attachment).and_return class_double(File, read: content, extension: "txt")
         described_class.perform_now(model.id)
         model.reload
       end
@@ -531,7 +531,7 @@ RSpec.describe Scan::Model::ParseMetadataJob do
         allow(model).to receive_messages(
           model_files: instance_double(ActiveRecord::Relation, find_by: readme, min_by: nil, to_a: [readme])
         )
-        allow(readme).to receive(:attachment).and_return class_double(File, read: content)
+        allow(readme).to receive(:attachment).and_return class_double(File, read: content, extension: "txt")
         described_class.perform_now(model.id)
         model.reload
       end
@@ -565,7 +565,7 @@ RSpec.describe Scan::Model::ParseMetadataJob do
         allow(model).to receive_messages(
           model_files: instance_double(ActiveRecord::Relation, find_by: readme, min_by: nil, to_a: [readme])
         )
-        allow(readme).to receive(:attachment).and_return class_double(File, read: content)
+        allow(readme).to receive(:attachment).and_return class_double(File, read: content, extension: "txt")
         described_class.perform_now(model.id)
         model.reload
       end
