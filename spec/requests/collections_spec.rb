@@ -82,7 +82,8 @@ RSpec.describe "Collections" do
         expect(response.body).to include("collection-card-grid")
         expect(response.body).to include("collections-scroll-sentinel-top")
         expect(response.body).to include("collections-scroll-sentinel")
-        expect(response.body).not_to match(/pagination/)
+        # Tour copy mentions "pagination options"; assert no Kaminari pager chrome.
+        expect(response.body).not_to include('aria-label="pager"')
       end
 
       it "keeps unassigned chrome outside the scroll grid", :as_member do
