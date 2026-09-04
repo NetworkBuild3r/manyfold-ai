@@ -29,6 +29,9 @@ RSpec.describe "Models" do
   context "when signed out in multiuser mode", :after_first_run, :multiuser do
     context "with public model" do
       let!(:model) { create(:model, :public) }
+      let!(:preview) { create(:model_file, model: model, filename: "cover.jpg") }
+
+      before { model.update!(preview_file: preview) }
 
       describe "GET /models" do
         it "includes indexing directive header" do
