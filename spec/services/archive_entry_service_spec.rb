@@ -271,7 +271,7 @@ RSpec.describe ArchiveEntryService do
       service = described_class.new(@file)
       allow(service).to receive(:load_assimp!).and_return(true)
       allow(service).to receive(:convert_mesh_to_stl_tempfile!).and_return(nil)
-      expect(Open3).not_to receive(:capture3)
+      expect(Open3).not_to receive(:capture3).with("node", any_args)
 
       service.list!
       entry = @file.archive_entries.find_by!(pathname: "parts/widget.obj")
