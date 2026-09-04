@@ -102,4 +102,34 @@ class Components::ModelCard < Components::Base
       end
     end
   end
+
+  # Used by Components::ModelSummary (merge target picker). Kept after the
+  # browse-card redesign removed the inline credit row from ModelCard itself.
+  def credits
+    ul(class: "list-none flex flex-wrap gap-x-2 text-xs text-secondary-500 dark:text-secondary-400 m-0 p-0") do
+      if @actor && !@actor.local
+        if (creator = @actor.extensions["attributedTo"])
+          li { credit_creator target: creator["url"], name: creator["name"] }
+        end
+        if (collection = @actor.extensions["context"])
+          li { credit_collection target: collection["url"], name: collection["name"] }
+        end
+      else
+        li { credit_creator target: @model.creator, name: @model.creator.name } if @model.creator
+        li { credit_collection target: @model.collection, name: @model.collection.name } if @model.collection
+      end
+    end
+  end
+
+  def credit_creator(target:, name:)
+    Icon icon: "person", label: Creator.model_name.human
+    whitespace
+    link_to name, target, "aria-label": [Creator.model_name.human, name].join(": "), data: {turbo_frame: "_top"}
+  end
+
+  def credit_collection(target:, name:)
+    Icon icon: "collection", label: Collection.model_name.human
+    whitespace
+    link_to name, target, "aria-label": [Collection.model_name.human, name].join(": "), data: {turbo_frame: "_top"}
+  end
 end

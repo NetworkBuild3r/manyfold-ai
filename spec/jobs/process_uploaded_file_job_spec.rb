@@ -201,5 +201,41 @@ RSpec.describe ProcessUploadedFileJob do
         expect(model.model_files.map(&:filename)).to contain_exactly("subfolder/more.stl", "test.stl")
       end
     end
+
+    # INIT-019/SPEC-003 — zip-slip / extract-fail must not persist raw ../ keys
+    it "does not persist zip-slip members or cache ids containing .." do # rubocop:todo RSpec/ExampleLength,RSpec/MultipleExpectations
+      Tempfile.create(%w[test .zip]) do |file|
+        Zip::File.open(file, create: true) do |zipfile|
+          zipfile.get_output_stream("../escape.stl") { |f| f.puts "evil" }
+          zipfile.get_output_stream("ok.stl") { |f| f.puts "solid" }
+        end
+        described_class.new.send(:unzip_into_model, model, Rack::Test::UploadedFile.new(file))
+        filenames = model.model_files.map(&:filename)
+        expect(filenames).to contain_exactly("ok.stl")
+        expect(filenames).not_to include("../escape.stl")
+        cache_ids = model.model_files.filter_map { |mf| mf.attachment&.id }
+        expect(cache_ids).not_to include(a_string_matching(/\.\./))
+      end
+    end
+
+    it "does not persist when EXTRACT_SECURE leaves no file under the cache tmpdir" do # rubocop:todo RSpec/ExampleLength
+      Tempfile.create(%w[test .zip]) do |file|
+        Zip::File.open(file, create: true) do |zipfile|
+          zipfile.get_output_stream("ghost.stl") { |f| f.puts "solid" }
+        end
+        job = described_class.new
+        allow(job).to receive(:extract_unzip_member).and_return(nil)
+        expect {
+          job.send(:unzip_into_model, model, Rack::Test::UploadedFile.new(file))
+        }.not_to change(ModelFile, :count)
+      end
+    end
+
+    it "rejects absolute pathnames before persist" do
+      job = described_class.new
+      expect(job.send(:persistable_unzip_member?, "/tmp/absolute.stl")).to be false
+      expect(job.send(:persistable_unzip_member?, "C:\\Windows\\evil.stl")).to be false
+      expect(job.send(:persistable_unzip_member?, "parts/ok.stl")).to be true
+    end
   end
 end

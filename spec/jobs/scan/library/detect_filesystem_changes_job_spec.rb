@@ -74,6 +74,38 @@ RSpec.describe Scan::Library::DetectFilesystemChangesJob do
     end
   end
 
+  # INIT-019/SPEC-006: unknown child dirs under a known model must still be discovered.
+  context "with a new nested pack under a known model" do
+    around do |ex|
+      MockDirectory.create([
+        "model_one/part_1.obj",
+        "model_one/new_pack/widget.stl"
+      ]) do |path|
+        @library_path = path
+        ex.run
+      end
+    end
+
+    let(:library) { create(:library, path: @library_path) } # rubocop:todo RSpec/InstanceVariable
+
+    before do
+      model = create(:model, library: library, path: "model_one")
+      create(:model_file, model: model, filename: "part_1.obj")
+    end
+
+    it "discovers the unknown child directory as its own model folder" do
+      expect(described_class.new.folders_with_changes(library)).to include("model_one/new_pack")
+    end
+
+    it "enqueues create for the child and does not treat it as parent-only refresh" do
+      expect {
+        described_class.perform_now(library.id)
+      }.to have_enqueued_job(Scan::Library::CreateModelFromPathJob).with(
+        library.id, "model_one/new_pack", hash_including(scan_batch_id: kind_of(String))
+      )
+    end
+  end
+
   context "with a thingiverse-style model folder" do
     around do |ex|
       MockDirectory.create([

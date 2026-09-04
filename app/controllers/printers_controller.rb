@@ -9,7 +9,7 @@ class PrintersController < ApplicationController
   respond_to :html, :json
 
   before_action :load_printer, only: [
-    :show, :update, :status, :snapshot, :settings, :pause, :stop, :continue, :send_file
+    :show, :update, :destroy, :status, :snapshot, :settings, :pause, :stop, :continue, :send_file
   ]
   skip_after_action :verify_policy_scoped, only: [:discover, :new]
 

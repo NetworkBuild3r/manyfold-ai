@@ -1,4 +1,9 @@
 shared_examples "Followable" do
+  # CI image runs with FEDERATION off; federails_actor is nil unless enabled.
+  before do
+    allow(SiteSettings).to receive(:federation_enabled?).and_return(true)
+  end
+
   context "when being followed" do
     let(:follower) { create(:user) }
     let(:target) { create(described_class.to_s.underscore.to_sym) }

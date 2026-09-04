@@ -44,20 +44,21 @@ RSpec.describe "Model Files" do
         it "fails if expired" do
           id = file.signed_id(expires_at: 1.minute.ago, purpose: "download")
           get "/models/#{file.model.to_param}/model_files/signed/#{id}/#{file.filename}"
-          expect(response).to have_http_status(:not_found)
+          # INIT-019: invalid/expired sig does not skip auth — singleuser → 401; multiuser → 404.
+          expect(response.status).to be_in([401, 404])
         end
 
         it "fails if purpose doesn't match" do
           id = file.signed_id(expires_in: 1.minute, purpose: "shenanigans")
           get "/models/#{file.model.to_param}/model_files/signed/#{id}/#{file.filename}"
-          expect(response).to have_http_status(:not_found)
+          expect(response.status).to be_in([401, 404])
         end
 
         it "fails if signed ID doesn't match URL id" do
           another_file = create(:model_file, filename: "test2.jpg")
           id = file.signed_id(expires_in: 1.minute, purpose: "download")
           get "/models/#{file.model.to_param}/model_files/signed/#{id}/#{another_file.filename}"
-          expect(response).to have_http_status(:not_found)
+          expect(response.status).to be_in([401, 404])
         end
       end
     end
@@ -271,6 +272,24 @@ RSpec.describe "Model Files" do
       it "updates the file" do
         patch model_model_file_path(model, stl_file), params: {model_file: {name: "name"}}
         expect(response).to redirect_to(model_model_file_path(model, stl_file))
+      end
+
+      # INIT-019/SPEC-002 — path jail on filename update (ADR D-1)
+      it "does not persist a parent-directory filename escape" do # rubocop:disable RSpec/MultipleExpectations, RSpec/ExampleLength
+        original = stl_file.filename
+        outside = File.expand_path(File.join(library.path, "..", "outside.stl"))
+        patch model_model_file_path(model, stl_file), params: {model_file: {filename: "../../outside.stl"}}
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(stl_file.reload.filename).to eq original
+        expect(File.exist?(outside)).to be false
+        expect(LibraryPathJail.within?(library.path, stl_file.path_within_library)).to be true
+      end
+
+      it "does not persist an absolute filename path" do # rubocop:disable RSpec/MultipleExpectations
+        original = stl_file.filename
+        patch model_model_file_path(model, stl_file), params: {model_file: {filename: "/etc/passwd.stl"}}
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(stl_file.reload.filename).to eq original
       end
     end
 

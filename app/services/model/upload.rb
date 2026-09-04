@@ -3,6 +3,7 @@
 # Validate upload params and enqueue ProcessUploadedFileJob with ID-only args.
 class Model::Upload
   Result = Data.define(:valid?, :model, :multiple?, :jobs, :job_options)
+  MODEL_ATTRS = %i[creator_id collection_id license sensitive tag_list permission_preset name].freeze
 
   def self.call(library:, params:, owner:, enqueue: true)
     upload = new(library: library, owner: owner)
@@ -17,11 +18,14 @@ class Model::Upload
   end
 
   def call(params)
-    multiple = params[:file]&.values&.all? { |it|
-      SupportedMimeTypes.archive_extensions.include?(File.extname(it[:name]).delete(".").downcase)
+    params = indifferent_hash(params)
+    files = file_entries(params[:file])
+
+    multiple = files.any? && files.all? { |it|
+      SupportedMimeTypes.archive_extensions.include?(File.extname(it[:name].to_s).delete(".").downcase)
     }
     job_options = {
-      owner_id: @owner.id,
+      owner_id: @owner&.id,
       creator_id: params[:creator_id],
       collection_id: params[:collection_id],
       license: params[:license],
@@ -30,7 +34,7 @@ class Model::Upload
       permission_preset: params[:permission_preset],
       name: multiple ? nil : params[:name]
     }
-    dummy = Model.new(job_options.merge(
+    dummy = Model.new(job_options.slice(*MODEL_ATTRS).merge(
       name: multiple ? nil : params[:name],
       library: @library
     ))
@@ -40,9 +44,9 @@ class Model::Upload
     end
 
     jobs = if multiple
-      params[:file].values.map { |it| cached_file_data(it) }
+      files.map { |it| cached_file_data(it) }
     else
-      [params[:file].values.map { |it| cached_file_data(it) }]
+      [files.map { |it| cached_file_data(it) }]
     end
 
     Result.new(valid?: true, model: dummy, multiple?: multiple, jobs: jobs, job_options: job_options.compact)
@@ -56,12 +60,29 @@ class Model::Upload
 
   private
 
+  def file_entries(file)
+    return [] if file.blank?
+
+    values = file.respond_to?(:values) ? file.values : Array.wrap(file)
+    values.filter_map { |it| indifferent_hash(it).presence }
+  end
+
+  def indifferent_hash(obj)
+    return {} if obj.nil?
+
+    hash = obj.respond_to?(:to_unsafe_h) ? obj.to_unsafe_h : obj.to_h
+    hash.with_indifferent_access
+  rescue TypeError, NoMethodError
+    {}
+  end
+
   def cached_file_data(file)
+    file = indifferent_hash(file)
     {
       id: file[:id],
       storage: "cache",
       metadata: {
-        filename: Zaru.sanitize!(File.basename(file[:name]))
+        filename: Zaru.sanitize!(File.basename(file[:name].to_s))
       }
     }
   end

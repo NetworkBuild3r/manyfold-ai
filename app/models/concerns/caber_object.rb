@@ -7,7 +7,6 @@ module CaberObject
     can_grant_permissions_to Role
 
     attr_writer :owner
-    attr_writer :permission_preset
     accepts_nested_attributes_for :caber_relations, reject_if: :all_blank, allow_destroy: true
 
     before_validation :ensure_permission_preset_precedence
@@ -19,6 +18,14 @@ module CaberObject
     after_create_commit :apply_owner_safely
 
     before_update -> { @was_private = !public? }
+  end
+
+  # Virtual; not a column. Mark dirty so update!(permission_preset:) still commits
+  # and after_commit ApplyPreset runs. Reset the per-instance applied flag.
+  def permission_preset=(value)
+    @permission_preset = value
+    @permissions_applied = false
+    updated_at_will_change! if persisted?
   end
 
   def public?

@@ -85,6 +85,7 @@ class ProcessUploadedFileJob < ApplicationJob
     model || (Model.find(model_id) if model_id.present?)
   end
 
+  # INIT-019/SPEC-003: persist only members that extract under a jailed name — never raw ../ pathname.
   def unzip_into_model(model, file)
     new_files = []
     ModelFileUploader.with_file(file) do |archive|
@@ -96,8 +97,19 @@ class ProcessUploadedFileJob < ApplicationJob
         reader.each_entry do |entry|
           next if !entry.file? || entry.size > SiteSettings.max_file_extract_size
           next if SiteSettings.ignored_file?(entry.pathname)
-          filename = entry.pathname
-          reader.extract(entry, Archive::EXTRACT_SECURE, destination: tmpdir.to_s)
+
+          filename = normalize_unzip_pathname(entry.pathname)
+          unless persistable_unzip_member?(filename)
+            log_unzip_skip(filename, reason: "unsafe_pathname")
+            next
+          end
+
+          extracted = extract_unzip_member(reader, entry, tmpdir, filename)
+          unless extracted
+            log_unzip_skip(filename, reason: "extract_failed")
+            next
+          end
+
           new_files << model.model_files.create(filename: filename, attachment: ModelFileUploader.uploaded_file(
             storage: :cache,
             id: File.join(dirname, filename),
@@ -107,6 +119,34 @@ class ProcessUploadedFileJob < ApplicationJob
       end
     end
     new_files
+  end
+
+  def normalize_unzip_pathname(pathname)
+    pathname.to_s.delete_prefix("./").tr("\\", "/")
+  end
+
+  def persistable_unzip_member?(filename)
+    !LibraryPathJail.unsafe_relative?(filename)
+  end
+
+  def extract_unzip_member(reader, entry, tmpdir, filename)
+    reader.extract(entry, Archive::EXTRACT_SECURE, destination: tmpdir.to_s)
+    destination = File.expand_path(filename, tmpdir.to_s)
+    return nil unless File.file?(destination)
+    return nil unless LibraryPathJail.contained?(tmpdir.to_s, destination)
+
+    destination
+  rescue Archive::Error, Errno::ENOENT, Errno::EACCES => e
+    Rails.logger.warn(
+      "ProcessUploadedFileJob: unzip extract error pathname=#{filename.inspect} error=#{e.class}"
+    )
+    nil
+  end
+
+  def log_unzip_skip(filename, reason:)
+    Rails.logger.warn(
+      "ProcessUploadedFileJob: skipping unzip member pathname=#{filename.inspect} reason=#{reason}"
+    )
   end
 
   def count_common_path_components(archive)

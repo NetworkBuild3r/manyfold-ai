@@ -10,7 +10,7 @@ RSpec.describe Collection do
   it_behaves_like "IndexableWithCollectionDelegation"
   it_behaves_like "Linkable"
 
-  context "when creating a collection" do
+  context "when creating a collection", :federated do
     it "doesn't queue any activity jobs" do
       expect {
         create(:collection)

@@ -134,7 +134,7 @@ function boundsOf (tris) {
 }
 
 /** Isometric-ish view: rotate then orthographic project. */
-function projectTris (tris, w, h) {
+function projectTris (tris, w, h, cull = true) {
   const b = boundsOf(tris)
   const cx = (b.min[0] + b.max[0]) / 2
   const cy = (b.min[1] + b.max[1]) / 2
@@ -178,7 +178,7 @@ function projectTris (tris, w, h) {
     const v = t.v.map(xform)
     const n = xformN(t.n)
     // Back-face cull (camera looks down -Z toward origin)
-    if (n[2] > 0.05) continue
+    if (cull && n[2] > 0.05) continue
     projected.push({ n, v })
     for (const p of v) {
       if (p[0] < minX) minX = p[0]
@@ -324,7 +324,12 @@ try {
   // Cap extreme meshes for worker memory/time
   const MAX_TRIS = 250_000
   const use = tris.length > MAX_TRIS ? tris.slice(0, MAX_TRIS) : tris
-  const projected = projectTris(use, width, height)
+  let projected = projectTris(use, width, height, true)
+  if (!projected.length) {
+    // If back-face culling eliminated all triangles (e.g. single-sided surface
+    // or inverted normals), project without culling so we still produce a preview.
+    projected = projectTris(use, width, height, false)
+  }
   if (!projected.length) {
     console.error('all triangles culled')
     process.exit(1)

@@ -128,7 +128,16 @@ class Model < ApplicationRecord
   end
 
   def adopt_file(file, path_prefix: nil)
-    new_filename = path_prefix ? File.join(path_prefix, file.filename) : file.filename
+    # INIT-019/SPEC-004: jailed prefix + filename — never persist a `../` walk.
+    if path_prefix.present?
+      LibraryPathJail.assert_safe_relative!(path_prefix)
+    end
+    LibraryPathJail.assert_safe_relative!(file.filename)
+
+    new_filename = path_prefix.present? ? File.join(path_prefix, file.filename) : file.filename
+    LibraryPathJail.assert_safe_relative!(new_filename)
+    LibraryPathJail.assert_within!(library.path, File.join(path, new_filename))
+
     existing_file = model_files.find_by(filename: new_filename)
 
     if existing_file
@@ -139,6 +148,8 @@ class Model < ApplicationRecord
         # Name collision, different content -- disambiguate
         suffix = file.digest.presence || SecureRandom.hex(6)
         new_filename = "#{File.basename(new_filename, ".*")}_#{suffix}#{File.extname(new_filename)}"
+        LibraryPathJail.assert_safe_relative!(new_filename)
+        LibraryPathJail.assert_within!(library.path, File.join(path, new_filename))
       end
     end
 
@@ -348,14 +359,18 @@ class Model < ApplicationRecord
   end
 
   # Used by Model::Merge to place files from a source model under this target.
+  # INIT-019/SPEC-004 (ADR D-2): never emit a prefix containing `..`. Contained
+  # (parent/child) merges may use a relative prefix only when it stays inside the
+  # target; siblings and all other cases use File.basename (+ adopt_file collisions).
   def compute_merge_prefix(other)
-    if contains?(other)
-      Pathname.new(other.path).relative_path_from(Pathname.new(path)).to_s
-    elsif other.library_id == library_id && Model.common_root(self, other)
-      Pathname.new(other.path).relative_path_from(Pathname.new(path)).to_s
+    prefix = if contains?(other)
+      relative = Pathname.new(other.path).relative_path_from(Pathname.new(path)).to_s
+      LibraryPathJail.unsafe_relative?(relative) ? File.basename(other.path) : relative
     else
       File.basename(other.path)
     end
+    LibraryPathJail.assert_safe_relative!(prefix)
+    prefix
   end
 
   # Public API for Model::Update — capture dirty state before save.

@@ -3,6 +3,7 @@ shared_examples "Follower" do
   let(:target) { create(:model) }
 
   before do
+    allow(SiteSettings).to receive(:federation_enabled?).and_return(true)
     follower.follow(target)
   end
 

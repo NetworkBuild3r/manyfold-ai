@@ -19,8 +19,9 @@ RSpec.describe "Models gallery" do
           expect(response).to have_http_status(:success)
           expect(response.body).to include('turbo-frame id="model-gallery"')
           expect(response.body).to include('id="browseCarousel"')
-          expect(response.body).to include(preview.filename)
-          expect(response.body).to include(extra.filename)
+          # Carousel URLs use public_id + extension, not the storage filename.
+          expect(response.body).to include("#{preview.to_param}.jpg")
+          expect(response.body).to include("#{extra.to_param}.png")
         end
 
         it "exposes prev/next controls when two images are present" do
@@ -37,7 +38,7 @@ RSpec.describe "Models gallery" do
           # for the member proves the action still authorizes via show?/gallery?.
           get gallery_model_path(model)
           expect(response).to have_http_status(:success)
-          expect(response.body).to include(preview.filename)
+          expect(response.body).to include("#{preview.to_param}.jpg")
         end
       end
     end

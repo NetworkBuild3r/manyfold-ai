@@ -239,8 +239,14 @@ Rails.application.routes.draw do
   end
 
   get("/oembed", to: redirect(status: 303) { |_, request|
-    path = URI.parse(request.params[:url])&.path
+    # INIT-019/SPEC-007: reject protocol-relative // and non-relative paths.
+    path = begin
+      URI.parse(request.params[:url].to_s)&.path
+    rescue URI::InvalidURIError
+      raise ActionController::BadRequest
+    end
     raise ActionController::BadRequest if path.blank?
+    raise ActionController::BadRequest unless path.start_with?("/") && !path.start_with?("//")
     URI::HTTP.build(path: path + ".oembed", query: {
       maxwidth: request.params[:maxwidth],
       maxheight: request.params[:maxheight]

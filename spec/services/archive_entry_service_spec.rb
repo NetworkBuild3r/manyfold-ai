@@ -45,6 +45,36 @@ RSpec.describe ArchiveEntryService do
       expect(@file.archive_entries.find_by(pathname: "pics/shot.png").kind).to eq("image")
       expect(@file.archive_entries.find_by(pathname: "readme.txt").kind).to eq("other")
     end
+
+    # INIT-019/SPEC-006
+    it "keeps extra archive_entries when the listing is truncated" do
+      leftover = @file.archive_entries.create!(
+        pathname: "old_member.stl",
+        kind: "mesh",
+        status: "listed",
+        size: 10
+      )
+      stub_const("ArchiveEntryService::MAX_LIST_ENTRIES", 1)
+
+      described_class.new(@file).list!
+
+      expect(@file.reload.archive_entries_truncated).to be true
+      expect(@file.archive_entries.find_by(id: leftover.id)).to be_present
+    end
+
+    it "destroys stale archive_entries when the listing completes without truncation" do
+      leftover = @file.archive_entries.create!(
+        pathname: "old_member.stl",
+        kind: "mesh",
+        status: "listed",
+        size: 10
+      )
+
+      described_class.new(@file).list!
+
+      expect(@file.reload.archive_entries_truncated).to be false
+      expect(@file.archive_entries.find_by(id: leftover.id)).to be_nil
+    end
   end
 
   describe "#enqueue_previews!" do
@@ -99,7 +129,8 @@ RSpec.describe ArchiveEntryService do
       status = instance_double(Process::Status, success?: success, exitstatus: success ? 0 : 1)
       allow(File).to receive(:executable?).and_call_original
       allow(File).to receive(:executable?).with("/usr/bin/node").and_return(true)
-      allow(Open3).to receive(:capture3) do |_bin, _script, mesh_path, preview_path|
+      allow(Open3).to receive(:capture3).and_call_original
+      allow(Open3).to receive(:capture3).with("node", any_args) do |_bin, _script, mesh_path, preview_path|
         expect(File.extname(mesh_path).downcase).to eq(".stl")
         if success
           FileUtils.mkdir_p(File.dirname(preview_path))
@@ -175,6 +206,13 @@ RSpec.describe ArchiveEntryService do
                   vertex 0 1 0
                 endloop
               endfacet
+              facet normal 0 0 -1
+                outer loop
+                  vertex 0 0 0
+                  vertex 0 1 0
+                  vertex 1 0 0
+                endloop
+              endfacet
             endsolid cube
           STL
         end
@@ -234,7 +272,7 @@ RSpec.describe ArchiveEntryService do
       service = described_class.new(@file)
       allow(service).to receive(:load_assimp!).and_return(true)
       allow(service).to receive(:convert_mesh_to_stl_tempfile!).and_return(nil)
-      expect(Open3).not_to receive(:capture3)
+      expect(Open3).not_to receive(:capture3).with("node", any_args)
 
       service.list!
       entry = @file.archive_entries.find_by!(pathname: "parts/widget.obj")

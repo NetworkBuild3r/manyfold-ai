@@ -24,6 +24,12 @@ RSpec.describe PreviewFilePicker do
     names.map { |n| create(:model_file, model: model, filename: n) }
   end
 
+  def add_missing_file(name)
+    file = create(:model_file, model: model, filename: name, attachment: nil)
+    FileUtils.rm_f(File.join(library.path, file.path_within_library))
+    file
+  end
+
   it "keeps an existing on-disk image preview" do
     other, preview = add_files("other.png", "preview.jpg")
     model.update!(preview_file: other)
@@ -47,13 +53,14 @@ RSpec.describe PreviewFilePicker do
   end
 
   it "replaces a missing image with an on-disk image" do
-    gone, present = add_files("gone.jpg", "other.png")
+    gone = add_missing_file("gone.jpg")
+    present, = add_files("other.png")
     model.update!(preview_file: gone)
     expect(described_class.new(model).call).to eq present
   end
 
   it "returns nil with require_on_disk when no image is on disk" do
-    gone, = add_files("gone.jpg")
+    gone = add_missing_file("gone.jpg")
     model.update!(preview_file: gone)
     expect(described_class.new(model).call(require_on_disk: true)).to be_nil
   end

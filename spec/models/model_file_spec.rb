@@ -192,6 +192,52 @@ RSpec.describe ModelFile do
       expect(file.errors[:filename].first).to eq "cannot be a case-only change"
     end
 
+    # INIT-019/SPEC-002 — library path jail (ADR D-1)
+    it "rejects filename with parent-directory segments" do # rubocop:disable RSpec/MultipleExpectations
+      file.update(filename: "../escape.3mf")
+      expect(file).not_to be_valid
+      expect(file.errors[:filename]).to include("must stay within the library root")
+    end
+
+    it "rejects absolute filename paths" do # rubocop:disable RSpec/MultipleExpectations
+      file.update(filename: "/etc/passwd.3mf")
+      expect(file).not_to be_valid
+      expect(file.errors[:filename]).to include("must stay within the library root")
+    end
+
+    it "rejects Windows-style path separators that escape via .." do # rubocop:disable RSpec/MultipleExpectations
+      file.update(filename: "..\\outside.3mf")
+      expect(file).not_to be_valid
+      expect(file.errors[:filename]).to include("must stay within the library root")
+    end
+
+    it "rejects filenames containing NUL at the jail helper" do
+      expect(LibraryPathJail.unsafe_relative?("evil\0.3mf")).to be true
+    end
+
+    it "accepts nested filenames that stay under the library" do # rubocop:disable RSpec/MultipleExpectations
+      FileUtils.mkdir_p(File.join(library.path, "model_one", "sub", "dir"))
+      nested = create(:model_file, model: model, filename: "sub/dir/model.3mf", digest: "nested")
+      expect(nested).to be_valid
+      expect(nested.path_within_library).to eq "model_one/sub/dir/model.3mf"
+      expect(LibraryPathJail.within?(library.path, nested.path_within_library)).to be true
+    end
+
+    it "path_within_library never returns a path outside the library root" do
+      expect {
+        file.filename = "../../outside.3mf"
+        file.path_within_library
+      }.to raise_error(LibraryPathJail::EscapeError)
+    end
+
+    it "generate_location stays under the library when the record is valid" do
+      location = ModelFileUploader.new(:cache).generate_location(
+        StringIO.new("x"),
+        record: file
+      )
+      expect(LibraryPathJail.within?(library.path, location)).to be true
+    end
+
     it "removes original file from disk when explicitly told to" do
       expect { file.delete_from_disk_and_destroy }.to(
         change { File.exist?(File.join(library.path, file.path_within_library)) }.from(true).to(false)

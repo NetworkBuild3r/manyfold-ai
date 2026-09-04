@@ -75,6 +75,7 @@ RSpec.describe Performance::Telemetry do
   end
 
   it "caches Result in Redis (not Rails.cache file store)" do
+    orig_cache = Rails.cache
     allow(Rails).to receive(:cache).and_raise("Rails.cache must not be used")
     first = described_class.new(redis: redis, cache: true).call
     # Mutate underlying samples; cached result must still win within TTL
@@ -85,6 +86,8 @@ RSpec.describe Performance::Telemetry do
     second = described_class.new(redis: redis, cache: true).call
     expect(second.sample_count).to eq(first.sample_count)
     expect(second.sample_count).to eq(3)
+  ensure
+    allow(Rails).to receive(:cache).and_return(orig_cache)
   end
 
   it "never invokes Redis KEYS (Utils.fetch_from_redis path forbidden)" do

@@ -23,7 +23,7 @@ shared_examples "Caber::Object" do
     context "with public preset" do
       let(:object) {
         options = {permission_preset: "public"}
-        options[:creator] = create(:creator) if described_class.column_names.include?("creator_id")
+        options[:creator] = create(:creator, :public) if described_class.column_names.include?("creator_id")
         create(described_class.to_s.underscore.to_sym, options)
       }
 
@@ -112,13 +112,14 @@ shared_examples "Caber::Object" do
   context "when assigning permissions presets during update" do
     let(:object) {
       options = {owner: contributor}
-      options[:creator] = create(:creator) if described_class.column_names.include?("creator_id")
+      options[:creator] = create(:creator, :public) if described_class.column_names.include?("creator_id")
       create(described_class.to_s.underscore.to_sym, options)
     }
 
     context "with public preset" do
       before do
-        object.update!(permission_preset: "public")
+        # Reload so after_commit @permissions_applied from create does not skip ApplyPreset.
+        object.reload.update!(permission_preset: "public")
       end
 
       it "grants view permission to public role" do
@@ -132,7 +133,7 @@ shared_examples "Caber::Object" do
 
     context "with member preset" do
       before do
-        object.update!(permission_preset: "member")
+        object.reload.update!(permission_preset: "member")
       end
 
       it "grants view permission to member role" do
@@ -146,7 +147,7 @@ shared_examples "Caber::Object" do
 
     context "with private preset" do
       before do
-        object.update!(permission_preset: "private")
+        object.reload.update!(permission_preset: "private")
       end
 
       it "does not grant view permission to member role" do
@@ -160,7 +161,7 @@ shared_examples "Caber::Object" do
 
     context "with both preset and explicit permissions" do
       before do
-        object.update!(permission_preset: "member", caber_relations_attributes: [{permission: "view", subject: nil}])
+        object.reload.update!(permission_preset: "member", caber_relations_attributes: [{permission: "view", subject: nil}])
       end
 
       it "grants view permission to member role" do
@@ -191,7 +192,7 @@ shared_examples "Caber::Object" do
     end
 
     it "is public if there is a public view permission, an owner, and nothing else" do
-      object.update(creator: create(:creator)) if described_class.column_names.include?("creator_id")
+      object.update(creator: create(:creator, :public)) if described_class.column_names.include?("creator_id")
       object.grant_permission_to "view", nil
       expect(object.reload.matching_permission_preset).to eq "public"
     end

@@ -16,9 +16,22 @@ require "rails_helper"
 RSpec.describe "Models" do
   it_behaves_like "Permittable", Model
 
+  # INIT-019/SPEC-007: a download HMAC must not skip authenticate on GET /models.
+  context "when signed out in singleuser mode", :singleuser, :after_first_run do
+    it "still requires authentication for GET /models even with a valid download sig" do
+      file = create(:model_file)
+      sig = file.signed_id(expires_in: 1.minute, purpose: "download")
+      get "/models", params: {sig: sig}
+      expect(response).to redirect_to(new_user_session_path)
+    end
+  end
+
   context "when signed out in multiuser mode", :after_first_run, :multiuser do
     context "with public model" do
       let!(:model) { create(:model, :public) }
+      let!(:preview) { create(:model_file, model: model, filename: "cover.jpg") }
+
+      before { model.update!(preview_file: preview) }
 
       describe "GET /models" do
         it "includes indexing directive header" do
@@ -172,18 +185,18 @@ RSpec.describe "Models" do
           expect(tags).to contain_exactly("a", "b", "d")
         end
 
-        it "auto-publishes creator if being made public", :as_moderator do # rubocop:todo RSpec/ExampleLength, RSpec/MultipleExpectations
+        it "does not auto-publish a private creator when making the model public", :as_moderator do # rubocop:todo RSpec/ExampleLength, RSpec/MultipleExpectations
           private_creator = create(:creator)
-          private_model = create(:model, creator: private_creator)
+          private_model = create(:model, creator: private_creator, license: "MIT")
           put "/models/#{private_model.to_param}", params: {
             model: {
               creator_id: private_creator.id,
               caber_relations_attributes: {"0" => {subject: "role::public", permission: "view"}}
             }
           }
-          expect(response).to have_http_status(:redirect)
-          expect(private_model.reload).to be_public
-          expect(private_creator.reload).to be_public
+          expect(response).to have_http_status(:unprocessable_content)
+          expect(private_model.reload).not_to be_public
+          expect(private_creator.reload).not_to be_public
         end
 
         it "is denied to non-moderators", :as_contributor do
@@ -320,9 +333,24 @@ RSpec.describe "Models" do
       end
 
       describe "GET /models", :as_member do
+        # Fixtures have no preview images; opt out of default with-image browse.
+        let(:library_browse) { {library: library.to_param, has_image: "0"} }
+
         it "allows search queries" do
           get "/models?q=#{library.models.first.name}"
           expect(response).to have_http_status(:success)
+        end
+
+        # INIT-019/SPEC-007
+        it "does not follow-redirect a casual email-like mention" do
+          get "/models", params: {q: "painted by jane@studio"}
+          expect(response).to have_http_status(:success)
+          expect(response).not_to redirect_to(new_follow_path(uri: "painted by jane@studio"))
+        end
+
+        it "does not DoubleRender when q is a URL that also contains @" do
+          get "/models", params: {q: "http://user:pass@example.com/models/abc"}
+          expect(response).not_to have_http_status(:internal_server_error)
         end
 
         it "allows tag filters" do
@@ -339,7 +367,7 @@ RSpec.describe "Models" do
         end
 
         it "returns paginated models with infinite-scroll chrome" do # rubocop:todo RSpec/MultipleExpectations
-          get "/models?library=#{library.to_param}&page=1"
+          get "/models", params: library_browse.merge(page: 1)
           expect(response).to have_http_status(:success)
           expect(response.body).to include('data-controller="infinite-scroll"')
           expect(response.body).to include("model-card-grid")
@@ -347,7 +375,7 @@ RSpec.describe "Models" do
 
         it "serves turbo-stream pages for infinite scroll" do # rubocop:todo RSpec/MultipleExpectations
           get "/models",
-            params: {library: library.to_param, page: 1},
+            params: library_browse.merge(page: 1),
             headers: {"Accept" => "text/vnd.turbo-stream.html"}
           expect(response).to have_http_status(:success)
           expect(response.media_type).to eq("text/vnd.turbo-stream.html")
@@ -357,7 +385,7 @@ RSpec.describe "Models" do
         end
 
         it "uses fixed BrowseGrid page size on the index" do
-          get "/models?library=#{library.to_param}"
+          get "/models", params: library_browse
           expect(response).to have_http_status(:success)
           expect(response.body).to include("browse-card-grid")
           expect(response.body).to include(%(data-infinite-scroll-per-page-value="#{BrowseGrid::PAGE_SIZE}"))
@@ -368,7 +396,7 @@ RSpec.describe "Models" do
         it "honors offset and clamped per_page on infinite-scroll turbo-stream requests" do
           # 20 models in library; offset=0 with per_page=12 yields a next page.
           get "/models",
-            params: {library: library.to_param, offset: 0, per_page: 12},
+            params: library_browse.merge(offset: 0, per_page: 12),
             headers: {
               "Accept" => "text/vnd.turbo-stream.html",
               "X-Infinite-Scroll" => "1"
@@ -384,22 +412,22 @@ RSpec.describe "Models" do
         end
 
         it "advances offset metadata so clients can skip past a fetched page" do
-          # Client advances afterFetchCursor by limit; server exposes current window offset.
+          # Mid-window: both before and after remain for a 20-model library.
           get "/models",
-            params: {library: library.to_param, offset: 12, per_page: 12, window: "after"},
+            params: library_browse.merge(offset: 5, per_page: 5, window: "after"),
             headers: {
               "Accept" => "text/vnd.turbo-stream.html",
               "X-Infinite-Scroll" => "1"
             }
           expect(response).to have_http_status(:success)
-          expect(response.body).to include('data-offset="12"')
+          expect(response.body).to include('data-offset="5"')
           expect(response.body).to include('data-has-more-after="true"')
           expect(response.body).to include('data-has-more-before="true"')
         end
 
         it "sets has_more_before when offset is past the start" do
           get "/models",
-            params: {library: library.to_param, offset: 12, per_page: 5, window: "after"},
+            params: library_browse.merge(offset: 12, per_page: 5, window: "after"),
             headers: {
               "Accept" => "text/vnd.turbo-stream.html",
               "X-Infinite-Scroll" => "1"
@@ -412,7 +440,7 @@ RSpec.describe "Models" do
 
         it "marks true end only when offset+returned covers total" do
           get "/models",
-            params: {library: library.to_param, offset: 18, per_page: 5, window: "after"},
+            params: library_browse.merge(offset: 18, per_page: 5, window: "after"),
             headers: {
               "Accept" => "text/vnd.turbo-stream.html",
               "X-Infinite-Scroll" => "1"
@@ -425,7 +453,7 @@ RSpec.describe "Models" do
 
         it "prepends cards when window=before" do
           get "/models",
-            params: {library: library.to_param, offset: 5, per_page: 5, window: "before"},
+            params: library_browse.merge(offset: 5, per_page: 5, window: "before"),
             headers: {
               "Accept" => "text/vnd.turbo-stream.html",
               "X-Infinite-Scroll" => "1"
@@ -437,7 +465,7 @@ RSpec.describe "Models" do
 
         it "allows single-card per_page for delete refill" do
           get "/models",
-            params: {library: library.to_param, offset: 10, per_page: 1, window: "after"},
+            params: library_browse.merge(offset: 10, per_page: 1, window: "after"),
             headers: {
               "Accept" => "text/vnd.turbo-stream.html",
               "X-Infinite-Scroll" => "1"
@@ -448,7 +476,7 @@ RSpec.describe "Models" do
         end
 
         it "includes top and bottom sentinels on the HTML index" do
-          get "/models?library=#{library.to_param}"
+          get "/models", params: library_browse
           expect(response).to have_http_status(:success)
           expect(response.body).to include("models-scroll-sentinel-top")
           expect(response.body).to include('data-has-more-after=')
@@ -667,7 +695,8 @@ RSpec.describe "Models" do
       end
 
       describe "POST /models" do
-        let(:creator) { create(:creator) }
+        # Public preset requires an already-public creator (validate_publishable).
+        let(:creator) { create(:creator, :public) }
         let(:collection) { create(:collection) }
         let(:post_models) {
           post "/models", params: {

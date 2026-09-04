@@ -115,6 +115,7 @@ describe "Models", :after_first_run, :multiuser do # rubocop:disable RSpec/Empty
           }
 
           run_test! do # rubocop:disable RSpec/ExampleLength
+            # Model::Upload.compact drops nil kwargs (creator/collection/permission_preset).
             expect(ProcessUploadedFileJob).to have_been_enqueued.with(
               Library.first.id,
               [{
@@ -126,11 +127,8 @@ describe "Models", :after_first_run, :multiuser do # rubocop:disable RSpec/Empty
               }],
               name: "My New Model",
               owner_id: User.last.id,
-              creator_id: nil,
-              collection_id: nil,
               license: "MIT",
               sensitive: true,
-              permission_preset: nil,
               tag_list: ["tag1", "tag2"]
             ).once
           end

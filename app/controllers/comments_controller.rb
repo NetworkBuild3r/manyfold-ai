@@ -12,7 +12,7 @@ class CommentsController < ApplicationController
   end
 
   def get_commentable
-    commentable = params[:commentable_class].constantize
+    commentable = resolve_allowed_class!(:commentable_class)
     commentable_param = params[:commentable_class].parameterize + "_id"
     id = params[commentable_param]
     @commentable = policy_scope(commentable).find_param(id)

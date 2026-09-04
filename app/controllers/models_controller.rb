@@ -22,7 +22,10 @@ class ModelsController < ApplicationController
   include ModelsController::Merge
 
   def get_filters
-    @filter = Search::FilterService.new(params, user: current_user, default_has_image: true)
+    # HTML library browse defaults to with-image cards (INIT-009). API lists and
+    # bulk-edit/update must not drop models that lack a preview.
+    browse_with_images = !request.format.manyfold_api_v0? && %w[index filter_facets show].include?(action_name)
+    @filter = Search::FilterService.new(params, user: current_user, default_has_image: browse_with_images)
   end
 
   def index
@@ -267,15 +270,27 @@ class ModelsController < ApplicationController
 
   private
 
+  # INIT-019/SPEC-007: Follow redirect only for a full webfinger/acct form; return after redirect_to.
   def redirect_search
-    redirect_to new_follow_path(uri: params[:q]) if params[:q]&.match?(/(@|acct:)?([a-z0-9\-_.]+)@(.*)/)
-    if params[:q]&.match?(URI::RFC2396_PARSER.make_regexp)
-      if (link = Link.find_by(url: params[:q]))
-        redirect_to link.linkable
-      elsif Link.deserializer_for(url: params[:q])
-        redirect_to new_import_path(url: params[:q])
-      end
+    q = params[:q]
+    return if q.blank?
+
+    if webfinger_acct_query?(q)
+      redirect_to new_follow_path(uri: q)
+      return
     end
+
+    return unless q.match?(URI::RFC2396_PARSER.make_regexp)
+
+    if (link = Link.find_by(url: q))
+      redirect_to link.linkable
+    elsif Link.deserializer_for(url: q)
+      redirect_to new_import_path(url: q)
+    end
+  end
+
+  def webfinger_acct_query?(q)
+    q.match?(/\A(?:acct:)?[a-z0-9](?:[a-z0-9\-_.]*[a-z0-9])?@[a-z0-9](?:[a-z0-9\-_.]*[a-z0-9])?\.[a-z]{2,}\z/i)
   end
 
   def generate_available_tag_list

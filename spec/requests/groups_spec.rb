@@ -117,8 +117,10 @@ RSpec.describe "Groups", :after_first_run do
       end
 
       it "doesn't add any members by fediverse address if federation is disabled" do
+        # Ensure actor exists under federation-on before disabling (create otherwise skips actor).
+        address = user.federails_actor.at_address
         allow(SiteSettings).to receive(:federation_enabled?).and_return(false)
-        id_params = {group: {memberships_attributes: {"0" => {user_id: user.federails_actor.at_address}}}}
+        id_params = {group: {memberships_attributes: {"0" => {user_id: address}}}}
         patch "/creators/#{creator.to_param}/groups/#{group.to_param}", params: id_params
         expect(group.reload.members).to be_empty
       end
@@ -178,6 +180,36 @@ RSpec.describe "Groups", :after_first_run do
       it "doesn't show group list" do
         get "/creators/#{creator.to_param}/groups"
         expect(response).to have_http_status :forbidden
+      end
+    end
+
+    # INIT-019/SPEC-007
+    describe "POST /creators/{creator_id}/groups" do
+      let(:params) do
+        {group: {name: "Hijack", memberships_attributes: {"0" => {user_id: "new_user@example.com"}}}}
+      end
+
+      it "does not invite a user or persist a group" do
+        expect(User).not_to receive(:invite!)
+        expect {
+          post "/creators/#{creator.to_param}/groups", params: params
+        }.not_to change(Group, :count)
+        expect(response).to have_http_status :forbidden
+      end
+    end
+  end
+
+  context "when signed out" do
+    describe "POST /creators/{creator_id}/groups" do
+      let(:params) do
+        {group: {name: "Hijack", memberships_attributes: {"0" => {user_id: "new_user@example.com"}}}}
+      end
+
+      it "does not invite a user or persist a group" do
+        expect(User).not_to receive(:invite!)
+        expect {
+          post "/creators/#{creator.to_param}/groups", params: params
+        }.not_to change(Group, :count)
       end
     end
   end

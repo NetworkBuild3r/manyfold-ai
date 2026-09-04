@@ -85,6 +85,7 @@ class Scan::Model::AddNewFilesJob < ApplicationJob
     return [] unless root.present? && File.directory?(abs)
 
     indexable = SupportedMimeTypes.indexable_extensions.map(&:downcase).to_set
+    image_exts = SupportedMimeTypes.image_extensions.map(&:downcase).to_set
     common = ApplicationJob.common_subfolders.keys.map(&:downcase).to_set
     results = []
 
@@ -120,6 +121,8 @@ class Scan::Model::AddNewFilesJob < ApplicationJob
 
           results << File.join(model_path, name)
         elsif File.directory?(child) && !File.symlink?(child) && common.include?(name.downcase)
+          # Match ApplicationJob.common_subfolders glob: images/ is image-only (Thingiverse STLs stay out).
+          allowed = (name.downcase == "images") ? image_exts : indexable
           Dir.children(child).each do |fname|
             next if fname.start_with?(".")
 
@@ -127,9 +130,11 @@ class Scan::Model::AddNewFilesJob < ApplicationJob
             next unless File.file?(fpath) && !File.symlink?(fpath)
 
             ext = File.extname(fname).delete(".").downcase
-            next unless indexable.include?(ext)
+            next unless allowed.include?(ext)
+            rel = File.join(model_path, name, fname)
+            next if SiteSettings.ignored_file?(rel)
 
-            results << File.join(model_path, name, fname)
+            results << rel
           end
         end
       rescue Errno::EACCES, Errno::ENOENT, Errno::EIO
