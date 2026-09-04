@@ -695,7 +695,8 @@ RSpec.describe "Models" do
       end
 
       describe "POST /models" do
-        let(:creator) { create(:creator) }
+        # Public preset requires an already-public creator (validate_publishable).
+        let(:creator) { create(:creator, :public) }
         let(:collection) { create(:collection) }
         let(:post_models) {
           post "/models", params: {
