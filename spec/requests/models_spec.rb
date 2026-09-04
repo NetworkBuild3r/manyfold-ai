@@ -412,15 +412,15 @@ RSpec.describe "Models" do
         end
 
         it "advances offset metadata so clients can skip past a fetched page" do
-          # Client advances afterFetchCursor by limit; server exposes current window offset.
+          # Mid-window: both before and after remain for a 20-model library.
           get "/models",
-            params: library_browse.merge(offset: 12, per_page: 12, window: "after"),
+            params: library_browse.merge(offset: 5, per_page: 5, window: "after"),
             headers: {
               "Accept" => "text/vnd.turbo-stream.html",
               "X-Infinite-Scroll" => "1"
             }
           expect(response).to have_http_status(:success)
-          expect(response.body).to include('data-offset="12"')
+          expect(response.body).to include('data-offset="5"')
           expect(response.body).to include('data-has-more-after="true"')
           expect(response.body).to include('data-has-more-before="true"')
         end
