@@ -333,6 +333,9 @@ RSpec.describe "Models" do
       end
 
       describe "GET /models", :as_member do
+        # Fixtures have no preview images; opt out of default with-image browse.
+        let(:library_browse) { {library: library.to_param, has_image: "0"} }
+
         it "allows search queries" do
           get "/models?q=#{library.models.first.name}"
           expect(response).to have_http_status(:success)
@@ -364,7 +367,7 @@ RSpec.describe "Models" do
         end
 
         it "returns paginated models with infinite-scroll chrome" do # rubocop:todo RSpec/MultipleExpectations
-          get "/models?library=#{library.to_param}&page=1"
+          get "/models", params: library_browse.merge(page: 1)
           expect(response).to have_http_status(:success)
           expect(response.body).to include('data-controller="infinite-scroll"')
           expect(response.body).to include("model-card-grid")
@@ -372,7 +375,7 @@ RSpec.describe "Models" do
 
         it "serves turbo-stream pages for infinite scroll" do # rubocop:todo RSpec/MultipleExpectations
           get "/models",
-            params: {library: library.to_param, page: 1},
+            params: library_browse.merge(page: 1),
             headers: {"Accept" => "text/vnd.turbo-stream.html"}
           expect(response).to have_http_status(:success)
           expect(response.media_type).to eq("text/vnd.turbo-stream.html")
@@ -382,7 +385,7 @@ RSpec.describe "Models" do
         end
 
         it "uses fixed BrowseGrid page size on the index" do
-          get "/models?library=#{library.to_param}"
+          get "/models", params: library_browse
           expect(response).to have_http_status(:success)
           expect(response.body).to include("browse-card-grid")
           expect(response.body).to include(%(data-infinite-scroll-per-page-value="#{BrowseGrid::PAGE_SIZE}"))
@@ -393,7 +396,7 @@ RSpec.describe "Models" do
         it "honors offset and clamped per_page on infinite-scroll turbo-stream requests" do
           # 20 models in library; offset=0 with per_page=12 yields a next page.
           get "/models",
-            params: {library: library.to_param, offset: 0, per_page: 12},
+            params: library_browse.merge(offset: 0, per_page: 12),
             headers: {
               "Accept" => "text/vnd.turbo-stream.html",
               "X-Infinite-Scroll" => "1"
@@ -411,7 +414,7 @@ RSpec.describe "Models" do
         it "advances offset metadata so clients can skip past a fetched page" do
           # Client advances afterFetchCursor by limit; server exposes current window offset.
           get "/models",
-            params: {library: library.to_param, offset: 12, per_page: 12, window: "after"},
+            params: library_browse.merge(offset: 12, per_page: 12, window: "after"),
             headers: {
               "Accept" => "text/vnd.turbo-stream.html",
               "X-Infinite-Scroll" => "1"
@@ -424,7 +427,7 @@ RSpec.describe "Models" do
 
         it "sets has_more_before when offset is past the start" do
           get "/models",
-            params: {library: library.to_param, offset: 12, per_page: 5, window: "after"},
+            params: library_browse.merge(offset: 12, per_page: 5, window: "after"),
             headers: {
               "Accept" => "text/vnd.turbo-stream.html",
               "X-Infinite-Scroll" => "1"
@@ -437,7 +440,7 @@ RSpec.describe "Models" do
 
         it "marks true end only when offset+returned covers total" do
           get "/models",
-            params: {library: library.to_param, offset: 18, per_page: 5, window: "after"},
+            params: library_browse.merge(offset: 18, per_page: 5, window: "after"),
             headers: {
               "Accept" => "text/vnd.turbo-stream.html",
               "X-Infinite-Scroll" => "1"
@@ -450,7 +453,7 @@ RSpec.describe "Models" do
 
         it "prepends cards when window=before" do
           get "/models",
-            params: {library: library.to_param, offset: 5, per_page: 5, window: "before"},
+            params: library_browse.merge(offset: 5, per_page: 5, window: "before"),
             headers: {
               "Accept" => "text/vnd.turbo-stream.html",
               "X-Infinite-Scroll" => "1"
@@ -462,7 +465,7 @@ RSpec.describe "Models" do
 
         it "allows single-card per_page for delete refill" do
           get "/models",
-            params: {library: library.to_param, offset: 10, per_page: 1, window: "after"},
+            params: library_browse.merge(offset: 10, per_page: 1, window: "after"),
             headers: {
               "Accept" => "text/vnd.turbo-stream.html",
               "X-Infinite-Scroll" => "1"
@@ -473,7 +476,7 @@ RSpec.describe "Models" do
         end
 
         it "includes top and bottom sentinels on the HTML index" do
-          get "/models?library=#{library.to_param}"
+          get "/models", params: library_browse
           expect(response).to have_http_status(:success)
           expect(response.body).to include("models-scroll-sentinel-top")
           expect(response.body).to include('data-has-more-after=')
