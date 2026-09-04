@@ -44,20 +44,21 @@ RSpec.describe "Model Files" do
         it "fails if expired" do
           id = file.signed_id(expires_at: 1.minute.ago, purpose: "download")
           get "/models/#{file.model.to_param}/model_files/signed/#{id}/#{file.filename}"
-          expect(response).to have_http_status(:not_found)
+          # INIT-019: invalid/expired sig does not skip auth — singleuser → 401; multiuser → 404.
+          expect(response.status).to be_in([401, 404])
         end
 
         it "fails if purpose doesn't match" do
           id = file.signed_id(expires_in: 1.minute, purpose: "shenanigans")
           get "/models/#{file.model.to_param}/model_files/signed/#{id}/#{file.filename}"
-          expect(response).to have_http_status(:not_found)
+          expect(response.status).to be_in([401, 404])
         end
 
         it "fails if signed ID doesn't match URL id" do
           another_file = create(:model_file, filename: "test2.jpg")
           id = file.signed_id(expires_in: 1.minute, purpose: "download")
           get "/models/#{file.model.to_param}/model_files/signed/#{id}/#{another_file.filename}"
-          expect(response).to have_http_status(:not_found)
+          expect(response.status).to be_in([401, 404])
         end
       end
     end
