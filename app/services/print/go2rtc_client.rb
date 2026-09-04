@@ -27,7 +27,8 @@ module Print
       http.read_timeout = GO2RTC_READ_TIMEOUT
       response = http.get(uri.request_uri)
       body = response.body
-      unless response.is_a?(Net::HTTPSuccess) && body.present? && body.bytesize > MIN_JPEG_BYTES
+      has_content = body && !body.empty?
+      unless response.is_a?(Net::HTTPSuccess) && has_content && body.bytesize > MIN_JPEG_BYTES
         raise Error, "go2rtc frame empty or HTTP #{response.code}"
       end
       body
