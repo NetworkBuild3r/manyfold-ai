@@ -129,7 +129,8 @@ RSpec.describe ArchiveEntryService do
       status = instance_double(Process::Status, success?: success, exitstatus: success ? 0 : 1)
       allow(File).to receive(:executable?).and_call_original
       allow(File).to receive(:executable?).with("/usr/bin/node").and_return(true)
-      allow(Open3).to receive(:capture3) do |_bin, _script, mesh_path, preview_path|
+      allow(Open3).to receive(:capture3).and_call_original
+      allow(Open3).to receive(:capture3).with("node", any_args) do |_bin, _script, mesh_path, preview_path|
         expect(File.extname(mesh_path).downcase).to eq(".stl")
         if success
           FileUtils.mkdir_p(File.dirname(preview_path))
