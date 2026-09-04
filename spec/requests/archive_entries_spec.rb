@@ -54,17 +54,17 @@ RSpec.describe ArchiveEntriesController, :after_first_run, type: :request do
 
       it "denies archive index listing" do
         get model_model_file_archive_entries_path(model, file)
-        expect(response).to have_http_status(:not_found)
+        expect(response).to have_http_status(:forbidden)
       end
 
       it "denies archive member download" do
         get download_model_model_file_archive_entry_path(model, file, entry)
-        expect(response).to have_http_status(:not_found)
+        expect(response).to have_http_status(:forbidden)
       end
 
       it "denies archive member content" do
         get content_model_model_file_archive_entry_path(model, file, entry)
-        expect(response).to have_http_status(:not_found)
+        expect(response).to have_http_status(:forbidden)
       end
     end
 
