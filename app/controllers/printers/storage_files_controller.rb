@@ -37,8 +37,10 @@ module Printers
 
       filename = if uploaded.respond_to?(:original_filename)
         uploaded.original_filename.to_s
-      else
+      elsif uploaded.respond_to?(:path)
         File.basename(uploaded.path.to_s)
+      else
+        File.basename(uploaded.to_s)
       end
       extension = File.extname(filename).delete(".").downcase
       unless %w[ctb jxs].include?(extension)
