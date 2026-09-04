@@ -10,7 +10,10 @@ shared_examples "Permittable" do |object_class|
     before do
       allow(SiteSettings).to receive(:default_viewer_role).and_return(:private)
       object.try(:license=, "MIT")
-      object.try(:creator=, create(:creator))
+      # Publishability requires an already-public creator when becoming public.
+      if object.class.column_names.include?("creator_id")
+        object.creator = create(:creator, :public)
+      end
       object.grant_permission_to("edit", editor)
       object.save!
     end
