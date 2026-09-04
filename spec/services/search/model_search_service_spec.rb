@@ -7,10 +7,10 @@ RSpec.describe Search::ModelSearchService do
     before do
       seuss = create(:creator, name: "Dr Seuss")
       bats = create(:collection, name: "Chiroptera")
-      create(:model, name: "cat in the hat", tag_list: ["dog", "log", "frog", "cat"], creator: seuss, notes: "lorem ipsum", caption: nil)
-      create(:model, name: "hat on the cat", tag_list: ["dog"], creator: seuss, notes: nil, caption: "dolor sit amet")
-      create(:model, name: "bat on a mat", tag_list: ["log"], collection: bats, notes: nil, caption: nil)
-      model = create(:model, name: "bat on a hat", tag_list: ["frog"], collection: bats, notes: nil, caption: nil)
+      create(:model, name: "cat in the hat", path: "cat_in_hat", tag_list: ["dog", "log", "frog", "cat"], creator: seuss, notes: "lorem ipsum", caption: nil)
+      create(:model, name: "hat on the cat", path: "hat_on_cat", tag_list: ["dog"], creator: seuss, notes: nil, caption: "dolor sit amet")
+      create(:model, name: "bat on a mat", path: "bat_on_mat", tag_list: ["log"], collection: bats, notes: nil, caption: nil)
+      model = create(:model, name: "bat on a hat", path: "bat_on_hat", tag_list: ["frog"], collection: bats, notes: nil, caption: nil)
       create(:model_file, filename: "big_hat.stl", model: model)
     end
 
