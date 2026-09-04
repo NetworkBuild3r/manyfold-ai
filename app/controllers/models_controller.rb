@@ -22,9 +22,10 @@ class ModelsController < ApplicationController
   include ModelsController::Merge
 
   def get_filters
-    # HTML browse defaults to with-image cards (INIT-009). API lists all authorized models.
-    html_browse = !request.format.manyfold_api_v0?
-    @filter = Search::FilterService.new(params, user: current_user, default_has_image: html_browse)
+    # HTML library browse defaults to with-image cards (INIT-009). API lists and
+    # bulk-edit/update must not drop models that lack a preview.
+    browse_with_images = !request.format.manyfold_api_v0? && %w[index filter_facets show].include?(action_name)
+    @filter = Search::FilterService.new(params, user: current_user, default_has_image: browse_with_images)
   end
 
   def index
