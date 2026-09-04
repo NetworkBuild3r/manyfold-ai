@@ -2,7 +2,7 @@
 
 class Components::ModelSummary < Components::ModelCard
   def initialize(model:)
-    @model = model
+    super(model: model)
   end
 
   def view_template
