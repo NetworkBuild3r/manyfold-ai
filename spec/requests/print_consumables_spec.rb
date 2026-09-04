@@ -58,7 +58,7 @@ RSpec.describe "Print consumables and storage API" do
       tmp.write("mesh")
       tmp.rewind
       file = Rack::Test::UploadedFile.new(tmp.path, "model/stl", original_filename: "part.stl")
-      post printer_storage_files_path(print_host), params: {file: file}
+      post printer_storage_files_path(print_host), params: {file: file}, as: :json
       expect(response).to have_http_status(:unprocessable_content)
       expect(response.parsed_body["error"]).to eq("unsupported_file_type")
       expect(response.parsed_body["reasons"].first["code"]).to eq("format_unsupported")
