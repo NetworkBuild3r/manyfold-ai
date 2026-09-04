@@ -185,18 +185,18 @@ RSpec.describe "Models" do
           expect(tags).to contain_exactly("a", "b", "d")
         end
 
-        it "auto-publishes creator if being made public", :as_moderator do # rubocop:todo RSpec/ExampleLength, RSpec/MultipleExpectations
+        it "does not auto-publish a private creator when making the model public", :as_moderator do # rubocop:todo RSpec/ExampleLength, RSpec/MultipleExpectations
           private_creator = create(:creator)
-          private_model = create(:model, creator: private_creator)
+          private_model = create(:model, creator: private_creator, license: "MIT")
           put "/models/#{private_model.to_param}", params: {
             model: {
               creator_id: private_creator.id,
               caber_relations_attributes: {"0" => {subject: "role::public", permission: "view"}}
             }
           }
-          expect(response).to have_http_status(:redirect)
-          expect(private_model.reload).to be_public
-          expect(private_creator.reload).to be_public
+          expect(response).to have_http_status(:unprocessable_content)
+          expect(private_model.reload).not_to be_public
+          expect(private_creator.reload).not_to be_public
         end
 
         it "is denied to non-moderators", :as_contributor do
