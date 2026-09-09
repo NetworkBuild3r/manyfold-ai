@@ -152,6 +152,29 @@ RSpec.describe "Problems" do
           expect(Model.where(id: model_b.id)).not_to exist
         end
 
+        it "clears leftover duplicate problems after a same-digest merge" do
+          library = create(:library, path: @library_path) # rubocop:todo RSpec/InstanceVariable
+          model_a = create(:model, library: library, path: "alpha", name: "Alpha")
+          model_b = create(:model, library: library, path: "beta", name: "Beta")
+          file_a = create(:model_file, model: model_a, filename: "part.stl")
+          file_b = create(:model_file, model: model_b, filename: "copy.stl")
+          file_a.update_columns(digest: "same", size: 2048) # rubocop:disable Rails/SkipsModelValidations
+          file_b.update_columns(digest: "same", size: 2048) # rubocop:disable Rails/SkipsModelValidations
+          problem = create(:problem, category: :duplicate, problematic: file_a)
+          create(:problem, category: :duplicate, problematic: file_b)
+
+          post merge_problem_path(problem), params: {
+            keep: "a",
+            other_id: model_b.public_id,
+            fields: {name: "a"},
+            tag_strategy: "combine"
+          }
+
+          expect(response).to redirect_to(problems_path)
+          expect(Model.where(id: model_b.id)).not_to exist
+          expect(Problem.where(category: :duplicate, problematic_type: "ModelFile")).not_to exist
+        end
+
         it "does not 500 when the library disk refuses the move" do
           library = create(:library, path: @library_path) # rubocop:todo RSpec/InstanceVariable
           model_a = create(:model, library: library, path: "alpha", name: "Alpha")
@@ -235,6 +258,22 @@ RSpec.describe "Problems" do
     end
 
     describe "POST /problems/:id/resolve with destroy resolution", :as_moderator do
+      it "clears the leftover same-model extra after the extra copy is deleted" do
+        model = create(:model)
+        keeper = create(:model_file, model: model, filename: "keep.stl")
+        extra = create(:model_file, model: model, filename: "extra.stl")
+        keeper.update_columns(digest: "same", size: 4096) # rubocop:disable Rails/SkipsModelValidations
+        extra.update_columns(digest: "same", size: 4096) # rubocop:disable Rails/SkipsModelValidations
+        create(:problem, category: :duplicate, problematic: keeper)
+        extra_problem = create(:problem, category: :duplicate, problematic: extra)
+
+        post resolve_problem_path(extra_problem), params: {resolve: "1"}
+
+        expect(response).to have_http_status(:redirect)
+        expect(ModelFile.where(id: extra.id)).not_to exist
+        expect(Problem.where(category: :duplicate, problematic: keeper)).not_to exist
+      end
+
       it "destroys the problem record before running the destructive side effect" do
         problem = create(:problem_on_model, category: :empty)
         problem_id = problem.id

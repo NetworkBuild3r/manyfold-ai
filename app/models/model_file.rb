@@ -333,7 +333,7 @@ class ModelFile < ApplicationRecord
   end
 
   def rescan_duplicates
-    duplicates.each { |it| it.analyse_later }
+    duplicates.each { |it| Problems::Duplicate.detect(it) }
   end
 
   def presupported_files_cannot_have_presupported_version

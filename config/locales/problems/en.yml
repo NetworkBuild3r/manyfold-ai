@@ -42,11 +42,11 @@ en:
       ignore: Hide
       item: Item
       merge: Merge
-      merge_explainer: Below are identified groups of duplicated 3D meshes and models. Merge two models when the same file lives in both, or delete one extra copy when you know which file to drop.
+      merge_explainer: Below are identified groups of duplicated 3D meshes and models. Merge two models when the same file lives in both. Extra copies on one model are dropped when you merge or delete them, and they leave this list once only one copy remains.
+      merge_title: Merge Duplicates
       more_copies:
         one: "+%{count} more copy"
         other: "+%{count} more copies"
-      merge_title: Merge Duplicates
       no_filter_matches: No items match that name filter.
       no_preview: No preview
       no_problems: No problems matched the current filters.

@@ -32,20 +32,29 @@ export default class extends Controller {
 
   mergeSelected (event: Event): void {
     event.preventDefault()
-    const row = this.rowTargets.find((el) => {
+    const checked = this.rowTargets.filter((el) => {
       const box = el.querySelector<HTMLInputElement>('input[type="checkbox"][name^="problems"]')
-      return box?.checked === true && Boolean(el.dataset.mergeUrl)
+      return box?.checked === true
     })
-    const url = row?.dataset.mergeUrl
-    if (url == null || url === '') {
-      window.alert(this.element.getAttribute('data-problem-list-filter-merge-missing-value') ?? '')
+    const mergeable = checked.find((el) => Boolean(el.dataset.mergeUrl))
+    const url = mergeable?.dataset.mergeUrl
+    if (url != null && url !== '') {
+      const frame = document.querySelector<HTMLElement>('turbo-frame#duplicate-merge-dialog')
+      if (frame != null) {
+        frame.setAttribute('src', url)
+        return
+      }
+      window.location.assign(url)
       return
     }
-    const frame = document.querySelector<HTMLElement>('turbo-frame#duplicate-merge-dialog')
-    if (frame != null) {
-      frame.setAttribute('src', url)
-      return
+    if (checked.length > 0) {
+      const form = this.element.querySelector<HTMLFormElement>('form')
+      const resolve = form?.querySelector<HTMLInputElement>('input[type="submit"][name="resolve"]')
+      if (form != null && resolve != null) {
+        form.requestSubmit(resolve)
+        return
+      }
     }
-    window.location.assign(url)
+    window.alert(this.element.getAttribute('data-problem-list-filter-merge-missing-value') ?? '')
   }
 }

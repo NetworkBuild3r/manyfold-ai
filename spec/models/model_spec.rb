@@ -527,6 +527,16 @@ RSpec.describe Model do
       expect(source_file.reload.model_id).to eq source.id
       expect(source_file.exists_on_storage?).to be true
     end
+
+    it "deduplicates identical bytes even when the target filename differs" do
+      keeper = create(:model_file, model: target, filename: "keep.stl", digest: "same-digest")
+      source_file.update!(digest: "same-digest")
+
+      result = target.adopt_file(source_file, path_prefix: "source")
+
+      expect(result).to eq(status: :deduplicated, existing_file_id: keeper.id)
+      expect(source_file.reload.model_id).to eq source.id
+    end
   end
 
   context "when unmerging deduplicated file" do

@@ -139,10 +139,15 @@ class Model < ApplicationRecord
     LibraryPathJail.assert_within!(library.path, File.join(path, new_filename))
 
     existing_file = model_files.find_by(filename: new_filename)
+    digest_twin = file.digest.present? ? model_files.find_by(digest: file.digest) : nil
+
+    if digest_twin
+      # Identical bytes already on the target, any path -- keep one copy.
+      return {status: :deduplicated, existing_file_id: digest_twin.id}
+    end
 
     if existing_file
       if file.digest.present? && file.digest == existing_file.digest
-        # Identical content at same path -- deduplicate (don't delete; let source destroy handle it)
         return {status: :deduplicated, existing_file_id: existing_file.id}
       else
         # Name collision, different content -- disambiguate

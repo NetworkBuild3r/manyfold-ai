@@ -106,6 +106,20 @@ RSpec.describe Model::Merge, "same-library siblings" do # rubocop:todo RSpec/Des
     expect(Model.where(id: model_b.id)).not_to exist
   end
 
+  it "drops leftover same-digest extras and clears duplicate problems" do # rubocop:todo RSpec/ExampleLength, RSpec/MultipleExpectations
+    file_a.update_columns(digest: "same", size: 1024) # rubocop:disable Rails/SkipsModelValidations
+    file_b.update_columns(digest: "same", size: 1024) # rubocop:disable Rails/SkipsModelValidations
+    extra = create(:model_file, model: model_a, filename: "copy_again.stl")
+    extra.update_columns(digest: "same", size: 1024) # rubocop:disable Rails/SkipsModelValidations
+    create(:problem, category: :duplicate, problematic: file_a)
+    create(:problem, category: :duplicate, problematic: extra)
+
+    described_class.call(model_a, model_b)
+
+    expect(model_a.model_files.reload.count).to eq 1
+    expect(Problem.where(category: :duplicate, problematic: model_a.model_files)).not_to exist
+  end
+
   it "disambiguates colliding basename filenames via adopt_file" do # rubocop:todo RSpec/MultipleExpectations, RSpec/ExampleLength
     create(:model_file, model: model_a, filename: "B/part_b.stl", digest: "different")
     described_class.call(model_a, model_b)
