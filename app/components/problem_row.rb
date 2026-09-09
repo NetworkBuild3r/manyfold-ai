@@ -141,7 +141,15 @@ class Components::ProblemRow < Components::Base
   def merge_url
     return unless @pair&.mergeable? && @user && ProblemPolicy.new(@user, @problem).merge?
 
-    merge_problem_path(@problem)
+    merge_problem_path(@problem, return_to: problems_list_return_to)
+  end
+
+  def problems_list_return_to
+    request = helpers.request
+    return problems_path if request.blank?
+    return request.fullpath if ["/problems", "/problems/index"].include?(request.path)
+
+    problems_path
   end
 
   def extra_copies_label

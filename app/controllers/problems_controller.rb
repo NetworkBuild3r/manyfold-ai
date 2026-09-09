@@ -84,11 +84,12 @@ class ProblemsController < ApplicationController
     @model_a = @pair.model
     @model_b = @pair.other_model_for(params[:other_id])
     if @model_b.blank?
-      redirect_to problems_path, alert: t(".no_counterpart")
+      redirect_to after_merge_problems_path, status: :see_other, alert: t(".no_counterpart")
       return
     end
     authorize @model_a, :merge?
     authorize @model_b, :merge?
+    @return_to = after_merge_problems_path
   end
 
   def apply_merge
@@ -98,7 +99,7 @@ class ProblemsController < ApplicationController
     model_a = pair.model
     model_b = pair.other_model_for(params[:other_id])
     if model_b.blank?
-      redirect_to problems_path, alert: t("problems.merge.no_counterpart")
+      redirect_to after_merge_problems_path, status: :see_other, alert: t("problems.merge.no_counterpart")
       return
     end
     authorize model_a, :merge?
@@ -111,11 +112,15 @@ class ProblemsController < ApplicationController
       overrides: merge_overrides,
       tag_strategy: params[:tag_strategy]
     )
-    redirect_to problems_path, notice: t("problems.merge.success", name: target.name)
+    redirect_to after_merge_problems_path, status: :see_other, notice: t("problems.merge.success", name: target.name)
   rescue Errno::EPERM, Errno::EACCES, Errno::EIO => e
     Rails.logger.warn("[ProblemsController#apply_merge] storage #{e.class}: #{e.message}")
-    redirect_to merge_problem_path(@problem, other_id: params[:other_id], keep: params[:keep]),
-      alert: t("problems.merge.storage_failed")
+    redirect_to merge_problem_path(
+      @problem,
+      other_id: params[:other_id],
+      keep: params[:keep],
+      return_to: params[:return_to]
+    ), status: :see_other, alert: t("problems.merge.storage_failed")
   end
 
   private
@@ -152,6 +157,24 @@ class ProblemsController < ApplicationController
       end
     end
     streams
+  end
+
+  def after_merge_problems_path
+    safe_problems_list_path(params[:return_to])
+  end
+
+  # Only the Problems index (plus its filters/page). Never an off-site URL or the merge dialog.
+  def safe_problems_list_path(raw)
+    candidate = raw.to_s
+    return problems_path if candidate.blank?
+
+    uri = URI.parse(candidate)
+    return problems_path if uri.scheme.present? || uri.host.present?
+    return problems_path unless ["/problems", "/problems/index"].include?(uri.path)
+
+    uri.query.present? ? "#{uri.path}?#{uri.query}" : uri.path
+  rescue URI::InvalidURIError
+    problems_path
   end
 
   def permitted_params

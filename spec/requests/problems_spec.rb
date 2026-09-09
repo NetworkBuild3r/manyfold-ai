@@ -147,9 +147,55 @@ RSpec.describe "Problems" do
             tag_strategy: "combine"
           }
 
+          expect(response).to have_http_status(:see_other)
           expect(response).to redirect_to(problems_path)
           expect(model_a.reload.name).to eq "Beta"
           expect(Model.where(id: model_b.id)).not_to exist
+        end
+
+        it "returns to the Problems list the operator started from" do
+          library = create(:library, path: @library_path) # rubocop:todo RSpec/InstanceVariable
+          model_a = create(:model, library: library, path: "alpha", name: "Alpha")
+          model_b = create(:model, library: library, path: "beta", name: "Beta")
+          file_a = create(:model_file, model: model_a, filename: "part.stl")
+          file_b = create(:model_file, model: model_b, filename: "copy.stl")
+          file_a.update_column(:digest, "same") # rubocop:disable Rails/SkipsModelValidations
+          file_b.update_column(:digest, "same") # rubocop:disable Rails/SkipsModelValidations
+          problem = create(:problem, category: :duplicate, problematic: file_a)
+          list = "/problems?category%5B%5D=duplicate&page=2"
+
+          post merge_problem_path(problem), params: {
+            keep: "a",
+            other_id: model_b.public_id,
+            fields: {name: "a"},
+            tag_strategy: "combine",
+            return_to: list
+          }
+
+          expect(response).to have_http_status(:see_other)
+          expect(response).to redirect_to(list)
+        end
+
+        it "ignores an off-site return_to and uses the Problems home instead" do
+          library = create(:library, path: @library_path) # rubocop:todo RSpec/InstanceVariable
+          model_a = create(:model, library: library, path: "alpha", name: "Alpha")
+          model_b = create(:model, library: library, path: "beta", name: "Beta")
+          file_a = create(:model_file, model: model_a, filename: "part.stl")
+          file_b = create(:model_file, model: model_b, filename: "copy.stl")
+          file_a.update_column(:digest, "same") # rubocop:disable Rails/SkipsModelValidations
+          file_b.update_column(:digest, "same") # rubocop:disable Rails/SkipsModelValidations
+          problem = create(:problem, category: :duplicate, problematic: file_a)
+
+          post merge_problem_path(problem), params: {
+            keep: "a",
+            other_id: model_b.public_id,
+            fields: {name: "a"},
+            tag_strategy: "combine",
+            return_to: "https://evil.example/problems"
+          }
+
+          expect(response).to have_http_status(:see_other)
+          expect(response).to redirect_to(problems_path)
         end
 
         it "clears leftover duplicate problems after a same-digest merge" do
@@ -170,6 +216,7 @@ RSpec.describe "Problems" do
             tag_strategy: "combine"
           }
 
+          expect(response).to have_http_status(:see_other)
           expect(response).to redirect_to(problems_path)
           expect(Model.where(id: model_b.id)).not_to exist
           expect(Problem.where(category: :duplicate, problematic_type: "ModelFile")).not_to exist

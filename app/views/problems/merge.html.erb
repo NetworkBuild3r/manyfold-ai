@@ -1,3 +1,3 @@
 <%= turbo_frame_tag "duplicate-merge-dialog" do %>
-  <%= render Components::DuplicateMergeDialog.new(problem: @problem, model_a: @model_a, model_b: @model_b) %>
+  <%= render Components::DuplicateMergeDialog.new(problem: @problem, model_a: @model_a, model_b: @model_b, return_to: @return_to) %>
 <% end %>

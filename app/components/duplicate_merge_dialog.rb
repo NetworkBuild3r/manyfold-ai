@@ -5,10 +5,11 @@ class Components::DuplicateMergeDialog < Components::Base
   include Phlex::Rails::Helpers::ImageTag
   include Phlex::Rails::Helpers::NumberToHumanSize
 
-  def initialize(problem:, model_a:, model_b:)
+  def initialize(problem:, model_a:, model_b:, return_to: nil)
     @problem = problem
     @model_a = model_a
     @model_b = model_b
+    @return_to = return_to
   end
 
   def view_template
@@ -19,8 +20,9 @@ class Components::DuplicateMergeDialog < Components::Base
         "aria-modal": "true",
         data: {duplicate_merge_target: "dialog"}
       ) do
-        form_with url: merge_problem_path(@problem), method: :post, data: {turbo_frame: "_top"} do
+        form_with url: merge_problem_path(@problem), method: :post, data: {turbo_frame: "_top", turbo_action: "advance"} do
           hidden_input("other_id", @model_b.public_id)
+          hidden_input("return_to", @return_to) if @return_to.present?
           header_block
           div(class: "flex flex-col gap-4 px-6 py-4") do
             keep_picker
@@ -185,7 +187,8 @@ class Components::DuplicateMergeDialog < Components::Base
         ) { t("general.cancel") }
         button(
           type: "submit",
-          class: [Components::BaseButton::BASE_CLASSES, Components::BaseButton::VARIANT_CLASSES["success"]].join(" ")
+          class: [Components::BaseButton::BASE_CLASSES, Components::BaseButton::VARIANT_CLASSES["success"]].join(" "),
+          data: {turbo_frame: "_top"}
         ) do
           Icon(icon: "box-arrow-in-up-left", label: t("problems.merge.confirm"))
           whitespace
