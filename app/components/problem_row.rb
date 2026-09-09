@@ -22,8 +22,12 @@ class Components::ProblemRow < Components::Base
       }
     ) do
       yield if block_given?
-      thumbnail
-      info_block
+      if paired?
+        pair_block
+      else
+        thumbnail(preview_image_file, title_text)
+        info_block(title_text, file_name, file_size, secondary_label, view_href)
+      end
       view_button
       div(class: "flex items-center gap-2 shrink-0") do
         merge_button
@@ -37,7 +41,7 @@ class Components::ProblemRow < Components::Base
 
   def row_class
     [
-      "problem-row flex items-center gap-4 w-full p-3 rounded-md border",
+      "problem-row flex flex-wrap md:flex-nowrap items-center gap-3 md:gap-4 w-full p-3 rounded-md border",
       "bg-secondary-50 dark:bg-secondary-800/60",
       "border-secondary-200 dark:border-secondary-600",
       "has-[:checked]:border-primary-500 has-[:checked]:bg-primary-500/10",
@@ -46,15 +50,47 @@ class Components::ProblemRow < Components::Base
   end
 
   def search_blob
-    [title_text, file_name, counterpart_label, @problem.note, @problem.category].compact.join(" ").downcase
+    [
+      title_text,
+      file_name,
+      counterpart_model_name,
+      counterpart_file_name,
+      @problem.note,
+      @problem.category
+    ].compact.join(" ").downcase
   end
 
-  def thumbnail
+  def paired?
+    @pair.present? && other_file.present?
+  end
+
+  def pair_block
+    div(class: "min-w-0 flex-1 grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-2 sm:gap-3 items-center") do
+      side(model: preview_model, file: model_file, href: view_href)
+      versus
+      side(model: other_file.model, file: other_file, href: [other_file.model, other_file], extra: extra_copies_label)
+    end
+  end
+
+  def versus
+    span(class: "justify-self-center text-[10px] font-bold uppercase tracking-wide text-secondary-400 dark:text-secondary-500 px-1") do
+      t("problems.index.versus")
+    end
+  end
+
+  def side(model:, file:, href:, extra: nil)
+    div(class: "min-w-0 flex items-center gap-3 p-2 rounded-md border border-secondary-200 dark:border-secondary-600 bg-white/70 dark:bg-secondary-900/50") do
+      thumbnail(preview_for(model), model&.name.to_s)
+      info_block(model&.name.presence || title_text, file&.filename.presence || file&.name, file&.size, extra, href)
+    end
+  end
+
+  def thumbnail(image_file, alt)
     div(class: "relative w-16 h-12 shrink-0 overflow-hidden rounded border border-secondary-200 dark:border-secondary-600 bg-secondary-100 dark:bg-secondary-900") do
-      if preview_image_file
+      if image_file
         image_tag(
-          model_model_file_path(preview_image_file.model, preview_image_file, format: preview_image_file.extension, derivative: "preview"),
-          alt: title_text,
+          model_model_file_path(image_file.model, image_file, format: image_file.extension, derivative: "preview"),
+          alt: alt,
           class: "absolute inset-0 w-full h-full object-cover",
           loading: "lazy",
           decoding: "async",
@@ -69,25 +105,22 @@ class Components::ProblemRow < Components::Base
     end
   end
 
-  def info_block
+  def info_block(title, filename, size, extra, href)
     div(class: "min-w-0 flex-1 flex flex-col gap-1") do
-      if view_href
-        link_to title_text, view_href, class: "font-semibold text-sm text-primary-600 dark:text-primary-400 no-underline hover:underline truncate"
+      if href
+        link_to title, href, class: "font-semibold text-sm text-primary-600 dark:text-primary-400 no-underline hover:underline truncate"
       else
-        p(class: "font-semibold text-sm text-primary-600 dark:text-primary-400 truncate") { title_text }
+        p(class: "font-semibold text-sm text-primary-600 dark:text-primary-400 truncate") { title }
       end
       div(class: "flex flex-wrap items-center gap-2 text-xs text-secondary-500 dark:text-secondary-400 min-w-0") do
         Icon(icon: "file-earmark", label: t("problems.index.file"))
-        span(class: "font-mono truncate max-w-[16rem]") { file_name }
-        if file_size&.positive?
-          span { "(#{number_to_human_size(file_size)})" }
+        span(class: "font-mono truncate max-w-[16rem]") { filename.to_s }
+        if size.to_i.positive?
+          span { "(#{number_to_human_size(size)})" }
         end
-        if counterpart_label.present?
+        if extra.present?
           span { "•" }
-          span(class: "truncate") { counterpart_label }
-        elsif secondary_label.present?
-          span { "•" }
-          span(class: "truncate") { secondary_label }
+          span(class: "truncate") { extra }
         end
       end
     end
@@ -111,15 +144,11 @@ class Components::ProblemRow < Components::Base
     merge_problem_path(@problem)
   end
 
-  def counterpart_label
-    return if @pair.blank?
+  def extra_copies_label
+    extra = @pair.counterparts.size - 1
+    return if extra < 1
 
-    other = @pair.primary_other_file
-    if @pair.mergeable? && other
-      t("problems.index.identical_to_model", file: other.filename, model: other.model.name)
-    elsif @pair.same_model_copies.any?
-      t("problems.index.identical_on_same_model", file: @pair.same_model_copies.first.filename)
-    end
+    t("problems.index.more_copies", count: extra)
   end
 
   def view_button
@@ -191,6 +220,18 @@ class Components::ProblemRow < Components::Base
     @problem.problematic if @problem.problematic.is_a?(ModelFile)
   end
 
+  def other_file
+    @pair&.primary_other_file
+  end
+
+  def counterpart_model_name
+    other_file&.model&.name
+  end
+
+  def counterpart_file_name
+    other_file&.filename
+  end
+
   def preview_model
     case @problem.problematic
     when Model then @problem.problematic
@@ -202,7 +243,11 @@ class Components::ProblemRow < Components::Base
   end
 
   def preview_image_file
-    file = preview_model&.preview_file
+    preview_for(preview_model)
+  end
+
+  def preview_for(model)
+    file = model&.preview_file
     file if file&.is_image?
   end
 end

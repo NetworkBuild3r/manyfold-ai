@@ -18,7 +18,7 @@ class ModelFile < ApplicationRecord
 
   after_create :attach_existing_file_on_create!
 
-  before_destroy :rescan_duplicates
+  after_destroy :rescan_duplicates
   # INIT-002/SPEC-003: storage key is filename + parent model path, not filename alone.
   after_commit :reattach!, on: :update, if: :needs_storage_reattach?
   after_commit :check_parent_model_for_problems_later, on: [:create, :destroy]
@@ -333,7 +333,9 @@ class ModelFile < ApplicationRecord
   end
 
   def rescan_duplicates
-    duplicates.each { |it| it.analyse_later }
+    return if digest.blank?
+
+    ModelFile.where(digest: digest).find_each { |it| Problems::Duplicate.detect(it) }
   end
 
   def presupported_files_cannot_have_presupported_version

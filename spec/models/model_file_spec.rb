@@ -237,7 +237,7 @@ RSpec.describe ModelFile do
       expect(file.errors[:filename].first).to eq "cannot be a case-only change"
     end
 
-    # INIT-019/SPEC-002 — library path jail (ADR D-1)
+    # INIT-019/SPEC-002 -- library path jail (ADR D-1)
     it "rejects filename with parent-directory segments" do # rubocop:disable RSpec/MultipleExpectations
       file.update(filename: "../escape.3mf")
       expect(file).not_to be_valid
@@ -300,11 +300,15 @@ RSpec.describe ModelFile do
       expect { file.destroy }.not_to raise_exception
     end
 
-    it "queues up rescans for duplicates on destroy" do
+    it "clears leftover duplicate problems on destroy" do
       dupe = create(:model_file, model: model, filename: "duplicate.3mf", digest: "1234")
-      expect { file.destroy }.to(
-        have_enqueued_job(Analysis::AnalyseModelFileJob).with(dupe.id)
-      )
+      file.update_columns(size: 1024) # rubocop:disable Rails/SkipsModelValidations
+      dupe.update_columns(size: 1024) # rubocop:disable Rails/SkipsModelValidations
+      create(:problem, category: :duplicate, problematic: dupe)
+
+      file.destroy
+
+      expect(Problem.where(category: :duplicate, problematic: dupe)).not_to exist
     end
   end
 

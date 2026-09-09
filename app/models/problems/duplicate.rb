@@ -14,8 +14,10 @@ module Problems
       case action
       when :destroy
         problematic = problem.problematic
+        leftovers = problematic.duplicates.to_a
         problem.destroy!
         problematic.delete_from_disk_and_destroy
+        leftovers.each { |file| detect(file) }
         {removed: true}
       when :ignore
         problem.update!(ignored: true)

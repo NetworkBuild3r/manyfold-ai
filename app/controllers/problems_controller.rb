@@ -112,6 +112,10 @@ class ProblemsController < ApplicationController
       tag_strategy: params[:tag_strategy]
     )
     redirect_to problems_path, notice: t("problems.merge.success", name: target.name)
+  rescue Errno::EPERM, Errno::EACCES, Errno::EIO => e
+    Rails.logger.warn("[ProblemsController#apply_merge] storage #{e.class}: #{e.message}")
+    redirect_to merge_problem_path(@problem, other_id: params[:other_id], keep: params[:keep]),
+      alert: t("problems.merge.storage_failed")
   end
 
   private
