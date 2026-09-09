@@ -20,6 +20,7 @@ RSpec.describe Components::ProblemRow, type: :component do
     expect(html).to include("142 MB")
     expect(html).to include("Photo 2020 04 01 17 05 41")
     expect(html).to include(%(id="problem-#{problem.id}"))
+    expect(html).not_to include('data-collapse-target="content"')
   end
 
   it "does not emit table cells" do

@@ -26,6 +26,8 @@ en:
       bulk_confirm: Are you sure you want to automatically resolve all the selected problems? This may remove files and data.
       bulk_delete: Delete selected
       bulk_ignore: Hide selected
+      bulk_merge: Merge selected
+      bulk_merge_missing: Select a group that can merge two models, then try Merge selected again.
       bulk_resolve: Resolve selected
       description: Description
       explainer: Review detected library problems. Resolve them one at a time, or select several and apply a bulk action.
@@ -34,6 +36,9 @@ en:
       groups_found:
         one: "%{count} item found"
         other: "%{count} items found"
+      groups_found_digest:
+        one: "%{count} group found"
+        other: "%{count} groups found"
       identical_on_same_model: Extra copy of %{file} on this model
       identical_to_model: Identical to %{file} on %{model}
       ignore: Hide
@@ -48,6 +53,7 @@ en:
       select: Select
       select_all: Select all
       showing: Showing %{from}–%{to} of %{total}
+      showing_groups: Showing %{from}–%{to} of %{total} groups found
       space_recoverable: 'Total space recoverable:'
       unignore: Show
       view: View

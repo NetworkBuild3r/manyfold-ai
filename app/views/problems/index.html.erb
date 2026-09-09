@@ -17,14 +17,18 @@
   <% end %>
 <% else %>
   <% bulk_resolve_class = [Components::BaseButton::BASE_CLASSES, (@duplicate_list ? Components::BaseButton::VARIANT_CLASSES["outline-danger"] : Components::BaseButton::VARIANT_CLASSES["danger"])].join(" ") %>
-  <div class="flex flex-col gap-6" data-controller="problem-list-filter">
+  <div class="flex flex-col gap-6" data-controller="problem-list-filter" data-problem-list-filter-merge-missing-value="<%= t(".bulk_merge_missing") %>">
     <div class="flex flex-wrap items-center justify-between gap-3">
       <div class="flex flex-wrap items-center gap-4">
         <h1 class="text-2xl font-bold text-secondary-900 dark:text-secondary-50 m-0">
           <%= @duplicate_list ? t(".merge_title") : Problem.model_name.human(count: 100) %>
         </h1>
         <span class="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-semibold text-primary-600 dark:text-primary-400 bg-secondary-100 dark:bg-secondary-800 border border-secondary-200 dark:border-secondary-600">
-          <%= t(".groups_found", count: @problems.total_count) %>
+          <% if @duplicate_list %>
+            <%= t(".groups_found_digest", count: @problems.total_count) %>
+          <% else %>
+            <%= t(".groups_found", count: @problems.total_count) %>
+          <% end %>
         </span>
       </div>
       <% if @recoverable_bytes.to_i.positive? %>
@@ -39,7 +43,7 @@
       <%= @duplicate_list ? t(".merge_explainer") : t(".explainer") %>
     </p>
 
-    <%= form_with url: resolve_problems_path(format: :turbo_stream), method: :post, class: "mb-0", data: {controller: "bulk-edit collapse", action: "change->bulk-edit#handleCheckboxChange"} do |form| %>
+    <%= form_with url: resolve_problems_path(format: :turbo_stream), method: :post, class: "mb-0", data: {controller: "bulk-edit", action: "change->bulk-edit#handleCheckboxChange"} do |form| %>
       <div class="flex flex-wrap items-center justify-between gap-3 p-4 mb-3 rounded-lg border border-secondary-200 dark:border-secondary-600 bg-secondary-50 dark:bg-secondary-800/50">
         <div class="flex flex-wrap items-center gap-4">
           <label class="inline-flex items-center gap-2 text-sm text-secondary-800 dark:text-secondary-100 cursor-pointer">
@@ -48,6 +52,12 @@
           </label>
           <span class="hidden sm:block w-px h-4 bg-secondary-300 dark:bg-secondary-600" aria-hidden="true"></span>
           <div class="flex flex-wrap gap-2">
+            <% if @duplicate_list %>
+              <button type="button" class="<%= [Components::BaseButton::BASE_CLASSES, Components::BaseButton::VARIANT_CLASSES["success"]].join(" ") %>" data-action="click->problem-list-filter#mergeSelected">
+                <%= Icon(icon: "box-arrow-in-up-left", label: t(".bulk_merge")) %>
+                <%= t(".bulk_merge") %>
+              </button>
+            <% end %>
             <%= form.submit(@duplicate_list ? translate(".bulk_delete") : translate(".bulk_resolve"), name: "resolve", class: bulk_resolve_class, data: {confirm: translate(".bulk_confirm")}) %>
             <%= form.submit translate(".bulk_ignore"), name: "ignore", class: secondary_button_class %>
           </div>
@@ -80,7 +90,11 @@
 
     <div class="flex flex-wrap items-center justify-between gap-3">
       <p class="text-sm text-secondary-500 dark:text-secondary-400 m-0">
-        <%= t(".showing", from: @problems.offset_value + 1, to: @problems.offset_value + @problems.length, total: @problems.total_count) %>
+        <% if @duplicate_list %>
+          <%= t(".showing_groups", from: @problems.offset_value + 1, to: @problems.offset_value + @problems.length, total: @problems.total_count) %>
+        <% else %>
+          <%= t(".showing", from: @problems.offset_value + 1, to: @problems.offset_value + @problems.length, total: @problems.total_count) %>
+        <% end %>
       </p>
       <%= paginate @problems %>
     </div>

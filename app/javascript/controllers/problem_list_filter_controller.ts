@@ -22,4 +22,30 @@ export default class extends Controller {
       this.emptyTarget.classList.toggle('hidden', visible > 0)
     }
   }
+
+  hideRow (event: Event): void {
+    const row = (event.target as Element | null)?.closest?.('.problem-row')
+    if (row instanceof HTMLElement) {
+      row.classList.add('hidden')
+    }
+  }
+
+  mergeSelected (event: Event): void {
+    event.preventDefault()
+    const row = this.rowTargets.find((el) => {
+      const box = el.querySelector<HTMLInputElement>('input[type="checkbox"][name^="problems"]')
+      return box?.checked === true && Boolean(el.dataset.mergeUrl)
+    })
+    const url = row?.dataset.mergeUrl
+    if (url == null || url === '') {
+      window.alert(this.element.getAttribute('data-problem-list-filter-merge-missing-value') ?? '')
+      return
+    }
+    const frame = document.querySelector<HTMLElement>('turbo-frame#duplicate-merge-dialog')
+    if (frame != null) {
+      frame.setAttribute('src', url)
+      return
+    }
+    window.location.assign(url)
+  }
 }

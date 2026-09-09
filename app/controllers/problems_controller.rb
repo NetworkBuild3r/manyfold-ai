@@ -26,10 +26,24 @@ class ProblemsController < ApplicationController
     # Don't show types ignored in user settings
     query = query.visible(helpers.problem_settings)
     query = query.includes([:problematic])
-    @counts_by_category = query.unscope(:includes, :order).group(:category).count
-    @problems = query.page(page).per(params[:per_page]&.to_i || 50).order([:category, :problematic_type]).includes(problematic: [:library, :model])
-    @duplicate_list = @problems.any? && @problems.all? { |problem| problem.category == "duplicate" }
-    @recoverable_bytes = recoverable_bytes_for(@problems)
+    counts_query = query.except(:includes, :preload, :eager_load, :order)
+    @counts_by_category = counts_query.group(:category).count
+    @duplicate_list = counts_query.exists? && !counts_query.where.not(category: "duplicate").exists?
+    per_page = params[:per_page]&.to_i
+    per_page = 50 unless per_page&.positive?
+    @problems = if @duplicate_list
+      query.where(id: Problem::DuplicateGroup.representative_ids(query))
+        .page(page).per(per_page).order(:id)
+        .includes(problematic: [:library, :model])
+    else
+      query.page(page).per(per_page).order([:category, :problematic_type])
+        .includes(problematic: [:library, :model])
+    end
+    @recoverable_bytes = if @duplicate_list
+      Problem::DuplicateGroup.recoverable_bytes(query, policy_scope(ModelFile))
+    else
+      recoverable_bytes_for(@problems)
+    end
     @duplicate_pairs = Problem::DuplicatePair.map_for(@problems, policy_scope(ModelFile))
     # Do we have any filters at all?
     @filters_applied = [:show_ignored, :severity, :category, :type].any? { |k| params.has_key?(k) }

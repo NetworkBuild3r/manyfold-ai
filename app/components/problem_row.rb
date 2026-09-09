@@ -16,9 +16,9 @@ class Components::ProblemRow < Components::Base
       id: "problem-#{@problem.id}",
       class: row_class,
       data: {
-        collapse_target: "content",
         problem_list_filter_target: "row",
-        search: search_blob
+        search: search_blob,
+        merge_url: merge_url
       }
     ) do
       yield if block_given?
@@ -94,15 +94,21 @@ class Components::ProblemRow < Components::Base
   end
 
   def merge_button
-    return unless @pair&.mergeable? && ProblemPolicy.new(@user, @problem).merge?
+    return unless merge_url
 
     GoButton(
       label: t("problems.index.merge"),
-      href: merge_problem_path(@problem),
+      href: merge_url,
       variant: "success",
       icon: "box-arrow-in-up-left",
       data: {turbo_frame: "duplicate-merge-dialog"}
     )
+  end
+
+  def merge_url
+    return unless @pair&.mergeable? && @user && ProblemPolicy.new(@user, @problem).merge?
+
+    merge_problem_path(@problem)
   end
 
   def counterpart_label
@@ -140,7 +146,7 @@ class Components::ProblemRow < Components::Base
       link_to problem_path(@problem, problem: {ignored: true}),
         method: :patch,
         class: ignore_button_class,
-        data: {action: "click->collapse#hideContaining"},
+        data: {action: "click->problem-list-filter#hideRow"},
         aria: {label: t("problems.index.ignore")} do
         Icon(icon: "eye-slash", label: t("problems.index.ignore"))
       end
