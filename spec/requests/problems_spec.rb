@@ -67,6 +67,70 @@ RSpec.describe "Problems" do
         end
       end
 
+      describe "GET /problems/:id/merge" do
+        around do |ex|
+          MockDirectory.create([
+            "alpha/part.stl",
+            "beta/copy.stl"
+          ]) do |path|
+            @library_path = path
+            ex.run
+          end
+        end
+
+        it "renders the A/B comparison dialog" do
+          library = create(:library, path: @library_path) # rubocop:todo RSpec/InstanceVariable
+          model_a = create(:model, library: library, path: "alpha", name: "Bleach Ichigo Diorama Hq")
+          model_b = create(:model, library: library, path: "beta", name: "Ichigo Copy Final")
+          file_a = create(:model_file, model: model_a, filename: "part.stl")
+          file_b = create(:model_file, model: model_b, filename: "copy.stl")
+          file_a.update_column(:digest, "same") # rubocop:disable Rails/SkipsModelValidations
+          file_b.update_column(:digest, "same") # rubocop:disable Rails/SkipsModelValidations
+          problem = create(:problem, category: :duplicate, problematic: file_a)
+
+          get merge_problem_path(problem)
+
+          expect(response).to have_http_status(:success)
+          expect(response.body).to include("Bleach Ichigo Diorama Hq")
+          expect(response.body).to include("Ichigo Copy Final")
+          expect(response.body).to include(I18n.t("problems.merge.confirm"))
+        end
+      end
+
+      describe "POST /problems/:id/merge" do
+        around do |ex|
+          MockDirectory.create([
+            "alpha/part.stl",
+            "beta/copy.stl"
+          ]) do |path|
+            @library_path = path
+            ex.run
+          end
+        end
+
+        it "merges the counterpart model into the kept model" do
+          library = create(:library, path: @library_path) # rubocop:todo RSpec/InstanceVariable
+          model_a = create(:model, library: library, path: "alpha", name: "Alpha")
+          model_b = create(:model, library: library, path: "beta", name: "Beta")
+          file_a = create(:model_file, model: model_a, filename: "part.stl")
+          file_b = create(:model_file, model: model_b, filename: "copy.stl")
+          file_a.update_column(:digest, "same") # rubocop:disable Rails/SkipsModelValidations
+          file_b.update_column(:digest, "same") # rubocop:disable Rails/SkipsModelValidations
+          problem = create(:problem, category: :duplicate, problematic: file_a)
+
+          post merge_problem_path(problem), params: {
+            keep: "a",
+            other_id: model_b.public_id,
+            fields: {name: "b", notes: "a"},
+            tag_strategy: "combine"
+          }
+
+          expect(response).to redirect_to(problems_path)
+          expect(model_a.reload.name).to eq "Beta"
+          expect(Model.where(id: model_b.id)).not_to exist
+        end
+      end
+
       context "when filtering by category" do
         it "only shows selected categories" do
           get "/problems/index", params: {"category[]": "missing"}

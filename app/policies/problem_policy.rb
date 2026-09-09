@@ -14,6 +14,17 @@ class ProblemPolicy < ApplicationPolicy
     )
   end
 
+  def merge?
+    return false unless user&.is_moderator?
+    return false unless record.category == "duplicate"
+
+    pair = Problem::DuplicatePair.build(record)
+    return false unless pair&.mergeable?
+
+    pair.other_models.all? { |model| ModelPolicy.new(user, model).merge? } &&
+      ModelPolicy.new(user, pair.model).merge?
+  end
+
   class Scope < ApplicationPolicy::Scope
     def resolve
       @user.is_moderator? ? scope : scope.none

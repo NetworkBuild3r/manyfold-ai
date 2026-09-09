@@ -230,6 +230,8 @@ Rails.application.routes.draw do
     end
     member do
       post "resolve"
+      get "merge"
+      post "merge", action: "apply_merge"
     end
   end
   resources :benchmark, only: [:index, :create, :destroy] if Rails.env.development?

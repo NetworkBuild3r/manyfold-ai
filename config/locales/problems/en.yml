@@ -34,9 +34,12 @@ en:
       groups_found:
         one: "%{count} item found"
         other: "%{count} items found"
+      identical_on_same_model: Extra copy of %{file} on this model
+      identical_to_model: Identical to %{file} on %{model}
       ignore: Hide
       item: Item
-      merge_explainer: Below are identified groups of duplicated 3D meshes and models. Resolve them by deleting extra copies, or hide items you want to keep as-is.
+      merge: Merge
+      merge_explainer: Below are identified groups of duplicated 3D meshes and models. Merge two models when the same file lives in both, or delete one extra copy when you know which file to drop.
       merge_title: Merge Duplicates
       no_filter_matches: No items match that name filter.
       no_preview: No preview
@@ -52,6 +55,50 @@ en:
       http_error:
         description: An error occurred when reading the link from the remote server.
         title: HTTP error fetching link
+    merge:
+      basic: Basic information
+      close: Close
+      confirm: Confirm merge
+      fields:
+        caption: Caption
+        collection: Collection
+        creator: Creator
+        indexable: Search indexing
+        library: Library
+        license: License
+        name: Name
+        notes: Description
+        preview: Preview
+        sensitive: Sensitive content
+        tags: Tags
+      files: Files
+      files_hint: All files will be merged into the kept entry.
+      indexable_inherit: Inherit
+      indexable_no: 'No'
+      indexable_yes: 'Yes'
+      keep_heading: Keep this model
+      keep_hint: The other model is deleted after its files and chosen metadata move here.
+      kept_file: Kept
+      library_stays: Files move into the kept model's library. The other library path is not preserved.
+      media: Media and preview
+      no_counterpart: This file's other copies are on the same model, so there is nothing to merge. Delete the extra copy if you do not need it.
+      none: None
+      'off': 'Off'
+      'on': 'On'
+      override: Override %{field}...
+      preview_side: Preview %{side}
+      publishing: Publishing and privacy
+      success: Merged into "%{name}".
+      tag_combine: Combine all tags
+      tag_count:
+        one: "%{count} tag"
+        other: "%{count} tags"
+      tag_keep_a: Keep tags from the first model
+      tag_keep_b: Keep tags from the second model
+      tag_strategy: Merge strategy
+      taxonomy: Metadata and taxonomy
+      title: Merge Duplicates
+      warning: The unkept entry will be permanently deleted after merge. This can be undone from merge history within 30 days.
     model:
       empty:
         description_html: This model contains no files. Either delete it, or find where its files went!

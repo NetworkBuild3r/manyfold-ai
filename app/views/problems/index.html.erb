@@ -68,7 +68,7 @@
       <div class="flex flex-col gap-2">
         <% @problems.each do |problem| %>
           <% next unless problem.problematic %>
-          <%= render Components::ProblemRow.new(problem: problem, user: current_user) do %>
+          <%= render Components::ProblemRow.new(problem: problem, user: current_user, pair: @duplicate_pairs[problem.id]) do %>
             <%= form.check_box "problems[#{problem.to_param}]", data: {resolution_strategy: problem.resolution_strategy, bulk_item: problem.to_param}, "aria-label": translate(".select"), class: "rounded border-secondary-300 text-primary-600 focus:ring-primary-500 h-[18px] w-[18px] shrink-0" %>
           <% end %>
         <% end %>
@@ -85,4 +85,5 @@
       <%= paginate @problems %>
     </div>
   </div>
+  <%= turbo_frame_tag "duplicate-merge-dialog" %>
 <% end %>

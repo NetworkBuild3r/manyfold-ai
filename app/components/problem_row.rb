@@ -5,9 +5,10 @@ class Components::ProblemRow < Components::Base
   include Phlex::Rails::Helpers::LinkTo
   include Phlex::Rails::Helpers::NumberToHumanSize
 
-  def initialize(problem:, user:)
+  def initialize(problem:, user:, pair: nil)
     @problem = problem
     @user = user
+    @pair = pair
   end
 
   def view_template
@@ -25,6 +26,7 @@ class Components::ProblemRow < Components::Base
       info_block
       view_button
       div(class: "flex items-center gap-2 shrink-0") do
+        merge_button
         ResolveButton(problem: @problem, user: @user)
         ignore_button
       end
@@ -44,7 +46,7 @@ class Components::ProblemRow < Components::Base
   end
 
   def search_blob
-    [title_text, file_name, @problem.note, @problem.category].compact.join(" ").downcase
+    [title_text, file_name, counterpart_label, @problem.note, @problem.category].compact.join(" ").downcase
   end
 
   def thumbnail
@@ -80,11 +82,37 @@ class Components::ProblemRow < Components::Base
         if file_size&.positive?
           span { "(#{number_to_human_size(file_size)})" }
         end
-        if secondary_label.present?
+        if counterpart_label.present?
+          span { "•" }
+          span(class: "truncate") { counterpart_label }
+        elsif secondary_label.present?
           span { "•" }
           span(class: "truncate") { secondary_label }
         end
       end
+    end
+  end
+
+  def merge_button
+    return unless @pair&.mergeable? && ProblemPolicy.new(@user, @problem).merge?
+
+    GoButton(
+      label: t("problems.index.merge"),
+      href: merge_problem_path(@problem),
+      variant: "success",
+      icon: "box-arrow-in-up-left",
+      data: {turbo_frame: "duplicate-merge-dialog"}
+    )
+  end
+
+  def counterpart_label
+    return if @pair.blank?
+
+    other = @pair.primary_other_file
+    if @pair.mergeable? && other
+      t("problems.index.identical_to_model", file: other.filename, model: other.model.name)
+    elsif @pair.same_model_copies.any?
+      t("problems.index.identical_on_same_model", file: @pair.same_model_copies.first.filename)
     end
   end
 
