@@ -80,6 +80,14 @@ class ModelFile < ApplicationRecord
 
   SLICED_PRINT_EXTENSIONS = %w[ctb jxs].freeze
 
+  # Source geometry that may raise a duplicate problem. Sidecars (mtl),
+  # sliced output (gcode), and the broader model MIME list do not.
+  # See INIT-024 design §3 (geometry vs sidecar vs derived).
+  DUPLICATE_GEOMETRY_EXTENSIONS = %w[
+    stl obj 3mf ply gltf glb drc fbx 3ds dae 3dm
+    step stp iges igs scad blend wrl x3d abc
+  ].freeze
+
   def extension
     attached = (attachment&.extension if has_attribute?(:attachment_data))
     attached.presence || File.extname(filename.to_s).delete(".").downcase
@@ -112,6 +120,10 @@ class ModelFile < ApplicationRecord
 
   def is_archive?
     SupportedMimeTypes.archive_extensions.include?(extension)
+  end
+
+  def duplicate_geometry?
+    DUPLICATE_GEOMETRY_EXTENSIONS.include?(extension)
   end
 
   def scan_archive_later(delay: 0.seconds, preview_images_only: false)
@@ -218,11 +230,10 @@ class ModelFile < ApplicationRecord
     ModelFile.where(digest: digest).where.not(id: id) # rubocop:todo Pundit/UsePolicyScope
   end
 
-  # Only geometry counts: loose 3D files, or the archives that carry them.
-  # Unrelated models routinely share a byte-identical preview photo, and that
-  # is never a reason to offer a merge.
+  # Only source geometry and archives count. Images, material sidecars, and
+  # sliced output share bytes across unrelated models and must not offer a merge.
   def duplicate?
-    return false unless is_3d_model? || is_archive?
+    return false unless duplicate_geometry? || is_archive?
 
     size.to_i > 0 && duplicates.exists?
   end
