@@ -1,6 +1,6 @@
 class ProblemsController < ApplicationController
   skip_after_action :verify_authorized, only: :resolve
-  after_action :verify_policy_scoped, only: :resolve
+  after_action :verify_policy_scoped, only: [:resolve, :merge, :apply_merge]
 
   def index
     authorize Problem
@@ -26,7 +26,11 @@ class ProblemsController < ApplicationController
     # Don't show types ignored in user settings
     query = query.visible(helpers.problem_settings)
     query = query.includes([:problematic])
+    @counts_by_category = query.unscope(:includes, :order).group(:category).count
     @problems = query.page(page).per(params[:per_page]&.to_i || 50).order([:category, :problematic_type]).includes(problematic: [:library, :model])
+    @duplicate_list = @problems.any? && @problems.all? { |problem| problem.category == "duplicate" }
+    @recoverable_bytes = recoverable_bytes_for(@problems)
+    @duplicate_pairs = Problem::DuplicatePair.map_for(@problems, policy_scope(ModelFile))
     # Do we have any filters at all?
     @filters_applied = [:show_ignored, :severity, :category, :type].any? { |k| params.has_key?(k) }
   end
@@ -57,6 +61,43 @@ class ProblemsController < ApplicationController
     else
       redirect_back_or_to problems_path unless performed?
     end
+  end
+
+  def merge
+    @problem = policy_scope(Problem).find_param(params[:id])
+    authorize @problem, :merge?
+    @pair = Problem::DuplicatePair.build(@problem)
+    @model_a = @pair.model
+    @model_b = @pair.other_model_for(params[:other_id])
+    if @model_b.blank?
+      redirect_to problems_path, alert: t(".no_counterpart")
+      return
+    end
+    authorize @model_a, :merge?
+    authorize @model_b, :merge?
+  end
+
+  def apply_merge
+    @problem = policy_scope(Problem).find_param(params[:id])
+    authorize @problem, :merge?
+    pair = Problem::DuplicatePair.build(@problem)
+    model_a = pair.model
+    model_b = pair.other_model_for(params[:other_id])
+    if model_b.blank?
+      redirect_to problems_path, alert: t("problems.merge.no_counterpart")
+      return
+    end
+    authorize model_a, :merge?
+    authorize model_b, :merge?
+    target, source = (params[:keep].to_s == "b") ? [model_b, model_a] : [model_a, model_b]
+    Model::MergeWithChoices.call(
+      target: target,
+      source: source,
+      choices: merge_field_choices,
+      overrides: merge_overrides,
+      tag_strategy: params[:tag_strategy]
+    )
+    redirect_to problems_path, notice: t("problems.merge.success", name: target.name)
   end
 
   private
@@ -99,5 +140,30 @@ class ProblemsController < ApplicationController
     params.expect(problem: [
       :ignored
     ])
+  end
+
+  def merge_field_choices
+    fields = params[:fields]
+    choices = fields.respond_to?(:permit) ? fields.permit(*Model::MergeWithChoices::FIELD_KEYS).to_h : {}
+    merge_overrides.each do |key, value|
+      next if value.blank?
+
+      choices[key] = "override"
+    end
+    choices
+  end
+
+  def merge_overrides
+    overrides = params[:overrides]
+    return {} unless overrides.respond_to?(:permit)
+
+    overrides.permit(*Model::MergeWithChoices::FIELD_KEYS).to_h
+  end
+
+  def recoverable_bytes_for(problems)
+    file_ids = problems.filter_map { |problem| problem.problematic_id if problem.problematic_type == "ModelFile" }
+    return 0 if file_ids.empty?
+
+    policy_scope(ModelFile).where(id: file_ids).sum(:size).to_i
   end
 end

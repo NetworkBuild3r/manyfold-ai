@@ -1541,8 +1541,8 @@ en:
       adjusted: Resin level updated.
   scans:
     create:
-      success: Scan started.
       dedup_success: Dedup started. Duplicate plans will be queued for review; nothing is merged automatically.
+      success: Scan started.
   security:
     running_as_root_html: The application is running as root, which is a security risk. Run as a different system user by setting the <code>PUID</code> and <code>PGID</code> environment variables.
   sites:
