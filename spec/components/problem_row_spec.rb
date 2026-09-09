@@ -4,7 +4,12 @@ require "rails_helper"
 
 RSpec.describe Components::ProblemRow, type: :component do
   let(:model) { create(:model, name: "Bleach Ichigo Diorama Hq") }
-  let(:file) { create(:model_file, model: model, filename: "ichigo_diorama_v2_hollow.stl", size: 142.megabytes) }
+  let(:file) do
+    create(:model_file, model: model, filename: "ichigo_diorama_v2_hollow.stl").tap do |model_file|
+      # Factory attachment is an empty IO; persist the library size the row reads.
+      model_file.update_column(:size, 142.megabytes)
+    end
+  end
   let(:problem) { create(:problem, category: :duplicate, problematic: file, note: "Photo 2020 04 01 17 05 41") }
 
   it "renders a full-width card row with title, file meta, and view control" do

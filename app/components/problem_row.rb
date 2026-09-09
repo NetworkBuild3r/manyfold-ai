@@ -77,7 +77,7 @@ class Components::ProblemRow < Components::Base
       div(class: "flex flex-wrap items-center gap-2 text-xs text-secondary-500 dark:text-secondary-400 min-w-0") do
         Icon(icon: "file-earmark", label: t("problems.index.file"))
         span(class: "font-mono truncate max-w-[16rem]") { file_name }
-        if file_size
+        if file_size&.positive?
           span { "(#{number_to_human_size(file_size)})" }
         end
         if secondary_label.present?
