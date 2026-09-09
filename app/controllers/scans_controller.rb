@@ -22,15 +22,15 @@ class ScansController < ApplicationController
     case params[:type].to_s
     when "check"
       Scan::CheckAllJob.perform_later(@filter.to_params, current_user)
-      t(".success")
+      t("scans.create.success")
     when "dedup"
       Scan::DedupLibraryJob.perform_later
-      t(".dedup_success")
+      t("scans.create.dedup_success")
     else
       Library.find_each do |library|
         library.detect_filesystem_changes_later
       end
-      t(".success")
+      t("scans.create.success")
     end
   end
 end

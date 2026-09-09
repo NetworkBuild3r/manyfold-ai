@@ -27,6 +27,7 @@ en:
       bulk_delete: Delete selected
       bulk_ignore: Hide selected
       bulk_resolve: Resolve selected
+      description: Description
       explainer: Review detected library problems. Resolve them one at a time, or select several and apply a bulk action.
       file: File
       filter_names: Filter model names...
@@ -34,15 +35,17 @@ en:
         one: "%{count} item found"
         other: "%{count} items found"
       ignore: Hide
+      item: Item
       merge_explainer: Below are identified groups of duplicated 3D meshes and models. Resolve them by deleting extra copies, or hide items you want to keep as-is.
       merge_title: Merge Duplicates
       no_filter_matches: No items match that name filter.
       no_preview: No preview
       no_problems: No problems matched the current filters.
+      resolve: Resolve
       select: Select
       select_all: Select all
       showing: Showing %{from}–%{to} of %{total}
-      space_recoverable: "Total space recoverable:"
+      space_recoverable: 'Total space recoverable:'
       unignore: Show
       view: View
     link:

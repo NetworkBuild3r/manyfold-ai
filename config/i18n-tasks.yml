@@ -142,6 +142,9 @@ ignore_unused:
 - 'problems.model_file.*'
 - 'problems.link.*'
 - 'problems.severities.*'
+- 'problems.index.description' # retained for locale parity after card-row list
+- 'problems.index.item'
+- 'problems.index.resolve'
 - 'application.caber_relation_fields.permissions.*'
 - 'devise.*' # Used deep down
 - 'doorkeeper.*' # Used deep down
