@@ -89,7 +89,7 @@ class Library < ApplicationRecord
   def storage
     case storage_service
     when "filesystem"
-      Shrine::Storage::FileSystem.new(path)
+      LibraryFileSystem.new(path)
     when "s3"
       Shrine::Storage::S3.new(
         endpoint: s3_endpoint,

@@ -94,6 +94,7 @@ en:
       override: Override %{field}...
       preview_side: Preview %{side}
       publishing: Publishing and privacy
+      storage_failed: Could not move files on the library disk. The models were left unchanged; try again or check NFS permissions.
       success: Merged into "%{name}".
       tag_combine: Combine all tags
       tag_count:
