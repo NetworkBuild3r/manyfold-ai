@@ -92,6 +92,28 @@ RSpec.describe ModelFile do
     end
   end
 
+  it "does not flag identical images as duplicates" do # rubocop:todo RSpec/ExampleLength
+    Dir.mktmpdir("model_file_spec_image") do |tmpdir|
+      library = create(:library, path: tmpdir)
+      model = create(:model, library: library, path: "model")
+      preview = create(:model_file, model: model, filename: "preview.jpg", digest: "1234")
+      create(:model_file, model: model, filename: "photo_2022-01-25.jpg", digest: "1234")
+      allow(preview).to receive(:size).and_return(154715)
+      expect(preview.duplicate?).to be false
+    end
+  end
+
+  it "flags identical archives as duplicates" do # rubocop:todo RSpec/ExampleLength
+    Dir.mktmpdir("model_file_spec_archive") do |tmpdir|
+      library = create(:library, path: tmpdir)
+      model = create(:model, library: library, path: "model")
+      pack = create(:model_file, model: model, filename: "pack.zip", digest: "1234")
+      create(:model_file, model: model, filename: "pack_copy.zip", digest: "1234")
+      allow(pack).to receive(:size).and_return(4096)
+      expect(pack.duplicate?).to be true
+    end
+  end
+
   it "does not flag duplicates for nil digests" do # rubocop:todo RSpec/ExampleLength
     Dir.mktmpdir("model_file_spec_nil") do |tmpdir|
       library = create(:library, path: tmpdir)

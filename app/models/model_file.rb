@@ -218,8 +218,13 @@ class ModelFile < ApplicationRecord
     ModelFile.where(digest: digest).where.not(id: id) # rubocop:todo Pundit/UsePolicyScope
   end
 
+  # Only geometry counts: loose 3D files, or the archives that carry them.
+  # Unrelated models routinely share a byte-identical preview photo, and that
+  # is never a reason to offer a merge.
   def duplicate?
-    size && size > 0 && duplicates.exists? && !is_document?
+    return false unless is_3d_model? || is_archive?
+
+    size.to_i > 0 && duplicates.exists?
   end
 
   # Used for ETag in conditional GETs
