@@ -38,6 +38,7 @@ RSpec.describe "Problems" do
         expect(response.body).to include("problem-row")
         expect(response.body).to include("problem-list-filter")
         expect(response.body).not_to match(/<table[^>]*data-controller="bulk-edit/)
+        expect(response.body).not_to match(/problem-row[^>]*data-collapse-target="content"/)
       end
 
       context "with silenced problems" do
@@ -64,6 +65,24 @@ RSpec.describe "Problems" do
           get "/problems/index", params: {"category[]": "duplicate"}
           expect(assigns(:duplicate_list)).to be true
           expect(response.body).to include(I18n.t("problems.index.merge_title"))
+          expect(response.body).to include(I18n.t("problems.index.bulk_merge"))
+        end
+
+        it "lists one row per identical digest" do
+          Problem.destroy_all
+          model_a = create(:model, name: "Alpha Mesh")
+          model_b = create(:model, name: "Alpha Copy")
+          file_a = create(:model_file, model: model_a, filename: "hero.stl")
+          file_b = create(:model_file, model: model_b, filename: "hero_copy.stl")
+          file_a.update_column(:digest, "same") # rubocop:disable Rails/SkipsModelValidations
+          file_b.update_column(:digest, "same") # rubocop:disable Rails/SkipsModelValidations
+          create(:problem, category: :duplicate, problematic: file_a)
+          create(:problem, category: :duplicate, problematic: file_b)
+
+          get "/problems/index", params: {"category[]": "duplicate"}
+
+          expect(assigns(:problems).length).to eq 1
+          expect(response.body.scan(/class="[^"]*problem-row/).size).to eq 1
         end
       end
 
