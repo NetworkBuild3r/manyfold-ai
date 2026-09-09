@@ -114,6 +114,29 @@ RSpec.describe ModelFile do
     end
   end
 
+  it "does not flag identical material sidecars as duplicates" do # rubocop:todo RSpec/ExampleLength
+    Dir.mktmpdir("model_file_spec_mtl") do |tmpdir|
+      library = create(:library, path: tmpdir)
+      model = create(:model, library: library, path: "model")
+      sidecar = create(:model_file, model: model, filename: "naruto.mtl", digest: "1234")
+      create(:model_file, model: model, filename: "stalone.mtl", digest: "1234")
+      allow(sidecar).to receive(:size).and_return(133)
+      expect(sidecar.is_3d_model?).to be true
+      expect(sidecar.duplicate?).to be false
+    end
+  end
+
+  it "does not flag identical sliced output as duplicates" do # rubocop:todo RSpec/ExampleLength
+    Dir.mktmpdir("model_file_spec_gcode") do |tmpdir|
+      library = create(:library, path: tmpdir)
+      model = create(:model, library: library, path: "model")
+      slice = create(:model_file, model: model, filename: "print.gcode", digest: "1234")
+      create(:model_file, model: model, filename: "print_copy.gcode", digest: "1234")
+      allow(slice).to receive(:size).and_return(8192)
+      expect(slice.duplicate?).to be false
+    end
+  end
+
   it "does not flag duplicates for nil digests" do # rubocop:todo RSpec/ExampleLength
     Dir.mktmpdir("model_file_spec_nil") do |tmpdir|
       library = create(:library, path: tmpdir)
