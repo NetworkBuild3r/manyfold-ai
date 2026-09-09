@@ -83,6 +83,9 @@ RSpec.describe "Problems" do
 
           expect(assigns(:problems).length).to eq 1
           expect(response.body.scan(/class="[^"]*problem-row/).size).to eq 1
+          expect(response.body).to include("Alpha Mesh")
+          expect(response.body).to include("Alpha Copy")
+          expect(response.body).to include(I18n.t("problems.index.versus"))
         end
       end
 
@@ -147,6 +150,29 @@ RSpec.describe "Problems" do
           expect(response).to redirect_to(problems_path)
           expect(model_a.reload.name).to eq "Beta"
           expect(Model.where(id: model_b.id)).not_to exist
+        end
+
+        it "does not 500 when the library disk refuses the move" do
+          library = create(:library, path: @library_path) # rubocop:todo RSpec/InstanceVariable
+          model_a = create(:model, library: library, path: "alpha", name: "Alpha")
+          model_b = create(:model, library: library, path: "beta", name: "Beta")
+          file_a = create(:model_file, model: model_a, filename: "part.stl")
+          file_b = create(:model_file, model: model_b, filename: "copy.stl")
+          file_a.update_column(:digest, "same") # rubocop:disable Rails/SkipsModelValidations
+          file_b.update_column(:digest, "same") # rubocop:disable Rails/SkipsModelValidations
+          problem = create(:problem, category: :duplicate, problematic: file_a)
+          allow(Model::MergeWithChoices).to receive(:call).and_raise(Errno::EPERM)
+
+          post merge_problem_path(problem), params: {
+            keep: "a",
+            other_id: model_b.public_id,
+            fields: {name: "a"},
+            tag_strategy: "combine"
+          }
+
+          expect(response).to redirect_to(merge_problem_path(problem, other_id: model_b.public_id, keep: "a"))
+          expect(flash[:alert]).to eq I18n.t("problems.merge.storage_failed")
+          expect(Model.where(id: model_b.id)).to exist
         end
       end
 

@@ -39,12 +39,13 @@ en:
       groups_found_digest:
         one: "%{count} group found"
         other: "%{count} groups found"
-      identical_on_same_model: Extra copy of %{file} on this model
-      identical_to_model: Identical to %{file} on %{model}
       ignore: Hide
       item: Item
       merge: Merge
       merge_explainer: Below are identified groups of duplicated 3D meshes and models. Merge two models when the same file lives in both, or delete one extra copy when you know which file to drop.
+      more_copies:
+        one: "+%{count} more copy"
+        other: "+%{count} more copies"
       merge_title: Merge Duplicates
       no_filter_matches: No items match that name filter.
       no_preview: No preview
@@ -56,6 +57,7 @@ en:
       showing_groups: Showing %{from}–%{to} of %{total} groups found
       space_recoverable: 'Total space recoverable:'
       unignore: Show
+      versus: vs
       view: View
     link:
       http_error:
@@ -94,6 +96,7 @@ en:
       override: Override %{field}...
       preview_side: Preview %{side}
       publishing: Publishing and privacy
+      storage_failed: Could not move files on the library disk. The models were left unchanged; try again or check NFS permissions.
       success: Merged into "%{name}".
       tag_combine: Combine all tags
       tag_count:

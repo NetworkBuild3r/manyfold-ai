@@ -316,4 +316,12 @@ RSpec.describe Library do
       expect(SiteSettings.default_library).to be_nil
     end
   end
+
+  it "uses NFS-safe filesystem storage that does not chmod after moves" do
+    library = build(:library, storage_service: "filesystem", path: "/tmp")
+    storage = library.storage
+    expect(storage).to be_a(LibraryFileSystem)
+    expect(storage.permissions).to be_nil
+    expect(storage.directory_permissions).to be_nil
+  end
 end

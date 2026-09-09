@@ -12,7 +12,7 @@ RSpec.describe Components::ProblemRow, type: :component do
   end
   let(:problem) { create(:problem, category: :duplicate, problematic: file, note: "Photo 2020 04 01 17 05 41") }
 
-  it "renders a full-width card row with title, file meta, and view control" do
+  it "renders a full-width card row with title, file meta, and view control" do # rubocop:todo RSpec/MultipleExpectations
     html = render described_class.new(problem: problem, user: nil)
     expect(html).to include("problem-row")
     expect(html).to include("Bleach Ichigo Diorama Hq")
@@ -29,7 +29,7 @@ RSpec.describe Components::ProblemRow, type: :component do
     expect(html).not_to include("<tr")
   end
 
-  it "names the other model that holds the identical file" do
+  it "places the two matching models side by side" do # rubocop:todo RSpec/ExampleLength, RSpec/MultipleExpectations
     other = create(:model, name: "Ichigo Copy Final")
     twin = create(:model_file, model: other, filename: "hero_copy.stl")
     file.update_column(:digest, "dup") # rubocop:disable Rails/SkipsModelValidations
@@ -37,6 +37,10 @@ RSpec.describe Components::ProblemRow, type: :component do
     pair = Problem::DuplicatePair.build(problem)
 
     html = render described_class.new(problem: problem, user: nil, pair: pair)
-    expect(html).to include("Identical to hero_copy.stl on Ichigo Copy Final")
+    expect(html).to include("Bleach Ichigo Diorama Hq")
+    expect(html).to include("Ichigo Copy Final")
+    expect(html).to include("ichigo_diorama_v2_hollow.stl")
+    expect(html).to include("hero_copy.stl")
+    expect(html).to include(I18n.t("problems.index.versus"))
   end
 end
