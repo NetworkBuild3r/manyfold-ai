@@ -237,7 +237,7 @@ RSpec.describe ModelFile do
       expect(file.errors[:filename].first).to eq "cannot be a case-only change"
     end
 
-    # INIT-019/SPEC-002 — library path jail (ADR D-1)
+    # INIT-019/SPEC-002 -- library path jail (ADR D-1)
     it "rejects filename with parent-directory segments" do # rubocop:disable RSpec/MultipleExpectations
       file.update(filename: "../escape.3mf")
       expect(file).not_to be_valid
