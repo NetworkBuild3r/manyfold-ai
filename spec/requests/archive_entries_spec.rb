@@ -77,4 +77,58 @@ RSpec.describe ArchiveEntriesController, :after_first_run, type: :request do
       end
     end
   end
+
+  describe "DELETE #destroy", :multiuser do
+    let(:member) { create(:user) }
+    let(:entry) { file.archive_entries.first }
+
+    it "maps DELETE to destroy and GET to show (CSRF-safe, no GET mutate)" do
+      path = model_model_file_archive_entry_path(model, file, entry)
+      expect(Rails.application.routes.recognize_path(path, method: :get)).to include(action: "show")
+      expect(Rails.application.routes.recognize_path(path, method: :delete)).to include(action: "destroy")
+    end
+
+    context "when the caller can update the model" do
+      before { sign_in user }
+
+      it "authorizes update? and invokes the rewrite-delete service" do
+        svc = instance_spy(ArchiveEntryService)
+        allow(ArchiveEntryService).to receive(:new).and_return(svc)
+
+        delete model_model_file_archive_entry_path(model, file, entry)
+
+        expect(svc).to have_received(:delete_member!).with(entry)
+        expect(response).to redirect_to(model_model_file_path(model, file))
+        expect(flash[:notice]).to eq(I18n.t("archive_entries.destroy.success"))
+      end
+    end
+
+    context "with preview grant only" do
+      before do
+        model.revoke_all_permissions(Role.find_by!(name: :member))
+        model.grant_permission_to "preview", member
+        sign_in member
+      end
+
+      it "denies archive member delete" do
+        delete model_model_file_archive_entry_path(model, file, entry)
+        expect(response).to have_http_status(:forbidden)
+        expect(ArchiveEntry.find_by(id: entry.id)).to be_present
+      end
+    end
+
+    context "with view grant only" do
+      before do
+        model.revoke_all_permissions(Role.find_by!(name: :member))
+        model.grant_permission_to "view", member
+        sign_in member
+      end
+
+      it "denies archive member delete" do
+        delete model_model_file_archive_entry_path(model, file, entry)
+        expect(response).to have_http_status(:forbidden)
+        expect(ArchiveEntry.find_by(id: entry.id)).to be_present
+      end
+    end
+  end
 end

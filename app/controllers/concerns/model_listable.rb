@@ -32,7 +32,7 @@ module ModelListable
 
     # Count before includes (avoids DISTINCT inflation / join cost); eager-load before window.
     total = @models.except(:order).count
-    @models = @models.includes([:creator, :collection, :tags]).preload([:preview_file])
+    @models = @models.includes([:creator, :collection, :tags]).preload([:preview_file, {preview_archive_entry: :model_file}])
     @models = prepare_browse_window(@models, total: total)
   end
 

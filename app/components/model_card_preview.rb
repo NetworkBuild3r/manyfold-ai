@@ -47,6 +47,9 @@ class Components::ModelCardPreview < Components::Base
   private
 
   def gallery_eligible?
+    entry = @model.preview_archive_entry
+    return true if entry&.is_image? && entry.preview_ready?
+
     file = @model.preview_file
     file.present? && file.is_image?
   end

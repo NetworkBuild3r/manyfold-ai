@@ -126,10 +126,11 @@ class ModelFile < ApplicationRecord
     DUPLICATE_GEOMETRY_EXTENSIONS.include?(extension)
   end
 
-  def scan_archive_later(delay: 0.seconds, preview_images_only: false)
+  # INIT-026/SPEC-003: force: true re-lists even when archive_entries_listed_count > 0.
+  def scan_archive_later(delay: 0.seconds, preview_images_only: false, force: false)
     return unless is_archive?
     Scan::ModelFile::ListArchiveJob.set(wait: delay)
-      .perform_later(id, preview_images_only: preview_images_only)
+      .perform_later(id, preview_images_only: preview_images_only, force: force)
   end
 
   def mime_type

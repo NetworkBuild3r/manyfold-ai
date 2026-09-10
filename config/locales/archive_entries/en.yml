@@ -4,6 +4,11 @@ en:
     card:
       preview_failed: Preview failed
       preview_loading: Generating object preview
+    destroy:
+      not_found: Archive member was not found.
+      success: Archive member removed.
+      unsafe_path: That archive path is not allowed.
+      unsupported_format: This archive format cannot be rewritten safely. The original file was left unchanged.
     panel:
       counts: "%{total} entries · %{ready} previews · %{pending} pending · %{failed} failed"
       download: Download

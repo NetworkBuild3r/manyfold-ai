@@ -9,7 +9,8 @@
 
   <section class="rounded-xl border border-secondary-200 dark:border-secondary-700 bg-white dark:bg-secondary-900/40 p-4 sm:p-6 space-y-4">
     <h2 class="text-lg font-semibold text-secondary-900 dark:text-secondary-50 m-0"><%= t("models.edit.sections.media") %></h2>
-    <%= collection_select_input_row form, :preview_file, @model.valid_preview_files, :id, :name, help: t("models.form.preview_file.help") %>
+    <%# INIT-026/SPEC-006: keep this select ModelFile-only — archive IDs must not collide on preview_file_id. %>
+    <%= collection_select_input_row form, :preview_file, @model.valid_preview_files.grep(ModelFile), :id, :name, help: t("models.form.preview_file.help") %>
   </section>
 
   <section class="rounded-xl border border-secondary-200 dark:border-secondary-700 bg-white dark:bg-secondary-900/40 p-4 sm:p-6 space-y-4">

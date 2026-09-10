@@ -53,8 +53,7 @@ class ModelsController < ApplicationController
       format.html do
         files = policy_scope(@model.model_files).without_special
         @locked_files = @model.model_files.without_special.count - files.count
-        @images = files.select(&:is_image?)
-        @images.unshift(@model.preview_file) if @images.delete(@model.preview_file)
+        @images = gallery_images_from(files)
         if helpers.file_list_settings["hide_presupported_versions"]
           hidden_ids = files.select(:presupported_version_id).where.not(presupported_version_id: nil)
           files = files.where.not(id: hidden_ids)
@@ -87,8 +86,7 @@ class ModelsController < ApplicationController
   # Lightweight image gallery for the browse lightbox (turbo-frame only).
   def gallery
     files = policy_scope(@model.model_files).without_special
-    @images = files.select(&:is_image?)
-    @images.unshift(@model.preview_file) if @images.delete(@model.preview_file)
+    @images = gallery_images_from(files)
     render layout: false
   end
 
@@ -330,6 +328,25 @@ class ModelsController < ApplicationController
     else
       Form::UploadedModelDeserializer.new(params: params, user: current_user).deserialize
     end
+  end
+
+  # INIT-026/SPEC-006: D-3 gallery = loose ModelFile images ∪ ready archive image entries
+  # whose parent file is in policy_scope (preview-only must not list other members).
+  def gallery_images_from(files)
+    scoped = files.to_a
+    loose = scoped.select(&:is_image?)
+    archive = @model.archive_entries.images.with_preview
+      .where(model_file_id: scoped.map(&:id))
+      .includes(model_file: :model)
+      .to_a
+    images = loose + archive
+    current = @model.preview_archive_entry || @model.preview_file
+    if current && images.delete(current)
+      images.unshift(current)
+    elsif current.is_a?(ArchiveEntry) && current.preview_ready?
+      images.unshift(current)
+    end
+    images
   end
 
   def get_model

@@ -7,7 +7,9 @@ module Archive
     extend ActiveSupport::Concern
     include EntrySupport
 
-    def enqueue_previews!(entries = nil, images_only: false, batch_size: ArchiveEntryService::DEFAULT_PREVIEW_BATCH, stagger: ArchiveEntryService::DEFAULT_PREVIEW_STAGGER)
+    # INIT-026/SPEC-003: every image under the size cap is queued (not a single cover).
+    # force: true re-queues even when a derivative already exists (full rescan).
+    def enqueue_previews!(entries = nil, images_only: false, force: false, batch_size: ArchiveEntryService::DEFAULT_PREVIEW_BATCH, stagger: ArchiveEntryService::DEFAULT_PREVIEW_STAGGER)
       entries ||= @model_file.archive_entries.previewable.where.not(status: %w[too_large skipped])
       images = entries.select(&:is_image?).sort_by { |e| e.size.to_i }
       meshes = if images_only
@@ -19,10 +21,11 @@ module Archive
       batch = [batch_size.to_i, 1].max
       stagger_s = stagger.to_f
       queued = 0
+      queued_images = 0
 
       (images + meshes).each do |entry|
         next if entry.status == "too_large"
-        next if entry.preview_ready? && entry.preview_exists?
+        next if !force && entry.preview_ready? && entry.preview_exists?
 
         wait = ((queued % batch) * stagger_s).seconds
         wait += ((queued / batch) * batch * stagger_s).seconds
@@ -30,7 +33,13 @@ module Archive
         entry.update!(status: "preview_pending", error_message: nil)
         Scan::ModelFile::PreviewArchiveEntryJob.set(wait: wait).perform_later(entry.id)
         queued += 1
+        queued_images += 1 if entry.is_image?
       end
+
+      Rails.logger.info(
+        "[ArchiveEntryService] enqueue_previews file=#{@model_file.id} " \
+        "queued_images=#{queued_images} queued=#{queued} force=#{force}"
+      )
 
       queued
     end

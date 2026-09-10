@@ -29,4 +29,26 @@ RSpec.describe Components::ModelCardPreview, type: :component do
     expect(html).not_to include("click->model-gallery#open")
     expect(html).to include(%(/models/#{model.to_param}))
   end
+
+  # INIT-026/SPEC-006
+  context "when the card preview is a ready archive image" do
+    let(:entry) do
+      zip = create(:model_file, model: model, filename: "pack.zip")
+      ArchiveEntry.create!(
+        model_file: zip,
+        pathname: "pics/inner.png",
+        kind: "image",
+        status: "preview_ready",
+        preview_path: "m/.manyfold/derivatives/archives/inner.png"
+      )
+    end
+
+    before { model.update!(preview_file: nil, preview_archive_entry: entry) }
+
+    it "opens gallery when the card preview is a ready archive image" do
+      html = render described_class.new(model: model.reload, editable: false, gallery: true)
+      expect(html).to include("click->model-gallery#open")
+      expect(html).to include("/models/#{model.to_param}/gallery")
+    end
+  end
 end

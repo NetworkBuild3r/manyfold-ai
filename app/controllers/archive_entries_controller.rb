@@ -27,7 +27,7 @@ class ArchiveEntriesController < ApplicationController
 
   def scan
     authorize @file, :scan_archive?
-    @file.scan_archive_later
+    @file.scan_archive_later(force: true)
     redirect_back_or_to [@model, @file], notice: t(".started")
   end
 
@@ -39,6 +39,19 @@ class ArchiveEntriesController < ApplicationController
   def content
     authorize @file, :download?
     send_entry(disposition: :inline)
+  end
+
+  def destroy
+    # INIT-026/SPEC-004: rewrite-delete. Preview-only show? is not enough (ADR D-5).
+    authorize @file, :update?
+    ArchiveEntryService.new(@file).delete_member!(@entry)
+    redirect_back_or_to [@model, @file], notice: t(".success")
+  rescue ArchiveEntryService::UnsupportedFormat
+    redirect_back_or_to [@model, @file], alert: t(".unsupported_format")
+  rescue ArchiveEntryService::UnsafePath
+    redirect_back_or_to [@model, @file], alert: t(".unsafe_path")
+  rescue ArchiveEntryService::EntryNotFound
+    redirect_back_or_to [@model, @file], alert: t(".not_found")
   end
 
   def preview

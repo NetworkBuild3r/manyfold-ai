@@ -40,7 +40,7 @@ class Components::ImageCarousel < Components::Base
               roledescription: "slide",
               label: translate("components.image_carousel.slide_label", index: (index + 1), count: @images.count, name: image.name)
             } do
-            img src: model_model_file_path(image.model, image, format: image.extension, derivative: "carousel"),
+            img src: carousel_src(image),
               alt: image.name,
               class: "block w-full h-full object-contain bg-secondary-900 dark:bg-secondary-950",
               loading: ((index <= 1) ? "eager" : "lazy"),
@@ -119,25 +119,91 @@ class Components::ImageCarousel < Components::Base
     end
   end
 
+  # INIT-026/SPEC-006: mixed ModelFile + ready ArchiveEntry slides (D-3).
+  def carousel_src(image)
+    if archive_image?(image)
+      preview_model_model_file_archive_entry_path(image.model, image.model_file, image)
+    else
+      model_model_file_path(image.model, image, format: image.extension, derivative: "carousel")
+    end
+  end
+
+  def archive_image?(image)
+    image.is_a?(ArchiveEntry)
+  end
+
+  def current_preview?(image)
+    model = image.model
+    if archive_image?(image)
+      model.preview_archive_entry_id == image.id
+    else
+      model.preview_file_id == image.id
+    end
+  end
+
+  def can_set_preview?(image)
+    if archive_image?(image)
+      policy(image.model).edit?
+    else
+      policy(image).edit?
+    end
+  end
+
+  # ADR D-5 / REQ-007: archive rewrite-delete needs model update?, not preview show?.
+  def can_delete?(image)
+    if archive_image?(image)
+      policy(image.model).update?
+    else
+      policy(image).destroy?
+    end
+  end
+
   def button_overlay(image)
     div class: "absolute bottom-0 left-0 right-0 bg-black/50 dark:bg-black/70 text-white px-3 py-2 text-sm hidden md:block" do
-      if image.model.preview_file != image && policy(image).edit?
-        form_with model: image.model, class: "inline-block" do |form|
-          form.hidden_field :preview_file_id, value: image.id
-          form.button t("models.file.set_as_preview"),
-            class: "inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded-full border border-warning text-warning bg-transparent hover:bg-warning/10 mr-2"
-        end
+      span class: "inline-flex items-center rounded-full bg-secondary-800/80 px-2 py-0.5 text-xs mr-2" do
+        archive_image?(image) ? t("models.gallery.source_archive") : t("models.gallery.source_loose")
       end
-      if policy(image).destroy?
-        a href: model_model_file_path(image.model, image),
-          tabindex: 0,
-          class: "inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded-full border border-danger text-white bg-transparent hover:bg-danger/20",
-          data: {
-            method: "delete",
-            confirm: translate("model_files.destroy.confirm")
-          } do
+      if !current_preview?(image) && can_set_preview?(image)
+        set_preview_form(image)
+      end
+      delete_control(image) if can_delete?(image)
+    end
+  end
+
+  def set_preview_form(image)
+    form_with model: image.model, class: "inline-block" do |form|
+      if archive_image?(image)
+        form.hidden_field :preview_archive_entry_id, value: image.id
+      else
+        form.hidden_field :preview_file_id, value: image.id
+      end
+      form.button t("models.file.set_as_preview"),
+        class: "inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded-full border border-warning text-warning bg-transparent hover:bg-warning/10 mr-2"
+    end
+  end
+
+  def delete_control(image)
+    if archive_image?(image)
+      confirm = translate("models.gallery.delete_confirm_archive", archive: image.model_file.filename, name: image.name)
+      form_with url: model_model_file_archive_entry_path(image.model, image.model_file, image),
+        method: :delete,
+        class: "inline-block",
+        data: {turbo_confirm: confirm, confirm: confirm} do |form|
+        form.button class: "inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded-full border border-danger text-white bg-transparent hover:bg-danger/20" do
           Icon(icon: "trash", label: t("general.delete"))
         end
+      end
+    else
+      a href: model_model_file_path(image.model, image),
+        tabindex: 0,
+        class: "inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded-full border border-danger text-white bg-transparent hover:bg-danger/20",
+        data: {
+          method: "delete",
+          confirm: translate("models.gallery.delete_confirm_loose"),
+          turbo_method: "delete",
+          turbo_confirm: translate("models.gallery.delete_confirm_loose")
+        } do
+        Icon(icon: "trash", label: t("general.delete"))
       end
     end
   end

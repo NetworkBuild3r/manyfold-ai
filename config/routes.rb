@@ -196,7 +196,7 @@ Rails.application.routes.draw do
         post "scan_archive", to: "archive_entries#scan"
         get :send_eligibility, to: "model_files/send_eligibilities#show"
       end
-      resources :archive_entries, only: [:index, :show] do
+      resources :archive_entries, only: [:index, :show, :destroy] do
         member do
           get :download
           get :content

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_08_29_153100) do
+ActiveRecord::Schema[8.0].define(version: 2026_09_10_192000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "fuzzystrmatch"
   enable_extension "pg_catalog.plpgsql"
@@ -40,6 +40,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_29_153100) do
     t.text "error_message"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "digest"
     t.index ["model_file_id", "kind"], name: "index_archive_entries_on_model_file_id_and_kind"
     t.index ["model_file_id", "pathname"], name: "index_archive_entries_on_model_file_id_and_pathname", unique: true
     t.index ["model_file_id", "status"], name: "index_archive_entries_on_model_file_id_and_status"
@@ -379,6 +380,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_29_153100) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "preview_file_id"
+    t.bigint "preview_archive_entry_id"
     t.bigint "creator_id"
     t.text "notes"
     t.text "caption"
@@ -399,6 +401,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_29_153100) do
     t.index ["name_lower"], name: "index_models_on_name_lower"
     t.index ["path", "library_id"], name: "index_models_on_path_and_library_id", unique: true
     t.index ["path"], name: "index_models_on_path_trgm", opclass: :gin_trgm_ops, using: :gin
+    t.index ["preview_archive_entry_id"], name: "index_models_on_preview_archive_entry_id"
     t.index ["preview_file_id"], name: "index_models_on_preview_file_id"
     t.index ["public_id"], name: "index_models_on_public_id"
     t.index ["slug"], name: "index_models_on_slug"
@@ -709,6 +712,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_29_153100) do
   add_foreign_key "merge_histories", "models", column: "target_model_id"
   add_foreign_key "model_files", "model_files", column: "presupported_version_id"
   add_foreign_key "model_files", "models"
+  add_foreign_key "models", "archive_entries", column: "preview_archive_entry_id", on_delete: :nullify
   add_foreign_key "models", "collections"
   add_foreign_key "models", "creators"
   add_foreign_key "models", "libraries"
