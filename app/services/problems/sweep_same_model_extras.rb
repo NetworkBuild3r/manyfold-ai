@@ -59,6 +59,8 @@ class Problems::SweepSameModelExtras
   def refresh_problems!
     retracted = 0
     refresh_scope.find_each do |file|
+      next unless file.persisted?
+
       existed = file.problems.exists?(category: :duplicate)
       Problems::Duplicate.detect(file)
       retracted += 1 if existed && !file.problems.exists?(category: :duplicate)
@@ -68,7 +70,7 @@ class Problems::SweepSameModelExtras
 
   def refresh_scope
     if @model
-      @model.model_files
+      @model.model_files.reload
     else
       ids = Problem.where(category: "duplicate", problematic_type: "ModelFile").pluck(:problematic_id)
       ModelFile.where(id: ids)
