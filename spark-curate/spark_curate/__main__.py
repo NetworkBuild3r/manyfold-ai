@@ -30,6 +30,7 @@ from spark_curate.classify import run_classify_cli  # noqa: E402
 from spark_curate.config import CurateConfig, SparkConfig, load_config, save_example_config  # noqa: E402
 from spark_curate.decide import decide_one  # noqa: E402
 from spark_curate.decide_merge import decide_merge_pair_safe  # noqa: E402
+from spark_curate.relocate import run_relocate_cli  # noqa: E402
 from spark_curate.unorganize import run_unorganize_cli  # noqa: E402
 from spark_curate.walk import iter_model_folders  # noqa: E402
 
@@ -65,6 +66,7 @@ def build_parser() -> argparse.ArgumentParser:
             "admit",
             "promote",
             "mesh-fingerprint",
+            "relocate",
         ),
         default="organize",
         help=(
@@ -77,7 +79,9 @@ def build_parser() -> argparse.ArgumentParser:
             "admit=new|hold verdicts into admissions JSONL (INIT-021/SPEC-008); "
             "promote=Unorg→library path-list promote (INIT-021/SPEC-013); "
             "mesh-fingerprint=gated residual stream SHA-256 + trimesh identifier "
-            "(INIT-022/SPEC-003; not a full-library extract)"
+            "(INIT-022/SPEC-003; not a full-library extract); "
+            "relocate=in-library dump dest pack-root lift (INIT-025/SPEC-003; "
+            "default APPLY=0)"
         ),
     )
     p.add_argument(
@@ -167,6 +171,15 @@ def build_parser() -> argparse.ArgumentParser:
         dest="category_extensions",
         default=[],
         help="Operator-added category beyond the live library's folders (repeatable)",
+    )
+    p.add_argument(
+        "--dest",
+        default=None,
+        help=(
+            "Relative Category/Name dest under --library for MODE=relocate "
+            "(INIT-025/SPEC-003). Primary: AnySTL/Girl Sitting on Dinosaur. "
+            "Refuse empty, '.', '/', or paths outside the library."
+        ),
     )
     p.add_argument(
         "--intake",
@@ -591,6 +604,8 @@ def main(argv: list[str] | None = None) -> int:
         return run_merge(args, spark, curate)
     if args.mode == "unorganize":
         return run_unorganize_cli(args, curate)
+    if args.mode == "relocate":
+        return run_relocate_cli(args, curate)
     if args.mode == "classify":
         return run_classify_cli(args, spark, curate)
     if args.mode == "admit":

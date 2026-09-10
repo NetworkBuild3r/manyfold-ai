@@ -22,8 +22,31 @@ It only needs:
 |--------|----------------|
 | `organize` (default) | Vision rename/move folders into Category/Model |
 | `merge` | Find duplicate packs (`Foo` / `Foo (2)`, shared digests) and queue merges |
+| `relocate` | Lift pack roots out of **one** named library dump dest (INIT-025). Default `APPLY=0`. |
 
 **Same character ≠ same model.** Two Batmans stay separate unless structural signals + vision say they are the *same product* (confidence ≥ 0.80).
+
+### Relocate dry-run (`MODE=relocate`, INIT-025/SPEC-003)
+
+In-library lane: lift pack roots out of **one** named dump dest already in the live library. Not Unorg unorganize. Default dry-run.
+
+```bash
+# Plan only — never mv (default)
+python -m spark_curate --library /library --mode relocate \
+  --dest "AnySTL/Girl Sitting on Dinosaur"
+# APPLY=1 is SPEC-004 (gated Job) after a human reviews the JSONL.
+```
+
+Dest must be a relative `Category/Name` path. Empty, `.`, `/`, `..`, and paths outside the library **fail loud**. Collision with an existing depth-2 folder is `hold` (never `Name (N)`). Sibling dump dests are listed in `relocate-siblings-*.jsonl` and are **not** moved.
+
+Plan line shape (`relocate-plan-*.jsonl`):
+
+```json
+{"provenance":"INIT-025/SPEC-003","kind":"lift","source":"/library/AnySTL/Girl Sitting on Dinosaur/Alliance-Stormtrooper_Samurai_NSFW","dest":"AnySTL/Alliance-Stormtrooper_Samurai_NSFW","category":"AnySTL","category_source":"dest_parent","pack_name":"Alliance-Stormtrooper_Samurai_NSFW","status":"lift"}
+```
+
+`kind` is `lift` | `hold` | `leftover`. `category_source` is `dest_parent` (first segment of the named dest).
+
 
 ### Merge dry-run / apply
 
@@ -132,8 +155,9 @@ docker compose up -d
 | Variable | Default | Meaning |
 |----------|---------|---------|
 | `LIBRARY_HOST_PATH` | (required) | Host path bind-mounted to `/library` |
-| `APPLY` | `0` | `1` = perform moves / queue merges |
-| `MODE` | `organize` | `organize` or `merge` |
+| `APPLY` | `0` | `1` = perform moves / queue merges. Relocate stays `0` until SPEC-004. |
+| `MODE` | `organize` | `organize`, `merge`, `relocate`, … |
+| `DEST` | | Relative `Category/Name` for `MODE=relocate` |
 | `MIN_CONFIDENCE` | `0.55` | Min vision confidence to move (organize) |
 | `MIN_MERGE_CONFIDENCE` | `0.80` | Min confidence to queue merge for Manyfold |
 | `MAX_MERGE_PAIRS` | `200` | Cap merge candidate pairs per run |
@@ -162,6 +186,9 @@ Written on the library volume (survives container):
   merges-pending.jsonl    # approved for Manyfold apply
   merges-applied.jsonl
   merges-failed.jsonl
+  relocate-plan-*.jsonl      # MODE=relocate: lift | hold | leftover (INIT-025/SPEC-003)
+  relocate-siblings-*.jsonl  # other organize-applied dump dests; inventory only
+  relocate-summary-*.json
   thumbs/                 # zip-extracted previews (cache only)
 ```
 
@@ -173,7 +200,8 @@ Written on the library volume (survives container):
 |------|----------|
 | Delete | **Never** |
 | Default | Dry-run |
-| Name clash | `Model (2)`, `Model (3)`, … |
+| Name clash (organize) | `Model (2)`, `Model (3)`, … |
+| Name clash (relocate) | **`hold`** — never `Name (N)` |
 | No preview | Leave folder in place |
 | Low confidence | Leave in place |
 | Flagged junk | Leave in place (noted only) |

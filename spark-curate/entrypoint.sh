@@ -126,6 +126,9 @@ if [[ ${#ARGS[@]} -eq 0 ]] || [[ "${ARGS[*]}" == "--library /library" ]]; then
   if [[ -n "${SLICE_TOP:-}" ]]; then
     ARGS+=(--slice-top "${SLICE_TOP}")
   fi
+  if [[ -n "${DEST:-}" ]]; then
+    ARGS+=(--dest "${DEST}")
+  fi
 else
   has_config=0
   for a in "${ARGS[@]}"; do
