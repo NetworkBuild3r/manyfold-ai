@@ -71,8 +71,7 @@ class Model::Merge
         stamp_scan_context_for!(other)
         other.destroy!
       end
-      collapse_identical_files!
-      refresh_duplicate_problems!
+      Problems::SweepSameModelExtras.call(model: @target)
     end
   end
 
@@ -89,20 +88,5 @@ class Model::Merge
 
   def stamp_scan_context_for!(record)
     ScanContext.apply!(record, *record.model_files.to_a)
-  end
-
-  def collapse_identical_files!
-    @target.model_files.reload
-      .select { |file| file.digest.present? && (file.duplicate_geometry? || file.is_archive?) }
-      .group_by(&:digest)
-      .each_value do |copies|
-        next if copies.size < 2
-
-        copies.sort_by(&:id).drop(1).each(&:delete_from_disk_and_destroy)
-      end
-  end
-
-  def refresh_duplicate_problems!
-    @target.model_files.reload.find_each { |file| Problems::Duplicate.detect(file) }
   end
 end
