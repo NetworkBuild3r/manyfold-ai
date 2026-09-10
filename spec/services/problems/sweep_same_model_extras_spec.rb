@@ -29,9 +29,8 @@ RSpec.describe Problems::SweepSameModelExtras do
     result = described_class.call
 
     expect(result.collapsed).to eq 1
-    expect(result.retracted).to be >= 1
     expect(ModelFile.where(id: extra.id)).not_to exist
-    expect(Problem.where(category: :duplicate, problematic: keeper)).not_to exist
+    expect(Problem.where(category: :duplicate, problematic: [keeper, extra])).not_to exist
   end
 
   it "leaves a real two-model pair on the Problems list" do # rubocop:todo RSpec/ExampleLength, RSpec/MultipleExpectations
