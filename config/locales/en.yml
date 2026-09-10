@@ -82,8 +82,8 @@ en:
         name: Name
         notes: Description
         path: Path
-        preview_file: Preview File
         preview_archive_entry: Preview Archive Entry
+        preview_file: Preview File
         sensitive: Sensitive Content
         tags: Tags
       model_file:
