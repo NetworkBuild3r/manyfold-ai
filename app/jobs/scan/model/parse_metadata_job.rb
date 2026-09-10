@@ -57,8 +57,17 @@ class Scan::Model::ParseMetadataJob < ApplicationJob
 
   # Prefer an on-disk image (preview/cover/thumb names first). Keep a missing
   # image only when no on-disk image exists. Upgrade nil/mesh → image.
+  # INIT-026/SPEC-003: picker may return a ModelFile or a ready ArchiveEntry (D-4).
   def resolve_preview_file(model)
-    {preview_file: PreviewFilePicker.new(model).call}
+    pick = PreviewFilePicker.new(model).call
+    case pick
+    when ArchiveEntry
+      {preview_archive_entry: pick}
+    when ModelFile
+      {preview_file: pick}
+    else
+      {}
+    end
   end
 
   def tags_from_directory_name(path)

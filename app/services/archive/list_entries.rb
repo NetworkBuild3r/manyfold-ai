@@ -62,6 +62,10 @@ module Archive
         archive_entries_listed_count: listed.size
       )
 
+      Rails.logger.info(
+        "[ArchiveEntryService] listed file=#{@model_file.id} count=#{listed.size} truncated=#{truncated}"
+      )
+
       listed
     end
   end

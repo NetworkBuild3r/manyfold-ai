@@ -30,6 +30,21 @@ RSpec.describe PreviewFilePicker do
     file
   end
 
+  def add_ready_archive_image(pathname: "pics/cover.png")
+    archive = create(:model_file, model: model, filename: "pack.zip")
+    entry = ArchiveEntry.create!(
+      model_file: archive,
+      pathname: pathname,
+      kind: "image",
+      status: "preview_ready",
+      preview_path: File.join(model.path, ".manyfold/derivatives/archives/x/y/preview.png")
+    )
+    abs = File.join(library.path, entry.preview_path)
+    FileUtils.mkdir_p(File.dirname(abs))
+    File.binwrite(abs, "png")
+    entry
+  end
+
   it "keeps an existing on-disk image preview" do
     other, preview = add_files("other.png", "preview.jpg")
     model.update!(preview_file: other)
@@ -68,5 +83,31 @@ RSpec.describe PreviewFilePicker do
   it "falls back to mesh when no images exist" do
     add_files("part.stl")
     expect(described_class.new(model).call.filename).to eq "part.stl"
+  end
+
+  # INIT-026/SPEC-003
+  it "picks a ready archive image when no loose images exist" do
+    add_files("part.stl")
+    entry = add_ready_archive_image
+    expect(described_class.new(model.reload).call(require_on_disk: true)).to eq entry
+  end
+
+  it "prefers an on-disk loose image over a ready archive image" do
+    loose, = add_files("other.png")
+    add_ready_archive_image
+    expect(described_class.new(model.reload).call).to eq loose
+  end
+
+  it "keeps a current ready archive preview" do
+    add_files("part.stl")
+    entry = add_ready_archive_image
+    model.update!(preview_archive_entry: entry)
+    expect(described_class.new(model.reload).call(require_on_disk: true)).to eq entry
+  end
+
+  it "includes ready archive images in valid_preview_files" do
+    add_files("part.stl")
+    entry = add_ready_archive_image(pathname: "pics/shot.png")
+    expect(model.reload.valid_preview_files).to include(entry)
   end
 end

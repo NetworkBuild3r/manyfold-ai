@@ -15,6 +15,12 @@ en:
       showing_chunk: Showing %{shown} of %{total} entries
       title: Archive contents
       truncated: listing truncated
+    destroy:
+      confirm: This image is inside the archive %{archive}. Removing it rewrites the archive and cannot be undone. The archive file itself will remain.
+      not_found: Archive member was not found.
+      success: Archive member removed.
+      unsupported_format: This archive format cannot be rewritten safely. The original file was left unchanged.
+      unsafe_path: That archive path is not allowed.
     scan:
       started: Archive scan queued. Refresh in a moment to see contents.
     show:

@@ -1,6 +1,12 @@
 <% content_for :head do %>
   <%= tag.meta property: "og:type", content: "website" %>
-  <%= tag.meta property: "og:image", content: model_model_file_url(@model, @model.preview_file, format: @model.preview_file.extension) if @model.preview_file&.is_image? && !@model.sensitive %>
+  <% unless @model.sensitive %>
+    <% if @model.preview_archive_entry&.preview_ready? %>
+      <%= tag.meta property: "og:image", content: preview_model_model_file_archive_entry_url(@model, @model.preview_archive_entry.model_file, @model.preview_archive_entry) %>
+    <% elsif @model.preview_file&.is_image? %>
+      <%= tag.meta property: "og:image", content: model_model_file_url(@model, @model.preview_file, format: @model.preview_file.extension) %>
+    <% end %>
+  <% end %>
   <%= tag.meta name: "description", content: truncate(sanitize(@model.notes), length: 80) if @model.notes.present? %>
   <%= tag.meta name: "fediverse:creator", content: @model.creator.federails_actor.at_address if @model.creator&.federails_actor %>
   <%= tag.link rel: "alternate", type: Mime[:oembed], href: model_url(@model, format: :oembed), title: @model.name %>

@@ -2,7 +2,9 @@
 
 namespace :manyfold do
   desc "Enqueue background archive listing for the library. " \
-       "LIMIT=0 (all), BATCH=100, IMAGES_ONLY=1 (default), FORCE=0, MODEL_ID=public_id"
+       "LIMIT=0 (all), BATCH=100, STAGGER=0.5, CURSOR=0, IMAGES_ONLY=1 (default), " \
+       "FORCE=0, MODEL_ID=public_id. Fleet FORCE=1 requires ARCHIVE_RESCAN_APPLY_GATE=1 " \
+       "(INIT-026/SPEC-005). Images-only force first."
   task scan_archives: :environment do
     images_only = ActiveModel::Type::Boolean.new.cast(ENV.fetch("IMAGES_ONLY", "1"))
 
@@ -11,7 +13,7 @@ namespace :manyfold do
       count = 0
       model.model_files.find_each do |file|
         next unless file.is_archive?
-        file.scan_archive_later(preview_images_only: images_only)
+        file.scan_archive_later(preview_images_only: images_only, force: true)
         count += 1
         puts "queued ListArchiveJob for model=#{model.public_id} file=#{file.filename}"
       end
@@ -19,15 +21,24 @@ namespace :manyfold do
     else
       limit = Integer(ENV.fetch("LIMIT", "0"))
       batch = Integer(ENV.fetch("BATCH", Scan::EnqueueArchiveScansJob::DEFAULT_BATCH.to_s))
+      stagger = Float(ENV.fetch("STAGGER", Scan::EnqueueArchiveScansJob::DEFAULT_STAGGER.to_s))
+      cursor = Integer(ENV.fetch("CURSOR", "0"))
       force = ActiveModel::Type::Boolean.new.cast(ENV.fetch("FORCE", "0"))
+      if force && ENV.fetch("ARCHIVE_RESCAN_APPLY_GATE", "0") != "1"
+        abort "refusing fleet FORCE=1 without ARCHIVE_RESCAN_APPLY_GATE=1 " \
+          "(INIT-026/SPEC-005). Per-model rescan uses MODEL_ID=."
+      end
       Scan::EnqueueArchiveScansJob.perform_later(
         limit: limit,
         batch_size: batch,
+        stagger: stagger,
         preview_images_only: images_only,
-        force: force
+        force: force,
+        cursor: cursor
       )
       puts "enqueued EnqueueArchiveScansJob limit=#{limit == 0 ? "all" : limit} " \
-           "batch=#{batch} images_only=#{images_only} force=#{force}"
+           "batch=#{batch} stagger=#{stagger} cursor=#{cursor} " \
+           "images_only=#{images_only} force=#{force}"
     end
   end
 

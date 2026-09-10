@@ -53,6 +53,7 @@ class Model < ApplicationRecord
   belongs_to :creator, optional: true
   belongs_to :collection, optional: true
   belongs_to :preview_file, class_name: "ModelFile", optional: true
+  belongs_to :preview_archive_entry, class_name: "ArchiveEntry", optional: true, inverse_of: :previewing_models
   has_many :model_files, dependent: :destroy
   has_many :archive_entries, through: :model_files
   has_many :merge_histories, foreign_key: :target_model_id, dependent: :destroy, inverse_of: :target_model
@@ -66,6 +67,8 @@ class Model < ApplicationRecord
   before_validation :strip_separators_from_path, if: :path_changed?
   # Do not auto-publish creators — validate_publishable requires an already-public creator.
   before_validation :normalize_license, if: -> { respond_to? :license }
+  # INIT-026/SPEC-002: assigning one D-4 preview source clears the other (file XOR archive entry).
+  before_validation :clear_exclusive_preview_source
 
   after_create_commit :post_creation_activity
   after_create :pregenerate_downloads
@@ -82,6 +85,7 @@ class Model < ApplicationRecord
   validates :public_id, multimodel_uniqueness: {punctuation_sensitive: false, case_sensitive: false, check: FederailsCommon::FEDIVERSE_USERNAMES}, if: -> { respond_to? :public_id }, on: [:create, :update]
 
   validate :validate_publishable
+  validate :preview_archive_entry_belongs_to_model
 
   scoped_search on: [:name, :caption]
   scoped_search on: :notes, aliases: [:description], only_explicit: true
@@ -216,8 +220,10 @@ class Model < ApplicationRecord
     tags.where(name: SiteSettings.model_tags_auto_tag_new).any?
   end
 
+  # INIT-026/SPEC-003: loose ModelFile previews plus ready archive image entries (D-4).
   def valid_preview_files
-    model_files.select { |it| it.is_image? || it.is_renderable? }
+    model_files.select { |it| it.is_image? || it.is_renderable? } +
+      archive_entries.select { |entry| entry.is_image? && entry.preview_ready? }
   end
 
   def image_files
@@ -312,9 +318,12 @@ class Model < ApplicationRecord
     Scan::CheckModelJob.set(wait: delay).perform_later(id, scan_batch_id: scan_batch_id)
   end
 
-  def scan_archives_later(delay: 0.seconds)
+  # INIT-026/SPEC-003: operator per-model rescan defaults to force: true (D-1).
+  def scan_archives_later(delay: 0.seconds, force: true, preview_images_only: false)
     model_files.find_each do |file|
-      file.scan_archive_later(delay: delay) if file.is_archive?
+      next unless file.is_archive?
+
+      file.scan_archive_later(delay: delay, force: force, preview_images_only: preview_images_only)
     end
   end
 
@@ -467,10 +476,26 @@ class Model < ApplicationRecord
       "created_at",
       "updated_at",
       "preview_file_id",
+      "preview_archive_entry_id",
       "slug",
       "public_id",
       "name_lower"
     ]).empty?
+  end
+
+  def clear_exclusive_preview_source
+    if preview_archive_entry_id_changed? && preview_archive_entry_id.present?
+      self.preview_file_id = nil
+    elsif preview_file_id_changed? && preview_file_id.present?
+      self.preview_archive_entry_id = nil
+    end
+  end
+
+  def preview_archive_entry_belongs_to_model
+    return if preview_archive_entry_id.blank?
+    return if archive_entries.exists?(id: preview_archive_entry_id)
+
+    errors.add(:preview_archive_entry, :must_belong_to_model)
   end
 
   def validate_publishable

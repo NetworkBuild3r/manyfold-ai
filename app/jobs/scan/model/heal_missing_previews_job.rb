@@ -31,7 +31,7 @@ class Scan::Model::HealMissingPreviewsJob < ApplicationJob
     return 0 if max <= 0
 
     scope = Model.where.not(preview_file_id: nil)
-      .includes(:preview_file, :model_files, :library)
+      .includes(:preview_file, :preview_archive_entry, :library, model_files: :archive_entries)
     scope = scope.where(library_id: library_id) if library_id.present?
 
     healed = 0
@@ -50,8 +50,8 @@ class Scan::Model::HealMissingPreviewsJob < ApplicationJob
   def heal_nil_previews(library_id:, max:)
     return 0 if max <= 0
 
-    scope = Model.where(preview_file_id: nil)
-      .includes(:preview_file, :model_files, :library)
+    scope = Model.where(preview_file_id: nil, preview_archive_entry_id: nil)
+      .includes(:preview_file, :preview_archive_entry, :library, model_files: :archive_entries)
     scope = scope.where(library_id: library_id) if library_id.present?
 
     healed = 0
@@ -72,7 +72,7 @@ class Scan::Model::HealMissingPreviewsJob < ApplicationJob
 
     scope = Model.joins(:preview_file)
       .where.not(image_filename_sql("model_files"))
-      .includes(:preview_file, :model_files, :library)
+      .includes(:preview_file, :preview_archive_entry, :library, model_files: :archive_entries)
     scope = scope.where(library_id: library_id) if library_id.present?
 
     healed = 0
@@ -92,8 +92,14 @@ class Scan::Model::HealMissingPreviewsJob < ApplicationJob
     healed
   end
 
+  # INIT-026/SPEC-003: ArchiveEntry picks set preview_archive_entry (D-4).
   def apply_pick!(model, pick)
-    model.update!(preview_file: pick)
+    case pick
+    when ArchiveEntry
+      model.update!(preview_archive_entry: pick)
+    else
+      model.update!(preview_file: pick)
+    end
     model.check_for_problems_later(delay: 1.second)
   end
 

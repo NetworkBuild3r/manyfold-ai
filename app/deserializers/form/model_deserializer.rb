@@ -6,6 +6,7 @@ module Form
       if user_can_set_permissions?
         @params.require(:model).permit(
           :preview_file_id,
+          :preview_archive_entry_id,
           :creator_id,
           :library_id,
           :name,
@@ -29,6 +30,7 @@ module Form
       else
         @params.require(:model).permit(
           :preview_file_id,
+          :preview_archive_entry_id,
           :creator_id,
           :library_id,
           :name,

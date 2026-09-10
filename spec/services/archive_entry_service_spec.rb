@@ -106,6 +106,41 @@ RSpec.describe ArchiveEntryService do
       expect(@file.archive_entries.find_by(pathname: "pics/shot.png").status).to eq("preview_pending")
       expect(@file.archive_entries.find_by(pathname: "parts/widget.stl").status).to eq("listed")
     end
+
+    def png_1x1_bytes
+      Base64.decode64("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==")
+    end
+
+    def add_extra_zip_images!(*names)
+      Zip::File.open(@zip_path) do |zip|
+        names.each { |name| zip.get_output_stream(name) { |f| f.write(png_1x1_bytes) } }
+      end
+      @file.attach_existing_file!(refresh: true)
+    end
+
+    # INIT-026/SPEC-003: every image under the size cap, not a single cover.
+    it "enqueues every image entry under the size cap" do
+      add_extra_zip_images!("pics/a.png", "pics/b.png")
+      service = described_class.new(@file)
+      service.list!
+      expect {
+        service.enqueue_previews!(images_only: true)
+      }.to have_enqueued_job(Scan::ModelFile::PreviewArchiveEntryJob).exactly(3).times
+      images = @file.archive_entries.where(kind: "image")
+      expect(images.count).to eq(3)
+      expect(images.pluck(:status).uniq).to eq(["preview_pending"])
+    end
+
+    it "does not enqueue image entries marked too_large" do
+      service = described_class.new(@file)
+      service.list!
+      image = @file.archive_entries.find_by!(pathname: "pics/shot.png")
+      image.update!(status: "too_large", size: SiteSettings.max_file_extract_size + 1)
+      expect {
+        service.enqueue_previews!(images_only: true, force: true)
+      }.not_to have_enqueued_job(Scan::ModelFile::PreviewArchiveEntryJob)
+      expect(image.reload.status).to eq("too_large")
+    end
   end
 
   describe "#extract_to_cache!" do
@@ -117,6 +152,26 @@ RSpec.describe ArchiveEntryService do
       expect(rel).to include(".manyfold/archive_cache/")
       expect(File.file?(File.join(@library_path, rel))).to be true
       expect(entry.reload.extracted_path).to eq(rel)
+    end
+  end
+
+  # INIT-026/SPEC-003: thumbs stay under .manyfold; originals never land in the pack folder.
+  describe "#extract_preview_image!" do
+    it "writes the derivative under .manyfold and not into the model folder" do
+      service = described_class.new(@file)
+      allow(service).to receive(:write_image_preview!) do |_src, dest|
+        FileUtils.mkdir_p(File.dirname(dest))
+        File.binwrite(dest, "png")
+      end
+      service.list!
+      entry = @file.archive_entries.find_by!(pathname: "pics/shot.png")
+      rel = service.extract_preview_image!(entry)
+      expect(rel).to include(".manyfold/derivatives/archives/")
+      expect(rel).to end_with("preview.png")
+      expect(File.file?(File.join(@library_path, rel))).to be true
+      expect(File.exist?(File.join(@library_path, "model_a", "shot.png"))).to be false
+      expect(File.exist?(File.join(@library_path, "model_a", "pics", "shot.png"))).to be false
+      expect(entry.reload.status).to eq("preview_ready")
     end
   end
 

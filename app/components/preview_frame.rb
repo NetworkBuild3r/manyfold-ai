@@ -16,11 +16,20 @@ class Components::PreviewFrame < Components::Base
 
   def before_template
     return if remote?
-    @file = @object.is_a?(Model) ? @object.preview_file : policy_scope(@object.models).first&.preview_file
+    if @object.is_a?(Model)
+      @entry = @object.preview_archive_entry
+      @file = @object.preview_file
+    else
+      first = policy_scope(@object.models).first
+      @entry = first&.preview_archive_entry
+      @file = first&.preview_file
+    end
   end
 
   def view_template
-    if @file
+    if archive_preview?
+      render_archive_entry
+    elsif @file
       render_local
     elsif remote?
       render_remote
@@ -50,6 +59,31 @@ class Components::PreviewFrame < Components::Base
   def image_class
     fit = @lite ? "object-contain" : "object-cover"
     "absolute inset-0 w-full h-full #{fit}" + (needs_hiding? ? " sensitive" : "")
+  end
+
+  # INIT-026/SPEC-006: card preview may be a ready ArchiveEntry (D-4).
+  def archive_preview?
+    @entry.present? && @entry.is_image? && @entry.preview_ready?
+  end
+
+  def render_archive_entry
+    if !@lite && !@entry.preview_exists?
+      return empty
+    end
+
+    div(class: preview_container_class) do
+      opts = {
+        class: image_class,
+        alt: @entry.name,
+        loading: @eager ? "eager" : "lazy",
+        decoding: "async",
+        width: 480,
+        height: 360
+      }
+      opts[:fetchpriority] = "high" if @eager
+      opts[:sizes] = "(max-width: 640px) 50vw, 240px" if @lite
+      image_tag preview_model_model_file_archive_entry_path(@entry.model, @entry.model_file, @entry), **opts
+    end
   end
 
   def render_local

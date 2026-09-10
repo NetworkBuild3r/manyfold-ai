@@ -46,4 +46,26 @@ RSpec.describe Components::PreviewFrame, type: :component do
     expect(html).not_to include("<img")
     expect(html).to include(I18n.t("components.model_card.no_preview"))
   end
+
+  # INIT-026/SPEC-006
+  context "when the card preview is a ready archive image" do
+    let(:entry) do
+      zip = create(:model_file, model: model, filename: "pack.zip")
+      ArchiveEntry.create!(
+        model_file: zip,
+        pathname: "pics/inner.png",
+        kind: "image",
+        status: "preview_ready",
+        preview_path: "m/.manyfold/derivatives/archives/inner.png"
+      )
+    end
+
+    before { model.update!(preview_file: nil, preview_archive_entry: entry) }
+
+    it "renders a ready archive entry as the card preview" do
+      html = render described_class.new(object: model.reload, lite: true)
+      expect(html).to include("<img")
+      expect(html).to include(view_context.preview_model_model_file_archive_entry_path(model, entry.model_file, entry))
+    end
+  end
 end

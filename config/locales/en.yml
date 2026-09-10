@@ -83,6 +83,7 @@ en:
         notes: Description
         path: Path
         preview_file: Preview File
+        preview_archive_entry: Preview Archive Entry
         sensitive: Sensitive Content
         tags: Tags
       model_file:
@@ -236,6 +237,8 @@ en:
             path:
               destination_exists: already exists
               nested: can't be changed, model contains other models
+            preview_archive_entry:
+              must_belong_to_model: must belong to this model
         model_file:
           attributes:
             filename:

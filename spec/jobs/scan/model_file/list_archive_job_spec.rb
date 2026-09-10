@@ -35,4 +35,20 @@ RSpec.describe Scan::ModelFile::ListArchiveJob do
     expect(@file.archive_entries.count).to eq(1)
     expect(@file.archive_entries.first.status).to eq("listed")
   end
+
+  # INIT-026/SPEC-003
+  it "skips re-list when the archive is already listed unless force" do
+    @file.update!(archive_entries_listed_count: 4)
+    expect {
+      described_class.perform_now(@file.id)
+    }.not_to have_enqueued_job(Scan::ModelFile::PreviewArchiveEntryJob)
+    expect(@file.archive_entries.count).to eq(0)
+  end
+
+  it "re-lists an already-listed archive when force is true" do
+    @file.update!(archive_entries_listed_count: 4)
+    described_class.perform_now(@file.id, force: true)
+    expect(@file.reload.archive_entries_listed_count).to eq(1)
+    expect(@file.archive_entries.count).to eq(1)
+  end
 end

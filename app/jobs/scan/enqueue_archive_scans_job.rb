@@ -2,6 +2,8 @@
 
 # Walk unlisted archive ModelFiles and enqueue ListArchiveJob in paced batches
 # so a full-library pass does not stampede NFS / Sidekiq.
+# Images-only force first (INIT-026/SPEC-005 / ADR D-7): default preview_images_only: true.
+# Fleet FORCE=1 is gated by ARCHIVE_RESCAN_APPLY_GATE on the rake/Job bake — not this class.
 class Scan::EnqueueArchiveScansJob < ApplicationJob
   queue_as :low
   unique :until_executed, lock_ttl: 6.hours
@@ -33,7 +35,7 @@ class Scan::EnqueueArchiveScansJob < ApplicationJob
 
       wait = (index * stagger_s).seconds
       Scan::ModelFile::ListArchiveJob.set(wait: wait)
-        .perform_later(file.id, preview_images_only: preview_images_only)
+        .perform_later(file.id, preview_images_only: preview_images_only, force: force)
       queued += 1
     end
 

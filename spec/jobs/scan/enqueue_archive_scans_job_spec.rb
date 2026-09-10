@@ -27,7 +27,7 @@ RSpec.describe Scan::EnqueueArchiveScansJob do
     expect {
       described_class.perform_now(limit: 10, batch_size: 10, stagger: 0, preview_images_only: true)
     }.to have_enqueued_job(Scan::ModelFile::ListArchiveJob)
-      .with(@file.id, preview_images_only: true)
+      .with(@file.id, preview_images_only: true, force: false)
   end
 
   it "skips archives that already have listings unless force" do
@@ -35,5 +35,34 @@ RSpec.describe Scan::EnqueueArchiveScansJob do
     expect {
       described_class.perform_now(limit: 10, batch_size: 10, stagger: 0)
     }.not_to have_enqueued_job(Scan::ModelFile::ListArchiveJob)
+  end
+
+  it "enqueues already-listed archives when force is true" do
+    @file.update!(archive_entries_listed_count: 3)
+    expect {
+      described_class.perform_now(limit: 10, batch_size: 10, stagger: 0, force: true)
+    }.to have_enqueued_job(Scan::ModelFile::ListArchiveJob)
+      .with(@file.id, preview_images_only: true, force: true)
+  end
+
+  it "self-chains the next batch with cursor" do
+    model_dir = File.join(@library.path, @model.path)
+    zip_path = File.join(model_dir, "pack2.zip")
+    Zip::File.open(zip_path, create: true) do |zip|
+      zip.get_output_stream("b.stl") { |f| f.write("solid b\nendsolid b\n") }
+    end
+    second = create(:model_file, model: @model, filename: "pack2.zip", attachment: nil)
+    second.attach_existing_file!(refresh: false)
+
+    expect {
+      described_class.perform_now(limit: 0, batch_size: 1, stagger: 0, force: true)
+    }.to have_enqueued_job(described_class).with(
+      hash_including(
+        cursor: @file.id,
+        force: true,
+        batch_size: 1,
+        preview_images_only: true
+      )
+    )
   end
 end

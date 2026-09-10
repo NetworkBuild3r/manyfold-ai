@@ -64,7 +64,11 @@ en:
         help: The file displayed as a model preview in library pages
       tags: Tags
     gallery:
+      delete_confirm_archive: This image is inside the archive %{archive}. Removing it rewrites the archive and cannot be undone. The archive file itself will remain.
+      delete_confirm_loose: This is a loose image on disk. Remove it from the model folder? This cannot be undone.
       no_images: No images for this model.
+      source_archive: Inside archive
+      source_loose: Loose file
     general:
       edit: Edit Model
     index:

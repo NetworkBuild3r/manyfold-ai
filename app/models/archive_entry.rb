@@ -9,6 +9,9 @@ class ArchiveEntry < ApplicationRecord
   RENDERABLE_EXTENSIONS = %w[stl obj 3mf ply gltf glb drc fbx 3ds gcode mpd ldr 3dm].freeze
 
   belongs_to :model_file, touch: true
+  # INIT-026/SPEC-002: models.preview_archive_entry_id nullifies when this entry is destroyed.
+  has_many :previewing_models, class_name: "Model", foreign_key: :preview_archive_entry_id,
+    dependent: :nullify, inverse_of: :preview_archive_entry
 
   validates :pathname, presence: true, uniqueness: {scope: :model_file_id}
   validates :kind, inclusion: {in: KINDS}
