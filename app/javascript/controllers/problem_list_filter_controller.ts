@@ -39,12 +39,17 @@ export default class extends Controller {
     const mergeable = checked.find((el) => Boolean(el.dataset.mergeUrl))
     const url = mergeable?.dataset.mergeUrl
     if (url != null && url !== '') {
+      const next = new URL(url, window.location.origin)
+      if (!next.searchParams.has('return_to')) {
+        next.searchParams.set('return_to', `${window.location.pathname}${window.location.search}`)
+      }
+      const href = `${next.pathname}${next.search}`
       const frame = document.querySelector<HTMLElement>('turbo-frame#duplicate-merge-dialog')
       if (frame != null) {
-        frame.setAttribute('src', url)
+        frame.setAttribute('src', href)
         return
       }
-      window.location.assign(url)
+      window.location.assign(href)
       return
     }
     if (checked.length > 0) {
