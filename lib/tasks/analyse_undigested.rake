@@ -9,4 +9,10 @@ namespace :manyfold do
     count = Scan::AnalyseUndigestedJob.perform_now(limit: limit, library_id: library_id)
     puts "Enqueued analysis for #{count} undigested file(s) (limit=#{limit})"
   end
+
+  desc "Drop leftover same-model extra copies and retract their duplicate Problems"
+  task sweep_same_model_duplicate_extras: :environment do
+    result = Problems::SweepSameModelExtras.call
+    puts "collapsed=#{result.collapsed} retracted=#{result.retracted}"
+  end
 end
