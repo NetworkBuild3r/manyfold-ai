@@ -552,6 +552,30 @@ RSpec.describe "Models" do
           end
         end
 
+        # INIT-025/SPEC-005 — path parent is not a merge target without a same-pack signal.
+        context "when target is a path parent with no eligibility signal", :as_moderator do # rubocop:todo RSpec/MultipleMemoizedHelpers
+          let!(:girl) do
+            create(:model, library: library, path: "AnySTL/Girl Sitting on Dinosaur")
+          end
+          let!(:stormtrooper) do
+            create(
+              :model,
+              library: library,
+              path: "AnySTL/Girl Sitting on Dinosaur/Alliance-Stormtrooper_Samurai_NSFW"
+            )
+          end
+
+          it "rejects the merge and leaves the child" do # rubocop:todo RSpec/MultipleExpectations
+            post "/models/merge", params: {
+              models: [stormtrooper.to_param],
+              target: girl.to_param
+            }
+            expect(response).to have_http_status(:unprocessable_content)
+            expect(flash[:alert]).to eq(I18n.t("models.merge.ineligible_parent"))
+            expect(Model.where(id: stormtrooper.id)).to exist
+          end
+        end
+
         context "when uniqueness Redlock would raise", :as_moderator do # rubocop:todo RSpec/MultipleMemoizedHelpers
           let(:model_one) { create(:model) }
           let(:model_two) { create(:model) }

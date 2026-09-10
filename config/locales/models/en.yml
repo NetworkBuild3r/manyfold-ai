@@ -120,6 +120,7 @@ en:
         toolbar_label: Model selection actions
       skip_models: Skip model list
     merge:
+      ineligible_parent: Path parent is not a merge target.
       success: Models merged successfully.
     model_filters_card:
       any: Any
