@@ -195,16 +195,16 @@ en:
         heading: Merge
         warning: Merging moves all files from this model to the target, and removes this model. File metadata is preserved, but any model metadata will be lost!
         with: Merge with
-      nesting:
-        contained_in: Contained in
-        explanation: This model is stored inside another model's folder. Folder nesting is not a reason to merge, and files stay on this model.
-        heading: Nested under %{parents}
-        parent_link: View parent model %{name}
       merge_history:
         heading: Merge history
         undo_button: Undo merge
         window_notice: Undo is available for %{days} days.
       model_details: Model Details
+      nesting:
+        contained_in: Contained in
+        explanation: This model is stored inside another model's folder. Folder nesting is not a reason to merge, and files stay on this model.
+        heading: Nested under %{parents}
+        parent_link: View parent model %{name}
       path: Path
       preview: This is just a preview of the complete model, which contains %{count} more files. Contact the model owner to get full access.
       print_log: Print log
