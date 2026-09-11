@@ -38,9 +38,9 @@ RSpec.describe "Model show gallery file chrome", :as_moderator do
       expect(response.body).not_to include("hidden md:block")
     end
 
-    it "renders file-card images contain-in-slot" do
+    it "renders gallery images contain-in-slot" do
       get model_path(model)
-      expect(response.body).to include("aspect-square")
+      expect(response.body).to include("aspect-[4/3]")
       expect(response.body).to include("object-contain")
     end
   end
