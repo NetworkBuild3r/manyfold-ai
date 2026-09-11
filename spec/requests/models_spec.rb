@@ -628,19 +628,9 @@ RSpec.describe "Models" do
 
           before { merge_post }
 
-          it "redirects to the new model" do
-            new_model = Model.last
-            expect(response).to redirect_to("/models/#{new_model.to_param}")
-          end
-
-          it "uses the common root folder as the new path" do
-            new_model = Model.last
-            expect(new_model.path).to eq "common"
-          end
-
-          it "uses the name of the common root folder as the new name" do
-            new_model = Model.last
-            expect(new_model.name).to eq "Common"
+          # INIT-025/SPEC-005 — common root is a path parent; v1 same-pack signals are empty.
+          it "refuses a path-parent common-root merge without a same-pack signal" do
+            expect(response).to have_http_status(:unprocessable_content)
           end
         end
 
