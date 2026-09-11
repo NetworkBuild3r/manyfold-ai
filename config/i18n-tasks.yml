@@ -170,6 +170,9 @@ ignore_unused:
 - 'home.index.shortcuts.problems_hint'
 - 'models.list.skip_models'
 - 'models.model_filters_card.has_image_active_hint'
+- 'collections.collection.*' # INIT-027/SPEC-009 — t("#{i18n_scope}.…") in _browse_entity_card
+- 'creators.creator.*' # INIT-027/SPEC-009 — same dynamic scope
+- 'archive_entries.destroy.confirm' # noun confirm for archive-member FileDeleteControl
 
 # - '{devise,kaminari,will_paginate}.*'
 # - 'simple_form.{yes,no}'

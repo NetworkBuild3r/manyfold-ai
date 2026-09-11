@@ -1217,7 +1217,6 @@ en:
         printer: Printer
         result: Result
         to: To
-      heading: Print History
       kpis:
         hours: Total Print Time
         hours_hint: Sum of actual durations
@@ -1292,7 +1291,6 @@ en:
       fleet_empty: No printers registered yet.
       fleet_link: Printers
       fleet_status: Fleet Status
-      heading: Job Queue
       history_link: Print history
       reorder: Reorder
       subtitle: Prioritized additive runs, active exposure schedules, and unclaimed print plates
@@ -1362,7 +1360,6 @@ en:
       endpoint_label: IP address
       endpoint_placeholder: http://10.0.1.199:3030
       footer_note: Camera feeds are restreamed through Manyfold. The physical printer stays on your private LAN.
-      heading: Add a printer
       lan_heading: Found on the LAN · UDP :3000 M99999
       mainboard_label: Mainboard ID
       mainboard_placeholder: Hex MainboardID
