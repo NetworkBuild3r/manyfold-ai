@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 # Kanban card for Job Queue columns (Figma 13 Job Queue / 23:1441).
+# Surfaces: INIT-027/SPEC-008.
 # Icons: Bootstrap Icons matching Figma glyphs (alert-triangle → exclamation-triangle,
 # move → arrows-move) — MCP asset URLs expire; documented deviation.
 class Components::PrintJobCard < Components::Base
@@ -29,11 +30,11 @@ class Components::PrintJobCard < Components::Base
   def queued_card
     waiting = @job.waiting_plate?
     article(
-      class: "bg-[#1a1311] border #{waiting ? "border-primary-600" : "border-[#332623]"} rounded-xl p-4 flex flex-col gap-3",
+      class: "bg-surface dark:bg-surface-dark border #{waiting ? "border-primary-600" : "border-secondary-200 dark:border-secondary-800"} rounded-xl p-4 flex flex-col gap-3",
       data: {print_queue_target: "card", job_id: @job.id, column: "queued"}
     ) do
       div(class: "flex items-center justify-between gap-2") do
-        p(class: "font-semibold text-sm text-surface m-0 truncate") { filename }
+        p(class: "font-semibold text-sm text-secondary-900 dark:text-surface m-0 truncate") { filename }
         Icon(icon: "arrows-move", label: t("print_jobs.card.reorder"))
       end
       meta_block
@@ -52,7 +53,7 @@ class Components::PrintJobCard < Components::Base
 
   def printing_card
     article(
-      class: "bg-[#1a1311] border border-[#332623] rounded-xl p-4 flex flex-col gap-3",
+      class: "bg-surface dark:bg-surface-dark border border-secondary-200 dark:border-secondary-800 rounded-xl p-4 flex flex-col gap-3",
       data: {
         print_queue_target: "card",
         job_id: @job.id,
@@ -67,16 +68,16 @@ class Components::PrintJobCard < Components::Base
           Icon(icon: "box", label: filename)
         end
         div(class: "min-w-0 flex-1") do
-          p(class: "font-semibold text-[13px] text-surface m-0 truncate") { filename }
-          p(class: "text-[11px] text-secondary-300 m-0 truncate") { host_name }
+          p(class: "font-semibold text-[13px] text-secondary-900 dark:text-surface m-0 truncate") { filename }
+          p(class: "text-[11px] text-secondary-600 dark:text-secondary-300 m-0 truncate") { host_name }
         end
       end
       div(class: "flex flex-col gap-1.5") do
         div(class: "flex items-center justify-between text-[11px]") do
-          span(class: "text-secondary-300", data: {print_queue_target: "layers"}) { layer_line }
+          span(class: "text-secondary-600 dark:text-secondary-300", data: {print_queue_target: "layers"}) { layer_line }
           span(class: "font-mono text-primary-600", data: {print_queue_target: "percent"}) { "#{progress_pct}%" }
         end
-        div(class: "bg-[#2f2723] h-1.5 rounded overflow-hidden") do
+        div(class: "bg-secondary-200 dark:bg-secondary-800 h-1.5 rounded overflow-hidden") do
           div(
             class: "bg-primary-600 h-full transition-[width] duration-500",
             style: "width: #{progress_pct}%",
@@ -102,7 +103,7 @@ class Components::PrintJobCard < Components::Base
             button_to t("print_jobs.card.pause"),
               pause_print_job_path(@job),
               method: :post,
-              class: "text-sm text-secondary-300 bg-transparent border-0 cursor-pointer p-0 hover:text-surface",
+              class: "text-sm text-secondary-600 dark:text-secondary-300 bg-transparent border-0 cursor-pointer p-0 hover:text-secondary-900 dark:hover:text-surface",
               form: {class: "inline"}
           end
           if policy(@job).cancel?
@@ -122,14 +123,14 @@ class Components::PrintJobCard < Components::Base
     outcome = @job.history_outcome.to_s
     needs_clear = @job.succeeded? && @job.plate_cleared_at.blank?
     article(
-      class: "bg-[#1a1311] border border-[#332623] rounded-xl p-4 flex flex-col gap-3",
+      class: "bg-surface dark:bg-surface-dark border border-secondary-200 dark:border-secondary-800 rounded-xl p-4 flex flex-col gap-3",
       data: {print_queue_target: "card", job_id: @job.id, column: "completed"}
     ) do
       div(class: "flex items-start justify-between gap-2") do
-        p(class: "font-semibold text-sm text-surface m-0 truncate") { filename }
+        p(class: "font-semibold text-sm text-secondary-900 dark:text-surface m-0 truncate") { filename }
         render Components::PrintOutcomeBadge.new(outcome: outcome)
       end
-      p(class: "text-[12px] text-secondary-300 m-0") { host_name }
+      p(class: "text-[12px] text-secondary-600 dark:text-secondary-300 m-0") { host_name }
       p(class: "text-[10px] text-secondary-500 m-0") { finished_label }
       if needs_clear && policy(@job).confirm_plate_cleared?
         button_to t("print_jobs.card.confirm_plate_cleared"),
@@ -144,7 +145,7 @@ class Components::PrintJobCard < Components::Base
   end
 
   def meta_block
-    div(class: "flex flex-col gap-1 text-[12px] text-secondary-300") do
+    div(class: "flex flex-col gap-1 text-[12px] text-secondary-600 dark:text-secondary-300") do
       p(class: "m-0") { t("print_jobs.card.target", name: host_name) }
       p(class: "m-0") { t("print_jobs.card.resin", profile: resin_label) }
     end

@@ -1,8 +1,7 @@
 # frozen_string_literal: true
 
+# INIT-027/SPEC-010 — slide overlay uses FileDeleteControl / SetPreviewControl; visible on mobile.
 class Components::ImageCarousel < Components::Base
-  include Phlex::Rails::Helpers::FormWith
-
   register_value_helper :policy
 
   def initialize(images:, browse: false)
@@ -74,8 +73,9 @@ class Components::ImageCarousel < Components::Base
   end
 
   def play_pause_control
+    # Avoid BaseButton::BASE_CLASSES prefix (fence); this is a Stimulus toggle, not a DoButton.
     button id: "rotationControl",
-      class: "absolute top-2 right-2 z-20 inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-white/90 dark:bg-secondary-800/90 border border-secondary-200 shadow hover:bg-white focus-visible:ring-2 focus-visible:ring-primary-500 min-w-[44px] min-h-[44px]",
+      class: "absolute top-2 right-2 z-20 inline-flex items-center justify-center gap-1 px-2 py-2 text-sm rounded-lg bg-white/90 dark:bg-secondary-800/90 border border-secondary-200 shadow hover:bg-white focus-visible:ring-2 focus-visible:ring-primary-500 min-w-[44px] min-h-[44px]",
       data: {action: "click->carousel#onPauseButton"} do
       Icon icon: "pause", label: t("components.image_carousel.play_pause"), id: "rotationControlIcon"
     end
@@ -158,6 +158,7 @@ class Components::ImageCarousel < Components::Base
     end
   end
 
+  # INIT-027/SPEC-010 — overlay stays visible on small viewports (not hidden md:block).
   def button_overlay(image)
     div class: "absolute bottom-0 left-0 right-0 z-20 bg-black/50 dark:bg-black/70 text-white px-3 py-2 text-sm flex flex-wrap items-center gap-2" do
       span class: "inline-flex items-center rounded-full bg-secondary-800/80 px-2 py-0.5 text-xs" do
@@ -171,36 +172,28 @@ class Components::ImageCarousel < Components::Base
   end
 
   def set_preview_form(image)
-    form_with model: image.model, class: "inline-block" do |form|
-      if archive_image?(image)
-        form.hidden_field :preview_archive_entry_id, value: image.id
-      else
-        form.hidden_field :preview_file_id, value: image.id
-      end
-      form.button t("models.file.set_as_preview"),
-        class: "inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded-full border border-warning text-warning bg-transparent hover:bg-warning/10 mr-2"
+    if archive_image?(image)
+      SetPreviewControl(model: image.model, preview_archive_entry_id: image.id)
+    else
+      SetPreviewControl(model: image.model, preview_file_id: image.id)
     end
   end
 
   def delete_control(image)
-    confirm = if archive_image?(image)
-      translate("models.gallery.delete_confirm_archive", archive: image.model_file.filename, name: image.name)
+    if archive_image?(image)
+      FileDeleteControl(
+        href: model_model_file_archive_entry_path(image.model, image.model_file, image),
+        confirm: translate("models.gallery.delete_confirm_archive", archive: image.model_file.filename, name: image.name),
+        label: t("models.gallery.delete_archive_member"),
+        icon_only: true
+      )
     else
-      translate("models.gallery.delete_confirm_loose")
-    end
-    url = if archive_image?(image)
-      model_model_file_archive_entry_path(image.model, image.model_file, image)
-    else
-      model_model_file_path(image.model, image)
-    end
-    form_with url: url,
-      method: :delete,
-      class: "inline-block",
-      data: {turbo_confirm: confirm, confirm: confirm} do |form|
-      form.button class: "inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded-full border border-danger text-white bg-transparent hover:bg-danger/20",
-        aria: {label: t("models.gallery.delete_image")} do
-        Icon(icon: "trash", label: t("models.gallery.delete_image"))
-      end
+      FileDeleteControl(
+        href: model_model_file_path(image.model, image),
+        confirm: translate("models.gallery.delete_confirm_loose"),
+        label: t("models.gallery.delete_image"),
+        icon_only: true
+      )
     end
   end
 end

@@ -25,7 +25,7 @@
                 [t(".auto_load_max_size.always"), 9_999_999]
               ],
               {selected: renderer_settings["auto_load_max_size"] || SiteSettings::UserDefaults::RENDERER[:auto_load_max_size]},
-              {class: "block w-full rounded-lg border border-secondary-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-primary-500 dark:border-secondary-600 dark:bg-secondary-800"} %>
+              {class: input_class} %>
       </div>
       <div>
         <%= renderer_settings_form.label :show_grid, t(".show_grid.label"), class: "block text-sm font-medium text-secondary-700 dark:text-secondary-300" %>
@@ -37,7 +37,7 @@
         <%= renderer_settings_form.label :grid_width, t(".grid_width.label"), class: "block text-sm font-medium text-secondary-700 dark:text-secondary-300" %>
       </div>
       <div>
-        <%= renderer_settings_form.number_field :grid_width, value: renderer_settings["grid_width"], class: "block w-full rounded-lg border border-secondary-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-primary-500 dark:border-secondary-600 dark:bg-secondary-800" %>
+        <%= renderer_settings_form.number_field :grid_width, value: renderer_settings["grid_width"], class: input_class %>
       </div>
       <div>
         <%= renderer_settings_form.label :enable_pan_zoom, t(".enable_pan_zoom.label"), class: "block text-sm font-medium text-secondary-700 dark:text-secondary-300" %>
@@ -49,7 +49,7 @@
         <%= renderer_settings_form.label :background_colour, t(".background_colour.label"), class: "block text-sm font-medium text-secondary-700 dark:text-secondary-300" %>
       </div>
       <div>
-        <%= renderer_settings_form.color_field :background_colour, value: renderer_settings["background_colour"], class: "block w-full rounded-lg border border-secondary-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-primary-500 dark:border-secondary-600 dark:bg-secondary-800 h-10" %>
+        <%= renderer_settings_form.color_field :background_colour, value: renderer_settings["background_colour"], class: "#{input_class} h-10" %>
       </div>
       <div>
         <%= renderer_settings_form.label :render_style, t(".render_style.label"), class: "block text-sm font-medium text-secondary-700 dark:text-secondary-300" %>
@@ -60,13 +60,13 @@
               [t(".render_style.normals"), "normals"],
               [t(".render_style.lambert"), "lambert"],
               [t(".render_style.shadowed"), "shadowed"]
-            ], {selected: renderer_settings["render_style"]}, {class: "block w-full rounded-lg border border-secondary-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-primary-500 dark:border-secondary-600 dark:bg-secondary-800"} %>
+            ], {selected: renderer_settings["render_style"]}, {class: input_class} %>
       </div>
       <div>
         <%= renderer_settings_form.label :object_colour, t(".object_colour.label"), class: "block text-sm font-medium text-secondary-700 dark:text-secondary-300" %>
       </div>
       <div>
-        <%= renderer_settings_form.color_field :object_colour, value: renderer_settings["object_colour"], class: "block w-full rounded-lg border border-secondary-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-primary-500 dark:border-secondary-600 dark:bg-secondary-800 h-10" %>
+        <%= renderer_settings_form.color_field :object_colour, value: renderer_settings["object_colour"], class: "#{input_class} h-10" %>
       </div>
     </div>
   </div>

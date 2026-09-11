@@ -1,6 +1,10 @@
 # frozen_string_literal: true
 
 class Components::PageTitle < Components::Base
+  # INIT-027/SPEC-011 — heading/nav class channel for specs.
+  NAV_CLASS = "border-b border-secondary-200 dark:border-secondary-500 py-2"
+  HEADING_CLASS = "text-2xl font-bold mt-2 mb-0 text-secondary-900 dark:text-secondary-100"
+
   def initialize(title:, breadcrumbs: {}, heading: true)
     @title = title
     @breadcrumbs = breadcrumbs
@@ -8,7 +12,7 @@ class Components::PageTitle < Components::Base
   end
 
   def view_template
-    nav aria: {label: "breadcrumb"}, class: "border-b border-secondary-200 dark:border-secondary-500 py-2" do
+    nav aria: {label: "breadcrumb"}, class: NAV_CLASS do
       ol class: "flex flex-wrap items-center gap-1 text-sm list-none m-0 p-0" do
         li class: "flex items-center gap-1" do
           a(href: root_url, class: "text-secondary-600 dark:text-secondary-300 no-underline hover:underline") { Icon icon: "house", label: t("application.navbar.home") }
@@ -26,7 +30,7 @@ class Components::PageTitle < Components::Base
       end
     end
     if @heading
-      h1(class: "text-2xl font-bold mt-2 mb-0 text-secondary-900 dark:text-secondary-100") do
+      h1(class: HEADING_CLASS) do
         span { @title }
       end
     end

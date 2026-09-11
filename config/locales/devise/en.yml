@@ -89,7 +89,7 @@ en:
       edit:
         are_you_sure: Are you sure?
         cancel_my_account: Delete my account
-        confirm_deletion: Are you sure you want to delete your account?
+        confirm_deletion: Are you sure you want to delete this user account?
         contact_info: Contact information
         current_password_help: Current password required for security
         currently_waiting_confirmation_for_email: 'Awaiting confirmation for: %{email}'

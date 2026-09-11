@@ -60,7 +60,7 @@ jobs:
               bundle exec rake rubocop
               bundle exec erb_lint --lint-all
               bash script/ui-contract-fence.sh --self-test
-              bash script/ui-contract-fence.sh --enforce none
+              bash script/ui-contract-fence.sh --enforce jquery,invalid-scale,hex,base-class
               yarn run lint:ts
               node -e 'require("./eslint.config.js")'
               yarn typecheck

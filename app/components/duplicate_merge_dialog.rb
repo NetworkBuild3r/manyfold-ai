@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+# Hex migration: INIT-027/SPEC-008.
 class Components::DuplicateMergeDialog < Components::Base
   include Phlex::Rails::Helpers::FormWith
   include Phlex::Rails::Helpers::ImageTag
@@ -15,7 +16,7 @@ class Components::DuplicateMergeDialog < Components::Base
   def view_template
     div(data: {controller: "duplicate-merge"}) do
       dialog(
-        class: "max-w-[700px] w-full max-h-[90vh] overflow-auto rounded-2xl bg-secondary-50 dark:bg-[#1a1311] border border-secondary-200 dark:border-[#332623] shadow-xl p-0 text-secondary-900 dark:text-secondary-50 backdrop:bg-secondary-950/70",
+        class: "max-w-[700px] w-full max-h-[90vh] overflow-auto rounded-2xl bg-secondary-50 dark:bg-surface-dark border border-secondary-200 dark:border-secondary-800 shadow-xl p-0 text-secondary-900 dark:text-secondary-50 backdrop:bg-secondary-950/70",
         "aria-labelledby": "duplicate-merge-title",
         "aria-modal": "true",
         data: {duplicate_merge_target: "dialog"}
@@ -45,7 +46,7 @@ class Components::DuplicateMergeDialog < Components::Base
   end
 
   def header_block
-    div(class: "flex items-start justify-between gap-4 px-6 py-5 border-b border-secondary-200 dark:border-[#332623]") do
+    div(class: "flex items-start justify-between gap-4 px-6 py-5 border-b border-secondary-200 dark:border-secondary-800") do
       div(class: "flex items-start gap-3 min-w-0") do
         span(class: "text-primary-500 mt-1") { Icon(icon: "files", label: t("problems.merge.title")) }
         div(class: "min-w-0") do
@@ -177,7 +178,7 @@ class Components::DuplicateMergeDialog < Components::Base
   end
 
   def footer_block
-    div(class: "flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-6 py-5 border-t border-secondary-200 dark:border-[#332623]") do
+    div(class: "flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-6 py-5 border-t border-secondary-200 dark:border-secondary-800") do
       p(class: "text-sm text-primary-600 dark:text-primary-400 m-0") { t("problems.merge.warning") }
       div(class: "flex items-center gap-2 shrink-0") do
         button(
@@ -199,7 +200,7 @@ class Components::DuplicateMergeDialog < Components::Base
   end
 
   def section_card(title)
-    section(class: "rounded-lg border border-secondary-200 dark:border-[#332623] bg-white/60 dark:bg-[#2d201c] p-4 flex flex-col gap-4") do
+    section(class: "rounded-lg border border-secondary-200 dark:border-secondary-800 bg-white/60 dark:bg-secondary-800 p-4 flex flex-col gap-4") do
       h3(class: "text-[11px] font-semibold uppercase tracking-wide text-secondary-500 dark:text-secondary-400 m-0") { title }
       yield
     end

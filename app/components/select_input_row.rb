@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 class Components::SelectInputRow < Components::InputRow
+  # INIT-027/SPEC-007 — association button uses BaseButton constants, not an inlined prefix.
   def initialize(form:, attribute:, label:, select_options:, help: nil, options: {})
     @select_options = select_options
     super(form: form, attribute: attribute, label: label, help: help, options: options)
@@ -36,7 +37,11 @@ class Components::SelectInputRow < Components::InputRow
   end
 
   def render_association_button(button)
-    classes = "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 bg-white border border-primary-500 text-primary-700 hover:bg-primary-50 dark:bg-secondary-800 dark:border-primary-500 dark:text-primary-300 dark:hover:bg-secondary-700 ml-2 shrink-0"
+    classes = [
+      Components::BaseButton::BASE_CLASSES,
+      Components::BaseButton::VARIANT_CLASSES.fetch("outline-primary"),
+      "ml-2 shrink-0"
+    ].join(" ")
     if button[:dialog].present?
       button(
         type: "button",

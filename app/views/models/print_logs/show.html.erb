@@ -6,7 +6,6 @@
 <div class="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-10 py-8 space-y-8">
   <div class="flex flex-wrap items-start justify-between gap-4">
     <div class="space-y-1.5 max-w-2xl">
-      <h1 class="font-display font-bold text-3xl text-secondary-900 dark:text-surface m-0"><%= @model.name %></h1>
       <p class="text-sm text-secondary-600 dark:text-secondary-300 m-0"><%= t(".subtitle") %></p>
     </div>
     <div class="flex flex-wrap gap-3 items-center">
@@ -34,14 +33,14 @@
     </div>
   </div>
 
-  <section class="bg-[#1a1311] border border-[#332623] rounded-2xl overflow-hidden" aria-labelledby="artifacts-heading">
-    <div class="px-5 py-4 border-b border-[#332623]">
-      <h2 id="artifacts-heading" class="text-sm font-bold text-surface m-0"><%= t(".artifacts_heading") %></h2>
+  <section class="bg-surface dark:bg-surface-dark border border-secondary-200 dark:border-secondary-800 rounded-2xl overflow-hidden" aria-labelledby="artifacts-heading">
+    <div class="px-5 py-4 border-b border-secondary-200 dark:border-secondary-800">
+      <h2 id="artifacts-heading" class="text-sm font-bold text-secondary-900 dark:text-surface m-0"><%= t(".artifacts_heading") %></h2>
     </div>
     <div class="overflow-x-auto">
       <table class="w-full text-sm text-left border-collapse">
         <thead>
-          <tr class="border-b border-[#332623] text-[11px] uppercase tracking-wide text-secondary-500">
+          <tr class="border-b border-secondary-200 dark:border-secondary-800 text-[11px] uppercase tracking-wide text-secondary-500">
             <th class="px-5 py-3 font-medium"><%= t(".table.format") %></th>
             <th class="px-5 py-3 font-medium"><%= t(".table.file") %></th>
             <th class="px-5 py-3 font-medium"><%= t(".table.printer") %></th>
@@ -51,17 +50,17 @@
         </thead>
         <tbody>
           <% @artifacts.each do |artifact| %>
-            <tr class="border-b border-[#332623]">
+            <tr class="border-b border-secondary-200 dark:border-secondary-800">
               <td class="px-5 py-3">
                 <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold uppercase bg-primary-600/20 text-primary-600">
                   <%= artifact.format %>
                 </span>
               </td>
-              <td class="px-5 py-3 text-surface font-medium">
+              <td class="px-5 py-3 text-secondary-900 dark:text-surface font-medium">
                 <%= artifact.model_file&.filename.presence || t(".unnamed_artifact") %>
               </td>
-              <td class="px-5 py-3 text-secondary-300"><%= artifact.print_host&.name %></td>
-              <td class="px-5 py-3 font-mono text-[12px] text-secondary-300">
+              <td class="px-5 py-3 text-secondary-600 dark:text-secondary-300"><%= artifact.print_host&.name %></td>
+              <td class="px-5 py-3 font-mono text-[12px] text-secondary-600 dark:text-secondary-300">
                 <%= artifact.estimated_layers.presence || "—" %>
               </td>
               <td class="px-5 py-3 text-secondary-400 whitespace-nowrap">
@@ -79,24 +78,24 @@
     </div>
   </section>
 
-  <section class="bg-[#1a1311] border border-[#332623] rounded-2xl overflow-hidden" aria-labelledby="model-history-heading">
-    <div class="px-5 py-4 border-b border-[#332623] flex flex-wrap items-center justify-between gap-3">
-      <h2 id="model-history-heading" class="text-sm font-bold text-surface m-0"><%= t(".history_heading") %></h2>
+  <section class="bg-surface dark:bg-surface-dark border border-secondary-200 dark:border-secondary-800 rounded-2xl overflow-hidden" aria-labelledby="model-history-heading">
+    <div class="px-5 py-4 border-b border-secondary-200 dark:border-secondary-800 flex flex-wrap items-center justify-between gap-3">
+      <h2 id="model-history-heading" class="text-sm font-bold text-secondary-900 dark:text-surface m-0"><%= t(".history_heading") %></h2>
       <p class="text-sm font-semibold text-success m-0">
         <%= t(".success_widget",
               succeeded: @success_widget[:succeeded],
               total: @success_widget[:total]) %>
       </p>
     </div>
-    <ul class="list-none m-0 p-0 divide-y divide-[#332623]">
+    <ul class="list-none m-0 p-0 divide-y divide-secondary-200 dark:divide-secondary-800">
       <% @histories.each do |job| %>
         <li class="flex flex-wrap items-center justify-between gap-3 px-5 py-3">
           <div class="flex flex-wrap items-center gap-4 min-w-0 text-sm">
             <span class="text-secondary-400 whitespace-nowrap">
               <%= job.finished_at&.strftime("%b %-d, %H:%M") || "—" %>
             </span>
-            <span class="font-medium text-surface"><%= job.print_host&.name %></span>
-            <span class="text-secondary-300"><%= job.resin_profile.presence || "—" %></span>
+            <span class="font-medium text-secondary-900 dark:text-surface"><%= job.print_host&.name %></span>
+            <span class="text-secondary-600 dark:text-secondary-300"><%= job.resin_profile.presence || "—" %></span>
             <span class="font-mono text-[12px] text-secondary-400">
               <%= format_print_duration(job.actual_duration_seconds) %>
             </span>

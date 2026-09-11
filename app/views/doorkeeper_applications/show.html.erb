@@ -31,8 +31,8 @@
   </tr>
 </table>
 
-<%= link_to t(".edit"), edit_doorkeeper_application_path(@application), class: "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500" %>
-<%= link_to t(".destroy"), doorkeeper_application_path(@application), method: :delete, class: "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border border-danger text-danger bg-transparent hover:bg-danger/10 focus-visible:ring-2 focus-visible:ring-primary-500" %>
+<%= GoButton(label: t(".edit"), href: edit_doorkeeper_application_path(@application), variant: "primary") %>
+<%= DoButton(label: t(".destroy"), href: doorkeeper_application_path(@application), method: :delete, variant: "outline-danger", confirm: translate(".destroy_confirm")) %>
 
 <hr class="<%= divider_classes %>">
 

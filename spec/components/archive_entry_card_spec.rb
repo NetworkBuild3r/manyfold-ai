@@ -37,6 +37,8 @@ RSpec.describe Components::ArchiveEntryCard, type: :component do
       expect(html).to include("<img")
       expect(html).to include(preview_url)
       expect(html).to include("archive-entry-preview-image")
+      expect(html).to include("object-contain")
+      expect(html).not_to include("object-cover")
     end
 
     it "does not use a loading or failed slot" do
@@ -99,6 +101,7 @@ RSpec.describe Components::ArchiveEntryCard, type: :component do
       expect(html).to include(I18n.t("models.file.set_as_preview"))
       expect(html).to include(%(name="model[preview_archive_entry_id]"))
       expect(html).to include(I18n.t("models.gallery.delete_confirm_archive", archive: "pack.zip", name: entry.name))
+      expect(html).to include(I18n.t("models.gallery.delete_archive_member"))
       expect(html).to include(%(name="_method" value="delete"))
     end
   end

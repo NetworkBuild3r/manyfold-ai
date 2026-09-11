@@ -1,3 +1,4 @@
+<%# INIT-027/SPEC-010 — FileDeleteControl + SetPreviewControl; image contain-in-slot. %>
 <div class="mb-4 <%= "file-card relative" if policy(@model).edit? %>">
   <% if policy(@model).edit? %>
     <button type="button" class="file-list-selection-bubble absolute top-2 left-2 z-10 w-6 h-6 rounded-full border-2 border-white dark:border-secondary-300 bg-white/40 dark:bg-secondary-500/70 shadow cursor-pointer flex items-center justify-center outline-none focus-visible:ring-2 focus-visible:ring-primary-500 transition-opacity" data-file-list-selection-target="bubble" data-file-id="<%= file.to_param %>" data-action="click->file-list-selection#toggle" aria-pressed="false" aria-label="<%= t("models.show.file_selection.select_file", name: file.name) %>">
@@ -6,7 +7,9 @@
   <% end %>
   <div class="rounded-xl border bg-surface dark:bg-surface-dark overflow-hidden shadow-sm <%= (file === @model.preview_file) ? "border-primary-500" : "border-secondary-200 dark:border-secondary-600" %>">
     <% if file.is_image? %>
-      <%= image_tag model_model_file_path(@model, file, format: file.extension), class: "block w-full aspect-square object-cover", alt: file.name %>
+      <div class="relative aspect-square bg-secondary-900 dark:bg-secondary-950 overflow-hidden">
+        <%= image_tag model_model_file_path(@model, file, format: file.extension), class: "absolute inset-0 w-full h-full object-contain", alt: file.name %>
+      </div>
     <% elsif file.is_renderable? %>
       <div class="block w-full aspect-square">
         <%= Renderer(file: file) %>
@@ -47,14 +50,18 @@
       </div>
       <div class="flex flex-wrap items-center gap-2 mt-2">
         <div class="flex flex-wrap items-center gap-2 min-w-0">
-          <%= link_to t(".open_button.text"), model_model_file_path(@model, file), {class: "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 outline-none", "aria-label": translate(".open_button.label", name: file.name)} %>
-          <%= link_to Icon(icon: "cloud-download-fill", label: t("general.download")), model_model_file_path(@model, file, file.extension&.to_sym, download: "true"), {class: "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border border-secondary-300 dark:border-secondary-500 bg-white dark:bg-secondary-800 hover:bg-secondary-50 dark:hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-primary-500 outline-none", download: "download"} %>
+          <%= GoButton icon: "box-arrow-up-right", label: t(".open_button.text"), href: model_model_file_path(@model, file), variant: "primary", aria_label: translate(".open_button.label", name: file.name) %>
+          <%= GoButton icon: "cloud-download-fill", icon_only: true, label: t("general.download"), href: model_model_file_path(@model, file, file.extension&.to_sym, download: "true"), variant: "secondary" %>
           <% if file.presupported || file.presupported_version %>
             <%= Icon icon: "bar-chart-line-fill", label: ModelFile.human_attribute_name(:presupported) %>
           <% end %>
           <%= problem_icon_tag(file.problems) if policy(Problem).show? %>
         </div>
-        <div class="ml-auto">
+        <div class="ml-auto flex flex-wrap items-center gap-2">
+          <% if policy(@model).edit? && (file.is_renderable? || file.is_image?) && file != @model.preview_file %>
+            <%= SetPreviewControl(model: @model, preview_file_id: file.id) %>
+          <% end %>
+          <%= FileDeleteControl(href: model_model_file_path(@model, file), confirm: t("model_files.destroy.confirm"), label: t(".delete")) if policy(file).destroy? %>
           <%= BurgerMenu(direction: :up) do %>
             <%= app_links(file) %>
             <%= DropdownDivider() %>
@@ -65,8 +72,6 @@
               <%= DropdownDivider() %>
             <% end %>
             <%= DropdownItem icon: "pencil-fill", label: t(".edit"), path: edit_model_model_file_path(@model, file) if policy(file).edit? %>
-            <%= DropdownItem icon: "image", label: t(".set_as_preview"), path: model_path(@model, "model[preview_file_id]": file.id), method: :patch if policy(@model).edit? && (file.is_renderable? || file.is_image?) %>
-            <%= DropdownItem icon: "trash", label: t(".delete"), path: model_model_file_path(@model, file), method: :delete, confirm: translate("model_files.destroy.confirm") if policy(file).destroy? %>
           <% end %>
         </div>
       </div>

@@ -416,22 +416,6 @@ pl:
       open_button:
         label: Otwórz model %{name}
         text: Otwórz
-    search_help:
-      boolean: Użyj "or", aby znaleźć modele pasujące do któregokolwiek z terminów.
-      federation: Wyszukaj dowolną nazwę użytkownika Fediverse, aby ją zaobserwować.
-      filename:
-      intro:
-      more_details_html:
-      negation: Aby wykluczyć terminy, użyj "not", "!" lub "-".
-      parentheses:
-      path:
-      quotes:
-      simple:
-      specific_fields:
-      tag:
-      title: Składnia Wyszukiwania
-      unset:
-      without_tag:
     sort_menu:
       name:
       recent:
@@ -743,9 +727,6 @@ pl:
     update:
       success:
   home:
-    activity:
-      created: dodane %{time} temu
-      updated: zaktualizowane %{time} temu
     browsing:
       content:
       manual_link:
@@ -761,7 +742,6 @@ pl:
       users_v_creators:
     index:
       no_activities: Na razie nie ma żadnych aktywności do wyświetlenia.
-      open_search_help: Składnia wyszukiwania
       recent_activity: Ostatnia Aktywność
       search:
         placeholder: Czego szukasz?

@@ -31,9 +31,9 @@
 
   <div class="grid gap-6 lg:grid-cols-[1fr_360px]">
     <div class="space-y-6 min-w-0">
-      <section class="rounded-2xl border border-[#332623] bg-[#1a1311] p-6 space-y-5">
+      <section class="rounded-2xl border border-secondary-200 dark:border-secondary-800 bg-surface dark:bg-surface-dark p-6 space-y-5">
         <div class="flex flex-wrap items-center justify-between gap-3">
-          <h2 class="text-lg font-semibold text-surface m-0"><%= t(".identity_heading") %></h2>
+          <h2 class="text-lg font-semibold text-secondary-900 dark:text-surface m-0"><%= t(".identity_heading") %></h2>
           <% if policy(@printer).update? %>
             <button type="button"
                     class="inline-flex items-center justify-center px-3 py-1.5 rounded-lg bg-surface border border-secondary-300 text-secondary-900 text-sm font-medium"
@@ -52,14 +52,14 @@
           <div>
             <label class="block font-mono text-[11px] uppercase tracking-wide text-secondary-500 mb-1"><%= t(".fields.name") %></label>
             <%= f.text_field :name,
-                  class: "w-full rounded-lg border border-[#332623] bg-[#120f0d] px-3 py-2 text-sm font-mono text-surface",
+                  class: "w-full rounded-lg border border-secondary-200 dark:border-secondary-800 bg-white dark:bg-secondary-950 px-3 py-2 text-sm font-mono text-secondary-900 dark:text-surface",
                   readonly: !policy(@printer).update?,
                   data: {printer_camera_settings_target: "identityField"} %>
           </div>
           <div>
             <label class="block font-mono text-[11px] uppercase tracking-wide text-secondary-500 mb-1"><%= t(".fields.endpoint") %></label>
             <%= f.text_field :endpoint,
-                  class: "w-full rounded-lg border border-[#332623] bg-[#120f0d] px-3 py-2 text-sm font-mono text-surface",
+                  class: "w-full rounded-lg border border-secondary-200 dark:border-secondary-800 bg-white dark:bg-secondary-950 px-3 py-2 text-sm font-mono text-secondary-900 dark:text-surface",
                   readonly: !policy(@printer).update?,
                   placeholder: "http://10.0.0.199:3030",
                   data: {printer_camera_settings_target: "identityField"} %>
@@ -68,7 +68,7 @@
           <div class="sm:col-span-2">
             <label class="block font-mono text-[11px] uppercase tracking-wide text-secondary-500 mb-1"><%= t(".fields.mainboard_id") %></label>
             <%= f.text_field :mainboard_id,
-                  class: "w-full rounded-lg border border-[#332623] bg-[#120f0d] px-3 py-2 text-sm font-mono text-surface",
+                  class: "w-full rounded-lg border border-secondary-200 dark:border-secondary-800 bg-white dark:bg-secondary-950 px-3 py-2 text-sm font-mono text-secondary-900 dark:text-surface",
                   readonly: !policy(@printer).update?,
                   data: {printer_camera_settings_target: "identityField"} %>
           </div>
@@ -85,7 +85,7 @@
             <div>
               <label class="block font-mono text-[11px] uppercase tracking-wide text-secondary-500 mb-1"><%= label %></label>
               <% if readonly_display %>
-                <div class="rounded-lg border border-[#332623] bg-[#120f0d] px-3 py-2 text-sm font-mono text-secondary-200">
+                <div class="rounded-lg border border-secondary-200 dark:border-secondary-800 bg-white dark:bg-secondary-950 px-3 py-2 text-sm font-mono text-secondary-700 dark:text-secondary-200">
                   <% case key %>
                   <% when :protocol %>
                     <%= @printer.protocol_label %>
@@ -103,7 +103,7 @@
                 </div>
               <% else %>
                 <%= f.text_field key,
-                      class: "w-full rounded-lg border border-[#332623] bg-[#120f0d] px-3 py-2 text-sm font-mono text-surface",
+                      class: "w-full rounded-lg border border-secondary-200 dark:border-secondary-800 bg-white dark:bg-secondary-950 px-3 py-2 text-sm font-mono text-secondary-900 dark:text-surface",
                       readonly: !policy(@printer).update?,
                       data: {printer_camera_settings_target: "identityField"} %>
               <% end %>
@@ -119,8 +119,8 @@
         <% end %>
 
         <% if policy(@printer).destroy? %>
-          <div class="pt-4 border-t border-[#332623]">
-            <h3 class="text-sm font-semibold text-surface m-0 mb-2"><%= t(".danger_heading") %></h3>
+          <div class="pt-4 border-t border-secondary-200 dark:border-secondary-800">
+            <h3 class="text-sm font-semibold text-secondary-900 dark:text-surface m-0 mb-2"><%= t(".danger_heading") %></h3>
             <p class="text-sm text-secondary-400 m-0 mb-3"><%= t(".danger_help") %></p>
             <%= button_to t(".delete_printer"), printer_path(@printer), method: :delete,
                   form: {data: {turbo_confirm: t(".confirm_delete_printer", name: @printer.name)}},
@@ -129,10 +129,10 @@
         <% end %>
       </section>
 
-      <section class="rounded-2xl border border-[#332623] bg-[#1a1311] p-6 space-y-5">
+      <section class="rounded-2xl border border-secondary-200 dark:border-secondary-800 bg-surface dark:bg-surface-dark p-6 space-y-5">
         <div class="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h2 class="text-lg font-semibold text-surface m-0"><%= t(".storage_heading") %></h2>
+            <h2 class="text-lg font-semibold text-secondary-900 dark:text-surface m-0"><%= t(".storage_heading") %></h2>
             <p class="text-sm text-secondary-400 m-0 mt-1"><%= t(".storage_help") %></p>
           </div>
           <% if policy(@printer).storage? && !@printer.unsupported_for_send? %>
@@ -151,10 +151,10 @@
         <% pct = PrintConsumablesHelper.storage_used_pct(used, total) %>
         <% if total.positive? %>
           <div class="space-y-2">
-            <div class="flex justify-between text-[13px] font-mono text-secondary-300">
+            <div class="flex justify-between text-[13px] font-mono text-secondary-600 dark:text-secondary-300">
               <span><%= t(".storage_used", used: number_to_human_size(used), total: number_to_human_size(total), pct: pct) %></span>
             </div>
-            <div class="bg-[#2f2723] h-2 rounded-full overflow-hidden">
+            <div class="bg-secondary-200 dark:bg-secondary-800 h-2 rounded-full overflow-hidden">
               <div class="bg-primary-600 h-full" style="width: <%= pct %>%"></div>
             </div>
           </div>
@@ -168,7 +168,7 @@
           <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse min-w-[480px]">
               <thead>
-                <tr class="border-b border-[#332623]">
+                <tr class="border-b border-secondary-200 dark:border-secondary-800">
                   <th class="py-2 pe-3 font-mono text-[11px] uppercase text-secondary-500 font-medium"><%= t(".col.file") %></th>
                   <th class="py-2 pe-3 font-mono text-[11px] uppercase text-secondary-500 font-medium"><%= t(".col.size") %></th>
                   <th class="py-2 pe-3 font-mono text-[11px] uppercase text-secondary-500 font-medium"><%= t(".col.uploaded") %></th>
@@ -182,8 +182,8 @@
                   <% name = file[:name] || file["name"] || File.basename(path.to_s) %>
                   <% size = file[:size] || file["size"] || file[:Size] %>
                   <% uploaded_at = file[:uploaded_at] || file["uploaded_at"] || file[:mtime] %>
-                  <tr class="border-b border-[#332623] last:border-0">
-                    <td class="py-3 pe-3 font-mono text-sm text-surface"><%= name %></td>
+                  <tr class="border-b border-secondary-200 dark:border-secondary-800 last:border-0">
+                    <td class="py-3 pe-3 font-mono text-sm text-secondary-900 dark:text-surface"><%= name %></td>
                     <td class="py-3 pe-3 font-mono text-sm text-secondary-400">
                       <%= size.present? ? number_to_human_size(size.to_i) : "—" %>
                     </td>
@@ -217,19 +217,19 @@
     </div>
 
     <aside class="space-y-6">
-      <section class="rounded-2xl border border-[#332623] bg-[#1a1311] p-5 space-y-4">
+      <section class="rounded-2xl border border-secondary-200 dark:border-secondary-800 bg-surface dark:bg-surface-dark p-5 space-y-4">
         <div>
-          <h2 class="text-lg font-semibold text-surface m-0"><%= t(".gate_heading") %></h2>
+          <h2 class="text-lg font-semibold text-secondary-900 dark:text-surface m-0"><%= t(".gate_heading") %></h2>
           <p class="text-sm text-secondary-400 m-0 mt-1"><%= t(".gate_help") %></p>
         </div>
         <%= render Components::CompatibilityChecklist.new(rules: @gate_rules) %>
       </section>
 
-      <section class="rounded-2xl border border-[#332623] bg-[#1a1311] p-5 space-y-4"
+      <section class="rounded-2xl border border-secondary-200 dark:border-secondary-800 bg-surface dark:bg-surface-dark p-5 space-y-4"
                data-printer-camera-settings-target="cameraPanel">
         <div class="flex items-center justify-between gap-3">
           <div>
-            <h2 class="text-lg font-semibold text-surface m-0"><%= t(".camera_heading") %></h2>
+            <h2 class="text-lg font-semibold text-secondary-900 dark:text-surface m-0"><%= t(".camera_heading") %></h2>
             <p class="text-sm text-secondary-400 m-0 mt-1"><%= t(".camera_help") %></p>
           </div>
           <button type="button"
@@ -245,7 +245,7 @@
 
         <div>
           <label class="block font-mono text-[11px] uppercase tracking-wide text-secondary-500 mb-1"><%= t(".snapshot_interval") %></label>
-          <select class="w-full rounded-lg border border-[#332623] bg-[#120f0d] px-3 py-2 text-sm text-surface"
+          <select class="w-full rounded-lg border border-secondary-200 dark:border-secondary-800 bg-white dark:bg-secondary-950 px-3 py-2 text-sm text-secondary-900 dark:text-surface"
                   data-action="change->printer-camera-settings#changeInterval"
                   data-printer-camera-settings-target="interval">
             <option value="5000"><%= t(".interval_5s") %></option>
@@ -259,7 +259,7 @@
           <label class="block font-mono text-[11px] uppercase tracking-wide text-secondary-500 mb-1"><%= t(".rtsp_label") %></label>
           <input type="text" readonly
                  value="<%= t(".rtsp_placeholder", host: @printer.endpoint_host_port.to_s.split(":").first) %>"
-                 class="w-full rounded-lg border border-[#332623] bg-[#120f0d] px-3 py-2 text-sm font-mono text-secondary-300">
+                 class="w-full rounded-lg border border-secondary-200 dark:border-secondary-800 bg-white dark:bg-secondary-950 px-3 py-2 text-sm font-mono text-secondary-600 dark:text-secondary-300">
         </div>
 
         <div class="relative bg-black rounded-lg overflow-hidden h-40 flex items-center justify-center">

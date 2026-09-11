@@ -222,6 +222,18 @@ RSpec.describe "Users::Registrations" do
         it "shows edit page" do
           expect(response).to have_http_status(:success)
         end
+
+        it "keeps account save and delete as sibling forms" do # INIT-027/SPEC-013
+          forms = forms_targeting("/users")
+          update_form = forms.find { |form| method_overrides(form) == ["put"] }
+          delete_form = forms.find { |form| method_overrides(form) == ["delete"] }
+          expect(update_form).to be_present
+          expect(delete_form).to be_present
+          expect(update_form).not_to eq(delete_form)
+          expect(update_form.at('button[type="submit"], input[type="submit"]')).to be_present
+          expect(update_form.at("[data-turbo-confirm]")).to be_nil
+          expect(delete_form.at("[data-turbo-confirm]")).to be_present
+        end
       end
 
       describe "PATCH /users/" do

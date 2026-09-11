@@ -53,6 +53,11 @@ export default class extends Controller {
     this.focusFirstFocusable()
   }
 
+  // INIT-027/SPEC-011 — Turbo morphs drop the controller; drop listeners added in open().
+  disconnect (): void {
+    this.close()
+  }
+
   close (event?: Event): void {
     if (event != null) event.preventDefault()
     if (!this.hasDialogTarget) return

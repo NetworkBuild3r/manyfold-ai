@@ -416,22 +416,6 @@ es:
       open_button:
         label: Abrir modelo %{name}
         text: Abrir
-    search_help:
-      boolean: Utilice "or" para buscar modelos que coincidan con cualquiera de los términos.
-      federation: Busca cualquier nombre de usuario de Fediverse para seguirlo.
-      filename: También puede buscar nombres de archivo específicos.
-      intro: 'Encuentre lo que necesita con nuestra potente sintaxis de búsqueda:'
-      more_details_html: Para más información, lea la documentación completa <a href="https://github.com/wvanbergen/scoped_search/wiki/Query-language">del lenguaje de consulta de scoped_search</a>.
-      negation: Para excluir términos, utilice "not", "!" o "-".
-      parentheses: Agrupe los términos entre paréntesis para obtener combinaciones lógicas más complejas.
-      path: Busque dentro de las rutas de las carpetas del modelo especificándolo explícitamente; utilice `~` para una coincidencia parcial.
-      quotes: Para buscar varias palabras en un mismo término, utilice las comillas; sólo se mostrarán los modelos con el texto exacto.
-      simple: Por defecto, la búsqueda encontrará los modelos que coincidan con todos los términos.
-      specific_fields: Puede buscar términos en algunos campos específicos. Utilice "~" para que coincida con parte del campo o "=" que intentará que coincida con todo.
-      tag: Busca modelos con una etiqueta específica
-      title: Sintaxis de búsqueda
-      unset: Utilice "set?" para consultar si un campo concreto está establecido, y añada "not" para encontrar lo contrario.
-      without_tag: Utilice "!tag" para encontrar modelos sin una etiqueta específica
     sort_menu:
       name: Título
       recent: Más reciente
@@ -743,9 +727,6 @@ es:
     update:
       success: Grupo actualizado correctamente.
   home:
-    activity:
-      created: añadido hace %{time}
-      updated: actualizado hace %{time}
     browsing:
       content: Puede explorar los modelos haciendo clic en los enlaces de la barra de menús; navegar por una lista completa y filtrar por etiqueta, o navegar por colección o creador. Si lo prefiere, escriba en el cuadro de búsqueda para encontrar lo que busca
       manual_link: Guía de usuario
@@ -761,7 +742,6 @@ es:
       users_v_creators: A diferencia de muchas plataformas Fediverse, en Manyfold no tienes un único usuario. Cada modelo, creador y colección tiene su propio "handle" para que la gente lo siga, al igual que la cuenta con la que te registras. Esto significa que puedes gestionar más de un perfil de creador.
     index:
       no_activities: Por ahora no hay actividades que mostrar.
-      open_search_help: Sintaxis de búsqueda
       recent_activity: Actividad reciente
       search:
         placeholder: "¿Qué busca?"

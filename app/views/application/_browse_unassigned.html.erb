@@ -1,0 +1,36 @@
+<%# INIT-027/SPEC-009 — shared unassigned tile. Preview via locals (icon vs copy), not two layouts.
+    Locals: name, caption, models_params, icon (optional), preview_copy (optional), spacer (optional) %>
+<% name = local_assigns.fetch(:name)
+  caption = local_assigns.fetch(:caption)
+  models_params = local_assigns.fetch(:models_params)
+  icon = local_assigns[:icon]
+  preview_copy = local_assigns[:preview_copy]
+  spacer = local_assigns[:spacer]
+%>
+<div class="browse-unassigned-card relative flex flex-col rounded-xl overflow-hidden bg-surface dark:bg-surface-dark border border-warning dark:border-warning shadow-sm w-full max-w-[var(--browse-card-max)]">
+  <% if icon.present? %>
+    <div class="aspect-[4/3] bg-secondary-100 dark:bg-secondary-800 flex items-center justify-center">
+      <span class="text-secondary-400 dark:text-secondary-500 text-4xl" aria-hidden="true">
+        <%= Icon icon: icon, label: "" %>
+      </span>
+    </div>
+  <% else %>
+    <div class="flex items-center justify-center aspect-[4/3] bg-secondary-100 dark:bg-secondary-700/50">
+      <p class="text-sm text-secondary-600 dark:text-secondary-400 text-center px-4"><%= preview_copy %></p>
+    </div>
+  <% end %>
+  <div class="p-3 flex flex-col gap-1 grow">
+    <div class="font-semibold text-secondary-900 dark:text-secondary-100 leading-snug line-clamp-2 min-h-[2.75rem]"><%= name %></div>
+    <div class="text-sm text-secondary-600 dark:text-secondary-400 line-clamp-2 min-h-[2.5rem]"><%= caption %></div>
+    <% if spacer %>
+      <div class="min-h-[1rem]" aria-hidden="true"></div>
+    <% end %>
+  </div>
+  <div class="px-3 py-2.5 border-t border-secondary-200 dark:border-secondary-600 min-h-[3.25rem] flex items-center">
+    <%= GoButton(
+          label: "#{@unassigned_count} #{Model.model_name.human count: @unassigned_count}",
+          href: models_path(models_params),
+          variant: "primary"
+        ) %>
+  </div>
+</div>

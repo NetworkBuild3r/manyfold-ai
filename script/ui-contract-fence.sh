@@ -16,6 +16,10 @@ BASE_CLASS_NEEDLE='inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-med
 INPUT_CLASS_NEEDLE='block w-full rounded-lg border border-secondary-300 bg-white text-secondary-900'
 BASE_CLASS_OWNERS=('app/components/base_button.rb' 'app/components/text_input_row.rb')
 
+# INIT-027/SPEC-010 — show / carousel / _file chrome now uses DoButton/GoButton
+# constants. Empty deferred list; --enforce base-class is fully on.
+BASE_CLASS_DEFERRED=()
+
 SELF_TEST_DIR="tmp/ui-contract-fence-self-test"
 SELF_TEST_PLANT="${SELF_TEST_DIR}/_fence_plant.html.erb"
 
@@ -127,6 +131,16 @@ is_owner() {
   return 1
 }
 
+is_base_class_deferred() {
+  local file="$1"
+  local deferred
+  ((${#BASE_CLASS_DEFERRED[@]})) || return 1
+  for deferred in "${BASE_CLASS_DEFERRED[@]}"; do
+    [[ "$file" == "$deferred" ]] && return 0
+  done
+  return 1
+}
+
 # Print matching lines as path:line:text. Uses "$@" as extra rg args, then pattern, then roots.
 rg_hits() {
   local pattern="$1"
@@ -185,7 +199,7 @@ run_base_class() {
   while IFS= read -r line; do
     [[ -z "$line" ]] && continue
     path="${line%%:*}"
-    if is_owner "$path"; then
+    if is_owner "$path" || is_base_class_deferred "$path"; then
       continue
     fi
     printf '%s\n' "$line"
@@ -226,6 +240,11 @@ scan_roots() {
   echo "WALK_ROOTS: ${roots[*]}"
   echo "enforce: ${ENFORCE}"
   echo "hex_allowlist: ${HEX_ALLOWLIST_FILE}"
+  if ((${#BASE_CLASS_DEFERRED[@]})); then
+    echo "base_class_deferred: ${BASE_CLASS_DEFERRED[*]}"
+  else
+    echo "base_class_deferred: (none)"
+  fi
   emit_check jquery run_jquery "${roots[@]}"
   emit_check invalid-scale run_invalid_scale "${roots[@]}"
   emit_check hex run_hex "${roots[@]}"

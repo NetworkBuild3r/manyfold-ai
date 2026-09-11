@@ -22,7 +22,7 @@
       </td>
       <td class="px-4 py-2"><%= report.reporter_address %></td>
       <td class="px-4 py-2"><%= report.created_at %></td>
-      <td class="px-4 py-2 text-right"><%= link_to safe_join([Icon(icon: "search", label: t("general.view")), t("general.view")], " "), settings_report_path(report), {class: "inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 no-underline"} %></td>
+      <td class="px-4 py-2 text-right"><%= GoButton(icon: "search", label: t("general.view"), href: settings_report_path(report), variant: "primary") %></td>
     </tr>
   <% end %>
   </tbody>

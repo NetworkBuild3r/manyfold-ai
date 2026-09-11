@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+# INIT-027/SPEC-003 — ActorCard uses local title_row + GoButton open (not ModelCard#info_row).
 class Components::ActorCard < Components::ModelCard
   def initialize(actor:)
     @actor = actor
@@ -14,7 +15,7 @@ class Components::ActorCard < Components::ModelCard
         server_indicator @actor, full_address: true
       end
       PreviewFrame(object: @actor)
-      div(class: "p-3 flex flex-col gap-1") { info_row }
+      div(class: "p-3 flex flex-col gap-1") { title_row }
       actions
     end
   end
@@ -32,13 +33,24 @@ class Components::ActorCard < Components::ModelCard
     end
   end
 
-  def title
+  def title_row
     div(class: "font-medium text-secondary-900 dark:text-secondary-100") do
       icon = f3di_icon_for(@actor.extensions&.dig("f3di:concreteType"))
       icon ? Icon(icon: icon) : span { "⁂" }
       whitespace
       span { sanitize(@actor.name) }
     end
+  end
+
+  def open_button
+    GoButton(
+      href: @actor.profile_url,
+      label: t("components.model_card.open_button.text"),
+      variant: :primary,
+      icon: "box-arrow-up-right",
+      aria_label: translate("components.model_card.open_button.label", name: @actor.name),
+      data: {turbo_frame: "_top"}
+    )
   end
 
   def actions

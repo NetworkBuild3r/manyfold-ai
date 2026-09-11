@@ -8,15 +8,6 @@ module BrowseHelper
     BrowseGrid.page_size
   end
 
-  # path_helper: symbol like :models_path, :creators_path, :collections_path
-  # Kept for non-scroll page links (e.g. models_page_url); not used by infinite scroll.
-  def browse_page_url(path_helper, page, filter: nil, per_page: nil)
-    size = per_page.presence || BrowseGrid.page_size
-    base = filter&.to_params || {}
-    sort = request.query_parameters.slice("order", "direction")
-    public_send(path_helper, base.merge(page: page, per_page: size).merge(sort))
-  end
-
   # Metadata for top/bottom sentinels (bidirectional row window).
   # path_helper / filter kept for call-site parity; fetch URLs are client-owned.
   def browse_window_meta(_path_helper, filter: nil) # rubocop:disable Lint/UnusedMethodArgument
@@ -27,13 +18,5 @@ module BrowseHelper
       offset: @browse_offset.to_i,
       returned: @browse_returned_count.to_i
     }
-  end
-
-  def creators_page_url(page, filter = nil, per_page: nil)
-    browse_page_url(:creators_path, page, filter: filter, per_page: per_page)
-  end
-
-  def collections_page_url(page, filter = nil, per_page: nil)
-    browse_page_url(:collections_path, page, filter: filter, per_page: per_page)
   end
 end

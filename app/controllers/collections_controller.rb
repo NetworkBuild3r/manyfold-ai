@@ -13,6 +13,7 @@ class CollectionsController < ApplicationController
   before_action -> { set_indexable @collection }, except: [:index, :new, :create]
 
   def index
+    # INIT-027/SPEC-009 — tag/count helpers in BrowseListable; filter apply stays here.
     @models = policy_scope(Model).all
     @collections = policy_scope(Collection).all
     if @filter.any?
@@ -20,17 +21,15 @@ class CollectionsController < ApplicationController
       @collections = @filter.collections(@collections)
     end
 
-    @tags, @unrelated_tag_count = generate_tag_list(@models, @filter.tags)
-    @tags, @kv_tags = split_key_value_tags(@tags)
-    @unrelated_tag_count = nil unless @filter.any?
+    prepare_browse_index_tags
 
     @collections = apply_sort_order(@collections)
     @collections = @collections.includes :collections, :collection, :links, :creator
     @collections = prepare_browse_page(@collections)
 
     ids = @collections.map(&:id)
-    @model_counts = ids.empty? ? {} : policy_scope(Model).where(collection_id: ids).group(:collection_id).count
-    @subcollection_counts = ids.empty? ? {} : policy_scope(Collection).where(collection_id: ids).group(:collection_id).count
+    @model_counts = grouped_policy_count(policy_scope(Model), :collection_id, ids)
+    @subcollection_counts = grouped_policy_count(policy_scope(Collection), :collection_id, ids)
 
     @filter_in_place = true
     @unassigned_count = policy_scope(Model).where(collection: nil).count

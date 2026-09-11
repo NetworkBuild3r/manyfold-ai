@@ -23,5 +23,6 @@ RSpec.describe Components::PrintVatCard, type: :component do
     expect(html).to include("Phrozen Aqua")
     expect(html).to include("FEP warning").or include("Danger")
     expect(html).to include("Swap vat allocation")
+    expect(html).not_to match(/#[0-9a-fA-F]{6}/)
   end
 end

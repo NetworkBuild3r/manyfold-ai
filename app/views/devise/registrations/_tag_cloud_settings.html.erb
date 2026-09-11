@@ -6,7 +6,7 @@
         <%= tag_cloud_settings_form.label :threshold, t(".threshold.label"), class: "block text-sm font-medium text-secondary-700 dark:text-secondary-300" %>
       </div>
       <div>
-        <%= tag_cloud_settings_form.number_field :threshold, value: tag_cloud_settings["threshold"], class: "block w-full rounded-lg border border-secondary-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-primary-500 dark:border-secondary-600 dark:bg-secondary-800" %>
+        <%= tag_cloud_settings_form.number_field :threshold, value: tag_cloud_settings["threshold"], class: input_class %>
       </div>
       <div>
         <%= tag_cloud_settings_form.label :heatmap, t(".heatmap.label"), class: "block text-sm font-medium text-secondary-700 dark:text-secondary-300" %>
@@ -21,7 +21,7 @@
         <%= tag_cloud_settings_form.select :sorting,
               [[t(".sorting.frequency"), nil], [t(".sorting.alphabetical"), "alphabetical"]],
               {selected: tag_cloud_settings["sorting"]},
-              {class: "block w-full rounded-lg border border-secondary-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-primary-500 dark:border-secondary-600 dark:bg-secondary-800"} %>
+              {class: input_class} %>
       </div>
       <div>
         <%= tag_cloud_settings_form.label :keypair, t(".keypair.label"), class: "block text-sm font-medium text-secondary-700 dark:text-secondary-300" %>

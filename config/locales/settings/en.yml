@@ -280,7 +280,7 @@ en:
         using_site_default: Using site default file storage limit?
       show:
         approve: Approve account
-        confirm_destroy: Are you sure you want to remove this account immediately? This cannot be undone!
+        confirm_destroy: Are you sure you want to delete this user immediately? This cannot be undone!
         reset_password: Reset password
         title: 'Account details: %{username}'
       update:

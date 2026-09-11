@@ -10,8 +10,12 @@ require "rails_helper"
 #                DELETE /libraries/:id(.:format)                                                libraries#destroy
 
 RSpec.describe "Libraries" do
-  context "when signed out" do
-    it "needs testing when multiuser is enabled"
+  # INIT-027/SPEC-012 — libraries#index is nested at GET /settings/libraries
+  context "when signed out", :after_first_run, :multiuser do
+    it "does not authorize GET /settings/libraries" do
+      get "/settings/libraries"
+      expect(response).to redirect_to("/users/sign_in")
+    end
   end
 
   context "when signed in" do
@@ -22,14 +26,36 @@ RSpec.describe "Libraries" do
     end
 
     describe "GET /settings/libraries" do
-      before { get "/settings/libraries" }
-
       it "denies permission", :as_member do
+        get "/settings/libraries"
+        expect(response).to have_http_status(:not_found)
+      end
+
+      it "is denied to moderators", :as_moderator do
+        get "/settings/libraries"
+        expect(response).to have_http_status(:not_found)
+      end
+
+      it "is denied to contributors", :as_contributor do
+        get "/settings/libraries"
         expect(response).to have_http_status(:not_found)
       end
 
       it "shows list", :as_administrator do
+        get "/settings/libraries"
         expect(response).to have_http_status(:success)
+        expect(response.body).to include(library.name)
+      end
+
+      it "lists only policy_scope rows", :as_administrator do
+        hidden = create(:library, name: "HiddenFromScope")
+        allow(LibraryPolicy::Scope).to receive(:new).and_wrap_original do |method, user, scope|
+          method.call(user, scope.where(id: library.id))
+        end
+        get "/settings/libraries"
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include(library.name)
+        expect(response.body).not_to include(hidden.name)
       end
     end
 
@@ -69,8 +95,31 @@ RSpec.describe "Libraries" do
         expect(response).to have_http_status(:success)
       end
 
+      # INIT-027/SPEC-003 — tag-regex add/remove is cocooned, not jQuery (LB-3).
+      it "wires cocooned for tag regex rows without jQuery", :as_administrator do
+        expect(response.body).to include('data-controller="cocooned"')
+        expect(response.body).to include('data-cocooned-trigger="add"')
+        expect(response.body).to include('data-cocooned-trigger="remove"')
+        expect(response.body).not_to include("jQuery")
+        expect(response.body).not_to include("$('#")
+      end
+
       it "is denied to non-administrators", :as_moderator do
         expect(response).to have_http_status(:forbidden)
+      end
+
+      it "keeps save and delete as sibling DoButton forms", :as_administrator do # INIT-027/SPEC-013
+        path = "/libraries/#{library.to_param}"
+        forms = forms_targeting(path)
+        update_form = forms.find { |form| method_overrides(form) == ["patch"] }
+        delete_form = forms.find { |form| method_overrides(form) == ["delete"] }
+        expect(update_form).to be_present
+        expect(delete_form).to be_present
+        expect(update_form).not_to eq(delete_form)
+        expect(update_form.at('input[type="submit"], button[type="submit"]')).to be_present
+        expect(update_form.at("[data-turbo-confirm]")).to be_nil
+        expect(delete_form.at("[data-turbo-confirm]")).to be_present
+        expect(html5_document.at("a[data-method='delete']")).to be_nil
       end
     end
 
@@ -109,6 +158,13 @@ RSpec.describe "Libraries" do
       it "is denied to non-administrators", :as_moderator do
         expect(response).to have_http_status(:forbidden)
       end
+    end
+  end
+
+  context "when signed in as administrator with no libraries", :as_administrator do
+    it "redirects GET /settings/libraries to new library using the scoped collection" do
+      get "/settings/libraries"
+      expect(response).to redirect_to("/libraries/new")
     end
   end
 end

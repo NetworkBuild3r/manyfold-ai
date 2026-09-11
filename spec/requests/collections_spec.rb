@@ -148,6 +148,19 @@ RSpec.describe "Collections" do
       end
     end
 
+    context "when the library has no collections" do
+      before do
+        Model.delete_all
+        Collection.delete_all
+      end
+
+      it "renders the empty state", :as_member do # INIT-027/SPEC-009
+        get "/collections"
+        expect(response).to have_http_status(:success)
+        expect(response.body).not_to include("collection-card-grid")
+      end
+    end
+
     describe "POST /collections" do
       it "creates a new collection and redirects to list", :as_contributor do
         post "/collections", params: {collection: {name: "newname"}}
@@ -194,6 +207,19 @@ RSpec.describe "Collections" do
 
       it "is denied to non-moderators", :as_contributor do
         expect(response).to have_http_status(:forbidden)
+      end
+
+      it "keeps save and delete as sibling forms", :as_moderator do # INIT-027/SPEC-013
+        path = "/collections/#{collection.to_param}"
+        forms = forms_targeting(path)
+        update_form = forms.find { |form| method_overrides(form) == ["patch"] }
+        delete_form = forms.find { |form| method_overrides(form) == ["delete"] }
+        expect(update_form).to be_present
+        expect(delete_form).to be_present
+        expect(update_form).not_to eq(delete_form)
+        expect(update_form.at('input[type="submit"], button[type="submit"]')).to be_present
+        expect(update_form.at("[data-turbo-confirm]")).to be_nil
+        expect(delete_form.at("[data-turbo-confirm]")).to be_present
       end
     end
 

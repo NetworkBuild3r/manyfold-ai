@@ -416,22 +416,6 @@ fr:
       open_button:
         label: Ouvrir le modèle %{name}
         text: Ouvrir
-    search_help:
-      boolean:
-      federation:
-      filename:
-      intro:
-      more_details_html:
-      negation: Pour exclure des termes, utilisez "pas", " !" ou "-".
-      parentheses:
-      path:
-      quotes:
-      simple:
-      specific_fields:
-      tag:
-      title:
-      unset:
-      without_tag:
     sort_menu:
       name: Titre
       recent: Le plus récent
@@ -746,9 +730,6 @@ fr:
     update:
       success:
   home:
-    activity:
-      created:
-      updated:
     browsing:
       content:
       manual_link: Guide de l'utilisateur
@@ -764,7 +745,6 @@ fr:
       users_v_creators:
     index:
       no_activities: Il n'y a pas d'activités à afficher pour l'instant.
-      open_search_help:
       recent_activity: Activité récente
       search:
         placeholder: Que recherchez-vous ?

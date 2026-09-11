@@ -22,5 +22,6 @@ RSpec.describe Components::ResinBottleCard, type: :component do
     expect(html).to include("200ml")
     expect(html).to include("Low")
     expect(html).to include("Adjust level")
+    expect(html).not_to match(/#[0-9a-fA-F]{6}/)
   end
 end

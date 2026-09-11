@@ -94,4 +94,52 @@ RSpec.describe ApplicationHelper do
       expect(attrs["tour-id-completed"]).to eq "true"
     end
   end
+
+  describe "#button_class_for" do
+    it "joins BASE_CLASSES with the named variant" do
+      expect(helper.button_class_for("primary")).to include(Components::BaseButton::BASE_CLASSES)
+      expect(helper.button_class_for("primary")).to include(Components::BaseButton::VARIANT_CLASSES.fetch("primary"))
+    end
+
+    it "does not double-prefix toolbar" do
+      expect(helper.button_class_for("toolbar")).to eq(Components::BaseButton::VARIANT_CLASSES.fetch("toolbar"))
+    end
+  end
+
+  describe "#input_class" do
+    it "equals TextInputRow::INPUT_CLASS" do
+      expect(helper.input_class).to eq(Components::TextInputRow::INPUT_CLASS)
+    end
+  end
+
+  describe "#secondary_action_class" do
+    it "equals the named toolbar VARIANT_CLASSES entry byte-for-byte" do
+      expect(helper.secondary_action_class).to eq(Components::BaseButton::VARIANT_CLASSES.fetch("toolbar"))
+    end
+  end
+
+  # INIT-027/SPEC-005 — links stay on primary-* so the CSS accent alias applies.
+  describe "#content_link_class" do
+    it "uses primary text tokens (light and dark)" do
+      expect(helper.content_link_class).to include("text-primary-700")
+      expect(helper.content_link_class).to include("dark:text-primary-400")
+    end
+  end
+
+  describe "#file_input_row" do
+    it "uses TextInputRow::INPUT_CLASS on the file field" do
+      form = ActionView::Helpers::FormBuilder.new(:test, nil, helper, {})
+      html = helper.file_input_row(form, :avatar)
+      expect(html).to include(Components::TextInputRow::INPUT_CLASS)
+    end
+  end
+
+  describe "#errors_for" do
+    it "delegates message text to InputRow.messages_for" do
+      record = User.new
+      record.errors.add(:email, "is invalid")
+      expect(helper.errors_for(record, :email)).to include(Components::InputRow.messages_for(record, :email))
+      expect(helper.errors_for(record, :email)).to include(Components::InputRow::ERROR_CLASS)
+    end
+  end
 end

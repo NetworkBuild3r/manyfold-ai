@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 # Send-from-library dialog (Figma 15:586). Sliced-file path only; Prepare/Open Slicer stubbed (GR-001).
+# Surfaces: INIT-027/SPEC-008.
 class Components::SendPrintDialog < Components::Base
   register_value_helper :policy
 
@@ -18,9 +19,7 @@ class Components::SendPrintDialog < Components::Base
   def view_template
     div(class: "relative", data: {
       controller: "dialog send-print",
-      send_print_eligibility_url_value: @eligibility_url,
-      send_print_model_id_value: @model.to_param,
-      send_print_file_id_value: @file.to_param
+      send_print_eligibility_url_value: @eligibility_url
     }) do
       button(
         type: "button",
@@ -34,7 +33,7 @@ class Components::SendPrintDialog < Components::Base
       end
 
       dialog(
-        class: "relative max-w-xl w-full max-h-[90vh] overflow-auto rounded-2xl bg-[#1a1311] border border-[#332623] shadow-xl p-0 text-surface backdrop:bg-secondary-950/70",
+        class: "relative max-w-xl w-full max-h-[90vh] overflow-auto rounded-2xl bg-surface dark:bg-surface-dark border border-secondary-200 dark:border-secondary-800 shadow-xl p-0 text-secondary-900 dark:text-surface backdrop:bg-secondary-950/70",
         id: "send-print-dialog",
         "aria-labelledby": "send-print-dialog-label",
         "aria-modal": "true",
@@ -59,10 +58,10 @@ class Components::SendPrintDialog < Components::Base
 
   def header_block
     div(class: "flex flex-col gap-1.5") do
-      h1(class: "font-display font-bold text-2xl text-surface m-0", id: "send-print-dialog-label") do
+      h1(class: "font-display font-bold text-2xl text-secondary-900 dark:text-surface m-0", id: "send-print-dialog-label") do
         t("printers.send.title")
       end
-      p(class: "text-sm text-secondary-300 m-0") do
+      p(class: "text-sm text-secondary-600 dark:text-secondary-300 m-0") do
         t("printers.send.subtitle", name: @model.name)
       end
     end
@@ -76,7 +75,7 @@ class Components::SendPrintDialog < Components::Base
       select(
         id: "send-print-host",
         name: "print_host_id",
-        class: "w-full bg-[#261c1a] border border-[#332623] rounded-lg px-4 py-3 text-sm text-surface",
+        class: "w-full bg-white dark:bg-secondary-950 border border-secondary-300 dark:border-secondary-700 rounded-lg px-4 py-3 text-sm text-secondary-900 dark:text-surface",
         data: {
           send_print_target: "printer",
           action: "change->send-print#refreshEligibility"
@@ -104,10 +103,10 @@ class Components::SendPrintDialog < Components::Base
   end
 
   def prepare_stub
-    div(class: "bg-[#261c1a] border border-[#332623] rounded-xl p-5 flex flex-col gap-4 w-full opacity-60") do
+    div(class: "bg-secondary-50 dark:bg-secondary-900 border border-secondary-200 dark:border-secondary-800 rounded-xl p-5 flex flex-col gap-4 w-full opacity-60") do
       div(class: "flex flex-col gap-1.5") do
-        h2(class: "text-base font-semibold text-surface m-0") { t("printers.send.prepare_title") }
-        p(class: "text-[13px] text-secondary-300 m-0") { t("printers.send.prepare_help") }
+        h2(class: "text-base font-semibold text-secondary-900 dark:text-surface m-0") { t("printers.send.prepare_title") }
+        p(class: "text-[13px] text-secondary-600 dark:text-secondary-300 m-0") { t("printers.send.prepare_help") }
       end
       button(
         type: "button",
@@ -121,9 +120,9 @@ class Components::SendPrintDialog < Components::Base
   end
 
   def sliced_path
-    div(class: "bg-[#100b09] border border-[#332623] rounded-xl p-5 flex flex-col gap-4 w-full") do
+    div(class: "bg-secondary-50 dark:bg-secondary-950 border border-secondary-200 dark:border-secondary-800 rounded-xl p-5 flex flex-col gap-4 w-full") do
       div(class: "flex flex-col gap-1.5") do
-        h2(class: "text-base font-semibold text-secondary-300 m-0") { t("printers.send.sliced_title") }
+        h2(class: "text-base font-semibold text-secondary-700 dark:text-secondary-300 m-0") { t("printers.send.sliced_title") }
         p(class: "text-[13px] text-secondary-500 m-0") { t("printers.send.sliced_help") }
       end
       form(

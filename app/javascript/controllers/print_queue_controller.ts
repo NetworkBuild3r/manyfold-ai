@@ -2,7 +2,8 @@ import { Controller } from '@hotwired/stimulus'
 
 // Polls the queue JSON board and refreshes live printing card telemetry.
 export default class extends Controller {
-  static targets = ['card', 'layers', 'percent', 'bar', 'elapsed', 'remaining']
+  // INIT-027/SPEC-004 — only `card` is a Stimulus target; telemetry nodes are queried.
+  static targets = ['card']
   static values = {
     url: String,
     interval: { type: Number, default: 5000 }

@@ -1,64 +1,16 @@
-<% content_for :page_header do %>
-  <%= PageTitle title: Creator.model_name.human(count: 100), heading: false %>
-<% end %>
-
-<% content_for :browse_chrome do %>
-  <div class="flex flex-col gap-2.5 max-w-screen-2xl mx-auto">
-    <div class="flex flex-wrap items-center gap-2 sm:gap-3">
-      <button type="button"
-              class="lg:hidden inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg border border-secondary-300 dark:border-secondary-600 bg-surface dark:bg-secondary-900 text-secondary-900 dark:text-secondary-100 hover:border-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500"
-              data-action="click->filter-drawer#open"
-              aria-controls="sidebar"
-              aria-expanded="false">
-        <%= Icon icon: "funnel", label: "" %>
-        <span><%= t("layouts.card_list_page.filters_heading", default: "Filters") %></span>
-        <% if @filter&.any? %>
-          <span class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full bg-primary-600 text-white text-xs font-semibold"><%= active_filters_list(@filter).size %></span>
-        <% end %>
-      </button>
-      <div class="flex items-center gap-2 ml-auto">
-        <%= SortMenu(filter: @filter) %>
-      </div>
-    </div>
-    <%= render "application/active_filter_pills", filter: @filter, clear_path: creators_path, clear_label: t(".clear_filters") if @filter&.any? %>
-  </div>
-<% end %>
-
-<% content_for :items do %>
-  <% if @creators.empty? && (@unassigned_count || 0) == 0 %>
-    <%= render "application/empty_state", message: t(".no_results_html"), icon: "people" do %>
-      <% if @filter&.any? %>
-        <p><%= link_to t(".clear_filters"), creators_path, class: primary_button_class %></p>
-      <% end %>
-    <% end %>
-  <% else %>
-    <div class="skip-link-container">
-      <%= skip_link "sidebar", t(".skip_creators") %>
-      <% show_unassigned = @unassigned_count.to_i > 0 && @browse_offset.to_i.zero? %>
-      <%= render layout: "application/browse_infinite_grid", locals: {
-            sentinel_prefix: "creators",
-            grid_id: "creator-card-grid",
-            card_selector: ".creator-card",
-            storage_key_prefix: "scroll_creators_",
-            aria_label: Creator.model_name.human(count: 100),
-            path_helper: :creators_path,
-            end_message: t(".end_of_results"),
-            error_message: t(".load_error"),
-            loading_message: t(".loading_more"),
-            scroll_hint: t(".scroll_hint"),
-            back_to_top: t(".back_to_top"),
-            unassigned_html: (show_unassigned ? capture { render "unassigned" } : nil)
-          } do %>
-        <%= render @creators %>
-      <% end %>
-    </div>
-  <% end %>
-<% end %>
-
-<% content_for :actions do %>
-  <%= link_to t("creators.general.new"), new_creator_path, class: "inline-flex items-center px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500" if policy(:creator).new? %>
-<% end %>
-
+<%# INIT-027/SPEC-009 — thin creators index; page chrome in application/browse_index. %>
+<%= render "application/browse_index", records: @creators, model_class: Creator,
+      path_helper: :creators_path, empty_icon: "people", sentinel_prefix: "creators",
+      grid_id: "creator-card-grid", card_selector: ".creator-card",
+      storage_key_prefix: "scroll_creators_",
+      show_unassigned: @unassigned_count.to_i > 0 && @browse_offset.to_i.zero?,
+      unassigned_partial: "creators/unassigned",
+      no_results: t(".no_results_html"), clear_filters: t(".clear_filters"),
+      skip_link_label: t(".skip_creators"), end_message: t(".end_of_results"),
+      error_message: t(".load_error"), loading_message: t(".loading_more"),
+      scroll_hint: t(".scroll_hint"), back_to_top: t(".back_to_top"),
+      new_path: new_creator_path, new_label: t("creators.general.new"),
+      new_allowed: policy(:creator).new? %>
 <% content_for :sidebar do %>
   <%= render "filters_card" %>
   <%= render "tags_card" %>

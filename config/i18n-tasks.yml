@@ -163,7 +163,6 @@ ignore_unused:
 - 'application.footer.sponsor'
 - 'archive_entries.panel.showing_chunk'
 - 'home.browsing.manual_link'
-- 'home.index.open_search_help'
 - 'home.index.recent_activity'
 - 'home.index.shortcuts.favorites'
 - 'home.index.shortcuts.favorites_hint'

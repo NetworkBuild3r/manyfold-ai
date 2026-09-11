@@ -416,22 +416,6 @@ zh-CN:
       open_button:
         label: 打开模型 %{name}
         text: 打开
-    search_help:
-      boolean: 使用 "or" 查找匹配的模型。
-      federation: 搜索任何 Fediverse 用户名，即可关注该用户。
-      filename: 您可以通过明确指定在文件名字段内进行搜索。
-      intro: 使用搜索语法查找所需内容：
-      more_details_html: 有关详细信息，请阅读 <a href="https://github.com/wvanbergen/scoped_search/wiki/Query-language">scoped_search 查询语言</a> 的完整文档。
-      negation: 使用 "not"、"!" 或 "-" 来排除。
-      parentheses: 用括号将搜索词分组，以实现更复杂的逻辑组合。
-      path: 通过明确指定在模型文件夹路径内搜索；使用 `~` 进行部分匹配。
-      quotes: 要查找多个单词，请使用引号；只有包含确切文本的模型才会显示。
-      simple: 默认情况下，搜索将查找符合所有条件的模型。
-      specific_fields: 您可以在几个特定字段中查找关键词。使用"~"匹配部分字段；"="将尝试匹配整个字段。只有在明确指定字段的情况下，才会搜索模型描述和库名。
-      tag: 查找带有特定 Tag 的模型
-      title: 搜索语法
-      unset: 使用 "set?" 查询特定字段是否已设置，添加 "not" 则可查找相反字段。
-      without_tag: 使用 "!tag" 查找不带有特定 Tag 的模型
     sort_menu:
       name: 标题
       recent: 上传时间
@@ -743,9 +727,6 @@ zh-CN:
     update:
       success:
   home:
-    activity:
-      created: 添加于 %{time} 前
-      updated: 更新于 %{time} 前
     browsing:
       content: 您可以点击菜单栏中的链接来浏览模型；浏览完整列表并按标签过滤，或按集合或创作者浏览。或者，只需在搜索框中输入您想要的内容即可！
       manual_link: 用户指南
@@ -761,7 +742,6 @@ zh-CN:
       users_v_creators:
     index:
       no_activities: 暂时没有动态要展示。
-      open_search_help: 搜索语法
       recent_activity: 近期更新
       search:
         placeholder: 搜索本地模型库

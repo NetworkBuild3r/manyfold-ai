@@ -37,6 +37,6 @@
 </table>
 
 <div class="flex flex-wrap gap-2 mt-4">
-  <%= link_to t(".resolve"), settings_report_path(@report, resolve: true), method: :patch, class: "inline-flex items-center px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 no-underline" %>
-  <%= link_to t(".ignore"), settings_report_path(@report, ignore: true), method: :patch, class: "inline-flex items-center px-4 py-2 rounded-lg bg-danger text-white hover:opacity-90 focus-visible:ring-2 focus-visible:ring-primary-500 no-underline" %>
+  <%= DoButton(label: t(".resolve"), href: settings_report_path(@report, resolve: true), method: :patch, variant: "primary") %>
+  <%= DoButton(label: t(".ignore"), href: settings_report_path(@report, ignore: true), method: :patch, variant: "danger") %>
 </div>

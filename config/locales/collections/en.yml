@@ -16,7 +16,7 @@ en:
     create:
       success: New collection details saved.
     destroy:
-      confirm: Are you sure you want to remove this item? No files will be affected.
+      confirm: Are you sure you want to delete this collection? No files will be affected.
       success: Collection deleted!
     form:
       notes:

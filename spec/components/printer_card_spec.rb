@@ -9,7 +9,8 @@ RSpec.describe Components::PrinterCard, type: :component do
     html = render described_class.new(printer: printer, status: {})
     expect(html).to include("GK3 Pro — garage")
     expect(html).to include("Open monitor")
-    expect(html).to include("/printers/#{printer.id}")
+    expect(html).not_to match(/#[0-9a-fA-F]{6}/)
+    expect(html).to include("dark:bg-surface-dark")
   end
 
   it "wires printer-fleet Stimulus when status_url is present" do

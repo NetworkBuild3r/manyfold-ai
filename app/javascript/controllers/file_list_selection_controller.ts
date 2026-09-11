@@ -9,24 +9,16 @@ export default class extends BaseSelectionController {
   static targets = [
     'bubble',
     'toolbar',
-    'bulkEditForm',
     'bulkEditIdsContainer',
-    'splitForm',
-    'splitIdsContainer',
-    'clearButton'
+    'splitIdsContainer'
   ]
 
   static values = { modelId: { type: String, default: '' } }
 
-  declare bulkEditFormTarget: HTMLFormElement
-  declare hasBulkEditFormTarget: boolean
   declare bulkEditIdsContainerTarget: HTMLElement
   declare hasBulkEditIdsContainerTarget: boolean
-  declare splitFormTarget: HTMLFormElement
-  declare hasSplitFormTarget: boolean
   declare splitIdsContainerTarget: HTMLElement
   declare hasSplitIdsContainerTarget: boolean
-  declare clearButtonTarget: HTMLElement
   declare modelIdValue: string
 
   get storageKey (): string {

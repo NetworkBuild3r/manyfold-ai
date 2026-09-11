@@ -42,10 +42,18 @@
         <span class="text-secondary-600 dark:text-secondary-400"><%= t("archive_entries.show.status", default: "Status") %></span>
         <span><%= @entry.status.humanize %></span>
       </div>
-      <div class="mt-4">
-        <%= link_to t("archive_entries.panel.download", default: "Download"),
-              download_model_model_file_archive_entry_path(@model, @file, @entry),
-              class: "inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg bg-primary-600 text-white hover:bg-primary-700 no-underline" %>
+      <div class="mt-4 flex flex-wrap items-center gap-2">
+        <%= GoButton label: t("archive_entries.panel.download"), href: download_model_model_file_archive_entry_path(@model, @file, @entry), variant: "primary" %>
+        <% if @entry.is_image? && @entry.preview_ready? && @model.preview_archive_entry_id != @entry.id && policy(@model).edit? %>
+          <%= SetPreviewControl(model: @model, preview_archive_entry_id: @entry.id) %>
+        <% end %>
+        <% if policy(@model).update? %>
+          <%= FileDeleteControl(
+                href: model_model_file_archive_entry_path(@model, @file, @entry),
+                confirm: t("models.gallery.delete_confirm_archive", archive: @file.filename, name: @entry.name),
+                label: t("models.gallery.delete_archive_member")
+              ) %>
+        <% end %>
       </div>
     <% end %>
   </div>

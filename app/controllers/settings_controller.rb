@@ -37,6 +37,7 @@ class SettingsController < ApplicationController
     SiteSettings.site_name = settings[:site_name]
     SiteSettings.site_tagline = settings[:site_tagline]
     SiteSettings.theme = settings[:theme]
+    # INIT-027/SPEC-005 — Appearance picker still persists accent_color (wired via CSS alias).
     if settings[:accent_color].present? && SiteSettings::AVAILABLE_ACCENTS.include?(settings[:accent_color])
       SiteSettings.accent_color = settings[:accent_color]
     end
