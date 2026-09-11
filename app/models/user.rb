@@ -49,6 +49,12 @@ class User < ApplicationRecord
       if: :password_required?
   end
 
+  # INIT-028/SPEC-002 — NULL inherit; blank treated as inherit at resolve time (ADR D-2).
+  validates :interface_theme,
+    inclusion: {in: SiteSettings::AVAILABLE_THEMES},
+    allow_nil: true,
+    allow_blank: true
+
   after_create :assign_default_role
 
   # Explicitly explain serialization for MariaDB
@@ -344,6 +350,7 @@ class User < ApplicationRecord
     settings_attributes = [
       "sensitive_content_handling",
       "interface_language",
+      "interface_theme",
       "sort_order",
       "pagination_settings",
       "renderer_settings",

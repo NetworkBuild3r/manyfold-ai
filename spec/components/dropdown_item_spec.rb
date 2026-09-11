@@ -39,13 +39,18 @@ RSpec.describe Components::DropdownItem, type: :component do
     )
     expect(html).to include("<form")
     expect(html).to include('data-turbo-confirm="Delete this file?"')
-    expect(html).to include('data-confirm="Delete this file?"')
+    expect(html).not_to include("data-confirm")
   end
 
   # INIT-027/SPEC-011 — class channel is ITEM_CLASS / ACTIVE_ITEM_CLASS.
   it "uses ITEM_CLASS from the constant, not an inline literal" do
     html = render described_class.new(label: "Edit model", path: "/models/1/edit")
     expect(html).to include(described_class::ITEM_CLASS)
+  end
+
+  # INIT-028/SPEC-004 — SM-001 class channel (GET and POST share ITEM_CLASS).
+  it "includes bg-transparent and appearance-none on ITEM_CLASS" do
+    expect(described_class::ITEM_CLASS.split).to include("bg-transparent", "appearance-none")
   end
 
   it "appends ACTIVE_ITEM_CLASS when active" do
@@ -63,5 +68,6 @@ RSpec.describe Components::DropdownItem, type: :component do
     doc = Nokogiri::HTML.fragment(html)
     expect(doc.at("a")["data-method"]).to be_nil
     expect(html).to include('data-turbo-confirm="Leave this page?"')
+    expect(html).not_to include("data-confirm")
   end
 end

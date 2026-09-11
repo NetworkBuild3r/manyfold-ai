@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
-# INIT-027/SPEC-006 — single button class channel + dual confirm keys during UJS overlap.
+# INIT-027/SPEC-006 — single button class channel.
+# INIT-028/SPEC-005 — Turbo-only confirm (drop the UJS confirm key).
 class Components::BaseButton < Components::Base
   include Phlex::Rails::Helpers::ButtonTo
 
@@ -68,10 +69,10 @@ class Components::BaseButton < Components::Base
     [BASE_CLASSES, variant_classes].join(" ")
   end
 
-  # Noun comes from the caller (`confirm:`). Dual-key until SPEC-007/010 drop UJS data-confirm.
+  # Noun comes from the caller (`confirm:`). Turbo owns the dialog; UJS stays started for other helpers.
   def button_data
     confirm_attrs = if @confirm.present?
-      {turbo_confirm: @confirm, confirm: @confirm}
+      {turbo_confirm: @confirm}
     else
       {}
     end

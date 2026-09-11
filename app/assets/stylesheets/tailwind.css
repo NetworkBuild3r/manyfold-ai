@@ -73,11 +73,13 @@
 :root {
   --brand-primary: var(--color-primary-600);
   --brand-primary-hover: var(--color-primary-700);
+  color-scheme: light;
 }
 
-/* Lighter info on dark surfaces (alerts, badges) */
+/* Lighter info on dark surfaces (alerts, badges). INIT-028/SPEC-004 — D-5 UA scheme. */
 .dark {
   --color-info: oklch(0.760 0.095 195);
+  color-scheme: dark;
 }
 
 /*
@@ -202,10 +204,16 @@
   .dark a {
     color: var(--color-primary-400);
   }
-  /* Dark surfaces: form controls and icons should not fall back to browser black */
-  .dark input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="image"]),
+  /* Dark surfaces: form controls and icons should not fall back to browser black.
+     INIT-028/SPEC-004 — include submit/button so UA buttonface text is not left black-on-white. */
+  .dark input:not([type="checkbox"]):not([type="radio"]):not([type="image"]),
   .dark textarea,
   .dark select {
+    color: var(--color-secondary-100);
+  }
+  .dark input[type="submit"],
+  .dark input[type="button"],
+  .dark button {
     color: var(--color-secondary-100);
   }
   .dark input[type="checkbox"],

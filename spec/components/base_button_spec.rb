@@ -42,7 +42,7 @@ RSpec.describe Components::BaseButton, type: :component do
       expect(html).to include(Components::BaseButton::BASE_CLASSES)
     end
 
-    it "sets turbo_confirm and confirm when confirm: is passed" do
+    it "sets turbo_confirm only when confirm: is passed" do
       html = render described_class.new(
         label: "Delete library",
         href: "/libraries/1",
@@ -51,7 +51,7 @@ RSpec.describe Components::BaseButton, type: :component do
         confirm: "Delete this library?"
       )
       expect(html).to include('data-turbo-confirm="Delete this library?"')
-      expect(html).to include('data-confirm="Delete this library?"')
+      expect(html).not_to include("data-confirm")
     end
 
     it "omits confirm data attributes when confirm is blank" do
@@ -90,7 +90,7 @@ RSpec.describe Components::BaseButton, type: :component do
         confirm: "Leave this filter?"
       )
       expect(html).to include('data-turbo-confirm="Leave this filter?"')
-      expect(html).to include('data-confirm="Leave this filter?"')
+      expect(html).not_to include("data-confirm")
     end
   end
 

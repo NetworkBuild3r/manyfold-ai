@@ -6,7 +6,8 @@ class Components::DropdownItem < Components::Base
   include Phlex::Rails::Helpers::ButtonTo
 
   # INIT-027/SPEC-011 — class channel for specs; initialize/view_template API unchanged.
-  ITEM_CLASS = "block w-full px-3 py-2 text-left text-sm text-secondary-700 dark:text-secondary-200 hover:bg-secondary-100 dark:hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-primary-500 no-underline"
+  # INIT-028/SPEC-004 — transparent + appearance-none so button_to does not paint UA buttonface.
+  ITEM_CLASS = "block w-full px-3 py-2 text-left text-sm text-secondary-700 dark:text-secondary-200 bg-transparent appearance-none border-0 shadow-none hover:bg-secondary-100 dark:hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-primary-500 no-underline"
   ACTIVE_ITEM_CLASS = " bg-primary-50 dark:bg-primary-900/30 font-medium"
 
   def initialize(label:, path:, icon: nil, method: nil, turbo_method: nil, aria_label: nil, confirm: nil, turbo_confirm: nil, active: false, turbo_frame: nil)
@@ -54,9 +55,9 @@ class Components::DropdownItem < Components::Base
 
   def item_data
     attrs = {turbo_frame: @turbo_frame}
+    # INIT-028/SPEC-005 — turbo_confirm only; do not emit the UJS confirm key.
     if @confirm.present?
       attrs[:turbo_confirm] = @confirm
-      attrs[:confirm] = @confirm
     end
     attrs.compact
   end

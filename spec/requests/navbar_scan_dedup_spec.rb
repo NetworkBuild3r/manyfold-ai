@@ -18,6 +18,19 @@ RSpec.describe "Navbar Scan Dedup" do
       expect(dedup_confirm).to match(/review/i)
       expect(dedup_confirm).to match(/not(?:hing)? is merged automatically/i)
     end
+
+    it "emits Turbo-only confirm on Scan POST" do # INIT-028/SPEC-005 SM-004
+      get "/settings"
+      expect(response).to have_http_status(:success)
+      scan_confirm = I18n.t("application.navbar.scan_changes.confirm")
+      doc = Nokogiri::HTML(response.body)
+      scan_forms = doc.css("form").select do |form|
+        form["action"].to_s.split("?").first.end_with?("/scans") &&
+          form.at("[data-turbo-confirm]")&.[]("data-turbo-confirm") == scan_confirm
+      end
+      expect(scan_forms.size).to eq(1)
+      expect(scan_forms.first.at("[data-confirm]")).to be_nil
+    end
   end
 
   context "when moderator", :as_moderator do

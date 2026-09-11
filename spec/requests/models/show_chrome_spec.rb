@@ -25,6 +25,9 @@ RSpec.describe "Model show gallery file chrome", :as_moderator do
       expect(model_deletes.size).to eq(1)
       expect(model_deletes.first.text).to include(I18n.t("models.show.delete_model"))
       expect(toolbar.at("a[data-method='delete']")).to be_nil
+      # INIT-028/SPEC-005 — SM-004: overflow Delete is Turbo-confirm only.
+      expect(model_deletes.first.at("[data-turbo-confirm]")["data-turbo-confirm"]).to eq(I18n.t("models.destroy.confirm"))
+      expect(model_deletes.first.at("[data-confirm]")).to be_nil
     end
 
     it "targets current-slide delete at the loose file, not the model" do
