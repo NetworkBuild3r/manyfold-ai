@@ -44,6 +44,15 @@ RSpec.describe "Settings" do
         expect(response.body).to include(I18n.t("settings.appearance.accent.help"))
         expect(I18n.t("settings.appearance.accent.help")).to match(/buttons and links/i)
       end
+
+      # INIT-028/SPEC-003 — D-7 / REQ-007: instance default, not the only control.
+      it "describes Appearance theme as the instance default" do
+        get "/settings/appearance"
+        help = I18n.t("settings.appearance.theme.help_html")
+        expect(response.body).to include("Default for visitors and accounts that inherit")
+        expect(help).to include("Default for visitors and accounts that inherit")
+        expect(help).not_to include("Affects all accounts")
+      end
     end
 
     describe "PATCH /settings" do
@@ -98,6 +107,15 @@ RSpec.describe "Settings" do
 
         it "saves file ignore regexes" do
           expect(SiteSettings.model_ignored_files).to contain_exactly(/.*\.lys/, /.*\.lyt/)
+        end
+      end
+
+      # INIT-028/SPEC-003 — admin Appearance still writes SiteSettings.theme.
+      context "with appearance theme params" do
+        it "persists a listed theme" do
+          SiteSettings.theme = "light"
+          patch "/settings", params: {appearance: {theme: "dark"}}
+          expect(SiteSettings.theme).to eq "dark"
         end
       end
 
