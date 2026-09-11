@@ -13,6 +13,18 @@
       <small class="text-sm text-secondary-500 dark:text-secondary-400 block mt-1"><%= t ".interface_language.help" %></small>
     </div>
 
+    <%# INIT-028/SPEC-003 — D-8: account theme overlay; inherit is blank (ADR D-2). %>
+    <div>
+      <%= form.label :interface_theme, t(".interface_theme.label"), class: "block text-sm font-medium text-secondary-700 dark:text-secondary-300" %>
+    </div>
+    <div>
+      <%= form.select :interface_theme,
+            @theme_options,
+            {selected: @user.interface_theme},
+            {class: input_class} %>
+      <small class="text-sm text-secondary-500 dark:text-secondary-400 block mt-1"><%= t ".interface_theme.help" %></small>
+    </div>
+
     <div>
       <%= form.label :sensitive_content_handling, t(".sensitive_content.label"), class: "block text-sm font-medium text-secondary-700 dark:text-secondary-300" %>
     </div>

@@ -40,7 +40,9 @@ RSpec.describe ModelsHelper do
     let!(:problem) { create(:problem_on_model, problematic: model) }
 
     before do
-      allow(helper).to receive(:policy_scope) { |scope| scope }
+      without_partial_double_verification do
+        allow(helper).to receive(:policy_scope) { |scope| scope }
+      end
     end
 
     it "includes the model in the problematic set" do

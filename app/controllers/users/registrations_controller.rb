@@ -7,6 +7,7 @@ class Users::RegistrationsController < Devise::RegistrationsController
   before_action :configure_sign_up_params, only: [:create]
   before_action :detect_if_first_use, only: [:edit, :update]
   before_action :load_languages, only: [:edit, :update]
+  before_action :load_theme_options, only: [:edit, :update]
   before_action :configure_account_update_params, only: [:update]
   skip_before_action :check_for_first_use, only: [:edit, :update]
 
@@ -99,6 +100,7 @@ class Users::RegistrationsController < Devise::RegistrationsController
         :password_confirmation,
         :current_password,
         :interface_language,
+        :interface_theme,
         :sensitive_content_handling,
         :sort_order,
         pagination_settings: [
@@ -208,6 +210,15 @@ class Users::RegistrationsController < Devise::RegistrationsController
     @languages = [[t("devise.registrations.general_settings.interface_language.autodetect"), nil]].concat(
       I18n.available_locales.map { |locale| [I18nData.languages(locale)[locale.to_s.first(2).upcase.to_s]&.capitalize, locale] }
     )
+  end
+
+  # INIT-028/SPEC-003 — D-2/D-8: blank option is inherit (NULL); same vocab as Appearance.
+  def load_theme_options
+    inherit = [t("devise.registrations.general_settings.interface_theme.inherit"), nil]
+    choices = SiteSettings::AVAILABLE_THEMES.map { |theme|
+      [t("devise.registrations.general_settings.interface_theme.options.#{theme}"), theme]
+    }
+    @theme_options = [inherit, *choices]
   end
 
   def update_resource(resource, data)

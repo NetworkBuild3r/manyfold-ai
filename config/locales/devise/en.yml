@@ -121,6 +121,14 @@ en:
           autodetect: Use browser settings
           help: 'Note: some untranslated text may still show in English.'
           label: Interface language
+        interface_theme:
+          help: Light, Dark, or System for this account. Use site default to follow Appearance.
+          inherit: Use site default
+          label: Theme
+          options:
+            dark: Dark
+            light: Light
+            system: System (use device setting)
         sensitive_content:
           help: Affects how content marked as "sensitive" will be displayed
           hide: Hide completely

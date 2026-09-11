@@ -490,4 +490,61 @@ RSpec.describe "Users::Registrations" do
       end
     end
   end
+
+  # INIT-028/SPEC-003 — SM-003 / GR-006: self-only overlay; SiteSettings.theme unchanged.
+  context "when a non-admin updates interface_theme", :as_contributor, :multiuser do
+    it "shows a labeled theme select on account settings" do
+      get "/users/edit"
+      expect(response).to have_http_status(:success)
+      expect(response.body).to include('id="user_interface_theme"')
+      expect(response.body).to include("for=\"user_interface_theme\"")
+      expect(response.body).to include(I18n.t("devise.registrations.general_settings.interface_theme.label"))
+      expect(response.body).to include(I18n.t("devise.registrations.general_settings.interface_theme.inherit"))
+    end
+
+    it "saves own overlay without changing SiteSettings.theme" do
+      SiteSettings.theme = "light"
+      instance_theme = SiteSettings.theme
+      patch "/users", params: {user: {interface_theme: "dark"}}
+      expect(response).to redirect_to("/users/edit")
+      expect(User.with_role(:contributor).first.reload.interface_theme).to eq "dark"
+      expect(SiteSettings.theme).to eq instance_theme
+    end
+
+    it "saves inherit as blank" do
+      User.with_role(:contributor).first.update!(interface_theme: "dark")
+      patch "/users", params: {user: {interface_theme: ""}}
+      expect(User.with_role(:contributor).first.reload.interface_theme).to be_blank
+    end
+
+    it "does not write another user's interface_theme" do
+      member = User.with_role(:contributor).first
+      other = create(:user, interface_theme: "light")
+      patch "/users", params: {user: {id: other.id, interface_theme: "dark"}}
+      expect(other.reload.interface_theme).to eq "light"
+      expect(member.reload.interface_theme).to eq "dark"
+    end
+
+    it "pins html data-theme and dark class from the overlay" do
+      user = User.with_role(:contributor).first
+      user.update!(interface_theme: "dark")
+      # Warden test helpers keep the signed-in AR instance; layout reads that
+      # object, not a fresh find. Re-sign so html data-theme sees the overlay.
+      sign_in user.reload
+      get "/users/edit"
+      html = Nokogiri::HTML(response.body).at("html")
+      expect(html["data-theme"]).to eq "dark"
+      expect(html["class"].to_s.split).to include("dark")
+    end
+  end
+
+  context "when signed out", :multiuser do
+    it "pins data-theme from the instance default" do
+      SiteSettings.theme = "light"
+      get "/users/sign_in"
+      html = Nokogiri::HTML(response.body).at("html")
+      expect(html["data-theme"]).to eq "light"
+      expect(html["class"].to_s.split).not_to include("dark")
+    end
+  end
 end

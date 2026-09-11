@@ -8,6 +8,29 @@ RSpec.describe User do
     expect(build(:user, username: nil)).not_to be_valid
   end
 
+  # INIT-028/SPEC-002 — interface_theme vocab; NULL inherit (ADR D-2).
+  it "allows a nil interface_theme (inherit instance)" do
+    expect(build(:user, interface_theme: nil)).to be_valid
+  end
+
+  %w[light dark system].each do |theme|
+    it "allows interface_theme #{theme}" do
+      expect(build(:user, interface_theme: theme)).to be_valid
+    end
+  end
+
+  it "allows a blank interface_theme (inherit at resolve time)" do
+    expect(build(:user, interface_theme: "")).to be_valid
+  end
+
+  it "rejects an unknown interface_theme" do
+    expect(build(:user, interface_theme: "Darkly")).not_to be_valid
+  end
+
+  it "rejects inherit as an interface_theme string" do
+    expect(build(:user, interface_theme: "inherit")).not_to be_valid
+  end
+
   it "allows single-character usernames" do
     expect(build(:user, username: "a")).to be_valid
   end
@@ -333,6 +356,7 @@ RSpec.describe User do
     {
       sensitive_content_handling: "hide",
       interface_language: "en",
+      interface_theme: "dark",
       sort_order: "recent",
       pagination_settings: {},
       renderer_settings: {},

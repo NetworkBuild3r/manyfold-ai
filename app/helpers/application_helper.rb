@@ -1,6 +1,11 @@
 module ApplicationHelper
+  # INIT-028/SPEC-003 — D-9: civil theme from ThemeResolver; SSR .dark only when resolved dark.
+  def resolved_theme
+    ThemeResolver.call(user: current_user)
+  end
+
   def dark_theme?
-    SiteSettings.validated_theme == "dark"
+    resolved_theme == "dark"
   end
 
   # Returns Tailwind class string for settings sidebar nav links. Use for consistent active/inactive styling.

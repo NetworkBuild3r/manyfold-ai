@@ -39,7 +39,7 @@ en:
         help: A link to a place where visitors can support the instance financially (e.g. OpenCollective, Patreon). Shown in footer.
         label: Support link
       theme:
-        help_html: Affects all accounts. "System" follows your device's light or dark preference.
+        help_html: Default for visitors and accounts that inherit. "System" follows your device's light or dark preference.
         label: Theme
         options:
           dark: Dark

@@ -126,6 +126,33 @@ RSpec.describe ApplicationHelper do
     end
   end
 
+  # INIT-028/SPEC-003 — D-9: SSR .dark follows ThemeResolver, not raw SiteSettings.
+  describe "#dark_theme?" do
+    before { allow(helper).to receive(:current_user).and_return(nil) }
+
+    it "is true when the resolver returns dark" do
+      allow(ThemeResolver).to receive(:call).with(user: nil).and_return("dark")
+      expect(helper.dark_theme?).to be true
+    end
+
+    it "is false when the resolver returns light" do
+      allow(ThemeResolver).to receive(:call).with(user: nil).and_return("light")
+      expect(helper.dark_theme?).to be false
+    end
+
+    it "is false when the resolver returns system" do
+      allow(ThemeResolver).to receive(:call).with(user: nil).and_return("system")
+      expect(helper.dark_theme?).to be false
+    end
+
+    it "passes current_user into ThemeResolver" do
+      user = instance_double(User)
+      allow(helper).to receive(:current_user).and_return(user)
+      allow(ThemeResolver).to receive(:call).with(user: user).and_return("light")
+      expect(helper.resolved_theme).to eq "light"
+    end
+  end
+
   describe "#file_input_row" do
     it "uses TextInputRow::INPUT_CLASS on the file field" do
       form = ActionView::Helpers::FormBuilder.new(:test, nil, helper, {})

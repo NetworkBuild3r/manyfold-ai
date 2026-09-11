@@ -4,6 +4,8 @@
 require "rails_helper"
 
 RSpec.describe Components::SetPreviewControl, type: :component do
+  include Rails.application.routes.url_helpers
+
   let(:model) { create(:model) }
   let(:file) { create(:model_file, model: model, filename: "cover.jpg") }
 
