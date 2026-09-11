@@ -14,7 +14,11 @@ RSpec.describe "Navbar Scan Dedup" do
       expect(response.body).to include(dedup_label)
       expect(response.body).to include("/scans?type=dedup")
       expect(response.body).to include(dedup_confirm)
-      expect(response.body).to match(/data-(?:turbo-)?method="post"/)
+      doc = Nokogiri::HTML(response.body)
+      dedup_forms = doc.css("form").select { |form| form["action"].to_s.include?("type=dedup") }
+      expect(dedup_forms.size).to eq(1)
+      expect(dedup_forms.first["method"].to_s.downcase).to eq("post")
+      expect(dedup_forms.first.at("[data-turbo-confirm]")["data-turbo-confirm"]).to eq(dedup_confirm)
       expect(dedup_confirm).to match(/review/i)
       expect(dedup_confirm).to match(/not(?:hing)? is merged automatically/i)
     end
