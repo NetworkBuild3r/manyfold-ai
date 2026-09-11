@@ -54,9 +54,6 @@
           <% if policy(@model).edit? %>
             <%= link_to Icon(icon: "pencil", label: translate("general.edit")), edit_model_path(@model), class: secondary_action_class, title: translate("general.edit"), aria: {label: translate("components.model_card.edit_button.label", name: @model.name)} %>
           <% end %>
-          <% if policy(@model).destroy? %>
-            <%= link_to Icon(icon: "trash", label: translate("general.delete")), model_path(@model), method: :delete, data: {confirm: t("models.destroy.confirm")}, class: secondary_action_class(visibility: "hidden lg:inline-flex"), aria: {label: translate("components.model_card.delete_button.label", name: @model.name)} %>
-          <% end %>
           <% if policy(@model).scan? %>
             <%= link_to Icon(icon: "radar", label: t(".rescan")), scan_model_path(@model), method: :post, class: secondary_action_class(visibility: "hidden lg:inline-flex"), title: t(".rescan") %>
             <% if @model.model_files.any?(&:is_archive?) %>
@@ -77,7 +74,7 @@
               <%= DropdownItem(icon: "radar", label: t(".rescan"), path: scan_model_path(@model), method: :post) if policy(@model).scan? %>
               <%= DropdownItem(icon: "flag", label: translate("general.report", type: ""), path: new_model_report_path(@model)) if SiteSettings.multiuser_enabled? %>
               <%= DropdownItem(icon: "files", label: t(".files_card.bulk_edit"), path: bulk_edit_model_model_files_path(@model)) if policy(@model).edit? %>
-              <%= DropdownItem(icon: "trash", label: translate("general.delete"), path: model_path(@model), method: :delete, confirm: t("models.destroy.confirm")) if policy(@model).destroy? %>
+              <%= DropdownItem(icon: "trash", label: t(".delete_model"), path: model_path(@model), method: :delete, confirm: t("models.destroy.confirm"), aria_label: t(".delete_model")) if policy(@model).destroy? %>
             </ul>
           </div>
         </div>
