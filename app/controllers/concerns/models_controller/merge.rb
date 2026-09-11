@@ -31,6 +31,12 @@ module ModelsController::Merge
     end
     if @target
       authorize @target
+      # INIT-025/SPEC-005: refuse path-parent merge without a same-pack signal (ADR D-4).
+      if path_parent_merge_ineligible?
+        flash[:alert] = t("models.merge.ineligible_parent")
+        head :unprocessable_content
+        return
+      end
       @target.merge!(@models)
       redirect_to @target, notice: t("models.merge.success")
     else
@@ -54,6 +60,10 @@ module ModelsController::Merge
       skip_policy_scope
       head :bad_request
     end
+  end
+
+  def path_parent_merge_ineligible?
+    @models.any? { |source| !Model::MergeEligibility.eligible?(source: source, target: @target) }
   end
 
   def get_merging_models
