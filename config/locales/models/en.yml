@@ -66,6 +66,7 @@ en:
     gallery:
       delete_confirm_archive: This image is inside the archive %{archive}. Removing it rewrites the archive and cannot be undone. The archive file itself will remain.
       delete_confirm_loose: This is a loose image on disk. Remove it from the model folder? This cannot be undone.
+      delete_image: Delete image
       no_images: No images for this model.
       source_archive: Inside archive
       source_loose: Loose file
@@ -166,6 +167,7 @@ en:
     scan:
       success: Model scan started
     show:
+      delete_model: Delete model
       dequeue: In queue
       download_preparing: Download is being prepared, please wait.
       download_requested: Download requested and will be ready soon, please wait.

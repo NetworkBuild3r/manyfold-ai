@@ -159,8 +159,8 @@ class Components::ImageCarousel < Components::Base
   end
 
   def button_overlay(image)
-    div class: "absolute bottom-0 left-0 right-0 bg-black/50 dark:bg-black/70 text-white px-3 py-2 text-sm hidden md:block" do
-      span class: "inline-flex items-center rounded-full bg-secondary-800/80 px-2 py-0.5 text-xs mr-2" do
+    div class: "absolute bottom-0 left-0 right-0 z-20 bg-black/50 dark:bg-black/70 text-white px-3 py-2 text-sm flex flex-wrap items-center gap-2" do
+      span class: "inline-flex items-center rounded-full bg-secondary-800/80 px-2 py-0.5 text-xs" do
         archive_image?(image) ? t("models.gallery.source_archive") : t("models.gallery.source_loose")
       end
       if !current_preview?(image) && can_set_preview?(image)
@@ -183,27 +183,23 @@ class Components::ImageCarousel < Components::Base
   end
 
   def delete_control(image)
-    if archive_image?(image)
-      confirm = translate("models.gallery.delete_confirm_archive", archive: image.model_file.filename, name: image.name)
-      form_with url: model_model_file_archive_entry_path(image.model, image.model_file, image),
-        method: :delete,
-        class: "inline-block",
-        data: {turbo_confirm: confirm, confirm: confirm} do |form|
-        form.button class: "inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded-full border border-danger text-white bg-transparent hover:bg-danger/20" do
-          Icon(icon: "trash", label: t("general.delete"))
-        end
-      end
+    confirm = if archive_image?(image)
+      translate("models.gallery.delete_confirm_archive", archive: image.model_file.filename, name: image.name)
     else
-      a href: model_model_file_path(image.model, image),
-        tabindex: 0,
-        class: "inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded-full border border-danger text-white bg-transparent hover:bg-danger/20",
-        data: {
-          method: "delete",
-          confirm: translate("models.gallery.delete_confirm_loose"),
-          turbo_method: "delete",
-          turbo_confirm: translate("models.gallery.delete_confirm_loose")
-        } do
-        Icon(icon: "trash", label: t("general.delete"))
+      translate("models.gallery.delete_confirm_loose")
+    end
+    url = if archive_image?(image)
+      model_model_file_archive_entry_path(image.model, image.model_file, image)
+    else
+      model_model_file_path(image.model, image)
+    end
+    form_with url: url,
+      method: :delete,
+      class: "inline-block",
+      data: {turbo_confirm: confirm, confirm: confirm} do |form|
+      form.button class: "inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded-full border border-danger text-white bg-transparent hover:bg-danger/20",
+        aria: {label: t("models.gallery.delete_image")} do
+        Icon(icon: "trash", label: t("models.gallery.delete_image"))
       end
     end
   end

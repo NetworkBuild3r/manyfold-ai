@@ -79,5 +79,12 @@ RSpec.describe Components::ImageCarousel, type: :component do
       expect(html).to include(I18n.t("models.gallery.delete_confirm_archive", archive: "pack.zip", name: entry.name))
       expect(html).to include(%(name="_method" value="delete"))
     end
+
+    it "deletes the current image file, not the model" do
+      html = render described_class.new(images: [preview, entry], browse: false)
+      expect(html).to include(I18n.t("models.gallery.delete_image"))
+      expect(html).to include(%(action="#{view_context.model_model_file_path(model, preview)}"))
+      expect(html).to include(%(action="#{view_context.model_model_file_archive_entry_path(model, entry.model_file, entry)}"))
+    end
   end
 end
