@@ -526,7 +526,11 @@ RSpec.describe "Users::Registrations" do
     end
 
     it "pins html data-theme and dark class from the overlay" do
-      User.with_role(:contributor).first.update!(interface_theme: "dark")
+      user = User.with_role(:contributor).first
+      user.update!(interface_theme: "dark")
+      # Warden test helpers keep the signed-in AR instance; layout reads that
+      # object, not a fresh find. Re-sign so html data-theme sees the overlay.
+      sign_in user.reload
       get "/users/edit"
       html = Nokogiri::HTML(response.body).at("html")
       expect(html["data-theme"]).to eq "dark"
