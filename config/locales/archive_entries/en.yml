@@ -5,6 +5,7 @@ en:
       preview_failed: Preview failed
       preview_loading: Generating object preview
     destroy:
+      confirm: Remove this archive member from %{archive}? This rewrites the archive and cannot be undone.
       not_found: Archive member was not found.
       success: Archive member removed.
       unsafe_path: That archive path is not allowed.

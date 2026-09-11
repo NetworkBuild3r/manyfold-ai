@@ -80,9 +80,12 @@ RSpec.describe Components::ImageCarousel, type: :component do
       expect(html).to include(%(name="_method" value="delete"))
     end
 
-    it "deletes the current image file, not the model" do
+    # INIT-027/SPEC-010 — overlay targets the shown file/archive member, not the model.
+    it "keeps overlay delete visible on small viewports and targets the shown file" do # rubocop:todo RSpec/ExampleLength, RSpec/MultipleExpectations
       html = render described_class.new(images: [preview, entry], browse: false)
+      expect(html).not_to include("hidden md:block")
       expect(html).to include(I18n.t("models.gallery.delete_image"))
+      expect(html).to include(I18n.t("models.gallery.delete_archive_member"))
       expect(html).to include(%(action="#{view_context.model_model_file_path(model, preview)}"))
       expect(html).to include(%(action="#{view_context.model_model_file_archive_entry_path(model, entry.model_file, entry)}"))
     end

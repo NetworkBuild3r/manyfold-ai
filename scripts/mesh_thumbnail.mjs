@@ -151,9 +151,9 @@ function projectTris (tris, w, h, cull = true) {
   const cp = Math.cos(pitch); const sp = Math.sin(pitch)
 
   function xform (p) {
-    let x = (p[0] - cx) * scale
-    let y = (p[1] - cy) * scale
-    let z = (p[2] - cz) * scale
+    const x = (p[0] - cx) * scale
+    const y = (p[1] - cy) * scale
+    const z = (p[2] - cz) * scale
     // yaw around Y
     const x1 = x * cyA + z * syA
     const z1 = -x * syA + z * cyA

@@ -46,10 +46,13 @@ module ApplicationHelper
     SiteSettings.site_icon.presence
   end
 
-  # Outline / secondary toolbar controls — explicit text so Bootstrap Icons (currentColor) stay visible in dark mode.
-  # Pass visibility: "hidden lg:inline-flex" for desktop-only toolbar icons.
+  # Toolbar / secondary outline — delegates to BaseButton::VARIANT_CLASSES["toolbar"] (byte-equal).
+  # Pass visibility: "hidden lg:inline-flex" to replace the leading display token only (SPEC-010 call sites).
   def secondary_action_class(visibility: "inline-flex")
-    "#{visibility} items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border border-secondary-300 dark:border-secondary-500 bg-white dark:bg-secondary-800 text-secondary-900 dark:text-secondary-100 hover:bg-secondary-50 dark:hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-primary-500 outline-none"
+    toolbar = Components::BaseButton::VARIANT_CLASSES.fetch("toolbar")
+    return toolbar if visibility == "inline-flex"
+
+    toolbar.sub(/\Ainline-flex\b/, visibility)
   end
 
   # Content / inline links. Prefer this helper for new link_to calls; bare <a> also
@@ -58,16 +61,8 @@ module ApplicationHelper
     "text-primary-700 dark:text-primary-400 no-underline hover:underline"
   end
 
-  def muted_link_class
-    "text-secondary-600 dark:text-secondary-400 no-underline hover:underline"
-  end
-
   def body_text_class
     "text-secondary-900 dark:text-secondary-100"
-  end
-
-  def muted_text_class
-    "text-secondary-600 dark:text-secondary-400"
   end
 
   def checkmark(value)
@@ -208,35 +203,36 @@ module ApplicationHelper
     input_row(form, attribute, type: :collection_select, collection: collection, value_method: value_method, text_method: text_method, **options)
   end
 
-  # Shared Tailwind class strings for submit/action buttons. Matches Components::BaseButton.
+  # INIT-027/SPEC-007 — form.submit / type=button class strings; DoButton/GoButton for links.
+  def button_class_for(variant)
+    variant_classes = Components::BaseButton::VARIANT_CLASSES.fetch(variant.to_s)
+    return variant_classes if variant_classes.start_with?(Components::BaseButton::BASE_CLASSES)
+
+    [Components::BaseButton::BASE_CLASSES, variant_classes].join(" ")
+  end
+
   def primary_button_class
-    [Components::BaseButton::BASE_CLASSES, Components::BaseButton::VARIANT_CLASSES["primary"]].join(" ")
+    button_class_for("primary")
   end
 
   def secondary_button_class
-    [Components::BaseButton::BASE_CLASSES, Components::BaseButton::VARIANT_CLASSES["secondary"]].join(" ")
+    button_class_for("secondary")
+  end
+
+  def input_class
+    Components::TextInputRow::INPUT_CLASS
   end
 
   def file_input_row(form, name, options = {})
-    input_class = "block w-full rounded-lg border border-secondary-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-primary-500 dark:border-secondary-600 dark:bg-secondary-800"
-    safe_join([
-      content_tag(:div) do
-        form.label(name, options[:label], class: "block text-sm font-medium text-secondary-700 dark:text-secondary-300")
-      end,
-      content_tag(:div, class: "mt-1") do
-        safe_join [
-          content_tag(:div, class: "flex gap-2 items-center") do
-            safe_join [
-              form.file_field(name, class: input_class),
-              options[:remove] ? form.check_box(:"remove_#{name}", class: "rounded border-secondary-300 text-primary-600 focus:ring-primary-500 h-4 w-4", autocomplete: "off") : nil,
-              options[:remove] ? form.label(:"remove_#{name}", Icon(icon: "trash", label: options[:remove_label]), class: "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border border-danger text-danger bg-transparent hover:bg-danger/10 focus-visible:ring-2 focus-visible:ring-primary-500 cursor-pointer") : nil
-            ].compact
-          end,
-          errors_for(form.object, name),
-          (options[:help] ? content_tag(:span, class: "text-sm text-secondary-500 dark:text-secondary-400 mt-1 block") { options[:help] } : nil)
-        ].compact
-      end
-    ])
+    render Components::FileInputRow.new(
+      form: form,
+      attribute: name,
+      label: options[:label],
+      help: options[:help],
+      remove: options[:remove],
+      remove_label: options[:remove_label],
+      options: options.except(:label, :help, :remove, :remove_label)
+    )
   end
 
   def nav_link(ico, text, path, options = {})
@@ -279,11 +275,10 @@ module ApplicationHelper
   end
 
   def errors_for(record, attribute)
-    return if record.nil? || attribute.nil?
-    return unless record.errors.include? attribute
-    content_tag(:div,
-      record.errors.full_messages_for(attribute).join("; "),
-      class: "text-danger text-sm mt-1 block")
+    messages = Components::InputRow.messages_for(record, attribute)
+    return if messages.blank?
+
+    content_tag(:div, messages, class: Components::InputRow::ERROR_CLASS)
   end
 
   def skip_link(target, text)

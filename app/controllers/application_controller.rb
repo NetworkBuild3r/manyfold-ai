@@ -16,7 +16,9 @@ class ApplicationController < ActionController::Base
   before_action :check_scan_status, if: -> { request.format.html? }
   before_action :restore_failed_search
 
-  protect_from_forgery with: :null_session, if: :is_api_request?
+  # INIT-027/SPEC-013 — HTML uses exception CSRF; Manyfold API Bearer skips verification.
+  protect_from_forgery with: :exception
+  skip_forgery_protection if: :is_api_request?
 
   rescue_from ScopedSearch::QueryNotSupported, with: -> {
     flash[:alert] = t("application.search_error")

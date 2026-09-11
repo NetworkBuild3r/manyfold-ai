@@ -1,9 +1,4 @@
 module ModelsHelper
-  # URL for models index with a given page, preserving filter/sort and fixed per_page.
-  def models_page_url(page, filter = nil, per_page: nil)
-    browse_page_url(:models_path, page, filter: filter, per_page: per_page)
-  end
-
   def group(files)
     return {} if files.empty?
     sections = {}
@@ -26,7 +21,8 @@ module ModelsHelper
   end
 
   def problems_including_files(model)
-    policy_scope(Problem).where(problematic: policy_scope(model.model_files) + [self])
+    # INIT-027/SPEC-003 — helper is not a Model; include the passed record.
+    policy_scope(Problem).where(problematic: policy_scope(model.model_files) + [model])
   end
 
   def license_select_options(selected: nil)

@@ -1,0 +1,93 @@
+<%# INIT-027/SPEC-009 — shared creators/collections index page chrome.
+    A browse-chrome class change for these two indexes is this file only.
+    Nouns stay on locals (und-1). Unassigned visibility is one flag (und-2).
+
+    Locals:
+      records, model_class, path_helper, empty_icon,
+      sentinel_prefix, grid_id, card_selector, storage_key_prefix,
+      show_unassigned, unassigned_partial,
+      no_results, clear_filters, skip_link_label,
+      end_message, error_message, loading_message, scroll_hint, back_to_top,
+      new_path, new_label, new_allowed %>
+<% records = local_assigns.fetch(:records)
+  model_class = local_assigns.fetch(:model_class)
+  path_helper = local_assigns.fetch(:path_helper)
+  empty_icon = local_assigns.fetch(:empty_icon)
+  sentinel_prefix = local_assigns.fetch(:sentinel_prefix)
+  grid_id = local_assigns.fetch(:grid_id)
+  card_selector = local_assigns.fetch(:card_selector)
+  storage_key_prefix = local_assigns.fetch(:storage_key_prefix)
+  show_unassigned = local_assigns.fetch(:show_unassigned)
+  unassigned_partial = local_assigns.fetch(:unassigned_partial)
+  no_results = local_assigns.fetch(:no_results)
+  clear_filters = local_assigns.fetch(:clear_filters)
+  skip_link_label = local_assigns.fetch(:skip_link_label)
+  end_message = local_assigns.fetch(:end_message)
+  error_message = local_assigns.fetch(:error_message)
+  loading_message = local_assigns.fetch(:loading_message)
+  scroll_hint = local_assigns.fetch(:scroll_hint)
+  back_to_top = local_assigns.fetch(:back_to_top)
+  new_path = local_assigns.fetch(:new_path)
+  new_label = local_assigns.fetch(:new_label)
+  new_allowed = local_assigns.fetch(:new_allowed)
+  index_path = public_send(path_helper)
+%>
+<% content_for :page_header do %>
+  <%= PageTitle title: model_class.model_name.human(count: 100), heading: false %>
+<% end %>
+
+<% content_for :browse_chrome do %>
+  <div class="flex flex-col gap-2.5 max-w-screen-2xl mx-auto">
+    <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+      <button type="button"
+              class="lg:hidden <%= button_class_for("secondary") %>"
+              data-action="click->filter-drawer#open"
+              aria-controls="sidebar"
+              aria-expanded="false">
+        <%= Icon icon: "funnel", label: "" %>
+        <span><%= t("layouts.card_list_page.filters_heading", default: "Filters") %></span>
+        <% if @filter&.any? %>
+          <span class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full bg-primary-600 text-white text-xs font-semibold"><%= active_filters_list(@filter).size %></span>
+        <% end %>
+      </button>
+      <div class="flex items-center gap-2 ml-auto">
+        <%= SortMenu(filter: @filter) %>
+      </div>
+    </div>
+    <%= render "application/active_filter_pills", filter: @filter, clear_path: index_path, clear_label: clear_filters if @filter&.any? %>
+  </div>
+<% end %>
+
+<% content_for :items do %>
+  <% if records.empty? && (@unassigned_count || 0) == 0 %>
+    <%= render "application/empty_state", message: no_results, icon: empty_icon do %>
+      <% if @filter&.any? %>
+        <p><%= GoButton(label: clear_filters, href: index_path, variant: "primary") %></p>
+      <% end %>
+    <% end %>
+  <% else %>
+    <div class="skip-link-container">
+      <%= skip_link "sidebar", skip_link_label %>
+      <%= render layout: "application/browse_infinite_grid", locals: {
+            sentinel_prefix: sentinel_prefix,
+            grid_id: grid_id,
+            card_selector: card_selector,
+            storage_key_prefix: storage_key_prefix,
+            aria_label: model_class.model_name.human(count: 100),
+            path_helper: path_helper,
+            end_message: end_message,
+            error_message: error_message,
+            loading_message: loading_message,
+            scroll_hint: scroll_hint,
+            back_to_top: back_to_top,
+            unassigned_html: (show_unassigned ? capture { render unassigned_partial } : nil)
+          } do %>
+        <%= render records %>
+      <% end %>
+    </div>
+  <% end %>
+<% end %>
+
+<% content_for :actions do %>
+  <%= GoButton(label: new_label, href: new_path, variant: "primary") if new_allowed %>
+<% end %>

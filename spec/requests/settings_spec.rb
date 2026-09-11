@@ -29,6 +29,21 @@ RSpec.describe "Settings" do
         get "/settings"
         expect(response).to have_http_status(:success)
       end
+
+      # INIT-027/SPEC-005
+      it "emits data-accent from validated_accent_color on the application layout" do
+        SiteSettings.accent_color = "purple"
+        get "/settings"
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include('data-accent="purple"')
+      end
+
+      it "keeps the accent help text that buttons and links follow the picker" do
+        get "/settings/appearance"
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include(I18n.t("settings.appearance.accent.help"))
+        expect(I18n.t("settings.appearance.accent.help")).to match(/buttons and links/i)
+      end
     end
 
     describe "PATCH /settings" do
@@ -83,6 +98,20 @@ RSpec.describe "Settings" do
 
         it "saves file ignore regexes" do
           expect(SiteSettings.model_ignored_files).to contain_exactly(/.*\.lys/, /.*\.lyt/)
+        end
+      end
+
+      # INIT-027/SPEC-005
+      context "with appearance accent params" do
+        it "persists a listed accent_color" do
+          patch "/settings", params: {appearance: {accent_color: "green"}}
+          expect(SiteSettings.accent_color).to eq "green"
+        end
+
+        it "rejects an unknown accent_color" do
+          SiteSettings.accent_color = "indigo"
+          patch "/settings", params: {appearance: {accent_color: "chartreuse"}}
+          expect(SiteSettings.accent_color).to eq "indigo"
         end
       end
     end

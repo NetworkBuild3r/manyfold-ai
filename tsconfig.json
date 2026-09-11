@@ -17,7 +17,6 @@
       "node",
       "webpack-env",
       "three",
-      "jquery",
       "tom-select",
       "i18n-js"
     ],

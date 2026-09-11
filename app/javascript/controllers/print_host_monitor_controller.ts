@@ -11,7 +11,7 @@ export const SNAPSHOT_ERROR_BACKOFF_MS = 5000
 // Single-flight snapshot + error backoff + hidden-tab pause (INIT-009/SPEC-003).
 export default class extends Controller {
   static targets = [
-    'status', 'snapshot', 'badge', 'connection', 'filename', 'percent',
+    'status', 'snapshot', 'connection', 'filename', 'percent',
     'layers', 'bar', 'eta', 'resin', 'uv'
   ]
 
@@ -25,8 +25,6 @@ export default class extends Controller {
   declare readonly hasStatusTarget: boolean
   declare readonly snapshotTarget: HTMLImageElement
   declare readonly hasSnapshotTarget: boolean
-  declare readonly hasBadgeTarget: boolean
-  declare readonly badgeTarget: HTMLElement
   declare readonly hasConnectionTarget: boolean
   declare readonly connectionTarget: HTMLElement
   declare readonly hasFilenameTarget: boolean

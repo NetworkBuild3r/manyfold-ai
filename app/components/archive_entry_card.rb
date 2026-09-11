@@ -4,7 +4,6 @@ class Components::ArchiveEntryCard < Components::Base
   include Phlex::Rails::Helpers::ImageTag
   include Phlex::Rails::Helpers::LinkTo
   include Phlex::Rails::Helpers::NumberToHumanSize
-  include Phlex::Rails::Helpers::FormWith
 
   register_value_helper :policy
 
@@ -54,7 +53,7 @@ class Components::ArchiveEntryCard < Components::Base
   def ready_preview
     image_tag preview_model_model_file_archive_entry_path(@file.model, @file, @entry),
       alt: @entry.name,
-      class: "archive-entry-preview-image absolute inset-0 w-full h-full object-cover",
+      class: "archive-entry-preview-image absolute inset-0 w-full h-full object-contain",
       loading: "lazy"
   end
 
@@ -139,21 +138,14 @@ class Components::ArchiveEntryCard < Components::Base
   end
 
   def set_preview_action
-    form_with model: @file.model, class: "inline" do |form|
-      form.hidden_field :preview_archive_entry_id, value: @entry.id
-      form.button t("models.file.set_as_preview"),
-        class: "text-xs text-primary-700 dark:text-primary-400 bg-transparent border-0 p-0 cursor-pointer hover:underline"
-    end
+    SetPreviewControl(model: @file.model, preview_archive_entry_id: @entry.id)
   end
 
   def delete_action
-    confirm = translate("models.gallery.delete_confirm_archive", archive: @file.filename, name: @entry.name)
-    form_with url: model_model_file_archive_entry_path(@file.model, @file, @entry),
-      method: :delete,
-      class: "inline",
-      data: {turbo_confirm: confirm, confirm: confirm} do |form|
-      form.button t("general.delete"),
-        class: "text-xs text-danger bg-transparent border-0 p-0 cursor-pointer hover:underline"
-    end
+    FileDeleteControl(
+      href: model_model_file_archive_entry_path(@file.model, @file, @entry),
+      confirm: translate("models.gallery.delete_confirm_archive", archive: @file.filename, name: @entry.name),
+      label: t("models.gallery.delete_archive_member")
+    )
   end
 end

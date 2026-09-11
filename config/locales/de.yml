@@ -418,22 +418,6 @@ de:
       open_button:
         label: Öffne Modell %{name}
         text: Öffnen
-    search_help:
-      boolean: Verwende "oder", um Modelle zu finden, die einem der Begriffe entsprechen.
-      federation: Suche nach einem beliebigen Fediverse-Benutzernamen, um ihm zu folgen.
-      filename: Du kannst innerhalb von Dateinamen suchen, indem du das Feld explizit angibst.
-      intro: 'Finden, was Du brauchst, mit unserer leistungsstarken Such-Syntax:'
-      more_details_html: Weitere Informationen findest du in der vollständigen Dokumentation für <a href="https://github.com/wvanbergen/scoped_search/wiki/Query-language">die Abfragesprache von scoped_search</a>.
-      negation: Um Begriffe auszuschließen, verwende  "not", "!" oder "-".
-      parentheses: Gruppiere Begriffe mit Klammern für komplexere logische Kombinationen.
-      path: Suche innerhalb von Modellordnerpfaden, indem du diese explizit angibst; verwende `~` für eine teilweise Übereinstimmung.
-      quotes: Um nach mehreren Wörtern in einem einzigen Begriff zu suchen, verwende Anführungszeichen; es werden dann nur Modelle mit dem exakten Text angezeigt.
-      simple: In der Standardeinstellung findet die Suche Modelle, die allen Begriffen entsprechen.
-      specific_fields: Du kannst nach Begriffen in einigen bestimmten Feldern suchen. Verwende "~", um einen Teil des Feldes zu finden; verwende "=" um das ganze Feld zu finden. Modellbeschreibungen und Bibliotheksnamen werden nur durchsucht, wenn du es explizit angibst
-      tag: Findet Modelle mit einem bestimmten Tag
-      title: Suchsyntax
-      unset: Verwende "set?", um abzufragen, ob ein bestimmtes Feld gesetzt ist, und füge "not" hinzu, um das Gegenteil festzustellen.
-      without_tag: Verwende "!tag", um Modelle ohne ein bestimmtes Tag zu finden
     sort_menu:
       name: Titel
       recent: Neueste
@@ -745,9 +729,6 @@ de:
     update:
       success: Gruppe erfolgreich aktualisiert.
   home:
-    activity:
-      created: hinzugefügt vor %{time}
-      updated: hinzugefügt vor %{time}
     browsing:
       content: Du kannst die Modelle erkunden, indem du auf die Links in der Menüleiste klickst, eine vollständige Liste durchsuchen und nach Tags filtern oder nach Sammlung oder Ersteller suchen. Oder gib einfach in das Suchfeld ein, was du suchst!
       manual_link: Benutzerhandbuch
@@ -763,7 +744,6 @@ de:
       users_v_creators: Im Gegensatz zu vielen Fediverse-Plattformen hast du bei Manyfold nicht nur ein Handle. Jedes Modell, jeder Ersteller und jede Kollektion hat sein eigenes Handle, dem die Leute folgen können, ebenso wie das Konto, mit dem du dich anmeldest. Das bedeutet, dass du mehr als ein Ersteller-profil verwalten kannst!
     index:
       no_activities: Im Moment gibt es keine Aktivitäten zu sehen.
-      open_search_help: Such-Syntax
       recent_activity: Neuste Aktivitäten
       search:
         placeholder: Wonach suchen Sie?

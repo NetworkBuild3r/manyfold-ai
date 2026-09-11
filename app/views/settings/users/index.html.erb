@@ -2,7 +2,7 @@
 
 <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
   <p class="text-lg text-secondary-600 dark:text-secondary-400 mb-0"><%= t(".description") %></p>
-  <%= link_to t(".new"), new_settings_user_path, class: "inline-flex items-center px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 no-underline" if policy(:user).new? %>
+  <%= GoButton(label: t(".new"), href: new_settings_user_path, variant: "primary") if policy(:user).new? %>
 </div>
 
 <%= paginate @users %>
@@ -37,7 +37,7 @@
       <%= content_tag :td, user.federails_actor&.at_address, class: "px-4 py-2" if SiteSettings.federation_enabled? %>
       <%= content_tag :td, user.created_at, class: "px-4 py-2" %>
       <td class="px-4 py-2"><%= user.roles&.map(&:name)&.join(", ") %></td>
-      <td class="px-4 py-2"><%= link_to safe_join([Icon(icon: "search", label: t(".view")), t(".view")], " "), settings_user_path(user), class: "inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-secondary-300 bg-white dark:border-secondary-600 dark:bg-secondary-800 text-secondary-700 hover:bg-secondary-50 dark:hover:bg-secondary-700 no-underline text-sm" %></td>
+      <td class="px-4 py-2"><%= GoButton(icon: "search", label: t(".view"), href: settings_user_path(user), variant: "secondary") %></td>
     </tr>
   <% end %>
   </tbody>

@@ -19,14 +19,19 @@ export default class extends Controller {
     const trigger = event.currentTarget as HTMLElement
     this.lastFocused = trigger ?? document.activeElement as HTMLElement | null
     const byId = trigger?.dataset?.dialogId
-    const dialog = (byId != null ? document.getElementById(byId) : null) as HTMLDialogElement | null
-      ?? (this.hasDialogTarget ? this.dialogTarget : null)
+    const dialog = ((byId != null ? document.getElementById(byId) : null) as HTMLDialogElement | null) ??
+      (this.hasDialogTarget ? this.dialogTarget : null)
     if (dialog == null) return
     this.activeDialog = dialog
     dialog.showModal()
     dialog.addEventListener('click', this.boundBackdropClick)
     dialog.addEventListener('keydown', this.boundKeydown)
     this.focusFirstFocusable()
+  }
+
+  // INIT-027/SPEC-011 — Turbo morphs drop the controller; drop listeners added in open().
+  disconnect (): void {
+    this.close()
   }
 
   close (event?: Event): void {

@@ -6,7 +6,6 @@
      data-controller="printer-discover"
      data-printer-discover-url-value="<%= discover_printers_path %>">
   <div class="space-y-2">
-    <h1 class="font-display font-bold text-3xl text-secondary-900 dark:text-surface m-0"><%= t(".heading") %></h1>
     <p class="text-sm text-secondary-600 dark:text-secondary-300 m-0 max-w-3xl"><%= t(".subtitle") %></p>
   </div>
 
@@ -25,7 +24,7 @@
     </div>
   </section>
 
-  <section class="rounded-2xl border border-[#332623] bg-[#1a1311] p-6 space-y-5">
+  <section class="rounded-2xl border border-secondary-200 dark:border-secondary-800 bg-surface dark:bg-surface-dark p-6 space-y-5">
     <p class="font-mono text-[11px] text-secondary-500 uppercase tracking-wide m-0"><%= t(".manual_heading") %></p>
     <%= form_with model: @printer, url: printers_path, scope: :printer, class: "space-y-5" do |form| %>
       <% if @printer.errors.any? %>
@@ -41,17 +40,17 @@
         <div class="space-y-1.5">
           <%= form.label :name, t(".name_label"), class: "text-[11px] font-medium text-secondary-500 uppercase" %>
           <%= form.text_field :name, placeholder: t(".name_placeholder"),
-                class: "w-full bg-[#261c1a] border border-[#332623] rounded-lg px-4 py-3 font-mono text-[13px] text-surface placeholder:text-secondary-500" %>
+                class: "w-full bg-white dark:bg-secondary-950 border border-secondary-200 dark:border-secondary-800 rounded-lg px-4 py-3 font-mono text-[13px] text-secondary-900 dark:text-surface placeholder:text-secondary-500" %>
         </div>
         <div class="space-y-1.5">
           <%= form.label :endpoint, t(".endpoint_label"), class: "text-[11px] font-medium text-secondary-500 uppercase" %>
           <%= form.text_field :endpoint, placeholder: t(".endpoint_placeholder"),
-                class: "w-full bg-[#261c1a] border border-[#332623] rounded-lg px-4 py-3 font-mono text-[13px] text-surface placeholder:text-secondary-500" %>
+                class: "w-full bg-white dark:bg-secondary-950 border border-secondary-200 dark:border-secondary-800 rounded-lg px-4 py-3 font-mono text-[13px] text-secondary-900 dark:text-surface placeholder:text-secondary-500" %>
         </div>
         <div class="space-y-1.5">
           <%= form.label :mainboard_id, t(".mainboard_label"), class: "text-[11px] font-medium text-secondary-500 uppercase" %>
           <%= form.text_field :mainboard_id, placeholder: t(".mainboard_placeholder"),
-                class: "w-full bg-[#261c1a] border border-[#332623] rounded-lg px-4 py-3 font-mono text-[13px] text-surface placeholder:text-secondary-500" %>
+                class: "w-full bg-white dark:bg-secondary-950 border border-secondary-200 dark:border-secondary-800 rounded-lg px-4 py-3 font-mono text-[13px] text-secondary-900 dark:text-surface placeholder:text-secondary-500" %>
         </div>
       </div>
       <%= form.submit t(".save"),

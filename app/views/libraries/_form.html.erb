@@ -31,21 +31,24 @@
     <div>
       <%= form.label :tag_regex, class: "block text-sm font-medium text-secondary-700 dark:text-secondary-300" %>
     </div>
-    <div id="newinput" class="space-y-2">
-      <% @library.tag_regex.each do |reg| %>
-        <div class="tag-regex-row flex gap-2 items-center">
-          <%= text_field_tag "library[tag_regex][]", reg, class: "block flex-1 rounded-lg border border-secondary-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-primary-500 dark:border-secondary-600 dark:bg-secondary-800", autocomplete: "off" %>
-          <%= link_to Icon(icon: "trash", label: t("general.delete")), "", onClick: "jQuery(this).parents('.tag-regex-row')[0].remove(); return false;", class: "inline-flex items-center px-3 py-2 rounded-lg border border-danger text-danger hover:bg-danger/10 focus-visible:ring-2 focus-visible:ring-primary-500 shrink-0" %>
-        </div>
+    <%# INIT-027/SPEC-003 — cocooned add/remove; keep library[tag_regex][] (not nested attrs). %>
+    <div class="space-y-2">
+      <%= cocooned_container id: "cocooned-tag-regex" do %>
+        <% Array(@library.tag_regex).each do |reg| %>
+          <%= cocooned_item class: "tag-regex-row flex gap-2 items-center" do %>
+            <%= text_field_tag "library[tag_regex][]", reg, class: "block flex-1 rounded-lg border border-secondary-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-primary-500 dark:border-secondary-600 dark:bg-secondary-800", autocomplete: "off" %>
+            <%= link_to Icon(icon: "trash", label: t("general.delete")), "#", class: "cocooned-remove inline-flex items-center px-3 py-2 rounded-lg border border-danger text-danger hover:bg-danger/10 focus-visible:ring-2 focus-visible:ring-primary-500 shrink-0", data: {cocooned_trigger: "remove", cocooned_persisted: "false"} %>
+          <% end %>
+        <% end %>
       <% end %>
-      <div id="regexclone" class="hidden">
-        <div class="tag-regex-row flex gap-2 items-center">
+      <template data-name="template-tag-regex">
+        <div class="cocooned-item dynamic tag-regex-row flex gap-2 items-center" data-cocooned-item="true">
           <%= text_field_tag "library[tag_regex][]", "", class: "block flex-1 rounded-lg border border-secondary-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-primary-500 dark:border-secondary-600 dark:bg-secondary-800", autocomplete: "off" %>
-          <%= link_to Icon(icon: "trash", label: t("general.delete")), "", onClick: "jQuery(this).parents('.tag-regex-row')[0].remove(); return false;", class: "inline-flex items-center px-3 py-2 rounded-lg border border-danger text-danger hover:bg-danger/10 focus-visible:ring-2 focus-visible:ring-primary-500 shrink-0" %>
+          <%= link_to Icon(icon: "trash", label: t("general.delete")), "#", class: "cocooned-remove inline-flex items-center px-3 py-2 rounded-lg border border-danger text-danger hover:bg-danger/10 focus-visible:ring-2 focus-visible:ring-primary-500 shrink-0", data: {cocooned_trigger: "remove", cocooned_persisted: "false"} %>
         </div>
-      </div>
+      </template>
       <div class="mt-2">
-        <%= link_to Icon(icon: "plus-square-dotted", label: t(".add_line")), "", onClick: "$('#newinput').append($('#regexclone').html()); return false;", class: "inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 no-underline" %>
+        <%= link_to Icon(icon: "plus-square-dotted", label: t(".add_line")), "#", class: "cocooned-add inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 no-underline", data: {cocooned_trigger: "add", association: "tag_regex", template: "template-tag-regex", association_insertion_node: "#cocooned-tag-regex", association_insertion_method: "append"} %>
         <span id="libraryRegexHelp" class="text-sm text-secondary-500 dark:text-secondary-400 block mt-1"><%= t(".tag_regex.help") %></span>
       </div>
     </div>
@@ -53,17 +56,10 @@
 
   <div class="flex flex-wrap items-center gap-2 mt-4">
     <%= form.submit translate("general.save"), class: "inline-flex items-center px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500" %>
-
-    <% if @library.persisted? %>
-      <%= if policy(@library).destroy?
-            link_to safe_join([Icon(icon: "trash", label: t("general.delete")), t("general.delete")], " "),
-              library_path(@library.public_id),
-              {
-                method: :delete,
-                class: "ml-auto inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-danger text-danger hover:bg-danger/10 focus-visible:ring-2 focus-visible:ring-primary-500 no-underline",
-                data: {confirm: translate(".confirm_destroy.help", count: @library.models.count)}
-              }
-          end %>
-    <% end %>
+  </div>
+<% end %>
+<% if @library.persisted? && policy(@library).destroy? %>
+  <div class="max-w-2xl mx-auto flex justify-end mt-2">
+    <%= DoButton(icon: "trash", label: t("general.delete"), href: library_path(@library.public_id), method: :delete, variant: "outline-danger", confirm: translate(".confirm_destroy.help", count: @library.models.count)) %>
   </div>
 <% end %>

@@ -8,6 +8,7 @@ class CreatorsController < ApplicationController
   before_action -> { set_indexable @creator }, except: [:index, :new, :create]
 
   def index
+    # INIT-027/SPEC-009 — tag/count helpers in BrowseListable; filter apply stays here.
     @creators = policy_scope(Creator)
     @models = policy_scope(Model).all
     if @filter.any?
@@ -15,17 +16,15 @@ class CreatorsController < ApplicationController
       @creators = @filter.creators(@creators, @models)
     end
 
-    @tags, @unrelated_tag_count = generate_tag_list(@models, @filter.tags)
-    @tags, @kv_tags = split_key_value_tags(@tags)
-    @unrelated_tag_count = nil unless @filter.any?
+    prepare_browse_index_tags
 
     @creators = apply_sort_order(@creators)
     @creators = @creators.includes(:links, :collections)
     @creators = prepare_browse_page(@creators)
 
     ids = @creators.map(&:id)
-    @model_counts = ids.empty? ? {} : policy_scope(Model).where(creator_id: ids).group(:creator_id).count
-    @collection_counts = ids.empty? ? {} : policy_scope(Collection).where(creator_id: ids).group(:creator_id).count
+    @model_counts = grouped_policy_count(policy_scope(Model), :creator_id, ids)
+    @collection_counts = grouped_policy_count(policy_scope(Collection), :creator_id, ids)
 
     @filter_in_place = true
     @unassigned_count = policy_scope(Model).where(creator: nil).count

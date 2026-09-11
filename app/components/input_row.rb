@@ -1,6 +1,16 @@
 # frozen_string_literal: true
 
 class Components::InputRow < Components::Base
+  # INIT-027/SPEC-006 — single errors_for implementation (helper delegates here).
+  ERROR_CLASS = "text-danger text-sm mt-1"
+
+  def self.messages_for(object, attribute)
+    return if object.nil? || attribute.nil?
+    return unless object.errors.include? attribute
+
+    object.errors.full_messages_for(attribute).join("; ")
+  end
+
   def initialize(form:, attribute:, label:, help: nil, options: {})
     @form = form
     @attribute = attribute
@@ -49,10 +59,9 @@ class Components::InputRow < Components::Base
   end
 
   def errors_for(object, attribute)
-    return if object.nil? || attribute.nil?
-    return unless object.errors.include? attribute
-    div(class: "text-danger text-sm mt-1") do
-      object.errors.full_messages_for(attribute).join("; ")
-    end
+    messages = self.class.messages_for(object, attribute)
+    return if messages.blank?
+
+    div(class: ERROR_CLASS) { messages }
   end
 end

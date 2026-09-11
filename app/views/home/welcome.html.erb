@@ -5,7 +5,7 @@
     <%= t ".lead" %>
   </p>
 
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-4" data-masonry='{"percentPosition": true }'>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
     <%= content_tag(:article, class: "mb-4") { render "browsing" } %>
     <%= content_tag(:article, class: "mb-4") { render "uploading" } if current_user&.is_contributor? %>
     <%= content_tag(:article, class: "mb-4") { render "publishing" } if current_user&.is_contributor? %>

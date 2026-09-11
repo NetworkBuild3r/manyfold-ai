@@ -42,7 +42,12 @@ export default class extends Controller {
       }
     } catch (error) {
       if (this.hasResultsTarget) {
-        this.resultsTarget.innerHTML = `<p class="text-sm text-danger">${String(error)}</p>`
+        // INIT-027/SPEC-011 — never interpolate errors into innerHTML.
+        this.resultsTarget.replaceChildren()
+        const p = document.createElement('p')
+        p.className = 'text-sm text-danger'
+        p.textContent = String(error)
+        this.resultsTarget.appendChild(p)
       }
     } finally {
       if (this.hasButtonTarget) {

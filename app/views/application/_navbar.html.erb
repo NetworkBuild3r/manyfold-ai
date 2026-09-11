@@ -91,7 +91,7 @@
                     } do
                     safe_join [Icon(icon: "plus-circle"), t(".add_models")], " "
                   end %>
-              <ul class="absolute right-0 mt-1 min-w-[10rem] py-1 bg-surface dark:bg-secondary-800 rounded-lg shadow-lg border border-secondary-200 dark:border-secondary-600 z-50" role="menu" id="add-content-menu" data-dropdown-target="menu">
+              <ul class="<%= Components::DropdownMenu.panel_class(align: :right) %>" role="menu" id="add-content-menu" data-dropdown-target="menu">
                 <%= DropdownItem label: t(".upload"), path: new_model_path %>
                 <%= DropdownItem label: t(".import_url"), path: new_import_path %>
               </ul>
@@ -109,7 +109,7 @@
                   <%= Icon(icon: "radar", label: t(".scan")) %>
                   <%= t ".scan" %>
                 </button>
-                <ul class="absolute right-0 mt-1 min-w-[10rem] py-1 bg-surface dark:bg-secondary-800 rounded-lg shadow-lg border border-secondary-200 dark:border-secondary-600 z-50" data-dropdown-target="menu" role="menu">
+                <ul class="<%= Components::DropdownMenu.panel_class(align: :right) %>" data-dropdown-target="menu" role="menu">
                   <%= DropdownItem label: t(".scan_changes.label"), path: scans_path, method: :post, confirm: translate(".scan_changes.confirm") %>
                   <%= DropdownItem label: t(".check_existing.label"), path: scans_path(type: :check), method: :post, confirm: translate(".check_existing.confirm") %>
                   <%= DropdownItem label: t(".check_results.label"), path: scans_path({type: :check}.merge(@filter.to_params)), method: :post, confirm: translate(".check_results.confirm") if @filter&.any? %>
@@ -169,7 +169,7 @@
                     } do %>
                 <%= Icon(icon: "person", label: t(".account")) %>
               <% end %>
-              <ul class="absolute right-0 left-auto mt-1 min-w-[10rem] py-1 bg-surface dark:bg-secondary-800 rounded-lg shadow-lg border border-secondary-200 dark:border-secondary-600 z-50" id="preferences-menu" data-dropdown-target="menu" role="menu">
+              <ul class="<%= Components::DropdownMenu.panel_class(align: :right) %> left-auto" id="preferences-menu" data-dropdown-target="menu" role="menu">
                 <%= DropdownItem label: t("devise.registrations.edit.title"), path: edit_user_registration_path %>
                 <%= DropdownDivider() %>
                 <%= DropdownHeader text: t(".my_stuff") %>
@@ -203,7 +203,7 @@
         <% end %>
         <%- if SiteSettings.multiuser_enabled? && current_user.nil? %>
           <li class="flex" role="presentation">
-            <%= nav_link "box-arrow-in-right", t(".log_in"), new_user_session_path, title: translate(".log_in"), nofollow: true, style: "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-400" %>
+            <%= nav_link "box-arrow-in-right", t(".log_in"), new_user_session_path, title: translate(".log_in"), nofollow: true, style: "#{primary_button_class} no-underline" %>
           </li>
         <%- end %>
       </ul>

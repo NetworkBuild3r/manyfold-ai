@@ -15,7 +15,7 @@ en:
         label: Show models by %{name}
         remote_label: Show local models by %{name}
     destroy:
-      confirm: Are you sure you want to remove this item? No files will be affected.
+      confirm: Are you sure you want to delete this creator? No files will be affected.
       success: Creator deleted!
     form:
       avatar:

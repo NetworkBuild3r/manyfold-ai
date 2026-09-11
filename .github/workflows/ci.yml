@@ -51,18 +51,7 @@ jobs:
             -v "${{ github.workspace }}:/workspace" \
             -w /workspace \
             ${{ env.CI_IMAGE }}:latest \
-            bash -c "
-              corepack enable
-              bundle config set --local path vendor/bundle
-              bundle install
-              yarn install
-              yarn build:css:tailwind
-              bundle exec rake rubocop
-              bundle exec erb_lint --lint-all
-              yarn run lint:ts
-              yarn typecheck
-              bundle exec i18n-tasks health -l en
-            "
+            bash script/ci-lint.sh
 
   test:
     if: github.triggering_actor != 'allcontributors[bot]'

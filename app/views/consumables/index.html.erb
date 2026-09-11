@@ -40,10 +40,10 @@
 
   <section class="space-y-4">
     <h2 class="font-mono text-[11px] uppercase tracking-wide text-secondary-500 m-0"><%= t(".maintenance_heading") %></h2>
-    <div class="rounded-2xl border border-[#332623] bg-[#1a1311] overflow-x-auto">
+    <div class="rounded-2xl border border-secondary-200 dark:border-secondary-800 bg-surface dark:bg-surface-dark overflow-x-auto">
       <table class="w-full text-left border-collapse min-w-[720px]">
         <thead>
-          <tr class="border-b border-[#332623]">
+          <tr class="border-b border-secondary-200 dark:border-secondary-800">
             <th class="px-4 py-3 font-mono text-[11px] uppercase tracking-wide text-secondary-500 font-medium"><%= t(".col.printer") %></th>
             <th class="px-4 py-3 font-mono text-[11px] uppercase tracking-wide text-secondary-500 font-medium"><%= t(".col.fep") %></th>
             <th class="px-4 py-3 font-mono text-[11px] uppercase tracking-wide text-secondary-500 font-medium"><%= t(".col.lcd") %></th>
@@ -56,12 +56,12 @@
           <% @printers.each do |printer| %>
             <% fep_level = PrintConsumablesHelper.fep_level(printer.fep_cycles) %>
             <% lcd_level = PrintConsumablesHelper.lcd_level(printer.lcd_hours) %>
-            <tr class="border-b border-[#332623] last:border-0">
-              <td class="px-4 py-3 text-sm text-surface font-medium">
-                <%= link_to printer.name, printer_path(printer), class: "text-surface no-underline hover:underline" %>
+            <tr class="border-b border-secondary-200 dark:border-secondary-800 last:border-0">
+              <td class="px-4 py-3 text-sm text-secondary-900 dark:text-surface font-medium">
+                <%= link_to printer.name, printer_path(printer), class: "text-secondary-900 dark:text-surface no-underline hover:underline" %>
               </td>
               <td class="px-4 py-3 text-sm">
-                <span class="font-mono text-secondary-200">
+                <span class="font-mono text-secondary-700 dark:text-secondary-200">
                   <%= printer.fep_cycles.to_i %> / <%= PrintConsumablesHelper::FEP_LIFE_CYCLES %>
                 </span>
                 <% if fep_level != :optimal %>
@@ -72,7 +72,7 @@
                 <% end %>
               </td>
               <td class="px-4 py-3 text-sm">
-                <span class="font-mono text-secondary-200">
+                <span class="font-mono text-secondary-700 dark:text-secondary-200">
                   <%= number_with_precision(printer.lcd_hours.to_f, precision: 0, delimiter: ",") %> / <%= number_with_delimiter(PrintConsumablesHelper::LCD_LIFE_HOURS) %>
                 </span>
                 <% if lcd_level == :danger %>

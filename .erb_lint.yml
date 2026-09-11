@@ -8,7 +8,7 @@ exclude:
 linters:
   # Non-default linters
   PartialInstanceVariable:
-    enabled: false # TODO
+    enabled: false # INIT-027/SPEC-002: leave off — not cheap; instance vars in partials are still in use
   DeprecatedClasses:
     enabled: true
   ErbSafety:
@@ -25,11 +25,11 @@ linters:
         Enabled: false # ERB tags start at unusual indentations
       Layout/TrailingEmptyLines:
         Enabled: false # We don't need a newline inside every ERB tag!
-      # Temporarily disabled while we fix
+      # INIT-027/SPEC-002: keep off — ERB still has unused assigns / nested ternaries; not this spec
       Lint/UselessAssignment:
-        Enabled: false # TODO
+        Enabled: false
       Style/NestedTernaryOperator:
-        Enabled: false # TODO
+        Enabled: false
       Rails/OutputSafety:
         Exclude:
           - app/views/layouts/application.html.erb

@@ -42,12 +42,12 @@
       <%= render "tags_edit", form: form, name: :add_tags, label: translate(".add_tags"), tags: @available_tags || [] %>
       <%= render "tags_edit", form: form, name: :remove_tags, label: translate(".remove_tags"), tags: [] %>
 
-      <% if SiteSettings.show_libraries || current_user.is_administrator? %>
+      <% if SiteSettings.show_libraries || policy(Library).index? %>
         <div>
           <%= form.label :new_library_id, class: "block text-sm font-medium text-secondary-700 dark:text-secondary-300" %>
         </div>
         <div>
-          <%= form.collection_select :new_library_id, policy_scope(Library).all, :id, :name, {include_blank: t("general.no_change")}, {class: "block w-full rounded-lg border border-secondary-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-primary-500 dark:border-secondary-600 dark:bg-secondary-800"} %>
+          <%= form.collection_select :new_library_id, policy_scope(Library).all, :id, :name, {include_blank: t("general.no_change")}, {class: input_class} %>
         </div>
       <% end %>
 
@@ -61,7 +61,7 @@
       <%= form.hidden_field :library, value: @filter.parameter(:library) if @filter.filtering_by?(:library) %>
       <%= form.hidden_field :creator, value: @filter.parameter(:creator) if @filter.filtering_by?(:creator) %>
       <div class="flex flex-wrap items-center gap-2">
-        <%= form.submit translate(".submit"), class: "inline-flex items-center px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500" %>
+        <%= form.submit translate(".submit"), class: primary_button_class %>
         <%= form.submit translate(".update_all.label", count: @models.total_count), class: "inline-flex items-center px-4 py-2 rounded-lg border border-secondary-300 dark:border-secondary-600 bg-white dark:bg-secondary-800 text-secondary-700 hover:bg-secondary-50 dark:hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-primary-500", name: "update_all", data: {confirm: translate(".update_all.confirm", count: @models.total_count)} %>
         <%= form.submit translate(".merge"), class: "inline-flex items-center px-4 py-2 rounded-lg border border-warning text-warning hover:bg-warning/10 focus-visible:ring-2 focus-visible:ring-primary-500", formaction: merge_models_path, formmethod: :post, name: "merge" %>
       </div>

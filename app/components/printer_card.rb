@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 # Fleet card — status arrives async via printer-fleet Stimulus (INIT-009/SPEC-004).
+# Surfaces: INIT-027/SPEC-008 — @theme secondary/surface, no raw hex.
 class Components::PrinterCard < Components::Base
   include Phlex::Rails::Helpers::LinkTo
   include Phlex::Rails::Helpers::ImageTag
@@ -31,7 +32,7 @@ class Components::PrinterCard < Components::Base
   private
 
   def card_attrs
-    attrs = {class: "bg-[#1a1311] border border-[#332623] rounded-2xl overflow-hidden flex flex-col"}
+    attrs = {class: "bg-surface dark:bg-surface-dark border border-secondary-200 dark:border-secondary-800 rounded-2xl overflow-hidden flex flex-col"}
     return attrs if @status_url.blank?
 
     attrs.merge(
@@ -128,7 +129,7 @@ class Components::PrinterCard < Components::Base
 
   def title_row
     div(class: "flex items-center justify-between gap-3") do
-      h2(class: "text-lg font-semibold text-surface m-0 truncate") { @printer.name }
+      h2(class: "text-lg font-semibold text-secondary-900 dark:text-surface m-0 truncate") { @printer.name }
       if async_status?
         span(
           class: badge_wrapper_class("idle"),
@@ -146,10 +147,10 @@ class Components::PrinterCard < Components::Base
   def job_meta
     div(class: "flex flex-col gap-2") do
       p(class: "font-mono text-[11px] text-secondary-500 m-0 uppercase tracking-wide") { meta_line }
-      summary_attrs = {class: "text-sm m-0 #{offline? ? "text-danger" : "text-secondary-300"}"}
+      summary_attrs = {class: "text-sm m-0 #{offline? ? "text-danger" : "text-secondary-600 dark:text-secondary-300"}"}
       summary_attrs[:data] = {printer_fleet_target: "summary"} if async_status?
       p(**summary_attrs) { async_status? ? t("printers.card.no_active_job") : job_summary }
-      div(class: "bg-[#2f2723] h-1.5 rounded-full overflow-hidden") do
+      div(class: "bg-secondary-200 dark:bg-secondary-800 h-1.5 rounded-full overflow-hidden") do
         bar_attrs = {class: "bg-primary-600 h-full", style: "width: #{async_status? ? 0 : progress_pct}%"}
         bar_attrs[:data] = {printer_fleet_target: "bar"} if async_status?
         div(**bar_attrs)

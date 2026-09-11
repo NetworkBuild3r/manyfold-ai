@@ -18,7 +18,7 @@
       <%= form.select :library,
             policy_scope(Library).all.map { |lib| [library_select_title(lib), lib.to_param] },
             {selected: Library.default.to_param},
-            {class: "block w-full rounded-lg border border-secondary-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-primary-500 dark:border-secondary-600 dark:bg-secondary-800"} %>
+            {class: input_class} %>
       <span class="text-sm text-secondary-500 dark:text-secondary-400 block mt-1"><%= t ".library.help" %></span>
     </div>
   <% end %>
@@ -64,10 +64,10 @@
           [translate("settings.multiuser.default_viewer_role.options.public"), "public"]
         ],
           {selected: SiteSettings.default_viewer_role},
-          {class: "block w-full rounded-lg border border-secondary-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-primary-500 dark:border-secondary-600 dark:bg-secondary-800"} %>
+          {class: input_class} %>
   </div>
 
   <div class="mt-4">
-    <%= submit_tag translate(".submit"), class: "inline-flex items-center px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500" %>
+    <%= submit_tag translate(".submit"), class: primary_button_class %>
   </div>
 <% end %>

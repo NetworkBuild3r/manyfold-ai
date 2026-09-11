@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 # Resin inventory card with adjust-level form (INIT-008/SPEC-007 · Figma 23:1635).
+# Surfaces: INIT-027/SPEC-008.
 class Components::ResinBottleCard < Components::Base
   include Phlex::Rails::Helpers::FormWith
   include Phlex::Rails::Helpers::NumberWithPrecision
@@ -12,9 +13,9 @@ class Components::ResinBottleCard < Components::Base
   end
 
   def view_template
-    article(class: "rounded-2xl border border-[#332623] bg-[#1a1311] p-5 flex flex-col gap-4") do
+    article(class: "rounded-2xl border border-secondary-200 dark:border-secondary-800 bg-surface dark:bg-surface-dark p-5 flex flex-col gap-4") do
       div(class: "flex items-start justify-between gap-3") do
-        h3(class: "text-lg font-semibold text-surface m-0") { bottle_title }
+        h3(class: "text-lg font-semibold text-secondary-900 dark:text-surface m-0") { bottle_title }
         if policy(@bottle).update?
           button(
             type: "button",
@@ -25,14 +26,14 @@ class Components::ResinBottleCard < Components::Base
       end
 
       div(class: "space-y-2") do
-        div(class: "bg-[#2f2723] h-2 rounded-full overflow-hidden") do
+        div(class: "bg-secondary-200 dark:bg-secondary-800 h-2 rounded-full overflow-hidden") do
           div(
             class: "h-full rounded-full #{low? ? "bg-warning" : "bg-primary-600"}",
             style: "width: #{fill_pct}%"
           )
         end
         div(class: "flex items-baseline justify-between gap-2") do
-          p(class: "font-mono text-sm text-surface m-0") do
+          p(class: "font-mono text-sm text-secondary-900 dark:text-surface m-0") do
             plain t("consumables.resin.volume",
               remaining: format_ml(@bottle.remaining_ml),
               capacity: format_ml(@bottle.capacity_ml))
@@ -51,7 +52,7 @@ class Components::ResinBottleCard < Components::Base
       end
 
       if policy(@bottle).update?
-        div(class: "hidden pt-2 border-t border-[#332623]", data: {resin_adjust_target: "form"}) do
+        div(class: "hidden pt-2 border-t border-secondary-200 dark:border-secondary-800", data: {resin_adjust_target: "form"}) do
           form_with model: @bottle, url: resin_bottle_path(@bottle), method: :patch,
             class: "flex flex-wrap items-end gap-3" do |f|
             div(class: "grow min-w-[8rem]") do
@@ -62,7 +63,7 @@ class Components::ResinBottleCard < Components::Base
                 step: 1,
                 min: 0,
                 max: @bottle.capacity_ml.to_f,
-                class: "w-full rounded-lg border border-[#332623] bg-[#120f0d] text-surface px-3 py-2 text-sm font-mono"
+                class: "w-full rounded-lg border border-secondary-300 dark:border-secondary-700 bg-white dark:bg-secondary-950 text-secondary-900 dark:text-surface px-3 py-2 text-sm font-mono"
             end
             f.submit t("consumables.resin.save"),
               class: "inline-flex items-center justify-center px-4 py-2 rounded-lg bg-primary-600 text-white text-sm font-medium cursor-pointer"

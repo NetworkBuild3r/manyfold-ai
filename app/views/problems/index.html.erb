@@ -16,7 +16,7 @@
     <p><%= link_to Model.model_name.human(count: 100), models_path, class: "#{primary_button_class} no-underline" %></p>
   <% end %>
 <% else %>
-  <% bulk_resolve_class = [Components::BaseButton::BASE_CLASSES, (@duplicate_list ? Components::BaseButton::VARIANT_CLASSES["outline-danger"] : Components::BaseButton::VARIANT_CLASSES["danger"])].join(" ") %>
+  <% bulk_resolve_class = button_class_for(@duplicate_list ? "outline-danger" : "danger") %>
   <div class="flex flex-col gap-6" data-controller="problem-list-filter" data-problem-list-filter-merge-missing-value="<%= t(".bulk_merge_missing") %>">
     <div class="flex flex-wrap items-center justify-between gap-3">
       <div class="flex flex-wrap items-center gap-4">
@@ -53,12 +53,12 @@
           <span class="hidden sm:block w-px h-4 bg-secondary-300 dark:bg-secondary-600" aria-hidden="true"></span>
           <div class="flex flex-wrap gap-2">
             <% if @duplicate_list %>
-              <button type="button" class="<%= [Components::BaseButton::BASE_CLASSES, Components::BaseButton::VARIANT_CLASSES["success"]].join(" ") %>" data-action="click->problem-list-filter#mergeSelected">
+              <button type="button" class="<%= button_class_for("success") %>" data-action="click->problem-list-filter#mergeSelected">
                 <%= Icon(icon: "box-arrow-in-up-left", label: t(".bulk_merge")) %>
                 <%= t(".bulk_merge") %>
               </button>
             <% end %>
-            <%= form.submit(@duplicate_list ? translate(".bulk_delete") : translate(".bulk_resolve"), name: "resolve", class: bulk_resolve_class, data: {confirm: translate(".bulk_confirm")}) %>
+            <%= form.submit(@duplicate_list ? translate(".bulk_delete") : translate(".bulk_resolve"), name: "resolve", class: bulk_resolve_class, data: {turbo_confirm: translate(".bulk_confirm"), confirm: translate(".bulk_confirm")}) %>
             <%= form.submit translate(".bulk_ignore"), name: "ignore", class: secondary_button_class %>
           </div>
         </div>

@@ -563,22 +563,6 @@ en:
       loading: Loading images…
       open_model: Open model
       preview_label: Preview images for %{name}
-    search_help:
-      boolean: Use "or" to find models that match any of the terms.
-      federation: Search for any Fediverse username to follow it.
-      filename: You can search within filenames by explicitly specifying the field. After archives are scanned, bare search also matches paths inside zip/7z/rar (`inside ~ name`).
-      intro: 'Find what you need with our powerful search syntax:'
-      more_details_html: For more information, read the full documentation for <a href="https://github.com/wvanbergen/scoped_search/wiki/Query-language">scoped_search's query language</a>.
-      negation: To exclude terms, use "not", "!", or "-".
-      parentheses: Group terms with parentheses for more complex logic combinations.
-      path: Folder paths are included in normal search; use `path ~ tools` to match only the path.
-      quotes: To look for multiple words in a single term, use quotes; only models with the exact text will be shown.
-      simple: By default, search will find models that match all terms. Close spellings (typos) also match on name and folder path.
-      specific_fields: You can look for terms in a few specific fields. Use "~" to match part of the field; "=" will try to match the whole thing. Model descriptions and library names are only searched if you explicitly specify the fields.
-      tag: Finds models with a specific tag
-      title: Search Syntax
-      unset: Use "set?" to query if a particular field is set, and add "not" to find the opposite.
-      without_tag: Use "!tag" to find models without a certain tag
     sort_menu:
       name: Title
       random: Random
@@ -810,6 +794,7 @@ en:
       title: New API key
     show:
       destroy: Delete
+      destroy_confirm: Are you sure you want to delete this API key?
       edit: Edit
       oauth_help: You can access the library API via the OAuth client_credentials flow, using the security details below.
       revoke:
@@ -952,9 +937,6 @@ en:
     update:
       success: Group updated successfully.
   home:
-    activity:
-      created: added %{time} ago
-      updated: updated %{time} ago
     browsing:
       content: You can explore models by clicking the links in the menu bar; browse a complete list and filter by tag, or browse by collection or creator. Alternatively just type into the search box to find what you want!
       manual_link: User guide
@@ -971,7 +953,6 @@ en:
     index:
       browse_models: Browse all models
       no_activities: There are no models in your library yet.
-      open_search_help: Search syntax
       print_next_heading: What to print next
       print_next_sub: A fresh random pick of never-printed models with photos
       pulse:
@@ -1236,7 +1217,6 @@ en:
         printer: Printer
         result: Result
         to: To
-      heading: Print History
       kpis:
         hours: Total Print Time
         hours_hint: Sum of actual durations
@@ -1311,7 +1291,6 @@ en:
       fleet_empty: No printers registered yet.
       fleet_link: Printers
       fleet_status: Fleet Status
-      heading: Job Queue
       history_link: Print history
       reorder: Reorder
       subtitle: Prioritized additive runs, active exposure schedules, and unclaimed print plates
@@ -1381,7 +1360,6 @@ en:
       endpoint_label: IP address
       endpoint_placeholder: http://10.0.1.199:3030
       footer_note: Camera feeds are restreamed through Manyfold. The physical printer stays on your private LAN.
-      heading: Add a printer
       lan_heading: Found on the LAN · UDP :3000 M99999
       mainboard_label: Mainboard ID
       mainboard_placeholder: Hex MainboardID

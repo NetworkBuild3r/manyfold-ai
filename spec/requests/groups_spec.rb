@@ -61,6 +61,20 @@ RSpec.describe "Groups", :after_first_run do
         get "/creators/#{creator.to_param}/groups/#{group.to_param}/edit"
         expect(response).to have_http_status :success
       end
+
+      it "keeps save and delete as sibling forms" do # INIT-027/SPEC-013
+        get "/creators/#{creator.to_param}/groups/#{group.to_param}/edit"
+        path = "/creators/#{creator.to_param}/groups/#{group.to_param}"
+        forms = forms_targeting(path)
+        update_form = forms.find { |form| method_overrides(form) == ["patch"] }
+        delete_form = forms.find { |form| method_overrides(form) == ["delete"] }
+        expect(update_form).to be_present
+        expect(delete_form).to be_present
+        expect(update_form).not_to eq(delete_form)
+        expect(update_form.at('input[type="submit"], button[type="submit"]')).to be_present
+        expect(update_form.at("[data-turbo-confirm]")).to be_nil
+        expect(delete_form.at("[data-turbo-confirm]")).to be_present
+      end
     end
 
     describe "PATCH /creators/{creator_id}/groups/{id}" do

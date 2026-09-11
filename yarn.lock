@@ -1280,15 +1280,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/jquery@npm:^3.5.33":
-  version: 3.5.33
-  resolution: "@types/jquery@npm:3.5.33"
-  dependencies:
-    "@types/sizzle": "*"
-  checksum: 63a654cb5a141f794f8d2704891b851742bf40d1ef9c8ce7c38900b6e6aedded9324273d52a7a8ab5ddc17b395991b51e566119d4c14b160fef11342bdf18b3a
-  languageName: node
-  linkType: hard
-
 "@types/json-schema@npm:^7.0.15, @types/json-schema@npm:^7.0.9":
   version: 7.0.15
   resolution: "@types/json-schema@npm:7.0.15"
@@ -1330,13 +1321,6 @@ __metadata:
   version: 7.7.1
   resolution: "@types/semver@npm:7.7.1"
   checksum: 76d218e414482a398148d5c28f2bfa017108869f3fc18cda379c9d8d062348f8b9653ae2fa8642d3b5b52e211928fe8be34f22da4e1f08245c84e0e51e040673
-  languageName: node
-  linkType: hard
-
-"@types/sizzle@npm:*":
-  version: 2.3.10
-  resolution: "@types/sizzle@npm:2.3.10"
-  checksum: 7898ae8c147d6804e1eb7811664bf6e58c382840b03a56976c668f17fbc76f752c4086bddb0d6c6d54e279a9259cf4fbb61a6ee968dac98615c42350f6f57d6a
   languageName: node
   linkType: hard
 
@@ -2361,13 +2345,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"desandro-matches-selector@npm:^2.0.0":
-  version: 2.0.2
-  resolution: "desandro-matches-selector@npm:2.0.2"
-  checksum: 30979e6b45d7720d259d4db11ec026fcbee242deee5ec0944c265d7e386a7358ab29f7417cbc3631830d0dbe6e827940dee31f789ed865dba22880d209fc9f8e
-  languageName: node
-  linkType: hard
-
 "detect-libc@npm:^2.0.3":
   version: 2.1.2
   resolution: "detect-libc@npm:2.1.2"
@@ -3114,13 +3091,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ev-emitter@npm:^1.0.0":
-  version: 1.1.1
-  resolution: "ev-emitter@npm:1.1.1"
-  checksum: 3dd78a7620701ef8095794f611dd251bdd9023badf322b3d6fa5e10a660c50e83eec5ee5bbc7654682635cf7b8858c94e2c77e1d10bdc188a2b0593436403476
-  languageName: node
-  linkType: hard
-
 "eventemitter3@npm:^5.0.1":
   version: 5.0.4
   resolution: "eventemitter3@npm:5.0.4"
@@ -3257,15 +3227,6 @@ __metadata:
     locate-path: ^7.1.0
     path-exists: ^5.0.0
   checksum: 9a21b7f9244a420e54c6df95b4f6fc3941efd3c3e5476f8274eb452f6a85706e7a6a90de71353ee4f091fcb4593271a6f92810a324ec542650398f928783c280
-  languageName: node
-  linkType: hard
-
-"fizzy-ui-utils@npm:^2.0.0":
-  version: 2.0.7
-  resolution: "fizzy-ui-utils@npm:2.0.7"
-  dependencies:
-    desandro-matches-selector: ^2.0.0
-  checksum: 001e54effa22c4f62728b90a25e8eb5477057ab53d0184e1c3231bbdfc7c34e278418fbcaf7d63c75ede823d82e61245e668ce8cba90e1c5699de960188c654f
   languageName: node
   linkType: hard
 
@@ -3443,13 +3404,6 @@ __metadata:
     dunder-proto: ^1.0.1
     es-object-atoms: ^1.0.0
   checksum: 4fc96afdb58ced9a67558698b91433e6b037aaa6f1493af77498d7c85b141382cf223c0e5946f334fb328ee85dfe6edd06d218eaf09556f4bc4ec6005d7f5f7b
-  languageName: node
-  linkType: hard
-
-"get-size@npm:^2.0.2":
-  version: 2.0.3
-  resolution: "get-size@npm:2.0.3"
-  checksum: 18d5a5fdb3f541db8b1e6ad46a5411d4bb7da3061d2ef7e544db3bbce7a13543f05c91fd40c7f68b4bc4bc035c160fed23c45514cde7d5fb18de1cce10208b19
   languageName: node
   linkType: hard
 
@@ -4548,7 +4502,6 @@ __metadata:
     "@rails/ujs": ^7.1.600
     "@tailwindcss/cli": ^4.1
     "@types/i18n-js": ^4.0.1
-    "@types/jquery": ^3.5.33
     "@types/lodash": ^4.17.23
     "@types/node": ~24.10
     "@types/three": ^0.182.0
@@ -4570,7 +4523,6 @@ __metadata:
     eslint: ^9.39.2
     husky: ^9.1.7
     i18n-js: ^4.5.1
-    masonry-layout: ^4.2.2
     nodemon: ^3.1.11
     postcss: ^8.5.6
     postcss-cli: ^11.0.1
@@ -4582,16 +4534,6 @@ __metadata:
     typescript: ~5.9.3
   languageName: unknown
   linkType: soft
-
-"masonry-layout@npm:^4.2.2":
-  version: 4.2.2
-  resolution: "masonry-layout@npm:4.2.2"
-  dependencies:
-    get-size: ^2.0.2
-    outlayer: ^2.1.0
-  checksum: b947029b8fdfb384d17d7749d80a4f00f88d885acea04d77e1fefd36827cc2a345fd40d9ccddf720ed9323e133d8ea498125eece91d2c8517f69fd4e9e1bbdf4
-  languageName: node
-  linkType: hard
 
 "math-intrinsics@npm:^1.1.0":
   version: 1.1.0
@@ -4979,17 +4921,6 @@ __metadata:
     type-check: ^0.4.0
     word-wrap: ^1.2.5
   checksum: ecbd010e3dc73e05d239976422d9ef54a82a13f37c11ca5911dff41c98a6c7f0f163b27f922c37e7f8340af9d36febd3b6e9cef508f3339d4c393d7276d716bb
-  languageName: node
-  linkType: hard
-
-"outlayer@npm:^2.1.0":
-  version: 2.1.1
-  resolution: "outlayer@npm:2.1.1"
-  dependencies:
-    ev-emitter: ^1.0.0
-    fizzy-ui-utils: ^2.0.0
-    get-size: ^2.0.2
-  checksum: a8b69d07bad6b498ea1956f89a4bae6d38414d81a5feeae6af06cd8206a1bf47db82f664dc3ccd13b8d2c5886a6cded4a4642d0fafcbbd80f68873b7eb9f4153
   languageName: node
   linkType: hard
 

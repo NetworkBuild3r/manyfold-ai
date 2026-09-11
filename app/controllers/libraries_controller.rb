@@ -1,9 +1,11 @@
 class LibrariesController < ApplicationController
   before_action :get_library, except: [:index, :new, :create]
-  skip_after_action :verify_policy_scoped, only: [:index]
 
+  # INIT-027/SPEC-012 — authorize + policy_scope so verify_policy_scoped holds
   def index
-    redirect_to new_library_path and return if Library.all.empty? # rubocop:disable Pundit/UsePolicyScope
+    authorize Library
+    @libraries = policy_scope(Library).order(Arel.sql("LOWER(libraries.name) ASC"))
+    redirect_to new_library_path and return if @libraries.empty?
     render layout: "settings"
   end
 

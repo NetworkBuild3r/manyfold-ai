@@ -19,6 +19,17 @@ RSpec.describe "/settings/users", :multiuser do
     end
   end
 
+  describe "GET /show delete confirm", :as_administrator do
+    let(:user) { create(:user) }
+
+    it "includes turbo_confirm naming the user noun" do
+      get "/settings/users/#{user.to_param}"
+      expect(response).to be_successful
+      expect(response.body).to include("data-turbo-confirm")
+      expect(response.body).to include("delete this user")
+    end
+  end
+
   describe "GET /new", :as_moderator do
     it "renders a successful response" do
       get new_settings_user_url

@@ -30,11 +30,11 @@
   <%= select_input_row form, :ai_indexable, ai_indexable_select_options(form.object) if SiteSettings.allow_ai_bots %>
   <%= render "caber_relations_form", form: form %>
   <div class="flex flex-wrap items-center gap-2">
-    <%= form.submit translate("general.save"), class: "inline-flex items-center px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500" %>
-    <% if @collection.persisted? %>
-      <span class="ml-auto">
-        <%= DoButton(icon: "trash", label: t("general.delete"), href: collection_path(@collection), method: :delete, variant: "outline-danger", confirm: translate("collections.destroy.confirm")) if policy(@collection).destroy? %>
-      </span>
-    <% end %>
+    <%= form.submit translate("general.save"), class: primary_button_class %>
+  </div>
+<% end %>
+<% if @collection.persisted? && policy(@collection).destroy? %>
+  <div class="max-w-2xl mx-auto flex justify-end mt-2">
+    <%= DoButton(icon: "trash", label: t("general.delete"), href: collection_path(@collection), method: :delete, variant: "outline-danger", confirm: translate("collections.destroy.confirm")) %>
   </div>
 <% end %>

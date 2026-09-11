@@ -6,7 +6,7 @@ const STORAGE_KEY = 'model_list_selection'
 // cards (bubbles) and toolbar (Edit single, Bulk edit, Clear). Selection is optional
 // persisted to sessionStorage so refresh keeps it; clear on bulk-edit entry or when clearing.
 export default class extends BaseSelectionController {
-  static targets = ['bubble', 'toolbar', 'editLink', 'bulkEditForm', 'idsContainer', 'clearButton', 'mergeLink']
+  static targets = ['bubble', 'toolbar', 'editLink', 'idsContainer', 'mergeLink']
 
   declare editLinkTarget: HTMLAnchorElement
   declare hasEditLinkTarget: boolean

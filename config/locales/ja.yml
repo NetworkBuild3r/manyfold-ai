@@ -416,22 +416,6 @@ ja:
       open_button:
         label: モデル%{name}を開く
         text: 開く
-    search_help:
-      boolean: "「or」を使用して、いずれかの用語に一致するモデルを検索します。"
-      federation:
-      filename: 特定のファイル名を検索することもできます。
-      intro: パワフルな検索構文で必要なものを見つけよう：
-      more_details_html: 詳しくは、<a href="https://github.com/wvanbergen/scoped_search/wiki/Query-language">scoped_searchのクエリー</a>言語の完全なドキュメントをお読みください。
-      negation: 用語を除外するには、「not」、「!」、「or」を使用する。
-      parentheses: より複雑なロジックの組み合わせのために、用語を括弧でグループ化する。
-      path:
-      quotes: 1つの用語で複数の単語を検索するには、引用符を使用します。
-      simple: デフォルトでは、すべての条件に一致するモデルを検索します。
-      specific_fields: いくつかの特定のフィールドから用語を探すことができる。フィールドの一部にマッチする場合は「~」を、全体にマッチする場合は「=」を使用する。
-      tag: 特定のタグを持つモデルを検索する
-      title: 検索構文
-      unset: 特定のフィールドがセットされているかどうかを調べるには 「set?」を使い、その反対を調べるには 「not」を加える。
-      without_tag: 特定のタグがないモデルを見つけるには「!tag」
     sort_menu:
       name:
       recent:
@@ -743,9 +727,6 @@ ja:
     update:
       success:
   home:
-    activity:
-      created:
-      updated:
     browsing:
       content:
       manual_link:
@@ -761,7 +742,6 @@ ja:
       users_v_creators:
     index:
       no_activities:
-      open_search_help:
       recent_activity:
       search:
         placeholder:

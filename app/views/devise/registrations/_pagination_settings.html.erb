@@ -12,13 +12,13 @@
         <%= pagination_settings_form.label :per_page, t(".per_page.label"), class: "block text-sm font-medium text-secondary-700 dark:text-secondary-300" %>
       </div>
       <div>
-        <%= pagination_settings_form.number_field :per_page, value: pagination_settings["per_page"], in: 1..100, class: "block w-full rounded-lg border border-secondary-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-primary-500 dark:border-secondary-600 dark:bg-secondary-800" %>
+        <%= pagination_settings_form.number_field :per_page, value: pagination_settings["per_page"], in: 1..100, class: input_class %>
       </div>
       <div>
         <%= pagination_settings_form.label :grid_columns, t(".grid_columns.label"), class: "block text-sm font-medium text-secondary-700 dark:text-secondary-300" %>
       </div>
       <div>
-        <%= pagination_settings_form.select :grid_columns, options_for_select([[2, 2], [3, 3], [4, 4]], pagination_settings["grid_columns"] || 3), {}, class: "block w-full rounded-lg border border-secondary-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-primary-500 dark:border-secondary-600 dark:bg-secondary-800" %>
+        <%= pagination_settings_form.select :grid_columns, options_for_select([[2, 2], [3, 3], [4, 4]], pagination_settings["grid_columns"] || 3), {}, class: input_class %>
       </div>
     </div>
   </div>

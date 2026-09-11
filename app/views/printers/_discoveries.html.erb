@@ -3,14 +3,14 @@
 <% else %>
   <% candidates.each do |candidate| %>
     <% cand = candidate.with_indifferent_access %>
-    <article class="bg-[#1a1311] border border-[#332623] rounded-2xl p-6 flex flex-col gap-4">
+    <article class="bg-surface dark:bg-surface-dark border border-secondary-200 dark:border-secondary-800 rounded-2xl p-6 flex flex-col gap-4">
       <div class="space-y-1">
-        <h3 class="text-lg font-semibold text-surface m-0"><%= cand[:name].presence || t("printers.discover.unknown") %></h3>
+        <h3 class="text-lg font-semibold text-secondary-900 dark:text-surface m-0"><%= cand[:name].presence || t("printers.discover.unknown") %></h3>
         <p class="font-mono text-[13px] text-primary-600 m-0">
           <%= t("printers.discover.endpoint_line", endpoint: cand[:endpoint], protocol: cand[:protocol_version].presence || "SDCP") %>
         </p>
       </div>
-      <p class="text-[13px] text-secondary-300 m-0"><%= t("printers.discover.ready_help") %></p>
+      <p class="text-[13px] text-secondary-600 dark:text-secondary-300 m-0"><%= t("printers.discover.ready_help") %></p>
       <%= button_to t("printers.discover.add"), printers_path,
             method: :post,
             params: {

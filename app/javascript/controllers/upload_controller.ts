@@ -22,6 +22,16 @@ export default class extends Controller {
   nameField: HTMLDivElement | null = null
   multiMessage: HTMLDivElement | null = null
   singleMessage: HTMLDivElement | null = null
+  // INIT-027/SPEC-011 — same listener reference so disconnect can remove it.
+  private formEl: HTMLFormElement | null = null
+  private readonly boundFormdata = (event: FormDataEvent): void => {
+    this.uppy?.getFiles().forEach((f, index) => {
+      if (f.tus?.uploadUrl != null) {
+        event.formData.set(`model[file][${index}][id]`, f.tus.uploadUrl)
+        if (f.name != null) { event.formData.set(`model[file][${index}][name]`, f.name) }
+      }
+    })
+  }
 
   connect (): void {
     this.sweepLocalStorage()
@@ -66,17 +76,13 @@ export default class extends Controller {
     })
     this.uppy.on('file-added', this.updateResultingModelState.bind(this))
     this.uppy.on('file-removed', this.updateResultingModelState.bind(this))
-    this.element.closest('form')?.addEventListener('formdata', (event) => {
-      this.uppy?.getFiles().forEach((f, index) => {
-        if (f.tus?.uploadUrl != null) {
-          event.formData.set(`model[file][${index}][id]`, f.tus?.uploadUrl)
-          if (f.name != null) { event.formData.set(`model[file][${index}][name]`, f.name) }
-        }
-      })
-    })
+    this.formEl = this.element.closest('form')
+    this.formEl?.addEventListener('formdata', this.boundFormdata)
   }
 
   disconnect (): void {
+    this.formEl?.removeEventListener('formdata', this.boundFormdata)
+    this.formEl = null
     this.uppy?.destroy()
     this.uppy = null
   }

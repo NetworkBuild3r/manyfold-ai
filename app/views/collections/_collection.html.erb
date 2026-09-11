@@ -1,27 +1,8 @@
-<%# Uniform-height collection card for card-sized browse grid. %>
+<%# INIT-027/SPEC-009 — collection card; chrome in application/browse_entity_card. %>
 <% model_count = (@model_counts || {})[collection.id] || 0
   collection_count = (@subcollection_counts || {})[collection.id] || 0
-  has_subs = collection_count > 0
+  extra_html = capture do
 %>
-<div id="<%= dom_id(collection) %>"
-     class="collection-card relative flex flex-col rounded-xl overflow-hidden bg-surface dark:bg-surface-dark border border-secondary-200 dark:border-secondary-600 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-[box-shadow,transform] duration-200 <%= "opacity-90" if collection.remote? %>"
-     role="listitem">
-  <% if collection.remote? %>
-    <div class="absolute inset-x-0 top-0 z-10 px-3 py-1.5 bg-secondary-200/90 dark:bg-secondary-700/90 text-secondary-800 dark:text-secondary-200 text-sm">
-      <%= server_indicator collection %>
-    </div>
-  <% end %>
-  <%= PreviewFrame(object: collection) %>
-  <div class="p-3 flex flex-col gap-1 grow">
-    <div class="font-semibold text-secondary-900 dark:text-secondary-100 leading-snug line-clamp-2 min-h-[2.75rem]">
-      <%= collection.name.careful_titleize %>
-      <%= AccessIndicator object: collection %>
-    </div>
-    <div class="text-sm text-secondary-600 dark:text-secondary-400 line-clamp-2 min-h-[2.5rem]">
-      <% if collection.caption.present? %>
-        <%= sanitize collection.caption %>
-      <% end %>
-    </div>
     <div class="text-xs text-secondary-500 dark:text-secondary-400 truncate min-h-[1rem]">
       <% if collection.remote? %>
         <% creator_ext = collection.federails_actor&.extensions&.dig("attributedTo") %>
@@ -30,36 +11,24 @@
         <%= collection.creator.name %>
       <% end %>
     </div>
-  </div>
-  <div class="flex flex-wrap items-center gap-2 px-3 py-2.5 border-t border-secondary-200 dark:border-secondary-600 min-h-[3.25rem]">
-    <div class="flex flex-wrap items-center gap-2 min-w-0">
-      <%= if policy(collection).show?
-            GoButton(
-              label: "#{model_count} #{Model.model_name.human count: model_count}",
-              aria_label: collection.remote? ?
-                translate(".models_button.remote_label", name: collection.name) :
-                translate(".models_button.label", name: collection.name),
-              href: collection_path(collection),
-              variant: "primary"
-            )
-          end %>
-      <%= if policy(collection).show? && has_subs
-            GoButton(
-              label: "#{collection_count} #{Collection.model_name.human count: collection_count}",
-              aria_label: collection.remote? ?
-                translate(".collections_button.remote_label", name: collection.name) :
-                translate(".collections_button.label", name: collection.name),
-              href: collections_path(collection: collection),
-              variant: "primary"
-            )
-          end %>
-    </div>
-    <div class="ml-auto">
-      <%= BurgerMenu do %>
-        <%= DropdownItem(icon: "pencil", label: translate("general.edit"), path: edit_collection_path(collection), aria_label: translate(".edit_button.label", name: collection.name)) if policy(collection).edit? %>
-        <%= DropdownItem(icon: "trash", label: translate("general.delete"), path: collection_path(collection), method: :delete, aria_label: translate(".delete_button.label", name: collection.name), confirm: t("collections.destroy.confirm")) if policy(collection).destroy? %>
-        <%= DropdownItem(icon: "flag", label: translate("general.report", type: ""), path: new_collection_report_path(collection)) if SiteSettings.multiuser_enabled? %>
-      <% end %>
-    </div>
-  </div>
-</div>
+<%
+  end
+%>
+<%= render layout: "application/browse_entity_card", locals: {
+      record: collection,
+      card_class: "collection-card",
+      title: collection.name.careful_titleize,
+      extra_html: extra_html,
+      model_count: model_count,
+      secondary_count: collection_count,
+      show_secondary: collection_count > 0,
+      models_href: collection_path(collection),
+      secondary_href: collections_path(collection: collection),
+      i18n_scope: "collections.collection",
+      edit_path: edit_collection_path(collection),
+      destroy_path: collection_path(collection),
+      destroy_confirm: t("collections.destroy.confirm"),
+      report_path: new_collection_report_path(collection)
+    } do %>
+  <%= PreviewFrame(object: collection) %>
+<% end %>

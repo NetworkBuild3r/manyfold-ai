@@ -416,22 +416,6 @@ nl:
       open_button:
         label: Open model %{name}
         text: Openen
-    search_help:
-      boolean:
-      federation:
-      filename:
-      intro:
-      more_details_html:
-      negation:
-      parentheses:
-      path:
-      quotes:
-      simple:
-      specific_fields:
-      tag:
-      title:
-      unset:
-      without_tag:
     sort_menu:
       name:
       recent:
@@ -743,9 +727,6 @@ nl:
     update:
       success:
   home:
-    activity:
-      created:
-      updated:
     browsing:
       content:
       manual_link:
@@ -761,7 +742,6 @@ nl:
       users_v_creators:
     index:
       no_activities: Er zijn momenteel geen activiteiten om weer te geven.
-      open_search_help:
       recent_activity: Recente Activiteit
       search:
         placeholder: Waar zoek je naar?

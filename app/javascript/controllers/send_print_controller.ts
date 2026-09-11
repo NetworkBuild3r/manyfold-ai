@@ -4,9 +4,7 @@ import { Controller } from '@hotwired/stimulus'
 export default class extends Controller {
   static targets = ['printer', 'reasons', 'form', 'submit', 'csrf']
   static values = {
-    eligibilityUrl: String,
-    modelId: String,
-    fileId: String
+    eligibilityUrl: String
   }
 
   declare readonly printerTarget: HTMLSelectElement
@@ -16,8 +14,6 @@ export default class extends Controller {
   declare readonly csrfTarget: HTMLInputElement
   declare readonly hasCsrfTarget: boolean
   declare readonly eligibilityUrlValue: string
-  declare readonly modelIdValue: string
-  declare readonly fileIdValue: string
 
   connect (): void {
     if (this.hasCsrfTarget) {

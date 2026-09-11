@@ -33,4 +33,19 @@ RSpec.describe ModelsHelper do
       expect(helper.license_select_options(selected: "CC0-1.0")).to include('<option selected="selected" value="CC0-1.0">Creative Commons Zero</option>')
     end
   end
+
+  # INIT-027/SPEC-003 — problems_including_files must query the model, not the helper.
+  describe "#problems_including_files" do
+    let(:model) { create(:model) }
+    let!(:problem) { create(:problem_on_model, problematic: model) }
+
+    before do
+      allow(helper).to receive(:policy_scope) { |scope| scope }
+    end
+
+    it "includes the model in the problematic set" do
+      expect(helper.problems_including_files(model)).to include(problem)
+    end
+  end
 end
+

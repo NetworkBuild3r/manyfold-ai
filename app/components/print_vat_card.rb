@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 # Vat registry card with health badge + swap form (INIT-008/SPEC-007 · Figma 23:1635).
+# Surfaces: INIT-027/SPEC-008.
 class Components::PrintVatCard < Components::Base
   include Phlex::Rails::Helpers::FormWith
 
@@ -12,9 +13,9 @@ class Components::PrintVatCard < Components::Base
   end
 
   def view_template
-    article(class: "rounded-2xl border border-[#332623] bg-[#1a1311] p-5 flex flex-col gap-4") do
+    article(class: "rounded-2xl border border-secondary-200 dark:border-secondary-800 bg-surface dark:bg-surface-dark p-5 flex flex-col gap-4") do
       div(class: "flex items-start justify-between gap-3") do
-        h3(class: "text-lg font-semibold text-surface m-0") { @vat.identity }
+        h3(class: "text-lg font-semibold text-secondary-900 dark:text-surface m-0") { @vat.identity }
         health_badge
       end
 
@@ -23,7 +24,7 @@ class Components::PrintVatCard < Components::Base
           dt(class: "font-mono text-[11px] uppercase tracking-wide text-secondary-500 m-0") do
             t("consumables.vat.assigned_to")
           end
-          dd(class: "m-0 mt-1 font-medium #{assigned? ? "text-secondary-200" : "text-surface"}") do
+          dd(class: "m-0 mt-1 font-medium #{assigned? ? "text-secondary-700 dark:text-secondary-200" : "text-secondary-900 dark:text-surface"}") do
             assigned? ? @vat.print_host.name : t("consumables.vat.unassigned")
           end
         end
@@ -42,7 +43,7 @@ class Components::PrintVatCard < Components::Base
           end
           select(
             name: "resin_bottle_id",
-            class: "w-full rounded-lg border border-[#332623] bg-[#120f0d] text-surface px-3 py-2 text-sm"
+            class: "w-full rounded-lg border border-secondary-300 dark:border-secondary-700 bg-white dark:bg-secondary-950 text-secondary-900 dark:text-surface px-3 py-2 text-sm"
           ) do
             option(value: "") { t("consumables.vat.unassign_resin") }
             @bottles.each do |bottle|

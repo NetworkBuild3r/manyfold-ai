@@ -24,6 +24,7 @@ RSpec.describe Components::SendPrintDialog, type: :component do
     expect(html).to include("Open Prepare")
     expect(html).to include("disabled")
     expect(html).to include("Send .CTB")
+    expect(html).not_to match(/#[0-9a-fA-F]{6}/)
   end
 
   it "does not render for STL files" do

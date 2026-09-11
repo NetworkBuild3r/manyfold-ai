@@ -1,0 +1,77 @@
+<%# INIT-027/SPEC-009 — shared creator/collection card chrome (use as a layout).
+    Preview is yield; footer actions come from locals (und-1 noun substitution).
+
+    Locals: record, card_class, title, extra_html,
+      model_count, secondary_count, show_secondary,
+      models_href, secondary_href, i18n_scope,
+      edit_path, destroy_path, destroy_confirm, report_path %>
+<% record = local_assigns.fetch(:record)
+  card_class = local_assigns.fetch(:card_class)
+  title = local_assigns.fetch(:title)
+  extra_html = local_assigns[:extra_html]
+  model_count = local_assigns.fetch(:model_count)
+  secondary_count = local_assigns.fetch(:secondary_count)
+  show_secondary = local_assigns.fetch(:show_secondary)
+  models_href = local_assigns.fetch(:models_href)
+  secondary_href = local_assigns.fetch(:secondary_href)
+  i18n_scope = local_assigns.fetch(:i18n_scope)
+  edit_path = local_assigns.fetch(:edit_path)
+  destroy_path = local_assigns.fetch(:destroy_path)
+  destroy_confirm = local_assigns.fetch(:destroy_confirm)
+  report_path = local_assigns.fetch(:report_path)
+%>
+<div id="<%= dom_id(record) %>"
+     class="<%= card_class %> relative flex flex-col rounded-xl overflow-hidden bg-surface dark:bg-surface-dark border border-secondary-200 dark:border-secondary-600 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-[box-shadow,transform] duration-200 <%= "opacity-90" if record.remote? %>"
+     role="listitem">
+  <% if record.remote? %>
+    <div class="absolute inset-x-0 top-0 z-10 px-3 py-1.5 bg-secondary-200/90 dark:bg-secondary-700/90 text-secondary-800 dark:text-secondary-200 text-sm">
+      <%= server_indicator record %>
+    </div>
+  <% end %>
+  <%= yield %>
+  <div class="p-3 flex flex-col gap-1 grow">
+    <div class="font-semibold text-secondary-900 dark:text-secondary-100 leading-snug line-clamp-2 min-h-[2.75rem]">
+      <%= title %>
+      <%= AccessIndicator object: record %>
+    </div>
+    <div class="text-sm text-secondary-600 dark:text-secondary-400 line-clamp-2 min-h-[2.5rem]">
+      <% if record.caption.present? %>
+        <%= sanitize record.caption %>
+      <% end %>
+    </div>
+    <% if extra_html.present? %>
+      <%= extra_html %>
+    <% end %>
+  </div>
+  <div class="flex flex-wrap items-center gap-2 px-3 py-2.5 border-t border-secondary-200 dark:border-secondary-600 min-h-[3.25rem]">
+    <div class="flex flex-wrap items-center gap-2 min-w-0">
+      <%= if policy(record).show?
+            GoButton(
+              label: "#{model_count} #{Model.model_name.human count: model_count}",
+              aria_label: record.remote? ?
+                t("#{i18n_scope}.models_button.remote_label", name: record.name) :
+                t("#{i18n_scope}.models_button.label", name: record.name),
+              href: models_href,
+              variant: "primary"
+            )
+          end %>
+      <%= if policy(record).show? && show_secondary
+            GoButton(
+              label: "#{secondary_count} #{Collection.model_name.human count: secondary_count}",
+              aria_label: record.remote? ?
+                t("#{i18n_scope}.collections_button.remote_label", name: record.name) :
+                t("#{i18n_scope}.collections_button.label", name: record.name),
+              href: secondary_href,
+              variant: "primary"
+            )
+          end %>
+    </div>
+    <div class="ml-auto">
+      <%= BurgerMenu do %>
+        <%= DropdownItem(icon: "pencil", label: t("general.edit"), path: edit_path, aria_label: t("#{i18n_scope}.edit_button.label", name: record.name)) if policy(record).edit? %>
+        <%= DropdownItem(icon: "trash", label: t("general.delete"), path: destroy_path, method: :delete, aria_label: t("#{i18n_scope}.delete_button.label", name: record.name), confirm: destroy_confirm) if policy(record).destroy? %>
+        <%= DropdownItem(icon: "flag", label: t("general.report", type: ""), path: report_path) if SiteSettings.multiuser_enabled? %>
+      <% end %>
+    </div>
+  </div>
+</div>
