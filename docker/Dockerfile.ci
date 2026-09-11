@@ -18,6 +18,7 @@ RUN apt-get update -qq && apt-get install -y --no-install-recommends \
   libpq-dev \
   libvips-dev \
   pkg-config \
+  ripgrep \
   && rm -rf /var/lib/apt/lists/*
 
 # Node 24 via NodeSource (Bookworm's nodejs is too old)

@@ -200,7 +200,9 @@ export default class extends Controller {
       for (const record of records) {
         record.removedNodes.forEach((node) => {
           if (!(node instanceof HTMLElement)) return
-          if (node.matches?.(this.cardSelectorValue) || node.querySelector?.(this.cardSelectorValue)) {
+          const removedSelf = node.matches?.(this.cardSelectorValue) ?? false
+          const removedChild = node.querySelector?.(this.cardSelectorValue)
+          if (removedSelf || removedChild != null) {
             removedCard = true
           }
         })
@@ -753,8 +755,8 @@ export default class extends Controller {
     })
   }
 
-  private delay (ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms))
+  private async delay (ms: number): Promise<void> {
+    await new Promise((resolve) => setTimeout(resolve, ms))
   }
 
   private setLoadingUi (busy: boolean, direction?: FetchDirection): void {

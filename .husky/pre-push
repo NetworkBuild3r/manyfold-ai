@@ -3,4 +3,6 @@
 
 bundle exec rake rubocop:autocorrect
 bundle exec erb_lint --lint-all
-yarn run lint:ts
+yarn run lint:ts:fix
+# INIT-027/SPEC-002 — matcher self-test (plants under tmp/, never app/)
+bash script/ui-contract-fence.sh --self-test

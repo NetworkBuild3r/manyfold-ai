@@ -2,7 +2,8 @@
   "name": "manyfold",
   "private": true,
   "scripts": {
-    "lint:ts": "ts-standard --fix",
+    "lint:ts": "ts-standard",
+    "lint:ts:fix": "ts-standard --fix",
     "build": "bundle exec i18n export --config=./config/i18n-js.yml && esbuild app/javascript/*.* --minify=true --tree-shaking=true --bundle --sourcemap --outdir=app/assets/builds --public-path=assets",
     "build:css": "npx @tailwindcss/cli -i app/assets/stylesheets/tailwind.css -o app/assets/builds/tailwind.css --minify",
     "build:css:tailwind": "npx @tailwindcss/cli -i app/assets/stylesheets/tailwind.css -o app/assets/builds/tailwind.css --minify",
