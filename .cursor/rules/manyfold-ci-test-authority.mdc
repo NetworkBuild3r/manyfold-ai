@@ -1,0 +1,24 @@
+---
+description: Manyfold CI is the test authority — lint-first, no local rspec green, Redis in smoke-test
+globs: **/*.{rb,yml,yaml,rake}
+alwaysApply: false
+---
+
+# Manyfold CI / test authority (INIT-028, INIT-030)
+
+Control-node `bundle exec rspec` / `rubocop` **cannot run** (`libarchive.so.13` / test gems). GitHub Actions is the only test authority.
+
+## Do
+
+- Watch **`CI` `lint` first**, then `test`. `test` `needs: lint` — a lint fail leaves the PR `UNSTABLE` and **never runs specs**.
+- Declare a spec done only after **GitHub Actions `CI` lint + test SUCCESS** on the push.
+- After mutating a **signed-in** `User` in a request spec, `sign_in user.reload` (Warden keeps the in-memory AR object).
+- Docker **`smoke-test` must include Redis + `REDIS_URL`** whenever production boot uses Redis. Do not delete the smoke-test job to go green.
+- Never `kubectl apply` ConfigMap `manyfold-application-job-patch` over `application_job.rb`.
+
+## Do not
+
+- Treat control-node `LoadError libarchive.so.13` as a passing test suite.
+- `User.find.update!` then `get` without `sign_in user.reload`.
+- Point `Rails.cache` at Sidekiq Redis DB `/1` or `ActiveJob::Status`’s URL unchanged.
+- Delete the 607-line detect spec or weaken `ui-contract-fence.sh` walk roots to make CI green.
