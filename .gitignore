@@ -80,7 +80,10 @@ db/data_schema.rb
 
 .yardoc
 doc
-/.cursor/
+# Cursor: ignore local chat/state, keep committed agent rules
+/.cursor/*
+!/.cursor/rules/
+!/.cursor/rules/**
 
 # Local dev artifacts
 rspec_full.txt

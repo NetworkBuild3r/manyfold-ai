@@ -85,6 +85,13 @@ jobs:
       - name: Smoke test
         run: curl http://localhost:3214/health --fail-with-body
     services:
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
       postgres:
         image: postgres:17-alpine
         env:
@@ -103,6 +110,9 @@ jobs:
           SECRET_KEY_BASE: abc123
           DATABASE_HOST: postgres
           DATABASE_PASSWORD: manyfold
+          # INIT-030/SPEC-003: production boot requires REDIS_URL (Rails.cache /2).
+          # Sidekiq URL stays /1; do not omit this or smoke-test stays red (INIT-028).
+          REDIS_URL: redis://redis:6379/1
           # Skip heavy boot paths if any
           SKIP_LIBRARY_CHOWN: "1"
         options: >-
