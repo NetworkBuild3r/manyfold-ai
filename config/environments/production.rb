@@ -52,8 +52,12 @@ Rails.application.configure do
   # scan-batch finalize). FileStore on emptyDir is not an acceptable production default
   # (ASMT-017 HIGH-2). Sidekiq and ActiveJob::Status keep ENV REDIS_URL (cluster /1).
   # Rails.cache uses database /2 — never Sidekiq /1 (GR-004).
-  require_relative "../../lib/redis_cache_url"
-  config.cache_store = :redis_cache_store, {url: RedisCacheUrl.call(ENV.fetch("REDIS_URL", nil))}
+  # Docker image build boots this file for assets:precompile with no Redis
+  # (RAILS_ASSETS_PRECOMPILE=1). Skip the store there; runtime still raises if REDIS_URL is blank.
+  unless ENV["RAILS_ASSETS_PRECOMPILE"].present?
+    require_relative "../../lib/redis_cache_url"
+    config.cache_store = :redis_cache_store, {url: RedisCacheUrl.call(ENV.fetch("REDIS_URL", nil))}
+  end
 
   # Replace the default in-process and non-durable queuing backend for Active Job.
   config.active_job.queue_adapter = :sidekiq
