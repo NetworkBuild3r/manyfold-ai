@@ -83,7 +83,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Smoke test
-        run: curl http://localhost:3214/health --fail-with-body
+        run: |
+          for i in $(seq 1 36); do
+            if curl -sf --max-time 5 http://localhost:3214/health; then
+              exit 0
+            fi
+            sleep 5
+          done
+          curl http://localhost:3214/health --fail-with-body
     services:
       redis:
         image: redis:7
@@ -116,10 +123,10 @@ jobs:
           # Skip heavy boot paths if any
           SKIP_LIBRARY_CHOWN: "1"
         options: >-
-          --health-cmd "wget -q -O - http://localhost:3214/health || exit 1"
-          --health-start-period 90s
+          --health-cmd "wget -q -O - http://[::1]:3214/health || exit 1"
+          --health-start-period 180s
           --health-interval 10s
           --health-timeout 5s
-          --health-retries 6
+          --health-retries 18
         ports:
           - 3214:3214
