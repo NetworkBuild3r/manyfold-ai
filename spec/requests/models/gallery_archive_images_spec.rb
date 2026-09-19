@@ -35,6 +35,16 @@ RSpec.describe "Models gallery archive images" do
       expect(response.body).to include(preview_url)
     end
 
+    it "shows the loose image once when an archive member has the same digest" do
+      loose.update!(digest: "same-bytes")
+      ready_entry.update!(digest: "same-bytes")
+
+      get gallery_model_path(model)
+
+      expect(response.body).to include("#{loose.to_param}.jpg")
+      expect(response.body).not_to include(preview_url)
+    end
+
     it "does not include pending archive images or mesh members" do
       create_image_entry(archive, "pics/pending.jpg", status: "preview_pending")
       mesh = ArchiveEntry.create!(

@@ -252,6 +252,19 @@ class Model < ApplicationRecord
     entry&.is_image? && entry.preview_exists?
   end
 
+  # Queue a pass when this model has more than one image that could be the same bytes.
+  def dedup_images_later
+    return unless possible_duplicate_images?
+
+    Scan::Model::DedupImagesJob.perform_later(id)
+  end
+
+  def possible_duplicate_images?
+    loose = model_files.count { |file| file.is_image? }
+    archived = archive_entries.images.where.not(status: %w[skipped too_large preview_failed]).count
+    loose + archived > 1
+  end
+
   def three_d_files
     model_files.select(&:is_3d_model?)
   end

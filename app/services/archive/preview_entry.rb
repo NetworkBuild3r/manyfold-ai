@@ -62,6 +62,7 @@ module Archive
 
       entry.update!(preview_path: relative, status: "preview_ready", error_message: nil, digest: digest)
       Archive::AdoptImage.assign_preview!(model: @model, entry: entry)
+      @model.dedup_images_later
       relative
     end
 

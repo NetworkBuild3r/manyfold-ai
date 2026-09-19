@@ -13,6 +13,7 @@ class Scan::Model::CheckForProblemsJob < ApplicationJob
 
     Problems::Nesting.detect(model)
     model.ensure_image_preview!
+    model.dedup_images_later
     Problems::NoImage.detect(model)
     Problems::No3dModel.detect(model)
     Problems::NoLicense.detect(model)
