@@ -8,6 +8,7 @@ import inspect
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from spark_curate.apply_merges import write_merge_plans
 from spark_curate.admission import decide_pack, map_signals_for_judge, run_admit
@@ -101,12 +102,31 @@ class Ac2TwinEligibleStrongTests(unittest.TestCase):
     def test_ac2_twin_subset_library_plans_merge_under_hitl_all(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            d, mapped = _judge(
-                root,
-                [GEOMETRY_TWIN, f"{COMPOSITION_PREFIX}subset"],
-            )
+            payload = {
+                "decision": "merge",
+                "confidence": 0.91,
+                "target": "a",
+                "reason": "same pack",
+            }
+            with patch(
+                "spark_curate.decide_merge._preview_jpeg",
+                return_value=b"\xff\xd8fakejpeg",
+            ), patch(
+                "spark_curate.decide_merge.clients.gemma_vision",
+                return_value='{"decision":"merge"}',
+            ), patch(
+                "spark_curate.decide_merge.clients.curator_json",
+                return_value='{"decision":"merge","confidence":0.91,"target":"a","reason":"same pack"}',
+            ), patch(
+                "spark_curate.decide_merge.clients.extract_json_object",
+                return_value=payload,
+            ):
+                d, mapped = _judge(
+                    root,
+                    [GEOMETRY_TWIN, f"{COMPOSITION_PREFIX}subset"],
+                )
             self.assertEqual(d.decision, "merge")
-            self.assertIn("STRONG", d.reason)
+            self.assertTrue(d.approved_for_apply)
             self.assertTrue(library_may_plan_merge(mapped))
             cfg = CurateConfig(
                 merge_hitl="hitl_all",
@@ -313,11 +333,31 @@ class RegressionNocrcAndGatesTests(unittest.TestCase):
         )
         self.assertIn("shared_digest:2", mapped)
         with tempfile.TemporaryDirectory() as tmp:
-            d, _ = _judge(
-                Path(tmp),
-                [f"{MESH_BYTE_DIGEST}:2", f"{COMPOSITION_PREFIX}same_pack"],
-            )
+            payload = {
+                "decision": "merge",
+                "confidence": 0.91,
+                "target": "a",
+                "reason": "same pack",
+            }
+            with patch(
+                "spark_curate.decide_merge._preview_jpeg",
+                return_value=b"\xff\xd8fakejpeg",
+            ), patch(
+                "spark_curate.decide_merge.clients.gemma_vision",
+                return_value='{"decision":"merge"}',
+            ), patch(
+                "spark_curate.decide_merge.clients.curator_json",
+                return_value='{"decision":"merge","confidence":0.91,"target":"a","reason":"same pack"}',
+            ), patch(
+                "spark_curate.decide_merge.clients.extract_json_object",
+                return_value=payload,
+            ):
+                d, _ = _judge(
+                    Path(tmp),
+                    [f"{MESH_BYTE_DIGEST}:2", f"{COMPOSITION_PREFIX}same_pack"],
+                )
             self.assertEqual(d.decision, "merge")
+            self.assertTrue(d.approved_for_apply)
 
 
 class HitlAndAdmitHelpersTests(unittest.TestCase):

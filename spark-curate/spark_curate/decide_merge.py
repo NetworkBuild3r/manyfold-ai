@@ -161,20 +161,6 @@ def _is_strong_structural(
     return False
 
 
-def _strong_merge_decision(
-    base: MergeDecision,
-    cand: MergeCandidate,
-    curate: CurateConfig,
-) -> MergeDecision:
-    """Deterministic STRONG merge — skip Gemma (ADR D-4). Confidence ≥ min_merge_confidence."""
-    base.decision = "merge"
-    base.confidence = 0.85
-    base.target = "a" if len(cand.a.name) <= len(cand.b.name) else "b"
-    base.reason = "STRONG structural duplicate; skip Gemma"
-    base.approved_for_apply = base.confidence >= curate.min_merge_confidence
-    return base
-
-
 def decide_merge_pair(
     cand: MergeCandidate,
     spark: SparkConfig,
@@ -200,16 +186,20 @@ def decide_merge_pair(
         base.reason = "no structural duplicate signal; refuse franchise-only merge"
         return base
 
-    # STRONG: deterministic plan, no Gemma — even when previews are missing (ADR D-5 / aud-1)
-    if _is_strong_structural(signals):
-        return _strong_merge_decision(base, cand, curate)
-
+    # INIT-001/SPEC-002: STRONG is a plan, not permission. Same vision path as UNCERTAIN.
     jpeg_a = _preview_jpeg(cand.a.path, thumb_cache, curate)
     jpeg_b = _preview_jpeg(cand.b.path, thumb_cache, curate)
     if jpeg_a is None or jpeg_b is None:
-        # INIT-018/SPEC-003: preview-less name_near_dupe / weak overlap must NOT auto-merge (ADR D-5)
+        # A STRONG pair is a plan. Without preview text it is not permission.
+        if _is_strong_structural(signals):
+            base.decision = "merge"
+            base.confidence = 0.0
+            base.target = "a" if len(cand.a.name) <= len(cand.b.name) else "b"
+            base.reason = "STRONG structural duplicate; missing preview; not approved"
+            base.approved_for_apply = False
+            return base
         base.reason = (
-            "missing preview on one or both folders; refuse preview-less non-STRONG merge"
+            "missing preview on one or both folders; refuse preview-less merge"
         )
         return base
 
@@ -238,13 +228,10 @@ def decide_merge_pair(
             f"Normalize this merge decision JSON:\n\n{raw}",
         )
         data = clients.extract_json_object(cleaned)
-    except Exception:
-        try:
-            data = clients.extract_json_object(raw)
-        except Exception as e:  # noqa: BLE001
-            base.error = f"json parse failed: {e}"
-            base.reason = "parse_failed"
-            return base
+    except Exception as e:  # noqa: BLE001
+        base.error = f"curator failed: {e}"
+        base.reason = "curator_failed"
+        return base
 
     decision = str(data.get("decision") or "keep_separate").lower().strip()
     if decision not in {"merge", "keep_separate"}:
@@ -260,8 +247,11 @@ def decide_merge_pair(
     reason = str(data.get("reason") or "")[:300]
 
     # Post-rule: if signals are only weak overlap and vision says merge with low structural support
+    # Archive-overlap STRONG already has a structural signal. Do not force
+    # keep_separate just because basename overlap is low (INIT-001/SPEC-002).
     if (
         decision == "merge"
+        and not _is_strong_structural(signals)
         and "name_near_dupe" not in signals
         and _shared_digest_count(signals) < 1
     ):
@@ -282,7 +272,9 @@ def decide_merge_pair(
     base.target = target
     base.reason = reason
     base.approved_for_apply = (
-        decision == "merge" and confidence >= curate.min_merge_confidence
+        decision == "merge"
+        and confidence >= curate.min_merge_confidence
+        and bool(base.raw_vision)
     )
     return base
 

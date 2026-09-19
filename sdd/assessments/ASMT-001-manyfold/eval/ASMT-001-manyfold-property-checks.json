@@ -1,0 +1,26 @@
+{
+  "schema": "assessment-eval.property-checks/v1",
+  "target_report": "c:\\Users\\BrianNelson\\Projects\\mfold\\sdd\\assessments\\ASMT-001-manyfold\\ASMT-001-manyfold-assessment-report.md",
+  "evaluated_at": "2026-09-19T20:46:43.500505+00:00",
+  "passed": 16,
+  "failed": 0,
+  "all_passed": true,
+  "details": [
+    "PASS: markdown_document \u2014 report file is non-empty",
+    "PASS: section:Bottom Line Up Front (BLUF) \u2014 a 'Bottom Line Up Front (BLUF)' heading is present, ahead of the Executive Summary",
+    "PASS: no_separate_tldr_section \u2014 no separate 'TL;DR' heading \u2014 the BLUF is the report's single opening summary",
+    "PASS: section:Objectivity & Independent Validation \u2014 an 'Objectivity & Independent Validation' heading is present",
+    "PASS: section:Executive Summary \u2014 an 'Executive Summary' heading is present",
+    "PASS: section:Scoring Matrix \u2014 a 'Scoring Matrix' heading is present",
+    "PASS: section:Technical Component Analysis \u2014 a unified 'Technical Component Analysis' heading is present",
+    "PASS: section:Evidence & Falsification \u2014 an 'Evidence & Falsification' (or Falsification) heading is present",
+    "PASS: section:Recommendation \u2014 a 'Recommendation' heading is present",
+    "PASS: field:Assessment ID \u2014 '**Assessment ID:**' metadata is present",
+    "PASS: field:Recommendation \u2014 '**Recommendation:**' metadata is present",
+    "PASS: field:Confidence \u2014 '**Confidence:**' metadata is present",
+    "PASS: options_key:>=2 \u2014 options key lists 4 option(s) (need >= 2)",
+    "PASS: axes_present:capability+readiness \u2014 both 'capability' and 'readiness' axes are mentioned",
+    "PASS: no_redundant_component_tables \u2014 classification and gap analysis are combined into one 'Technical Component Analysis' matrix, not two separate overlapping tables",
+    "PASS: precision:no_unqualified_absolutes \u2014 Executive Summary avoids unqualified 'entire'/'all' capability claims, or names any minor external advantage as a 'harvestable delta'"
+  ]
+}
