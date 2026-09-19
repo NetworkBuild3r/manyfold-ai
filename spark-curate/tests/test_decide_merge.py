@@ -134,8 +134,8 @@ class DecideMergeLandmineTests(unittest.TestCase):
             self.assertFalse(d.approved_for_apply)
             self.assertIn("preview-less", d.reason)
 
-    def test_strong_shared_digest_previewless_still_merges(self) -> None:
-        """aud-1: multi-file shared_digest (≥2) may remain STRONG without Gemma."""
+    def test_strong_shared_digest_previewless_not_approved(self) -> None:
+        """INIT-001/SPEC-002: multi-file shared_digest is not permission without previews."""
         with tempfile.TemporaryDirectory() as tmp:
             cand = _pair(Path(tmp), signals=["shared_digest:2", "name_near_dupe"])
             with patch(
@@ -144,25 +144,68 @@ class DecideMergeLandmineTests(unittest.TestCase):
             ):
                 d = decide_merge_pair(cand, self.spark, self.curate, Path(tmp) / ".thumbs")
             self.assertEqual(d.decision, "merge")
-            self.assertGreaterEqual(d.confidence, 0.80)
-            self.assertTrue(d.approved_for_apply)
-            self.assertIn("STRONG", d.reason)
-
-    def test_strong_archive_overlap_skips_gemma_with_previews(self) -> None:
-        """SPEC-005 hook: ≥T mesh overlaps → STRONG, skip Gemma even with JPEGs."""
+            self.assertEqual(d.confidence, 0.0)
+            self.assertFalse(d.approved_for_apply)
+            self.assertIn("missing preview", d.reason)
+        """INIT-001/SPEC-002: ≥T mesh overlaps still go through Gemma."""
         with tempfile.TemporaryDirectory() as tmp:
             cand = _pair(
                 Path(tmp),
                 signals=["shared_archive_member", "archive_member_overlap:3"],
             )
+            payload = {
+                "decision": "merge",
+                "confidence": 0.91,
+                "target": "a",
+                "reason": "same pack",
+            }
             with patch(
                 "spark_curate.decide_merge._preview_jpeg",
                 return_value=b"\xff\xd8fakejpeg",
-            ), patch("spark_curate.decide_merge.clients.gemma_vision") as gemma:
+            ), patch(
+                "spark_curate.decide_merge.clients.gemma_vision",
+                return_value='{"decision":"merge"}',
+            ) as gemma, patch(
+                "spark_curate.decide_merge.clients.curator_json",
+                return_value='{"decision":"merge","confidence":0.91,"target":"a","reason":"same pack"}',
+            ), patch(
+                "spark_curate.decide_merge.clients.extract_json_object",
+                return_value=payload,
+            ):
                 d = decide_merge_pair(cand, self.spark, self.curate, Path(tmp) / ".thumbs")
-            gemma.assert_not_called()
+            gemma.assert_called_once()
             self.assertEqual(d.decision, "merge")
             self.assertTrue(d.approved_for_apply)
+
+    def test_strong_vision_failure_not_approved(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            cand = _pair(Path(tmp), signals=["shared_digest:2"])
+            with patch(
+                "spark_curate.decide_merge._preview_jpeg",
+                return_value=b"\xff\xd8fakejpeg",
+            ), patch(
+                "spark_curate.decide_merge.clients.gemma_vision",
+                side_effect=RuntimeError("vision down"),
+            ):
+                d = decide_merge_pair(cand, self.spark, self.curate, Path(tmp) / ".thumbs")
+            self.assertFalse(d.approved_for_apply)
+
+    def test_strong_curator_failure_not_approved(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            cand = _pair(Path(tmp), signals=["shared_digest:2"])
+            with patch(
+                "spark_curate.decide_merge._preview_jpeg",
+                return_value=b"\xff\xd8fakejpeg",
+            ), patch(
+                "spark_curate.decide_merge.clients.gemma_vision",
+                return_value='{"decision":"merge","confidence":0.9,"target":"a","reason":"x"}',
+            ), patch(
+                "spark_curate.decide_merge.clients.curator_json",
+                side_effect=RuntimeError("curator down"),
+            ):
+                d = decide_merge_pair(cand, self.spark, self.curate, Path(tmp) / ".thumbs")
+            self.assertFalse(d.approved_for_apply)
+            self.assertEqual(d.reason, "curator_failed")
 
 
 if __name__ == "__main__":

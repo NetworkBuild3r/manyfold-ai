@@ -204,13 +204,13 @@ class ArchiveCandidateWireTests(unittest.TestCase):
 
 
 class ArchiveDecideStrongTests(unittest.TestCase):
-    """INIT-018/SPEC-005 ac-4: STRONG archive skips Gemma."""
+    """INIT-001/SPEC-002: STRONG archive still calls Gemma."""
 
     def setUp(self) -> None:
         self.spark = SparkConfig()
         self.curate = CurateConfig(min_merge_confidence=0.80)
 
-    def test_ac4_strong_archive_skips_gemma_when_previews_exist(self) -> None:
+    def test_ac4_strong_archive_calls_gemma_when_previews_exist(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             a = root / "Games" / "Pack"
@@ -224,16 +224,31 @@ class ArchiveDecideStrongTests(unittest.TestCase):
                 b=ModelFolder(path=b, category="Games", name="Pack (2)"),
                 signals=["shared_archive_member", "archive_member_overlap:3"],
             )
+            payload = {
+                "decision": "merge",
+                "confidence": 0.91,
+                "target": "a",
+                "reason": "same pack",
+            }
             with patch(
                 "spark_curate.decide_merge._preview_jpeg",
                 return_value=b"\xff\xd8fakejpeg",
-            ), patch("spark_curate.decide_merge.clients.gemma_vision") as gemma:
+            ), patch(
+                "spark_curate.decide_merge.clients.gemma_vision",
+                return_value='{"decision":"merge"}',
+            ) as gemma, patch(
+                "spark_curate.decide_merge.clients.curator_json",
+                return_value='{"decision":"merge","confidence":0.91,"target":"a","reason":"same pack"}',
+            ), patch(
+                "spark_curate.decide_merge.clients.extract_json_object",
+                return_value=payload,
+            ):
                 d = decide_merge_pair(cand, self.spark, self.curate, Path(tmp) / ".thumbs")
-            gemma.assert_not_called()
+            gemma.assert_called_once()
             self.assertEqual(d.decision, "merge")
             self.assertGreaterEqual(d.confidence, 0.80)
             self.assertTrue(d.approved_for_apply)
-            self.assertIn("STRONG", d.reason)
+            self.assertNotIn("skip Gemma", d.reason)
 
     def test_one_mesh_plus_name_is_uncertain_calls_gemma(self) -> None:
         """(≥1 mesh + name_near_dupe) is UNCERTAIN — not STRONG."""

@@ -94,3 +94,6 @@ script/start-and-capture-logs.ps1
 __pycache__/
 *.py[cod]
 
+# Transient git worktrees (not part of a clean checkout)
+/.claude/worktrees/
+
