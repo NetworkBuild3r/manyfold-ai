@@ -45,7 +45,7 @@ class Model < ApplicationRecord
     if exts.empty?
       none
     else
-      where(ModelFile.image_preview_exists_sql)
+      where(Arel.sql("(#{ModelFile.image_preview_exists_sql}) OR (#{ArchiveEntry.image_preview_exists_sql})"))
     end
   }
 
@@ -228,6 +228,28 @@ class Model < ApplicationRecord
 
   def image_files
     model_files.select(&:is_image?)
+  end
+
+  # Assign a preview when the model already has an image (loose file or a ready
+  # archive entry) and neither preview source is an on-disk image.
+  def ensure_image_preview!
+    return if image_preview_assigned?
+
+    pick = PreviewFilePicker.new(self).call(require_on_disk: true)
+    case pick
+    when ArchiveEntry
+      update!(preview_archive_entry: pick) unless preview_archive_entry_id == pick.id
+    when ModelFile
+      update!(preview_file: pick) if pick.is_image? && preview_file_id != pick.id
+    end
+  end
+
+  def image_preview_assigned?
+    file = preview_file
+    return true if file&.is_image? && file.exists_on_storage?
+
+    entry = preview_archive_entry
+    entry&.is_image? && entry.preview_exists?
   end
 
   def three_d_files

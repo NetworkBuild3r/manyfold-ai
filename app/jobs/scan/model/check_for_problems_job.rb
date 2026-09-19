@@ -12,6 +12,7 @@ class Scan::Model::CheckForProblemsJob < ApplicationJob
     return if light
 
     Problems::Nesting.detect(model)
+    model.ensure_image_preview!
     Problems::NoImage.detect(model)
     Problems::No3dModel.detect(model)
     Problems::NoLicense.detect(model)

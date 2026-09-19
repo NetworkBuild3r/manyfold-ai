@@ -173,6 +173,38 @@ RSpec.describe ArchiveEntryService do
       expect(File.exist?(File.join(@library_path, "model_a", "pics", "shot.png"))).to be false
       expect(entry.reload.status).to eq("preview_ready")
     end
+
+    it "stores the SHA-512 digest and sets the archive image as preview" do
+      png = Base64.decode64("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==")
+      service = described_class.new(@file)
+      allow(service).to receive(:write_image_preview!)
+      service.list!
+      entry = @file.archive_entries.find_by!(pathname: "pics/shot.png")
+
+      service.extract_preview_image!(entry)
+
+      expect(entry.reload.digest).to eq(Digest::SHA512.hexdigest(png))
+      expect(@model.reload.preview_archive_entry).to eq(entry)
+      expect(File.exist?(File.join(@library_path, "model_a", "shot.png"))).to be false
+    end
+
+    it "reuses a matching image file instead of adding another preview image" do
+      png = Base64.decode64("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==")
+      cover = File.join(@library_path, "model_a", "cover.png")
+      File.binwrite(cover, png)
+      existing = create(:model_file, model: @model, filename: "cover.png", attachment: nil)
+      existing.attach_existing_file!(refresh: false)
+      existing.update!(digest: Digest::SHA512.file(cover).hexdigest)
+
+      service = described_class.new(@file)
+      allow(service).to receive(:write_image_preview!)
+      service.list!
+      entry = @file.archive_entries.find_by!(pathname: "pics/shot.png")
+
+      expect { service.extract_preview_image!(entry) }.not_to change { @model.model_files.count }
+      expect(@model.reload.preview_file).to eq(existing)
+      expect(@model.preview_archive_entry).to be_nil
+    end
   end
 
   describe "#extract_mesh_and_preview!" do
