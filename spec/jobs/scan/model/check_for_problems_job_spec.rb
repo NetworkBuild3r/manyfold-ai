@@ -36,6 +36,26 @@ RSpec.describe Scan::Model::CheckForProblemsJob do
       described_class.perform_now(model.id)
       expect(model.problems.map(&:category)).to include("no_image")
     end
+
+    it "assigns a ready archive image when no preview is set" do
+      MockDirectory.create(["pictured/pack.zip", "pictured/.manyfold/preview.png"]) do |path|
+        library = create(:library, path: path)
+        model = create(:model, library: library, path: "pictured", preview_file: nil)
+        file = create(:model_file, model: model, filename: "pack.zip")
+        entry = ArchiveEntry.create!(
+          model_file: file,
+          pathname: "pics/shot.png",
+          kind: "image",
+          status: "preview_ready",
+          preview_path: "pictured/.manyfold/preview.png",
+          size: 8
+        )
+
+        described_class.perform_now(model.id)
+
+        expect(model.reload.preview_archive_entry).to eq(entry)
+      end
+    end
   end
 
   context "when checking for missing 3d files" do

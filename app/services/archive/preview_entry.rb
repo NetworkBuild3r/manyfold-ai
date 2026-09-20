@@ -51,13 +51,18 @@ module Archive
       absolute = File.join(@library.path, relative)
       FileUtils.mkdir_p(File.dirname(absolute))
 
+      digest = nil
       Tempfile.create(["archive-entry", ".#{entry.extension.presence || "bin"}"]) do |tmp|
         tmp.binmode
         extract_entries_to!(entry.pathname => tmp.path)
+        # Hash the original bytes (same SHA-512 as ModelFile#calculate_digest).
+        digest = Archive::AdoptImage.hexdigest(tmp.path)
         write_image_preview!(tmp.path, absolute)
       end
 
-      entry.update!(preview_path: relative, status: "preview_ready", error_message: nil)
+      entry.update!(preview_path: relative, status: "preview_ready", error_message: nil, digest: digest)
+      Archive::AdoptImage.assign_preview!(model: @model, entry: entry)
+      @model.dedup_images_later
       relative
     end
 

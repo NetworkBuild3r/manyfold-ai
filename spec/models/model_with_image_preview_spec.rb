@@ -27,4 +27,19 @@ RSpec.describe "Model.with_image_preview" do
 
     expect(Model.with_image_preview).to contain_exactly(with_image)
   end
+
+  it "includes a model whose preview is a ready archive image" do
+    model = create(:model)
+    file = create(:model_file, model: model, filename: "pack.zip")
+    entry = ArchiveEntry.create!(
+      model_file: file,
+      pathname: "pics/shot.png",
+      kind: "image",
+      status: "preview_ready",
+      preview_path: "m/.manyfold/preview.png"
+    )
+    model.update!(preview_archive_entry: entry)
+
+    expect(Model.with_image_preview).to contain_exactly(model)
+  end
 end

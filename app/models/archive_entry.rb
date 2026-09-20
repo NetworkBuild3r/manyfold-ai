@@ -22,6 +22,15 @@ class ArchiveEntry < ApplicationRecord
   scope :previewable, -> { where(kind: %w[mesh image]) }
   scope :with_preview, -> { where(status: "preview_ready") }
 
+  # Image search: a ready archive image set as preview_archive_entry counts.
+  def self.image_preview_exists_sql
+    Arel.sql(
+      "EXISTS (SELECT 1 FROM archive_entries WHERE archive_entries.id = models.preview_archive_entry_id" \
+      " AND archive_entries.kind = 'image' AND archive_entries.status = 'preview_ready'" \
+      " AND archive_entries.preview_path IS NOT NULL)"
+    )
+  end
+
   delegate :model, to: :model_file
 
   def extension

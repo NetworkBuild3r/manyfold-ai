@@ -339,14 +339,21 @@ class ModelsController < ApplicationController
       .where(model_file_id: scoped.map(&:id))
       .includes(model_file: :model)
       .to_a
-    images = loose + archive
+    images = Archive::CollapseDuplicateImages.dedupe(@model, loose + archive)
     current = @model.preview_archive_entry || @model.preview_file
     if current && images.delete(current)
       images.unshift(current)
-    elsif current.is_a?(ArchiveEntry) && current.preview_ready?
+    elsif current.is_a?(ArchiveEntry) && current.preview_ready? && !covered_by_digest?(images, current)
       images.unshift(current)
     end
     images
+  end
+
+  def covered_by_digest?(images, current)
+    digest = current.digest.presence
+    return false if digest.blank?
+
+    images.any? { |image| image.digest == digest }
   end
 
   def get_model
