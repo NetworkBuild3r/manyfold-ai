@@ -15,6 +15,7 @@ Control-node `bundle exec rspec` / `rubocop` **cannot run** (`libarchive.so.13` 
 - After mutating a **signed-in** `User` in a request spec, `sign_in user.reload` (Warden keeps the in-memory AR object).
 - Docker **`smoke-test` must include Redis + `REDIS_URL`** whenever production boot uses Redis. Do not delete the smoke-test job to go green.
 - Docker **image build** boots production for `assets:precompile` with no Redis. Skip Redis `cache_store` when `RAILS_ASSETS_PRECOMPILE=1` (and keep a dummy `REDIS_URL` in `docker/build.dockerfile`). Runtime still requires Redis.
+- Docker smoke-test healthcheck must hit `http://[::1]:3214/health` (Puma binds `-b "[::]"`). `localhost` (IPv4) stays unhealthy after boot.
 - Never `kubectl apply` ConfigMap `manyfold-application-job-patch` over `application_job.rb`.
 
 ## Do not
