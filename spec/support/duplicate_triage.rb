@@ -7,6 +7,12 @@ module DuplicateTriageSpecHelpers
       file.update_columns(digest: digest, size: size) # rubocop:disable Rails/SkipsModelValidations -- digest fixture
     end
   end
+
+  def sized_file(model, filename:, size:)
+    create(:model_file, model: model, filename: filename).tap do |file|
+      file.update_columns(digest: nil, size: size) # rubocop:disable Rails/SkipsModelValidations -- undigested size fixture
+    end
+  end
 end
 
 RSpec.configure do |config|
