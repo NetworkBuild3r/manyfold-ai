@@ -1,0 +1,57 @@
+<%= PageTitle title: t(".title") %>
+
+<p class="text-sm text-secondary-500 dark:text-secondary-400 mb-4">
+  <%= t(".explainer", days: (Model::UNMERGE_WINDOW / 1.day).to_i) %>
+</p>
+
+<% if @merge_histories.empty? %>
+  <%= render "application/empty_state", message: t(".empty"), icon: "check-circle" %>
+<% else %>
+  <%= paginate @merge_histories %>
+
+  <table class="w-full border-collapse border border-secondary-200 dark:border-secondary-600 mt-3 [&>tbody>tr:nth-child(even)]:bg-secondary-50 [&>tbody>tr:nth-child(even)]:dark:bg-secondary-800/50">
+    <thead>
+      <tr>
+        <th class="border border-secondary-200 dark:border-secondary-600 px-4 py-2 text-left"><%= t(".when") %></th>
+        <th class="border border-secondary-200 dark:border-secondary-600 px-4 py-2 text-left"><%= t(".merged") %></th>
+        <th class="border border-secondary-200 dark:border-secondary-600 px-4 py-2 text-left"><%= t(".into") %></th>
+        <th class="border border-secondary-200 dark:border-secondary-600 px-4 py-2 text-left"><%= t(".files") %></th>
+        <th class="border border-secondary-200 dark:border-secondary-600 px-4 py-2 text-left"></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @merge_histories.each do |history| %>
+        <% target = history.target_model %>
+        <tr>
+          <td class="border border-secondary-200 dark:border-secondary-600 px-4 py-2 whitespace-nowrap">
+            <time datetime="<%= history.created_at.iso8601 %>" title="<%= l(history.created_at, format: :long) %>">
+              <%= t(".ago", time: time_ago_in_words(history.created_at)) %>
+            </time>
+          </td>
+          <td class="border border-secondary-200 dark:border-secondary-600 px-4 py-2">
+            <div><strong><%= history.source_name %></strong></div>
+            <div><small><code class="text-xs"><%= history.source_path %></code></small></div>
+          </td>
+          <td class="border border-secondary-200 dark:border-secondary-600 px-4 py-2">
+            <%= link_to target.name, model_path(target), class: "text-primary-600 dark:text-primary-400 hover:underline" %>
+          </td>
+          <td class="border border-secondary-200 dark:border-secondary-600 px-4 py-2 text-sm">
+            <%= t(".moved", count: history.adopted_count) %><br>
+            <%= t(".deduplicated", count: history.deduplicated_count) %>
+          </td>
+          <td class="border border-secondary-200 dark:border-secondary-600 px-4 py-2 text-end">
+            <% if history.undone? %>
+              <span class="text-sm text-secondary-500 dark:text-secondary-400"><%= t(".undone") %></span>
+            <% elsif history.undoable? && policy(target).unmerge? %>
+              <%= DoButton(icon: "arrow-counterclockwise", label: t(".undo"), href: unmerge_model_path(target, merge_history_id: history.id), method: :post, variant: "warning", confirm: t("general.are_you_sure")) %>
+            <% else %>
+              <span class="text-sm text-secondary-500 dark:text-secondary-400"><%= t(".expired") %></span>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <%= paginate @merge_histories %>
+<% end %>

@@ -224,6 +224,7 @@ Rails.application.routes.draw do
     concerns :reportable, reportable_class: "Collection"
     concerns :linkable
   end
+  resources :merge_histories, only: [:index], path: "merges"
   resources :problems, only: [:index, :update] do
     collection do
       post "resolve", action: "resolve"
