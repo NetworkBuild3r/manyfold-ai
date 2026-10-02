@@ -21,7 +21,10 @@ module DuplicateTriage
       shared_bytes
       unique_bytes_a
       unique_bytes_b
+      total_bytes_a
+      total_bytes_b
       containment
+      byte_containment
       jaccard
       nested
       creator_a
@@ -32,15 +35,26 @@ module DuplicateTriage
     def self.build(model_a, model_b, files: nil)
       low, high = [model_a, model_b].minmax_by(&:id)
       index = files || FileIndex.load([low.id, high.id])
-      new(model_a: low, model_b: high, rows_a: index.rows_for(low.id), rows_b: index.rows_for(high.id))
+      new(
+        model_a: low,
+        model_b: high,
+        rows_a: index.rows_for(low.id),
+        rows_b: index.rows_for(high.id),
+        total_bytes_a: index.total_bytes_for(low.id),
+        total_bytes_b: index.total_bytes_for(high.id)
+      )
     end
 
-    def initialize(model_a:, model_b:, rows_a:, rows_b:)
+    def initialize(model_a:, model_b:, rows_a:, rows_b:, total_bytes_a:, total_bytes_b:)
       @model_a = model_a
       @model_b = model_b
       @rows_a = rows_a
       @rows_b = rows_b
+      @total_bytes_a = total_bytes_a.to_i
+      @total_bytes_b = total_bytes_b.to_i
     end
+
+    attr_reader :total_bytes_a, :total_bytes_b
 
     def to_prompt_h
       PROMPT_KEYS.to_h { |key| [key, public_send(key)] }
@@ -77,6 +91,13 @@ module DuplicateTriage
 
     def unique_bytes_b
       unique_digest_set(@rows_b).sum { |digest| size_for(digest, @rows_b) }
+    end
+
+    def byte_containment
+      smaller = [total_bytes_a, total_bytes_b].min
+      return 0.0 if smaller.zero?
+
+      shared_bytes.to_f / smaller
     end
 
     def containment

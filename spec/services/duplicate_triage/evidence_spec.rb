@@ -62,13 +62,60 @@ RSpec.describe DuplicateTriage::Evidence, type: :duplicate_triage do
     expect(evidence.to_prompt_h.keys).to eq(described_class::PROMPT_KEYS)
     expect(evidence.to_prompt_h[:creator_a]).to eq("Alice")
     expect(evidence.to_prompt_h[:nested]).to be(false)
+    expect(evidence.to_prompt_h[:total_bytes_a]).to eq(1250)
+    expect(evidence.to_prompt_h[:total_bytes_b]).to eq(2000)
+    expect(evidence.to_prompt_h[:byte_containment]).to eq(0.8)
   end
 
   it "prints evidence JSON from the rake task without writing verdicts" do
     Rails.application.load_tasks unless Rake::Task.task_defined?("manyfold:duplicate_triage:evidence")
     task = Rake::Task["manyfold:duplicate_triage:evidence"]
     expect {
-      expect { task.execute }.to output(/"fingerprint"/).to_stdout
+      expect { task.execute }.to output(/"byte_containment"[\s\S]*"fingerprint"/).to_stdout
     }.not_to change(DuplicatePairVerdict, :count)
+  end
+end
+
+# Hand-computed (AC6 / ADR Addendum A-1):
+#   shared image 1024 bytes; totals 100_000_000 and 200_000_000
+#   byte_containment = 1024 / 100_000_000 = 0.00001024
+RSpec.describe DuplicateTriage::Evidence, "byte-weighted overlap (AC6)", type: :duplicate_triage do
+  let(:library) { create(:library) }
+
+  def promo_models(bytes_a, bytes_b)
+    left = create(:model, library: library, path: "Promo/Left")
+    right = create(:model, library: library, path: "Promo/Right")
+    digested_file(left, filename: "preview.jpg", digest: "promo-img", size: 1024)
+    digested_file(right, filename: "preview.jpg", digest: "promo-img", size: 1024)
+    sized_file(left, filename: "mesh.stl", size: bytes_a - 1024)
+    sized_file(right, filename: "mesh.stl", size: bytes_b - 1024)
+    [left, right]
+  end
+
+  it "is about 0.00001 when a 1 KB image is shared against 100 MB and 200 MB" do
+    left, right = promo_models(100_000_000, 200_000_000)
+    ev = described_class.build(left, right)
+    expect(ev.total_bytes_a).to eq(100_000_000)
+    expect(ev.total_bytes_b).to eq(200_000_000)
+    expect(ev.shared_bytes).to eq(1024)
+    expect(ev.byte_containment).to be_within(1e-12).of(0.00001024)
+  end
+
+  it "is 1.0 when the smaller model's bytes are entirely shared" do
+    small = create(:model, library: library, path: "Full/Small")
+    large = create(:model, library: library, path: "Full/Large")
+    digested_file(small, filename: "part.stl", digest: "contained", size: 50)
+    digested_file(large, filename: "part.stl", digest: "contained", size: 50)
+    digested_file(large, filename: "extra.stl", digest: "extra", size: 950)
+    expect(described_class.build(small, large).byte_containment).to eq(1.0)
+  end
+
+  it "is 0.0 when both models have zero total bytes" do
+    empty_a = create(:model, library: library, path: "Empty/A")
+    empty_b = create(:model, library: library, path: "Empty/B")
+    ev = described_class.build(empty_a, empty_b)
+    expect(ev.total_bytes_a).to eq(0)
+    expect(ev.total_bytes_b).to eq(0)
+    expect(ev.byte_containment).to eq(0.0)
   end
 end
