@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_09_11_134631) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_02_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "fuzzystrmatch"
   enable_extension "pg_catalog.plpgsql"
@@ -123,6 +123,31 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_11_134631) do
     t.index ["public_id"], name: "index_creators_on_public_id"
     t.index ["slug"], name: "index_creators_on_slug", unique: true
     t.index ["updated_at"], name: "index_creators_on_updated_at"
+  end
+
+  create_table "duplicate_pair_verdicts", force: :cascade do |t|
+    t.bigint "model_a_id", null: false
+    t.bigint "model_b_id", null: false
+    t.string "fingerprint", limit: 64, null: false
+    t.string "source", null: false
+    t.string "decision", null: false
+    t.string "keeper", null: false
+    t.decimal "confidence", precision: 4, scale: 3
+    t.string "reason", limit: 500
+    t.jsonb "evidence", default: {}, null: false
+    t.string "llm_model"
+    t.string "prompt_version"
+    t.string "error"
+    t.bigint "decided_by_id"
+    t.string "status", default: "proposed", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["decided_by_id"], name: "index_duplicate_pair_verdicts_on_decided_by_id"
+    t.index ["model_a_id", "model_b_id", "fingerprint", "source"], name: "index_dup_verdicts_on_pair_fingerprint_source", unique: true
+    t.index ["model_a_id"], name: "index_duplicate_pair_verdicts_on_model_a_id"
+    t.index ["model_b_id"], name: "index_duplicate_pair_verdicts_on_model_b_id"
+    t.index ["status", "decision", "confidence"], name: "index_dup_verdicts_on_status_decision_confidence"
+    t.check_constraint "model_a_id < model_b_id", name: "duplicate_pair_verdicts_model_a_lt_b"
   end
 
   create_table "fasp_client_backfill_requests", force: :cascade do |t|
@@ -700,6 +725,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_11_134631) do
   add_foreign_key "collections", "collections"
   add_foreign_key "collections", "creators"
   add_foreign_key "comments", "federails_actors"
+  add_foreign_key "duplicate_pair_verdicts", "models", column: "model_a_id", on_delete: :cascade
+  add_foreign_key "duplicate_pair_verdicts", "models", column: "model_b_id", on_delete: :cascade
+  add_foreign_key "duplicate_pair_verdicts", "users", column: "decided_by_id", on_delete: :nullify
   add_foreign_key "fasp_client_backfill_requests", "fasp_client_providers"
   add_foreign_key "fasp_client_event_subscriptions", "fasp_client_providers"
   add_foreign_key "federails_activities", "federails_actors", column: "actor_id"
