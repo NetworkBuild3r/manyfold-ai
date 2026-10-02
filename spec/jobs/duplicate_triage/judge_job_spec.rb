@@ -34,6 +34,28 @@ RSpec.describe DuplicateTriage::JudgeJob, type: :duplicate_triage do
     [left, right]
   end
 
+  def stub_judge_calls
+    allow(DuplicateTriage::LlmJudge).to receive(:configure!)
+    allow(DuplicateTriage::LlmJudge).to receive(:model_id).and_return("test")
+  end
+
+  def keep_separate_result
+    DuplicateTriage::LlmJudge::Result.new(
+      decision: "keep_separate", keeper: "a", confidence: 0.5, reason: "ok", error: nil
+    )
+  end
+
+  def containment(payload)
+    payload[:byte_containment] || payload["byte_containment"]
+  end
+
+  # Create Low → Mid → High so Pairs id order is the opposite of AC5.
+  def reverse_containment_pairs
+    isolated_pair("Low", shared_size: 1024, extra_a: 100_000_000, extra_b: 200_000_000, promo: true)
+    isolated_pair("Mid", shared_size: 500, extra_a: 500, extra_b: 500)
+    isolated_pair("High", shared_size: 1000)
+  end
+
   def stub_ok
     stub_request(:post, completions).to_return(
       status: 200,
@@ -112,22 +134,42 @@ RSpec.describe DuplicateTriage::JudgeJob, type: :duplicate_triage do
   end
 
   it "processes pairs by byte_containment descending and still judges below 0.01 (AC5)" do
-    isolated_pair("High", shared_size: 1000)
-    isolated_pair("Mid", shared_size: 500, extra_a: 500, extra_b: 500)
-    isolated_pair("Low", shared_size: 1024, extra_a: 100_000_000, extra_b: 200_000_000, promo: true)
+    reverse_containment_pairs
+    stub_judge_calls
     order = []
-    allow(DuplicateTriage::LlmJudge).to receive(:configure!)
-    allow(DuplicateTriage::LlmJudge).to receive(:model_id).and_return("test")
     allow(DuplicateTriage::LlmJudge).to receive(:call) do |payload|
-      order << payload[:byte_containment]
-      DuplicateTriage::LlmJudge::Result.new(
-        decision: "keep_separate", keeper: "a", confidence: 0.5, reason: "ok", error: nil
-      )
+      order << containment(payload)
+      keep_separate_result
     end
     described_class.perform_now
     expect(order.size).to eq(3)
-    expect(order).to eq(order.sort.reverse)
-    expect(order.last).to be < 0.01
+    expect(order[0]).to eq(1.0)
+    expect(order[1]).to eq(0.5)
+    expect(order[2]).to be < 0.01
+    expect(order).to eq([1.0, 0.5, order.last])
+  end
+
+  it "judges the below-0.01 band after higher overlap at concurrency 8 (AC5)" do
+    stub_const("#{described_class}::DEFAULT_CONCURRENCY", 8)
+    reverse_containment_pairs
+    stub_judge_calls
+    lock = Mutex.new
+    high_finish = []
+    low_start = nil
+    allow(DuplicateTriage::LlmJudge).to receive(:call) do |payload|
+      value = containment(payload)
+      if value >= 0.01
+        sleep 0.05
+        lock.synchronize { high_finish << Process.clock_gettime(Process::CLOCK_MONOTONIC) }
+      else
+        lock.synchronize { low_start = Process.clock_gettime(Process::CLOCK_MONOTONIC) }
+      end
+      keep_separate_result
+    end
+    described_class.perform_now
+    expect(high_finish.size).to eq(2)
+    expect(low_start).not_to be_nil
+    expect(low_start).to be >= high_finish.max
   end
 
   it "enqueues from the judge rake task" do

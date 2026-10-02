@@ -27,9 +27,10 @@ module DuplicateTriage
       cap = limit.present? ? Integer(limit) : nil
       items = llm_items
       items = items.first(cap) if cap
-      items.each_slice(concurrency).with_index do |batch, index|
+      batches = batches_for(items)
+      batches.each_with_index do |batch, index|
         persist_batch(batch)
-        sleep BATCH_PAUSE_SECONDS if index < ((items.size.to_f / concurrency).ceil - 1)
+        sleep BATCH_PAUSE_SECONDS if index < (batches.size - 1)
       end
     end
 
@@ -51,6 +52,14 @@ module DuplicateTriage
       index = FileIndex.load(pairs.flat_map { |pair| [pair.model_a.id, pair.model_b.id] }.uniq)
       pairs.filter_map { |pair| item_for(pair, index) }
         .sort_by { |item| -item.evidence.byte_containment }
+    end
+
+    # Highest overlap first; the below-0.01 band is its own trailing
+    # slice so a low pair is never judged in the same wave as a high one
+    # (AC5 / ADR Addendum A-1).
+    def batches_for(items)
+      head, tail = items.partition { |item| item.evidence.byte_containment >= 0.01 }
+      head.each_slice(concurrency).to_a + tail.each_slice(concurrency).to_a
     end
 
     def item_for(pair, index)
