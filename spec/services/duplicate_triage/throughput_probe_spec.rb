@@ -1,12 +1,9 @@
 # frozen_string_literal: true
 
 require "rails_helper"
+require Rails.root.join("lib/tasks/duplicate_triage_probe")
 
 RSpec.describe DuplicateTriage::ThroughputProbe do
-  before do
-    require Rails.root.join("lib/tasks/duplicate_triage_probe")
-  end
-
   it "reads JSON after a banner whose first exact line is [" do
     path = Rails.root.join("tmp/duplicate_triage_probe_sample.json")
     FileUtils.mkdir_p(path.dirname)
