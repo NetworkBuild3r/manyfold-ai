@@ -1,5 +1,9 @@
 <%= PageTitle title: @duplicate_list ? t(".merge_title") : Problem.model_name.human(count: 100), heading: false %>
 
+<p class="text-sm mb-3">
+  <%= link_to t(".merge_history_link"), merge_histories_path, class: "text-primary-600 dark:text-primary-400 hover:underline" %>
+</p>
+
 <%= render "filters" %>
 
 <% if @counts_by_category.present? %>

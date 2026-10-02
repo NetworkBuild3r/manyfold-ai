@@ -84,7 +84,7 @@ jobs:
     steps:
       - name: Smoke test
         run: |
-          for i in $(seq 1 36); do
+          for _ in $(seq 1 36); do
             if curl -sf --max-time 5 http://localhost:3214/health; then
               exit 0
             fi

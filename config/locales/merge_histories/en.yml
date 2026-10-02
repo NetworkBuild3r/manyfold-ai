@@ -1,0 +1,21 @@
+---
+en:
+  merge_histories:
+    index:
+      ago: "%{time} ago"
+      deduplicated:
+        one: "%{count} duplicate dropped"
+        other: "%{count} duplicates dropped"
+      empty: No models have been merged yet.
+      expired: Undo window closed
+      explainer: Every model merge is recorded here. Merges can be undone for %{days} days.
+      files: Files
+      into: Merged into
+      merged: Merged model
+      moved:
+        one: "%{count} file moved"
+        other: "%{count} files moved"
+      title: Merge history
+      undo: Undo merge
+      undone: Undone
+      when: When
