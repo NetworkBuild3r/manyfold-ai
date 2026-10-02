@@ -3,7 +3,7 @@
 require "pathname"
 
 module DuplicateTriage
-  # Same nesting test as Model#parents / Model::MergeEligibility: one model's
+  # Same nesting test as Model#parents / merge eligibility: one model's
   # library path is a filesystem ancestor of the other. Pathname only — names
   # are never compared (INIT-031/SPEC-003, D-2).
   module Ancestry
