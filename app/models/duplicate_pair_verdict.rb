@@ -34,7 +34,8 @@ class DuplicatePairVerdict < ApplicationRecord
   belongs_to :decided_by, class_name: "User", optional: true
 
   enum :source, SOURCES, validate: true
-  enum :decision, DECISIONS, validate: true
+  # prefix: AR already defines Relation#merge; keep the stored value "merge" (D-3).
+  enum :decision, DECISIONS, prefix: :decision, validate: true
   enum :keeper, KEEPERS, prefix: :keeper, validate: true
   enum :status, STATUSES, default: :proposed, validate: true
 

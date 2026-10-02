@@ -24,6 +24,18 @@ RSpec.describe DuplicatePairVerdict do
     )
   end
 
+  it "runs the migration forward and back on Postgres (AC1)" do
+    require Rails.root.join("db/migrate/20261002120000_create_duplicate_pair_verdicts")
+    migration = CreateDuplicatePairVerdicts.new
+    ActiveRecord::Migration.suppress_messages do
+      migration.migrate(:down)
+      expect(described_class.connection.data_source_exists?("duplicate_pair_verdicts")).to be(false)
+      migration.migrate(:up)
+    end
+    described_class.reset_column_information
+    expect(described_class.connection.data_source_exists?("duplicate_pair_verdicts")).to be(true)
+  end
+
   it "rejects reversed model ids at the database (AC2)" do
     lower, higher = [create(:model), create(:model)].sort_by(&:id)
     row = new_verdict(model_a: higher, model_b: lower)
@@ -57,8 +69,8 @@ RSpec.describe DuplicatePairVerdict do
   it "deletes verdict rows when either model is destroyed (AC4)" do
     left = create(:duplicate_pair_verdict)
     right = create(:duplicate_pair_verdict)
-    Model.where(id: left.model_a_id).delete_all
-    Model.where(id: right.model_b_id).delete_all
+    left.model_a.destroy!
+    right.model_b.destroy!
     expect(described_class.where(id: [left.id, right.id])).to be_empty
   end
 
