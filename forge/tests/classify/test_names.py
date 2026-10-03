@@ -39,6 +39,10 @@ COUNTER = re.compile(r"\(\s*\d+\s*\)\s*$")
         ("Iron Man: Mark 85", "Iron Man - Mark 85"),
         ("a/b\\c*d?e", "a b c d e"),
         ("CON", "CON_"),
+        (
+            "#24_Epic_Miniatures_Norse_Raiders_Pre_&_Unsupported_7z.001",
+            "#24 Epic Miniatures Norse Raiders Pre & Unsupported",
+        ),
         ("@rchvillain Games - The Trench", "@rchvillain Games - The Trench"),
         ("#25_Epic_Miniatures_Endless_Nightmare", "#25 Epic Miniatures Endless Nightmare"),
     ],
