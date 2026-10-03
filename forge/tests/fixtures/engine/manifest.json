@@ -1,0 +1,711 @@
+{
+ "basic.zip": {
+  "format": "zip",
+  "members": [
+   {
+    "chain": [
+     "models/cube_binary.stl"
+    ],
+    "depth": 1,
+    "sha256": "7ae73c149fd6111f2bcd2172ed885afd2f796b5b9335142ae10307dba6163218",
+    "size": 684,
+    "triangles": 12
+   },
+   {
+    "chain": [
+     "models/cube_ascii.stl"
+    ],
+    "depth": 1,
+    "sha256": "00194ba1590a4bfd6d1a37efbd1210a354db3cb570a6faa6bd150c46959990ec",
+    "size": 1423,
+    "triangles": 12
+   },
+   {
+    "chain": [
+     "images/preview.png"
+    ],
+    "depth": 1,
+    "sha256": "a5bcdfdb44eb1690110a0ef35d0a991a4b91a1a1674f5c9366228cb4c0bb0f8d",
+    "size": 3008,
+    "triangles": null
+   },
+   {
+    "chain": [
+     "readme.txt"
+    ],
+    "depth": 1,
+    "sha256": "9d58eac6364a9db43eab65c7503096a51ac5599fea8acd4ad530a71f5bdb7504",
+    "size": 980,
+    "triangles": null
+   },
+   {
+    "chain": [
+     "empty.txt"
+    ],
+    "depth": 1,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "size": 0,
+    "triangles": null
+   },
+   {
+    "chain": [
+     "data/random.bin"
+    ],
+    "depth": 1,
+    "sha256": "56740f4d3a29b7d793269e57d579ce3031a998c9bfca4548ed682e3978efc95b",
+    "size": 20000,
+    "triangles": null
+   }
+  ],
+  "paths": [
+   "basic.zip"
+  ]
+ },
+ "basic_lzma2.7z": {
+  "format": "7z",
+  "members": [
+   {
+    "chain": [
+     "models/cube_binary.stl"
+    ],
+    "depth": 1,
+    "sha256": "7ae73c149fd6111f2bcd2172ed885afd2f796b5b9335142ae10307dba6163218",
+    "size": 684,
+    "triangles": 12
+   },
+   {
+    "chain": [
+     "models/cube_ascii.stl"
+    ],
+    "depth": 1,
+    "sha256": "00194ba1590a4bfd6d1a37efbd1210a354db3cb570a6faa6bd150c46959990ec",
+    "size": 1423,
+    "triangles": 12
+   },
+   {
+    "chain": [
+     "images/preview.png"
+    ],
+    "depth": 1,
+    "sha256": "a5bcdfdb44eb1690110a0ef35d0a991a4b91a1a1674f5c9366228cb4c0bb0f8d",
+    "size": 3008,
+    "triangles": null
+   },
+   {
+    "chain": [
+     "readme.txt"
+    ],
+    "depth": 1,
+    "sha256": "9d58eac6364a9db43eab65c7503096a51ac5599fea8acd4ad530a71f5bdb7504",
+    "size": 980,
+    "triangles": null
+   },
+   {
+    "chain": [
+     "empty.txt"
+    ],
+    "depth": 1,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "size": 0,
+    "triangles": null
+   },
+   {
+    "chain": [
+     "data/random.bin"
+    ],
+    "depth": 1,
+    "sha256": "56740f4d3a29b7d793269e57d579ce3031a998c9bfca4548ed682e3978efc95b",
+    "size": 20000,
+    "triangles": null
+   }
+  ],
+  "paths": [
+   "basic_lzma2.7z"
+  ]
+ },
+ "basic_rar4.rar": {
+  "format": "rar4",
+  "members": [
+   {
+    "chain": [
+     "models/cube_binary.stl"
+    ],
+    "depth": 1,
+    "sha256": "7ae73c149fd6111f2bcd2172ed885afd2f796b5b9335142ae10307dba6163218",
+    "size": 684,
+    "triangles": 12
+   },
+   {
+    "chain": [
+     "models/cube_ascii.stl"
+    ],
+    "depth": 1,
+    "sha256": "00194ba1590a4bfd6d1a37efbd1210a354db3cb570a6faa6bd150c46959990ec",
+    "size": 1423,
+    "triangles": 12
+   },
+   {
+    "chain": [
+     "images/preview.png"
+    ],
+    "depth": 1,
+    "sha256": "a5bcdfdb44eb1690110a0ef35d0a991a4b91a1a1674f5c9366228cb4c0bb0f8d",
+    "size": 3008,
+    "triangles": null
+   },
+   {
+    "chain": [
+     "readme.txt"
+    ],
+    "depth": 1,
+    "sha256": "9d58eac6364a9db43eab65c7503096a51ac5599fea8acd4ad530a71f5bdb7504",
+    "size": 980,
+    "triangles": null
+   },
+   {
+    "chain": [
+     "empty.txt"
+    ],
+    "depth": 1,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "size": 0,
+    "triangles": null
+   },
+   {
+    "chain": [
+     "data/random.bin"
+    ],
+    "depth": 1,
+    "sha256": "56740f4d3a29b7d793269e57d579ce3031a998c9bfca4548ed682e3978efc95b",
+    "size": 20000,
+    "triangles": null
+   }
+  ],
+  "paths": [
+   "basic_rar4.rar"
+  ]
+ },
+ "basic_rar5_solid.rar": {
+  "format": "rar5",
+  "members": [
+   {
+    "chain": [
+     "models/cube_binary.stl"
+    ],
+    "depth": 1,
+    "sha256": "7ae73c149fd6111f2bcd2172ed885afd2f796b5b9335142ae10307dba6163218",
+    "size": 684,
+    "triangles": 12
+   },
+   {
+    "chain": [
+     "models/cube_ascii.stl"
+    ],
+    "depth": 1,
+    "sha256": "00194ba1590a4bfd6d1a37efbd1210a354db3cb570a6faa6bd150c46959990ec",
+    "size": 1423,
+    "triangles": 12
+   },
+   {
+    "chain": [
+     "images/preview.png"
+    ],
+    "depth": 1,
+    "sha256": "a5bcdfdb44eb1690110a0ef35d0a991a4b91a1a1674f5c9366228cb4c0bb0f8d",
+    "size": 3008,
+    "triangles": null
+   },
+   {
+    "chain": [
+     "readme.txt"
+    ],
+    "depth": 1,
+    "sha256": "9d58eac6364a9db43eab65c7503096a51ac5599fea8acd4ad530a71f5bdb7504",
+    "size": 980,
+    "triangles": null
+   },
+   {
+    "chain": [
+     "empty.txt"
+    ],
+    "depth": 1,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "size": 0,
+    "triangles": null
+   },
+   {
+    "chain": [
+     "data/random.bin"
+    ],
+    "depth": 1,
+    "sha256": "56740f4d3a29b7d793269e57d579ce3031a998c9bfca4548ed682e3978efc95b",
+    "size": 20000,
+    "triangles": null
+   }
+  ],
+  "paths": [
+   "basic_rar5_solid.rar"
+  ]
+ },
+ "deflate64.zip": {
+  "format": "zip",
+  "members": [
+   {
+    "chain": [
+     "models/cube_binary.stl"
+    ],
+    "depth": 1,
+    "sha256": "7ae73c149fd6111f2bcd2172ed885afd2f796b5b9335142ae10307dba6163218",
+    "size": 684,
+    "triangles": 12
+   },
+   {
+    "chain": [
+     "models/cube_ascii.stl"
+    ],
+    "depth": 1,
+    "sha256": "00194ba1590a4bfd6d1a37efbd1210a354db3cb570a6faa6bd150c46959990ec",
+    "size": 1423,
+    "triangles": 12
+   },
+   {
+    "chain": [
+     "images/preview.png"
+    ],
+    "depth": 1,
+    "sha256": "a5bcdfdb44eb1690110a0ef35d0a991a4b91a1a1674f5c9366228cb4c0bb0f8d",
+    "size": 3008,
+    "triangles": null
+   },
+   {
+    "chain": [
+     "readme.txt"
+    ],
+    "depth": 1,
+    "sha256": "9d58eac6364a9db43eab65c7503096a51ac5599fea8acd4ad530a71f5bdb7504",
+    "size": 980,
+    "triangles": null
+   },
+   {
+    "chain": [
+     "empty.txt"
+    ],
+    "depth": 1,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "size": 0,
+    "triangles": null
+   },
+   {
+    "chain": [
+     "data/random.bin"
+    ],
+    "depth": 1,
+    "sha256": "56740f4d3a29b7d793269e57d579ce3031a998c9bfca4548ed682e3978efc95b",
+    "size": 20000,
+    "triangles": null
+   }
+  ],
+  "paths": [
+   "deflate64.zip"
+  ],
+  "reader": "7zz"
+ },
+ "depth3.rar": {
+  "format": "rar4",
+  "members": [
+   {
+    "chain": [
+     "mid.zip"
+    ],
+    "depth": 1,
+    "sha256": "6a9195f293f4df16993bcd8d3d12837cb897aaccefad12bbb502642758d0e94f",
+    "size": 1051,
+    "triangles": null
+   },
+   {
+    "chain": [
+     "top.txt"
+    ],
+    "depth": 1,
+    "sha256": "13917713c38a8c1fa44f2e80dff1ec0c5bdba95e36f26b9a9de2e2c5f4052774",
+    "size": 10,
+    "triangles": null
+   },
+   {
+    "chain": [
+     "mid.zip",
+     "inner.7z"
+    ],
+    "depth": 2,
+    "sha256": "e68d4fd407d69a790a7f36ed998a5cebce94271de6f4f0abb5a015e4369f8b44",
+    "size": 830,
+    "triangles": null
+   },
+   {
+    "chain": [
+     "mid.zip",
+     "mid.txt"
+    ],
+    "depth": 2,
+    "sha256": "82f1dc717014a1614a7d5cb12ab7685f7cc134288793bbfab7be083527e9c39b",
+    "size": 10,
+    "triangles": null
+   },
+   {
+    "chain": [
+     "mid.zip",
+     "inner.7z",
+     "model.stl"
+    ],
+    "depth": 3,
+    "sha256": "fd00af5fe73833de6690a5f90f01fb6448cba967f61591e552ddc248417273d1",
+    "size": 684,
+    "triangles": 12
+   },
+   {
+    "chain": [
+     "mid.zip",
+     "inner.7z",
+     "leaf.txt"
+    ],
+    "depth": 3,
+    "sha256": "8b284b9293c9a13dfc33ca307701917d7a695dffee3e7e34443d470f1598da85",
+    "size": 12,
+    "triangles": null
+   }
+  ],
+  "nested": {
+   "mid.zip": "done",
+   "mid.zip/inner.7z": "done"
+  },
+  "paths": [
+   "depth3.rar"
+  ]
+ },
+ "model.stl.gz": {
+  "format": "gzip",
+  "members": [
+   {
+    "chain": [
+     "model.stl"
+    ],
+    "depth": 1,
+    "sha256": "601916e2ea6b2e5847136b09b66db1785b377b393b50337c21d39d72800d132c",
+    "size": 684,
+    "triangles": 12
+   }
+  ],
+  "paths": [
+   "model.stl.gz"
+  ],
+  "reader": "stream"
+ },
+ "split_rar4": {
+  "format": "rar4",
+  "members": [
+   {
+    "chain": [
+     "models/cube_binary.stl"
+    ],
+    "depth": 1,
+    "sha256": "7ae73c149fd6111f2bcd2172ed885afd2f796b5b9335142ae10307dba6163218",
+    "size": 684,
+    "triangles": 12
+   },
+   {
+    "chain": [
+     "models/cube_ascii.stl"
+    ],
+    "depth": 1,
+    "sha256": "00194ba1590a4bfd6d1a37efbd1210a354db3cb570a6faa6bd150c46959990ec",
+    "size": 1423,
+    "triangles": 12
+   },
+   {
+    "chain": [
+     "images/preview.png"
+    ],
+    "depth": 1,
+    "sha256": "a5bcdfdb44eb1690110a0ef35d0a991a4b91a1a1674f5c9366228cb4c0bb0f8d",
+    "size": 3008,
+    "triangles": null
+   },
+   {
+    "chain": [
+     "readme.txt"
+    ],
+    "depth": 1,
+    "sha256": "9d58eac6364a9db43eab65c7503096a51ac5599fea8acd4ad530a71f5bdb7504",
+    "size": 980,
+    "triangles": null
+   },
+   {
+    "chain": [
+     "empty.txt"
+    ],
+    "depth": 1,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "size": 0,
+    "triangles": null
+   },
+   {
+    "chain": [
+     "data/random.bin"
+    ],
+    "depth": 1,
+    "sha256": "56740f4d3a29b7d793269e57d579ce3031a998c9bfca4548ed682e3978efc95b",
+    "size": 20000,
+    "triangles": null
+   },
+   {
+    "chain": [
+     "data/big.bin"
+    ],
+    "depth": 1,
+    "sha256": "d18a903222d06b7575abd4e331a329f496924d567349d4ef7f6b1b88b74534f3",
+    "size": 110000,
+    "triangles": null
+   }
+  ],
+  "paths": [
+   "split_rar4.rar",
+   "split_rar4.r00",
+   "split_rar4.r01"
+  ]
+ },
+ "split_rar5": {
+  "format": "rar5",
+  "members": [
+   {
+    "chain": [
+     "models/cube_binary.stl"
+    ],
+    "depth": 1,
+    "sha256": "7ae73c149fd6111f2bcd2172ed885afd2f796b5b9335142ae10307dba6163218",
+    "size": 684,
+    "triangles": 12
+   },
+   {
+    "chain": [
+     "models/cube_ascii.stl"
+    ],
+    "depth": 1,
+    "sha256": "00194ba1590a4bfd6d1a37efbd1210a354db3cb570a6faa6bd150c46959990ec",
+    "size": 1423,
+    "triangles": 12
+   },
+   {
+    "chain": [
+     "images/preview.png"
+    ],
+    "depth": 1,
+    "sha256": "a5bcdfdb44eb1690110a0ef35d0a991a4b91a1a1674f5c9366228cb4c0bb0f8d",
+    "size": 3008,
+    "triangles": null
+   },
+   {
+    "chain": [
+     "readme.txt"
+    ],
+    "depth": 1,
+    "sha256": "9d58eac6364a9db43eab65c7503096a51ac5599fea8acd4ad530a71f5bdb7504",
+    "size": 980,
+    "triangles": null
+   },
+   {
+    "chain": [
+     "empty.txt"
+    ],
+    "depth": 1,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "size": 0,
+    "triangles": null
+   },
+   {
+    "chain": [
+     "data/random.bin"
+    ],
+    "depth": 1,
+    "sha256": "56740f4d3a29b7d793269e57d579ce3031a998c9bfca4548ed682e3978efc95b",
+    "size": 20000,
+    "triangles": null
+   },
+   {
+    "chain": [
+     "data/big.bin"
+    ],
+    "depth": 1,
+    "sha256": "d18a903222d06b7575abd4e331a329f496924d567349d4ef7f6b1b88b74534f3",
+    "size": 110000,
+    "triangles": null
+   }
+  ],
+  "paths": [
+   "split_rar5.part1.rar",
+   "split_rar5.part2.rar",
+   "split_rar5.part3.rar"
+  ]
+ },
+ "split_raw.7z": {
+  "format": "7z",
+  "members": [
+   {
+    "chain": [
+     "models/cube_binary.stl"
+    ],
+    "depth": 1,
+    "sha256": "7ae73c149fd6111f2bcd2172ed885afd2f796b5b9335142ae10307dba6163218",
+    "size": 684,
+    "triangles": 12
+   },
+   {
+    "chain": [
+     "models/cube_ascii.stl"
+    ],
+    "depth": 1,
+    "sha256": "00194ba1590a4bfd6d1a37efbd1210a354db3cb570a6faa6bd150c46959990ec",
+    "size": 1423,
+    "triangles": 12
+   },
+   {
+    "chain": [
+     "images/preview.png"
+    ],
+    "depth": 1,
+    "sha256": "a5bcdfdb44eb1690110a0ef35d0a991a4b91a1a1674f5c9366228cb4c0bb0f8d",
+    "size": 3008,
+    "triangles": null
+   },
+   {
+    "chain": [
+     "readme.txt"
+    ],
+    "depth": 1,
+    "sha256": "9d58eac6364a9db43eab65c7503096a51ac5599fea8acd4ad530a71f5bdb7504",
+    "size": 980,
+    "triangles": null
+   },
+   {
+    "chain": [
+     "empty.txt"
+    ],
+    "depth": 1,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "size": 0,
+    "triangles": null
+   },
+   {
+    "chain": [
+     "data/random.bin"
+    ],
+    "depth": 1,
+    "sha256": "56740f4d3a29b7d793269e57d579ce3031a998c9bfca4548ed682e3978efc95b",
+    "size": 20000,
+    "triangles": null
+   },
+   {
+    "chain": [
+     "data/big.bin"
+    ],
+    "depth": 1,
+    "sha256": "d18a903222d06b7575abd4e331a329f496924d567349d4ef7f6b1b88b74534f3",
+    "size": 110000,
+    "triangles": null
+   }
+  ],
+  "paths": [
+   "split_raw.7z.001",
+   "split_raw.7z.002",
+   "split_raw.7z.003"
+  ]
+ },
+ "zip_in_rar.rar": {
+  "format": "rar5",
+  "members": [
+   {
+    "chain": [
+     "inner.zip"
+    ],
+    "depth": 1,
+    "sha256": "79375a8af02bdb6627de8958997f71988f33d55d1632db5a8c3e8d176843471e",
+    "size": 24574,
+    "triangles": null
+   },
+   {
+    "chain": [
+     "notes.txt"
+    ],
+    "depth": 1,
+    "sha256": "b7846b7b6a2a32a6ade48e1859ede1f7d1cbe1e6255e4dce58b766cef0f8d375",
+    "size": 11,
+    "triangles": null
+   },
+   {
+    "chain": [
+     "inner.zip",
+     "models/cube_binary.stl"
+    ],
+    "depth": 2,
+    "sha256": "7ae73c149fd6111f2bcd2172ed885afd2f796b5b9335142ae10307dba6163218",
+    "size": 684,
+    "triangles": 12
+   },
+   {
+    "chain": [
+     "inner.zip",
+     "models/cube_ascii.stl"
+    ],
+    "depth": 2,
+    "sha256": "00194ba1590a4bfd6d1a37efbd1210a354db3cb570a6faa6bd150c46959990ec",
+    "size": 1423,
+    "triangles": 12
+   },
+   {
+    "chain": [
+     "inner.zip",
+     "images/preview.png"
+    ],
+    "depth": 2,
+    "sha256": "a5bcdfdb44eb1690110a0ef35d0a991a4b91a1a1674f5c9366228cb4c0bb0f8d",
+    "size": 3008,
+    "triangles": null
+   },
+   {
+    "chain": [
+     "inner.zip",
+     "readme.txt"
+    ],
+    "depth": 2,
+    "sha256": "9d58eac6364a9db43eab65c7503096a51ac5599fea8acd4ad530a71f5bdb7504",
+    "size": 980,
+    "triangles": null
+   },
+   {
+    "chain": [
+     "inner.zip",
+     "empty.txt"
+    ],
+    "depth": 2,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "size": 0,
+    "triangles": null
+   },
+   {
+    "chain": [
+     "inner.zip",
+     "data/random.bin"
+    ],
+    "depth": 2,
+    "sha256": "56740f4d3a29b7d793269e57d579ce3031a998c9bfca4548ed682e3978efc95b",
+    "size": 20000,
+    "triangles": null
+   }
+  ],
+  "nested": {
+   "inner.zip": "done"
+  },
+  "paths": [
+   "zip_in_rar.rar"
+  ]
+ }
+}
