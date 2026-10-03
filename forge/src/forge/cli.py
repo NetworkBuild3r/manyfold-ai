@@ -1,9 +1,9 @@
-"""Library Forge CLI. Stubs print 'not implemented' and exit 2; `db` is real.
+"""Library Forge CLI. Stubs print 'not implemented' and exit 2; `db` and `walk` are real.
 
 Other specs add logic via modules (forge.walker.run, forge.sweep.run, …)
 without growing this file into a router.
 
-INIT-032/SPEC-004
+INIT-032/SPEC-004 · walk wired by SPEC-005
 """
 
 from __future__ import annotations
@@ -14,7 +14,6 @@ import sys
 from forge import __version__
 
 _STUBS = (
-    "walk",
     "sweep",
     "status",
     "report",
@@ -41,7 +40,19 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--version", action="version", version=f"forge {__version__}")
     sub = parser.add_subparsers(dest="command", required=True)
 
-    _add_stub(sub, "walk", "Inventory the source root (SPEC-005)")
+    walk = sub.add_parser("walk", help="Inventory the source root (SPEC-005)")
+    walk.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Count only; never write the database (safe on a read-only mount)",
+    )
+    walk.add_argument(
+        "--threads",
+        type=int,
+        default=8,
+        metavar="N",
+        help="os.scandir worker threads (default 8)",
+    )
     _add_stub(sub, "sweep", "Claim and process pending containers (SPEC-007)")
     _add_stub(sub, "status", "Print sweep progress")
     _add_stub(sub, "report", "Inventory and duplicate reports (SPEC-009)")
@@ -57,6 +68,19 @@ def build_parser() -> argparse.ArgumentParser:
     downgrade.add_argument("revision")
     db_sub.add_parser("current", help="print the current alembic revision")
     return parser
+
+
+def _cmd_walk(args: argparse.Namespace) -> int:
+    from forge.config import ConfigError
+    from forge.walker import format_counts, run
+
+    try:
+        result = run(dry_run=args.dry_run, threads=args.threads)
+    except ConfigError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    print(format_counts(result.counts))
+    return 0
 
 
 def _cmd_db(args: argparse.Namespace) -> int:
@@ -81,6 +105,8 @@ def _cmd_db(args: argparse.Namespace) -> int:
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
+    if args.command == "walk":
+        return _cmd_walk(args)
     if args.command in _STUBS:
         return _not_implemented(args.command)
     if args.command == "db":

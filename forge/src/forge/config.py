@@ -8,6 +8,19 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 
+# State / sidecar directories the walker must not descend into.
+# Override with FORGE_SKIP_DIRS (comma-separated) when a run must match a
+# raw stat-walk that did not skip them.
+DEFAULT_SKIP_DIR_NAMES: tuple[str, ...] = (
+    ".manyfold",
+    ".spark-curate",
+    "_blobs",
+    ".forge-blobs",
+    "@eaDir",
+    "#recycle",
+    ".git",
+)
+
 
 class ConfigError(RuntimeError):
     """Missing or invalid forge configuration."""
@@ -45,12 +58,25 @@ def require_db_url() -> str:
     return normalize_db_url(url)
 
 
+def skip_dir_names() -> frozenset[str]:
+    """Directory basenames the walker will not descend into.
+
+    Unset FORGE_SKIP_DIRS uses DEFAULT_SKIP_DIR_NAMES. An empty value skips nothing
+    (used to compare a raw stat-walk that did not filter state dirs).
+    """
+    if "FORGE_SKIP_DIRS" not in os.environ:
+        return frozenset(DEFAULT_SKIP_DIR_NAMES)
+    parts = os.environ["FORGE_SKIP_DIRS"].split(",")
+    return frozenset(part.strip() for part in parts if part.strip())
+
+
 @dataclass(frozen=True)
 class ForgeConfig:
     db_url: str | None
     source_root: str | None
     scratch: str | None
     worker_id: str | None
+    skip_dirs: frozenset[str]
 
     @classmethod
     def from_env(cls) -> ForgeConfig:
@@ -59,6 +85,7 @@ class ForgeConfig:
             source_root=optional_env("FORGE_SOURCE_ROOT"),
             scratch=optional_env("FORGE_SCRATCH"),
             worker_id=optional_env("FORGE_WORKER_ID"),
+            skip_dirs=skip_dir_names(),
         )
 
     def require_db_url(self) -> str:
