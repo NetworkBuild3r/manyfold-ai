@@ -1,0 +1,7 @@
+# Custom ARC scale-set labels (github-actions-ci.mdc). Required so actionlint
+# does not treat k8 / k8-build / k8-deploy as unknown runner-label errors.
+self-hosted-runner:
+  labels:
+    - k8
+    - k8-build
+    - k8-deploy
