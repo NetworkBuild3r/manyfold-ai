@@ -185,7 +185,7 @@ def test_unit_without_pack_is_skipped_and_reported(mat) -> None:
         == 0
     )
     # the persisted plan carries the same report
-    stored = mat.scalar("SELECT totals->>'unassigned_loose_units' FROM materialize_plans")
+    stored = mat.scalar("SELECT totals::jsonb->>'unassigned_loose_units' FROM materialize_plans")
     assert stored == "1"
 
 
@@ -224,7 +224,7 @@ def test_batch_in_pack_containers_is_not_double_planned(mat) -> None:
 
     res = mat.plan()
     files = _files(mat, res.plan_id, pid)
-    assert sorted(files) == ["body.stl", "Part.stl"]
+    assert sorted(files) == ["Part.stl", "body.stl"]
     assert res.totals["files"] == 2 and res.totals["blobs"] == 2
 
 
