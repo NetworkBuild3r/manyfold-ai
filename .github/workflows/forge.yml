@@ -121,7 +121,7 @@ jobs:
           docker pull "$IMAGE"
           docker run --rm \
             -v /var/run/docker.sock:/var/run/docker.sock \
-            ghcr.io/aquasecurity/trivy:0.66.2 \
+            ghcr.io/aquasecurity/trivy:0.75.0 \
             image \
             --exit-code 1 \
             --severity CRITICAL \
