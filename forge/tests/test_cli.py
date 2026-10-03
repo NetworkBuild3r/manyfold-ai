@@ -23,9 +23,25 @@ def test_help_lists_subcommands(capsys) -> None:
 
 
 def test_stub_exits_2(capsys) -> None:
-    assert main(["walk"]) == 2
+    assert main(["sweep"]) == 2
     err = capsys.readouterr().err
     assert "not implemented" in err
+
+
+def test_walk_help_lists_flags(capsys) -> None:
+    with pytest.raises(SystemExit) as exc:
+        main(["walk", "--help"])
+    assert exc.value.code == 0
+    out = capsys.readouterr().out
+    assert "--dry-run" in out
+    assert "--threads" in out
+
+
+def test_walk_requires_source_root(monkeypatch, capsys) -> None:
+    monkeypatch.delenv("FORGE_SOURCE_ROOT", raising=False)
+    monkeypatch.delenv("FORGE_DB_URL", raising=False)
+    assert main(["walk", "--dry-run"]) == 2
+    assert "FORGE_SOURCE_ROOT" in capsys.readouterr().err
 
 
 def test_db_url_fails_loud_without_env(monkeypatch) -> None:

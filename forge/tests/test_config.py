@@ -17,6 +17,17 @@ def test_normalize_rewrites_postgres_scheme() -> None:
     assert normalize_db_url(already) == already
 
 
+def test_skip_dirs_default_and_override(monkeypatch) -> None:
+    from forge.config import DEFAULT_SKIP_DIR_NAMES, skip_dir_names
+
+    monkeypatch.delenv("FORGE_SKIP_DIRS", raising=False)
+    assert skip_dir_names() == frozenset(DEFAULT_SKIP_DIR_NAMES)
+    monkeypatch.setenv("FORGE_SKIP_DIRS", ".git,.manyfold")
+    assert skip_dir_names() == frozenset({".git", ".manyfold"})
+    monkeypatch.setenv("FORGE_SKIP_DIRS", "")
+    assert skip_dir_names() == frozenset()
+
+
 def test_source_root_required(monkeypatch) -> None:
     monkeypatch.delenv("FORGE_SOURCE_ROOT", raising=False)
     with pytest.raises(ConfigError, match="FORGE_SOURCE_ROOT"):
