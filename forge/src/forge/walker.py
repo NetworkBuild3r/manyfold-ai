@@ -16,7 +16,7 @@ from dataclasses import dataclass, replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-from sqlalchemy import bindparam, text
+from sqlalchemy import text
 from sqlalchemy.engine import Connection, Engine
 
 from forge.config import ConfigError, ForgeConfig, normalize_db_url, skip_dir_names
@@ -610,9 +610,9 @@ def _sync_archive_groups(
                 SELECT cf.container_id, cf.source_file_id, cf.ordinal, c.kind::text
                 FROM container_files cf
                 JOIN containers c ON c.id = cf.container_id
-                WHERE cf.source_file_id IN :ids
+                WHERE cf.source_file_id = ANY(CAST(:ids AS bigint[]))
                 """
-            ).bindparams(bindparam("ids", expanding=True)),
+            ),
             {"ids": all_ids},
         ).all()
         for container_id, source_file_id, ordinal, kind in rows:
@@ -687,9 +687,9 @@ def _sync_archive_groups(
                 text(
                     """
                     DELETE FROM container_files
-                    WHERE container_id = :cid AND source_file_id IN :ids
+                    WHERE container_id = :cid AND source_file_id = ANY(CAST(:ids AS bigint[]))
                     """
-                ).bindparams(bindparam("ids", expanding=True)),
+                ),
                 {"cid": extra, "ids": file_ids},
             )
             leftover = conn.execute(
@@ -723,9 +723,9 @@ def _sync_loose_batches(
             SELECT cf.source_file_id, cf.container_id
             FROM container_files cf
             JOIN containers c ON c.id = cf.container_id
-            WHERE c.kind = 'loose_batch' AND cf.source_file_id IN :ids
+            WHERE c.kind = 'loose_batch' AND cf.source_file_id = ANY(CAST(:ids AS bigint[]))
             """
-        ).bindparams(bindparam("ids", expanding=True)),
+        ),
         {"ids": loose_ids},
     ).all()
     sf_to_cid = {int(sid): int(cid) for sid, cid in owned}

@@ -203,3 +203,33 @@ def test_lone_partn_is_single_volume(tmp_path: Path) -> None:
     assert groups[0].missing_volume is False
     assert len(groups[0].files) == 1
     assert groups[0].volume_set is None
+
+
+def test_sync_beyond_bind_parameter_limit(session, engine) -> None:
+    """The prod walk seeds ~160k loose files: id lists must not be one bind param per id."""
+    from sqlalchemy import text
+
+    from forge.walker import WalkFile, _sync_archive_groups, _sync_loose_batches
+
+    n = 70_000  # > 65,535 (Postgres wire-protocol bind parameter limit)
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                """
+                INSERT INTO source_files (path, size, mtime, kind)
+                SELECT 'bulk/' || lpad(g::text, 6, '0') || '.stl', 10, now(), 'loose'
+                FROM generate_series(1, :n) AS g
+                """
+            ),
+            {"n": n},
+        )
+        path_to_id = {p: int(i) for p, i in conn.execute(text("SELECT path, id FROM source_files"))}
+        files = [WalkFile(p, 10, 0, SourceFileKind.loose, None) for p in sorted(path_to_id)]
+        seeded = _sync_loose_batches(conn, files, path_to_id, set())
+        assert seeded == n // 500
+        assert _sync_loose_batches(conn, files, path_to_id, set()) == 0
+        assert _sync_archive_groups(conn, [], path_to_id, set(), set()) == 0
+    count = session.execute(
+        text("SELECT count(*) FROM container_files cf JOIN containers c ON c.id = cf.container_id")
+    ).scalar_one()
+    assert count == n
