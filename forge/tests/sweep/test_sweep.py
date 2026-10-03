@@ -480,3 +480,34 @@ def test_settings_fail_loud_without_paths(sweep_env, monkeypatch, bad) -> None:
     monkeypatch.delenv(bad)
     with pytest.raises(ConfigError):
         SweepSettings.from_env()
+
+
+def test_db_outage_mid_container_hands_the_claim_back_without_burning_attempts(
+    sweep_env, monkeypatch
+) -> None:
+    from sqlalchemy.exc import OperationalError
+
+    cid = sweep_env.seed_loose({"o/a.stl": b"solid outage"})
+    real_process, real_release = sweep._engine_process, sweep.release_claim
+    calls = {"process": 0, "release": 0}
+
+    def flaky_process(ref, sink, caps, scratch, *, isolate=True):
+        calls["process"] += 1
+        if calls["process"] == 1:
+            raise OperationalError("INSERT", {}, Exception("server closed the connection"))
+        return real_process(ref, sink, caps, scratch, isolate=isolate)
+
+    def release_down_once(engine, claim, *, count_attempt):
+        calls["release"] += 1
+        if calls["release"] == 1:
+            raise OperationalError("SELECT", {}, Exception("connection refused"))
+        return real_release(engine, claim, count_attempt=count_attempt)
+
+    monkeypatch.setattr(sweep, "_engine_process", flaky_process)
+    monkeypatch.setattr(sweep, "release_claim", release_down_once)
+    stats = _run(sweep_env, "outage/p0")
+    assert stats.outcomes["db_error"] == 1 and stats.outcomes["done"] == 1
+    assert calls["release"] == 2, "the stranded claim was retried between containers"
+    row = _container(sweep_env, cid)
+    assert row["status"] == "done" and row["attempts"] == 1
+    assert sweep._STATE.unreleased == []

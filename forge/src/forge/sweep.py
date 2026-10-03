@@ -118,6 +118,9 @@ class Shutdown(BaseException):
 class _ProcState:
     busy: bool = False  # inside the engine: SIGTERM aborts the container
     stop: threading.Event = field(default_factory=threading.Event)
+    # Claims this process could not hand back because the DB was down; retried between
+    # containers so a Postgres restart does not strand them until the stale window.
+    unreleased: list = field(default_factory=list)
 
 
 _STATE = _ProcState()
@@ -879,11 +882,8 @@ def run_claim(
         raise
     except SQLAlchemyError as exc:
         log("db_error", container=claim.id, worker=claim.worker_id, error=repr(exc)[:300])
-        try:
-            release_claim(engine, claim, count_attempt=False)
-        except SQLAlchemyError:
-            pass  # the reaper / restart release recovers it
-        time.sleep(5)
+        _release_or_defer(engine, claim)
+        _STATE.stop.wait(min(5.0, settings.poll_seconds * 10))
         return "db_error", None
     except ValueError:
         # Misconfigured scratch / source (engine guard): fatal for this worker.
@@ -902,7 +902,10 @@ def run_claim(
         sink.discard_buffers()  # members already flushed were whole (GR-004); keep them
         try:
             status, reason = finish(engine, claim, result, sink, run_id)
-        except (LostClaim, SQLAlchemyError):
+        except LostClaim:
+            return "error", None
+        except SQLAlchemyError:
+            _release_or_defer(engine, claim)
             return "error", None
     log(
         "finish",
@@ -923,6 +926,22 @@ def run_claim(
     if status == "done" and should_requeue(claim, result):
         return "requeued", "unsupported_format"
     return status, reason
+
+
+def _release_or_defer(engine: Engine, claim: Claim) -> None:
+    try:
+        release_claim(engine, claim, count_attempt=False)
+    except SQLAlchemyError:
+        _STATE.unreleased.append(claim)
+
+
+def retry_deferred_releases(engine: Engine) -> None:
+    """Hand back claims a DB outage stranded (between containers: nothing is in flight)."""
+    while _STATE.unreleased:
+        claim = _STATE.unreleased[0]
+        ok = release_claim(engine, claim, count_attempt=False)
+        _STATE.unreleased.pop(0)
+        log("released", container=claim.id, worker=claim.worker_id, reason="db_outage", ok=ok)
 
 
 def worker_loop(
@@ -952,6 +971,7 @@ def worker_loop(
                 break
             now = time.monotonic()
             try:
+                retry_deferred_releases(engine)
                 if now >= next_reap:
                     reap(engine, settings)
                     next_reap = now + settings.reap_every_seconds * random.uniform(0.8, 1.2)
