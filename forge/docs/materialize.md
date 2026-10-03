@@ -23,7 +23,9 @@ or opened for write.** Enforcement, in the order an auditor should read it:
    created with `O_CREAT|O_EXCL|O_NOFOLLOW` — an existing v2 name (which may be a hardlink of a
    source inode) is never opened for write, truncated, chmod'ed or utime'd. Replacing a wrong
    pack file means a new temp name + `rename()` over the old *name*; no existing inode's bytes
-   change.
+   change. A hardlink *source* must itself resolve under the source or v2 root
+   (`check_link_source`), so a directory symlink planted in the source tree cannot pull an
+   arbitrary file into v2.
 2. **`tests/materialize/test_fence.py`** — AST fence: any write primitive (`os.link/rename/
    replace/unlink/mkdir/chmod/utime/...`, `Path.write_*`, write-mode `open`, `os.open`,
    `shutil`, `tempfile`) outside `guard.py` fails CI. It includes a planted-violation test.
