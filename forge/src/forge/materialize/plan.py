@@ -1,7 +1,9 @@
 """``forge materialize plan`` — decide the v2 tree from the catalog. Pure DB (no NAS reads).
 
 For each selected pack: the file list is the union of the mesh/image/doc blobs found in its
-``pack_containers`` (each container including its nested descendants), deduplicated by blob.
+``pack_containers`` (each container including its nested descendants) and the loose files named by
+its loose ``pack_units`` / ``pack_unit_sources`` (split ``loose_batch`` containers), deduplicated
+by blob.
 The path of a file is ``<Category>/<Pack>/<relative path inside source>`` where the relative
 path is taken from the pack's best occurrence of that blob (role primary > source > absorbed,
 then shallowest, then path). For each needed blob ONE source is chosen globally:
@@ -119,6 +121,11 @@ WHERE pc.pack_id = ANY(CAST(:packs AS bigint[]))
 ORDER BY pc.pack_id, pc.container_id
 """
 
+# Second branch of _SCOPE: loose members of split loose_batch containers. pack_unit_sources names
+# the exact source files of each loose unit and the unit's pack_id/role say where they go. The
+# batch container itself is never attached to the pack, so a batch already in pack_containers for
+# the same pack is skipped (no double planning; those files arrive through the first branch with
+# the container's role). Units with pack_id NULL never match (they are reported separately).
 _SCOPE = """
 WITH RECURSIVE s(pack_id, role, cid) AS (
     SELECT pc.pack_id, pc.role::text, pc.container_id
@@ -133,7 +140,44 @@ JOIN occurrences o ON o.container_id = s.cid
 JOIN blobs b ON b.sha256 = o.blob_sha
 JOIN mat_roots r ON r.id = o.container_id
 WHERE b.kind::text = ANY(CAST(:kinds AS text[]))
-ORDER BY s.pack_id
+UNION ALL
+SELECT pu.pack_id, pu.role::text, o.blob_sha, b.size, b.kind::text, o.container_id,
+       o.member_chain, o.member_path, o.depth, r.root_id
+FROM pack_units pu
+JOIN pack_unit_sources pus ON pus.unit_id = pu.id
+JOIN source_files sf ON sf.id = pus.source_file_id
+JOIN occurrences o ON o.member_chain[1] = sf.path AND cardinality(o.member_chain) = 1
+JOIN containers c ON c.id = o.container_id AND c.kind = 'loose_batch'
+JOIN blobs b ON b.sha256 = o.blob_sha
+JOIN mat_roots r ON r.id = o.container_id
+WHERE pu.pack_id = ANY(CAST(:packs AS bigint[]))
+  AND pu.kind = 'loose' AND pu.present AND pu.role IS NOT NULL
+  AND b.kind::text = ANY(CAST(:kinds AS text[]))
+  AND NOT EXISTS (
+      SELECT 1 FROM pack_containers pc
+      WHERE pc.pack_id = pu.pack_id AND pc.container_id = o.container_id
+  )
+ORDER BY pack_id
+"""
+
+# Loose units that no pack claimed (pack_id NULL): their files stay out of every pack. Reported,
+# never guessed into a pack.
+_UNASSIGNED_UNITS = """
+SELECT pu.id, pu.unit_key, pu.role::text AS role,
+       (SELECT count(*) FROM pack_unit_sources pus WHERE pus.unit_id = pu.id) AS files
+FROM pack_units pu
+WHERE pu.kind = 'loose' AND pu.present AND pu.pack_id IS NULL
+  AND EXISTS (SELECT 1 FROM pack_unit_sources pus WHERE pus.unit_id = pu.id)
+ORDER BY pu.id
+"""
+
+_PACK_UNITS = """
+SELECT pu.pack_id, pu.id AS unit_id, pu.unit_key, pu.path, pu.role::text AS role
+FROM pack_units pu
+WHERE pu.pack_id = ANY(CAST(:packs AS bigint[]))
+  AND pu.kind = 'loose' AND pu.present AND pu.role IS NOT NULL
+  AND EXISTS (SELECT 1 FROM pack_unit_sources pus WHERE pus.unit_id = pu.id)
+ORDER BY pu.pack_id, pu.id
 """
 
 _ROOT_INFO = """
@@ -289,6 +333,17 @@ def compute(conn: Connection, opts: PlanOptions) -> tuple[list[PlannedPack], dic
     pcs_by_pack: dict[int, list] = defaultdict(list)
     for pc in pcs:
         pcs_by_pack[int(pc["pack_id"])].append(dict(pc))
+    units_by_pack: dict[int, list[dict]] = defaultdict(list)
+    for u in conn.execute(text(_PACK_UNITS), {"packs": pack_ids}).mappings():
+        units_by_pack[int(u["pack_id"])].append(
+            {
+                "unit_id": int(u["unit_id"]),
+                "unit_key": u["unit_key"],
+                "path": u["path"],
+                "role": u["role"],
+            }
+        )
+    unassigned = [dict(u) for u in conn.execute(text(_UNASSIGNED_UNITS)).mappings()]
     roots = {int(r["id"]): dict(r) for r in conn.execute(text(_ROOT_INFO)).mappings()}
     root_paths: dict[int, list[str]] = defaultdict(list)
     pc_ids = sorted({int(pc["container_id"]) for pc in pcs})
@@ -370,6 +425,7 @@ def compute(conn: Connection, opts: PlanOptions) -> tuple[list[PlannedPack], dic
                     "pack_status": p["status"],
                     "classified": p["category"] is not None,
                     "containers": containers_meta,
+                    "loose_units": units_by_pack.get(pid, []),
                 },
             )
         )
@@ -414,11 +470,11 @@ def compute(conn: Connection, opts: PlanOptions) -> tuple[list[PlannedPack], dic
     for b in need.values():
         b.setdefault("source_kind", "missing")
 
-    totals = _totals(planned, need, junk, empty_packs, uncategorized, opts)
+    totals = _totals(planned, need, junk, empty_packs, uncategorized, opts, unassigned)
     return planned, need, totals
 
 
-def _totals(planned, need, junk, empty_packs, uncategorized, opts) -> dict:
+def _totals(planned, need, junk, empty_packs, uncategorized, opts, unassigned=()) -> dict:
     by_kind = Counter()
     by_kind_bytes = Counter()
     for b in need.values():
@@ -455,6 +511,10 @@ def _totals(planned, need, junk, empty_packs, uncategorized, opts) -> dict:
         "archive_units": len(roots),
         "archive_source_bytes_to_read": sum(roots.values()),
         "junk_blobs_skipped": junk["blobs"],
+        # Loose units no pack claimed (pack_id NULL): skipped, never guessed into a pack.
+        "unassigned_loose_units": len(unassigned),
+        "unassigned_loose_files": sum(int(u["files"]) for u in unassigned),
+        "unassigned_loose_unit_sample": [u["unit_key"] for u in unassigned[:20]],
         "write_bytes_hardlink_mode": write_bytes,
         "write_bytes_copy_mode": unique + linked,
         "free_bytes": opts.free_bytes,
