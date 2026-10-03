@@ -167,6 +167,19 @@ def test_transport_error_is_retried_next_run(lib, migrated_db, fake_llm):
     assert len(lib.packs_of()) == 1
 
 
+def test_http_404_model_missing_is_retried_next_run(lib, migrated_db, fake_llm):
+    """A 404 (served model changed) must not be cached as a permanent `unsure` verdict."""
+    partial_pair(lib)
+    fake_llm.responder = lambda body: (404, "model does not exist")
+    resolve(migrated_db, fake_llm)
+    assert len(fake_llm.requests) == 1  # 4xx is not retried inside one call
+    assert lib.rows("SELECT error FROM pack_decisions WHERE kind='llm'") == [("http 404",)]
+    fake_llm.responder = lambda body: verdict("same_pack")
+    resolve(migrated_db, fake_llm)
+    assert len(fake_llm.requests) == 2  # the 404 row was not served from cache
+    assert len(lib.packs_of()) == 1
+
+
 # ------------------------------------------------------------------------------ AC3
 
 

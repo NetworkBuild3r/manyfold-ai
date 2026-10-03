@@ -41,7 +41,10 @@ from forge.packs.unionfind import ConstrainedUnionFind
 from forge.packs.units import load_plan, refresh_units
 
 ADVISORY_LOCK_KEY = 0x464F5247  # one curation job (resolve / classify) at a time
-RETRYABLE_ERROR_PREFIXES = ("transport:", "http 5", "no attempt")
+# Any HTTP error is retried on the next run, not just 5xx: a 404 ("model does not exist" after the
+# served model changed) or 429 says nothing about the evidence, and caching it would pin the pair
+# at `unsure` until the prompt hash changes.
+RETRYABLE_ERROR_PREFIXES = ("transport:", "http ", "no attempt")
 
 
 class ResolveBusy(RuntimeError):
