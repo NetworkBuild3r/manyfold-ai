@@ -111,6 +111,22 @@ class WriteGuard:
             return self.scratch_root
         raise GuardError(f"unknown area {area!r}")
 
+    def check_link_source(self, path: str | os.PathLike) -> str:
+        """A hardlink source must resolve (parent via realpath) under the source root or the v2
+        root — a directory symlink planted in the source tree cannot pull an arbitrary file
+        (e.g. under /etc) into v2. Returns the resolved path; the link never follows the final
+        component."""
+        p = os.fspath(path)
+        if isinstance(p, bytes) or "\x00" in p or not os.path.isabs(p):
+            raise GuardError(f"bad link source {p!r}")
+        parent, name = os.path.split(p)
+        if name in ("", ".", ".."):
+            raise GuardError(f"unsafe link source {p!r}")
+        resolved = os.path.join(os.path.realpath(parent), name)
+        if not (_is_under(resolved, self.source_root) or _is_under(resolved, self.v2_root)):
+            raise GuardError(f"link source outside source/v2 roots refused: {p!r} -> {resolved!r}")
+        return resolved
+
     @staticmethod
     def assert_read_only_flags(flags: int) -> None:
         if flags & _WRITE_BITS:
@@ -166,7 +182,7 @@ class WriteGuard:
         """Hardlink ``src`` (a source-tree file or a v2 file; never modified) to a new name ``dst``
         in v2. ``src`` must be a regular file and is not followed if it is a symlink."""
         target = self.check(dst, "v2")
-        s = os.fspath(src)
+        s = self.check_link_source(src)
         st = os.lstat(s)
         if not stat.S_ISREG(st.st_mode):
             raise GuardError(f"link source {s!r} is not a regular file")

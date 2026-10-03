@@ -135,6 +135,20 @@ def test_open_new_never_opens_an_existing_inode(roots) -> None:
     assert model.read_bytes() == b"solid x\nendsolid x\n"
 
 
+def test_link_source_must_resolve_under_source_or_v2(roots, tmp_path) -> None:
+    outside = tmp_path / "etc"
+    outside.mkdir()
+    (outside / "shadow").write_bytes(b"secret")
+    with pytest.raises(GuardError, match="outside source/v2"):
+        roots.guard.link(outside / "shadow", roots.v2 / "leak")
+    # a directory symlink planted inside the source tree does not help
+    (roots.src / "Planted").symlink_to(outside)
+    with pytest.raises(GuardError, match="outside source/v2"):
+        roots.guard.link(roots.src / "Planted" / "shadow", roots.v2 / "leak")
+    assert not (roots.v2 / "leak").exists()
+    roots.guard.link(roots.src / "Anime" / "model.stl", roots.v2 / "ok")  # the normal case
+
+
 def test_link_refuses_symlink_source(roots) -> None:
     (roots.v2 / "s").symlink_to(roots.src / "Anime" / "model.stl")
     with pytest.raises(GuardError, match="regular"):
