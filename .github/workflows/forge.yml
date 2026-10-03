@@ -1,4 +1,4 @@
-# Library Forge — quality on k8, multi-arch image + Trivy on k8-build.
+# Library Forge — quality on k8, amd64 image (arm64 opt-in) + Trivy on k8-build.
 # Never GitHub-hosted runners (github-actions-ci.mdc).
 name: forge
 
@@ -14,6 +14,11 @@ on:
       - "forge/**"
       - ".github/workflows/forge.yml"
   workflow_dispatch:
+    inputs:
+      arm64:
+        description: "Also build linux/arm64 (QEMU; heavy — only for the Spark worker)"
+        type: boolean
+        default: false
 
 concurrency:
   group: forge-${{ github.workflow }}-${{ github.ref }}
@@ -76,7 +81,10 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      # amd64 only by default: concurrent QEMU arm64 builds wedged node k83 (I/O
+      # pressure ~90%). arm64 is opt-in via workflow_dispatch arm64=true.
       - name: Set up QEMU / binfmt
+        if: ${{ inputs.arm64 }}
         uses: docker/setup-qemu-action@v3
         with:
           platforms: linux/amd64,linux/arm64
@@ -105,7 +113,7 @@ jobs:
         with:
           context: ./forge
           file: ./forge/Dockerfile
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ inputs.arm64 && 'linux/amd64,linux/arm64' || 'linux/amd64' }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
