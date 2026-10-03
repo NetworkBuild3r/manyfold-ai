@@ -139,8 +139,17 @@ def _dispatch(sink: Sink, msg: list) -> Result | None:
 
 
 # The reader child parses hostile archives; it must never see pod secrets
-# (FORGE_DB_URL, tokens, Vault-injected vars). Whitelist only.
-_CHILD_ENV_ALLOW = ("PATH", "LANG", "LC_ALL", "FORGE_7ZZ", "FORGE_ENGINE_TEST_STALL_SECONDS")
+# (FORGE_DB_URL, tokens, Vault-injected vars). Whitelist only. LD_LIBRARY_PATH is a loader
+# search path, not a secret: shared-library interpreters (e.g. setup-python builds) need it
+# to start at all.
+_CHILD_ENV_ALLOW = (
+    "PATH",
+    "LANG",
+    "LC_ALL",
+    "LD_LIBRARY_PATH",
+    "FORGE_7ZZ",
+    "FORGE_ENGINE_TEST_STALL_SECONDS",
+)
 
 
 def _child_env() -> dict[str, str]:

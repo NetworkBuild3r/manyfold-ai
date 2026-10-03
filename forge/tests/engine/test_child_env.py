@@ -10,3 +10,8 @@ def test_child_env_drops_secrets(monkeypatch):
         assert name not in env
     assert "PYTHONPATH" in env
     assert env["LC_ALL"]
+
+
+def test_child_env_keeps_loader_path(monkeypatch):
+    monkeypatch.setenv("LD_LIBRARY_PATH", "/opt/python/lib")
+    assert _child_env()["LD_LIBRARY_PATH"] == "/opt/python/lib"

@@ -110,6 +110,34 @@ class SweepRun(Base):
     notes: Mapped[str | None] = mapped_column(Text)
 
 
+class SweepWorker(Base):
+    """Heartbeat + counters per sweep worker process (SPEC-007)."""
+
+    __tablename__ = "sweep_workers"
+
+    worker_id: Mapped[str] = mapped_column(Text, primary_key=True)
+    sweep_run_id: Mapped[int | None] = mapped_column(
+        ForeignKey("sweep_runs.id", ondelete="SET NULL")
+    )
+    host: Mapped[str | None] = mapped_column(Text)
+    pid: Mapped[int | None] = mapped_column(Integer)
+    started_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    last_seen: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    current_container_id: Mapped[int | None] = mapped_column(BigInteger)
+    containers_done: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, server_default=text("0")
+    )
+    containers_failed: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, server_default=text("0")
+    )
+    bytes_read: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
+    source_bytes: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
+
+
 class Blob(Base):
     __tablename__ = "blobs"
     __table_args__ = (CheckConstraint("sha256 ~ '^[0-9a-f]{64}$'", name="ck_blobs_sha256_hex"),)
@@ -158,6 +186,22 @@ class Container(Base):
             "id",
             postgresql_where=text("status = 'pending'"),
         ),
+        Index(
+            "ix_containers_finished_at",
+            "finished_at",
+            postgresql_where=text("finished_at IS NOT NULL"),
+        ),
+        Index("ix_containers_claimed", "claimed_at", postgresql_where=text("status = 'claimed'")),
+        Index(
+            "ix_containers_parent",
+            "parent_container_id",
+            postgresql_where=text("parent_container_id IS NOT NULL"),
+        ),
+        Index(
+            "ix_containers_requeued_from",
+            "requeued_from_id",
+            postgresql_where=text("requeued_from_id IS NOT NULL"),
+        ),
     )
 
     id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
@@ -188,9 +232,20 @@ class Container(Base):
     attempts: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
     members: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
     bytes_read: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
+    # SPEC-007: sum of the source file sizes (NAS bytes), set when a sweep worker claims it.
+    source_bytes: Mapped[int | None] = mapped_column(BigInteger)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # JSON: reader/detail/peak RSS, refusals by reason, superseded_by / requeued_from.
+    notes: Mapped[str | None] = mapped_column(Text)
+    # A loose_batch re-queued from an archive container that was not an archive at all.
+    requeued_from_id: Mapped[int | None] = mapped_column(
+        ForeignKey("containers.id", ondelete="SET NULL")
+    )
 
     source_file: Mapped[SourceFile | None] = relationship()
-    parent: Mapped[Container | None] = relationship(remote_side="Container.id")
+    parent: Mapped[Container | None] = relationship(
+        remote_side="Container.id", foreign_keys=[parent_container_id]
+    )
     files: Mapped[list[ContainerFile]] = relationship(back_populates="container")
     occurrences: Mapped[list[Occurrence]] = relationship(back_populates="container")
 
