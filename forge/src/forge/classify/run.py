@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import json
 import posixpath
+import re
 import sys
 from collections import Counter
 from dataclasses import dataclass, field
@@ -41,7 +42,6 @@ from forge.classify.vocab import (
     FALLBACK_CATEGORY,
     folder_category,
     folder_source,
-    keyword_category,
     source_keyword,
 )
 from forge.config import optional_env, require_db_url
@@ -49,7 +49,7 @@ from forge.packs.llm import LlmEndpoint, fingerprint, map_concurrent
 from forge.packs.resolve import acquire_lock, release_lock
 from forge.packs.sqlutil import copy_rows, temp_table
 
-RULES_VERSION = "classify-rules-v1"
+RULES_VERSION = "classify-rules-v4"
 RETRYABLE_ERROR_PREFIXES = ("transport:", "http 5", "no attempt")
 DEFAULT_MIN_CONFIDENCE = 0.6
 
@@ -160,11 +160,31 @@ def _majority(values: list[str]) -> str | None:
     return winners[0] if len(winners) == 1 else None
 
 
+_NULLISH = {"", "null", "none", "unknown", "n/a", "na", "-", "?", "various", "anonymous"}
+_JUNK_TAGS = {"unknown", "@untagged", "untagged", "null", "none"}
+_MONTHS = re.compile(
+    r"\b(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|"
+    r"sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?|avril|mai|juin|juillet)\b",
+    re.I,
+)
+
+
+def _clean_creator(raw: str | None) -> str | None:
+    if not raw or raw.strip().casefold() in _NULLISH:
+        return None
+    return clamp(fs_safe(raw), 80) or None
+
+
+def _is_datey(name: str) -> bool:
+    """A name that is only a date / counter ('03 - May 2021', '2020-08') names nothing."""
+    return sum(1 for ch in _MONTHS.sub("", name) if ch.isalpha()) < 3
+
+
 def _dedupe(tags: list[str]) -> list[str]:
     seen, out = set(), []
     for t in tags:
         k = t.casefold()
-        if t and k not in seen:
+        if t and k not in seen and k not in _JUNK_TAGS:
             seen.add(k)
             out.append(t)
     return out[:40]
@@ -215,14 +235,27 @@ class _Classifier:
             else:
                 fresh.append(p.id)
 
-        self.counts["llm_needed"] = len(llm_queue)
-        todo = llm_queue
+        # Raw LLM answers are cached by the evidence actually sent, so a rules change re-derives
+        # records without re-asking the model.
+        raw_cache = self._raw_cache()
+        jobs: list[tuple[PackInfo, Record, dict, str]] = []
+        for p, rec, ev in llm_queue:
+            lfp = fingerprint({"evidence": ev, "prompt": cls_judge.PROMPT_HASH})
+            hit = raw_cache.get(lfp)
+            if hit is not None:
+                self.counts["llm_cached"] += 1
+                self._apply_llm(p, rec, ev, hit)
+                fresh.append(p.id)
+            else:
+                jobs.append((p, rec, ev, lfp))
+        self.counts["llm_needed"] = len(jobs)
+        todo = jobs
         if self.endpoint is None or self.dry_run:
             todo = []
         elif llm_limit is not None:
-            todo = llm_queue[:llm_limit]
-        deferred = llm_queue[len(todo) :]
-        for p, rec, _ev in deferred:
+            todo = jobs[:llm_limit]
+        deferred = jobs[len(todo) :]
+        for _p, rec, _ev, _lfp in deferred:
             rec.category = FALLBACK_CATEGORY
             rec.reasons = ["classify_deferred"]
             rec.decided_by = "deterministic"
@@ -230,12 +263,14 @@ class _Classifier:
         self.counts["llm_deferred"] = len(deferred)
 
         endpoint = self.endpoint
+        model = endpoint.model if endpoint else None
         done = 0
-        for (p, rec, ev), result in map_concurrent(
+        for (p, rec, ev, lfp), result in map_concurrent(
             lambda item: cls_judge.classify(endpoint, item[2]), todo, self.concurrency
         ):
+            self._insert_raw(lfp, ev, result, model)
             self._apply_llm(p, rec, ev, result)
-            self._insert(fps[p.id], rec, endpoint.model if endpoint else None)
+            self._insert(fps[p.id], rec, model)
             done += 1
             self.counts["llm_called"] += 1
             if done % 10 == 0:
@@ -298,7 +333,8 @@ class _Classifier:
             SELECT DISTINCT ON (input_fingerprint) input_fingerprint, verdict, decided_by,
                    category, display_name, creator, source_tag, tags, review_reasons, confidence,
                    error
-            FROM classify_decisions WHERE prompt_hash = :ph
+            FROM classify_decisions
+            WHERE prompt_hash = :ph AND coalesce(evidence->>'row', 'record') = 'record'
             ORDER BY input_fingerprint, id DESC
             """,
             ph=cls_judge.PROMPT_HASH,
@@ -322,6 +358,55 @@ class _Classifier:
                 error,
             )
         return out
+
+    def _raw_cache(self) -> dict[str, cls_judge.Classification]:
+        rows = self._q(
+            """
+            SELECT DISTINCT ON (input_fingerprint) input_fingerprint, verdict, category,
+                   display_name, creator, tags, confidence, error
+            FROM classify_decisions
+            WHERE prompt_hash = :ph AND evidence->>'row' = 'llm_raw'
+            ORDER BY input_fingerprint, id DESC
+            """,
+            ph=cls_judge.PROMPT_HASH,
+        ).all()
+        out = {}
+        for fp, verdict, cat, name, creator, tags, conf, error in rows:
+            if error and error.startswith(RETRYABLE_ERROR_PREFIXES):
+                continue
+            out[fp] = cls_judge.Classification(
+                verdict,
+                category=cat,
+                display_name=name or "",
+                creator=creator or "",
+                tags=list(tags or []),
+                confidence=float(conf or 0),
+                error=error,
+            )
+        return out
+
+    def _insert_raw(
+        self, lfp: str, ev: dict, res: cls_judge.Classification, model: str | None
+    ) -> None:
+        self._q(
+            """
+            INSERT INTO classify_decisions (input_fingerprint, prompt_hash, model, verdict,
+                decided_by, category, display_name, creator, tags, confidence, error, evidence)
+            VALUES (:fp, :ph, :model, :verdict, 'llm', :cat, :name, :creator, :tags, :conf,
+                :error, CAST(:ev AS jsonb))
+            """,
+            fp=lfp,
+            ph=cls_judge.PROMPT_HASH,
+            model=model,
+            verdict=res.verdict,
+            cat=res.category if res.category in CATEGORIES else None,
+            name=res.display_name,
+            creator=res.creator,
+            tags=res.tags,
+            conf=round(res.confidence, 4),
+            error=res.error,
+            ev=json.dumps({"row": "llm_raw", "input": ev}, ensure_ascii=False, default=str),
+        )
 
     def _fingerprint(self, p: PackInfo, meta_stats: dict) -> str:
         roots = sorted({u.model_root for u in p.units if u.model_root is not None})
@@ -350,28 +435,63 @@ class _Classifier:
         )
         return [self.reader.for_root(r) for r in roots if r is not None]
 
-    def _owns_root(self, p: PackInfo) -> bool:
-        """True when the pack holds every mesh unit under its primary unit's model root, so the
-        root's title / folder name names this pack and not a multi-release collection."""
-        root = p.primary.model_root
-        if root is None:
-            return False
+    def _owns_root(self, p: PackInfo, root: str | None = None) -> bool:
+        """True when the pack holds every mesh unit under the model root (default: the primary
+        unit's), so the root's title / folder name names this pack, not a multi-release folder."""
+        root = p.primary.model_root if root is None else root
+        if root is None or not any(u.coloc_root == root for u in p.units):
+            return False  # no root, or a bundle root (its title names the whole dump)
         mine = sum(1 for u in p.units if u.model_root == root and u.mesh_count > 0)
         return mine >= self.root_mesh_units.get(root, 0)
 
     def _name_candidates(self, p: PackInfo, metas: list[ModelMeta]) -> list[str]:
         prim = p.primary
-        cands = []
-        if self._owns_root(p):
-            if metas and metas[0].title:
-                cands.append(metas[0].title)
-            cands.append(posixpath.basename(prim.model_root or ""))
+        # Owned model roots name the pack: their datapackage titles and folder names, the most
+        # descriptive (most words) first — short ones tend to be store or creator names.
+        owned = sorted(
+            {u.model_root for u in p.units if u.model_root and self._owns_root(p, u.model_root)}
+        )
+        titled = []
+        for root in owned:
+            meta = self.reader.for_root(root)
+            for raw in (meta.title, posixpath.basename(root)):
+                n = clean_name(raw or "")
+                if n and not is_weak(n):
+                    titled.append(n)
+        titled.sort(key=lambda n: -len(n.split()))
         if prim.kind == "loose":
-            cands.append(posixpath.basename(prim.path))
+            leaf = posixpath.basename(prim.path)
         else:
-            cands.append(strip_archive_ext(posixpath.basename(prim.path)))
-            cands.append(posixpath.basename(posixpath.dirname(prim.path)))
-        return [clean_name(c) for c in cands if c]
+            leaf = strip_archive_ext(posixpath.basename(prim.path))
+        parent_dir = posixpath.dirname(prim.path)
+        parent = posixpath.basename(parent_dir)
+        out = list(titled)
+        short = clean_name(leaf, keep_dates=True)
+        composite = (
+            parent
+            and parent.casefold() not in short.casefold()
+            and (
+                _is_datey(short)
+                or is_weak(short)
+                or (len(short.split()) <= 2 and parent_dir != (prim.model_root or parent_dir))
+            )
+        )
+        if composite:
+            out.append(clean_name(f"{parent} - {leaf}", keep_dates=True))
+        out.append(clean_name(leaf))
+        if prim.kind != "loose":
+            out.append(clean_name(parent))
+        return [n for n in out if n]
+
+    def _alternates(self, p: PackInfo) -> tuple[str, ...]:
+        prim = p.primary
+        leaf = posixpath.basename(prim.path)
+        if prim.kind != "loose":
+            leaf = strip_archive_ext(leaf)
+        alts = [clean_name(leaf, keep_dates=True)]
+        if self._owns_root(p) and prim.model_root:
+            alts.insert(0, clean_name(posixpath.basename(prim.model_root), keep_dates=True))
+        return tuple(a for a in alts if a and not is_weak(a))
 
     def _deterministic(self, p: PackInfo) -> tuple[Record, bool]:
         tops = [u.path.split("/", 1)[0] for u in p.units]
@@ -380,10 +500,6 @@ class _Classifier:
         cats = [c for c in (folder_category(t) for t in tops) if c]
         category = _majority(cats)
         how = "folder" if category else None
-        if category is None and not cats:
-            kw = {c for c in (keyword_category(k) for k in keywords) if c}
-            if len(kw) == 1:
-                category, how = kw.pop(), "datapackage_keywords"
         sources = [s for s in (folder_source(t) for t in tops) if s]
         source = _majority(sources) or (sorted(sources)[0] if sources else None)
         if source is None:
@@ -391,11 +507,14 @@ class _Classifier:
             source = kws[0] if kws else None
         creator = next((m.creator for m in metas if m.creator), None)
         names = self._name_candidates(p, metas)
-        name = next((n for n in names if n and not is_weak(n)), next((n for n in names if n), ""))
+        name = next(
+            (n for n in names if not is_weak(n) and not _is_datey(n)),
+            next((n for n in names if not is_weak(n)), next(iter(names), "")),
+        )
         rec = Record(
             category=category or FALLBACK_CATEGORY,
             display_name=name,
-            creator=clamp(fs_safe(creator), 80) if creator else None,
+            creator=_clean_creator(creator),
             source_tag=source,
             tags=keywords,
             decided_by="deterministic",
@@ -478,8 +597,8 @@ class _Classifier:
             llm_name = clean_name(res.display_name)
             if llm_name and not is_weak(llm_name):
                 rec.display_name = llm_name
-        if not rec.creator and res.creator:
-            rec.creator = clamp(fs_safe(res.creator), 80) or None
+        if not rec.creator:
+            rec.creator = _clean_creator(res.creator)
         rec.tags = _dedupe(rec.tags + res.tags)
 
     def _insert(self, fp: str, rec: Record, model: str | None) -> None:
@@ -504,7 +623,7 @@ class _Classifier:
             reasons=rec.reasons,
             conf=round(rec.confidence, 4),
             error=rec.error,
-            ev=json.dumps(rec.evidence, ensure_ascii=False, default=str),
+            ev=json.dumps({**rec.evidence, "row": "record"}, ensure_ascii=False, default=str),
         )
 
     # ------------------------------------------------------------------------------ overrides
@@ -524,7 +643,7 @@ class _Classifier:
             if name:
                 rec.display_name = clean_name(name) or rec.display_name
             if creator:
-                rec.creator = clamp(fs_safe(creator), 80)
+                rec.creator = _clean_creator(creator)
             if tags:
                 rec.tags = _dedupe(list(tags))
             rec.decided_by = "human"
@@ -547,6 +666,7 @@ class _Classifier:
                     creator=rec.creator,
                     source=rec.source_tag,
                     current=p.name,
+                    alternates=self._alternates(p),
                 )
             )
         names = assign_names(requests)

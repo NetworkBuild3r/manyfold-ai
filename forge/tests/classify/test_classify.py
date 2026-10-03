@@ -127,6 +127,44 @@ def test_same_display_name_in_one_category_gets_distinct_names(lib, migrated_db,
     assert "batman" in names and "Batman - Sanix" in names
 
 
+def test_monthly_releases_and_placeholder_metadata(lib, migrated_db, source_root):
+    root = "D&D/Goon Master Collection"
+    lib.loose({f"{root}/datapackage.json": "dp"})
+    write_dp(
+        source_root,
+        root,
+        title="unnamed-model",
+        keywords=["unknown", "undead"],
+        contributors=[{"title": "null", "roles": ["creator"]}],
+    )
+    lib.archive(f"{root}/GoonMaster 2020-08.part1.rar", {"a.stl": "a"})
+    lib.archive(f"{root}/GoonMaster 2020-09.part1.rar", {"b.stl": "b"})
+    lib.archive("D&D/Legendary Orcs (Avatars of War)/03 - May 2021.7z.001", {"c.stl": "c"})
+    lib.archive("D&D/Legendary Orcs (Avatars of War)/07 - Sept 2021.7z.001", {"d.stl": "d"})
+    build(migrated_db, root=source_root)
+    got = {r[0]: r[1:] for r in lib.rows("SELECT name, creator, tags FROM packs")}
+    assert set(got) == {
+        "GoonMaster 2020-08",
+        "GoonMaster 2020-09",
+        "Legendary Orcs (Avatars of War) - 03 - May 2021",
+        "Legendary Orcs (Avatars of War) - 07 - Sept 2021",
+    }
+    assert got["GoonMaster 2020-08"] == (None, ["undead"])
+
+
+def test_bundle_root_title_never_names_a_pack(lib, migrated_db, source_root):
+    root = "Games/Gaslands Gear Phase Skull"
+    files = {f"{root}/datapackage.json": "dp"}
+    for i in range(30):
+        files[f"{root}/other{i}/x{i}.jpg"] = f"img{i}"
+    lib.loose(files)
+    write_dp(source_root, root, title="Gaslands Gear Phase Skull")
+    lib.archive(f"{root}/Mythic Mugs KS/Bundle 1.zip.001", {"mug.stl": "mug"})
+    build(migrated_db, root=source_root)
+    names = {r[0] for r in lib.rows("SELECT name FROM packs WHERE mesh_count > 0")}
+    assert names == {"Mythic Mugs KS - Bundle 1"}
+
+
 def test_category_outside_list_is_unsure_misc_and_in_review_csv(lib, migrated_db, fake_llm):
     lib.archive("Unknown/odd thing/odd.zip", {"odd.stl": "odd"})
     fake_llm.responder = lambda body: answer(category="Unknown")

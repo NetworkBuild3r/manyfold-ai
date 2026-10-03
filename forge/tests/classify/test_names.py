@@ -39,6 +39,8 @@ COUNTER = re.compile(r"\(\s*\d+\s*\)\s*$")
         ("Iron Man: Mark 85", "Iron Man - Mark 85"),
         ("a/b\\c*d?e", "a b c d e"),
         ("CON", "CON_"),
+        ("@rchvillain Games - The Trench", "@rchvillain Games - The Trench"),
+        ("#25_Epic_Miniatures_Endless_Nightmare", "#25 Epic Miniatures Endless Nightmare"),
     ],
 )
 def test_clean_name(raw, expected):
@@ -47,6 +49,24 @@ def test_clean_name(raw, expected):
 
 def test_weak_names():
     assert is_weak("STL") and is_weak("12") and is_weak("Supported") and not is_weak("Goku")
+    assert is_weak("unnamed-model")
+
+
+def test_dated_alternates_win_when_a_base_name_is_shared():
+    reqs = [
+        NameRequest(1, "D&D", "GoonMaster", "archive:a", alternates=("GoonMaster 2020-08",)),
+        NameRequest(2, "D&D", "GoonMaster", "archive:b", alternates=("GoonMaster 2020-09",)),
+        NameRequest(3, "D&D", "Solo", "archive:c", alternates=("Solo 2021-01",)),
+    ]
+    names = assign_names(reqs)
+    assert names == {1: "GoonMaster 2020-08", 2: "GoonMaster 2020-09", 3: "Solo"}
+    assert clean_name("GoonMaster 2020-08.part1.rar", keep_dates=True) == "GoonMaster 2020-08"
+    assert clean_name("Man Eaters Part 2.part1.rar") == "Man Eaters"
+    assert clean_name("Man Eaters Part 2.part1.rar", keep_dates=True) == "Man Eaters Part 2"
+    assert clean_name("LOTP_Feb_2022_Abyss_UNSUPPORTED.001") == "LOTP Feb 2022 Abyss UNSUPPORTED"
+    assert clean_name("Tanis April 2021 Patreon by @Allstl.z01") == (
+        "Tanis April 2021 Patreon by @Allstl"
+    )
 
 
 def _safe(name: str) -> bool:
