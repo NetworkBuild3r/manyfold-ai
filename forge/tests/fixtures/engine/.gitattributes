@@ -1,0 +1,4 @@
+# Golden archive fixtures are byte-exact binaries: never normalize line endings.
+* -text -diff
+*.py text eol=lf
+*.json text eol=lf
