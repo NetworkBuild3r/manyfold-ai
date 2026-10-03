@@ -1,0 +1,109 @@
+# Library Forge — quality on k8, multi-arch image + Trivy on k8-build.
+# Never GitHub-hosted runners (github-actions-ci.mdc).
+name: forge
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "forge/**"
+      - ".github/workflows/forge.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "forge/**"
+      - ".github/workflows/forge.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: forge-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    runs-on: k8
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install ruff
+        run: pip install ruff
+
+      - name: Ruff
+        working-directory: forge
+        run: |
+          ruff check .
+          ruff format --check .
+
+      - name: Pytest
+        working-directory: forge
+        run: |
+          if [ -d tests ]; then
+            pip install -e . pytest
+            pytest tests -v
+          else
+            echo "forge/tests absent — skipping pytest (placeholder package)"
+          fi
+
+  build:
+    runs-on: k8-build
+    needs: quality
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up QEMU / binfmt
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: linux/amd64,linux/arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/networkbuild3r/library-forge
+          tags: |
+            type=raw,value=${{ github.sha }}
+            type=raw,value=main,enable=${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: ./forge
+          file: ./forge/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Trivy (fail on CRITICAL fixable)
+        uses: aquasecurity/trivy-action@0.32.0
+        with:
+          image-ref: ghcr.io/networkbuild3r/library-forge:${{ github.sha }}
+          severity: CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          format: table
+          vuln-type: os,library
+          scanners: vuln
