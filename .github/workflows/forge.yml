@@ -27,7 +27,7 @@ concurrency:
 jobs:
   quality:
     runs-on: k8
-    timeout-minutes: 25
+    timeout-minutes: 40
     permissions:
       contents: read
     # k8 ARC has no Docker (containerMode unset, no DinD — see
