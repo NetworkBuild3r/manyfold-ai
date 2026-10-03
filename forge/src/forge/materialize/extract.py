@@ -377,6 +377,11 @@ class Extractor:
                 norm, why = check_name(e["Path"])
                 if why is None and kind != "file":
                     why = kind
+                if why is None and not include_path_is_canonical(e["Path"], norm):
+                    # Defense in depth (GR-001): 7zz writes outside the WriteGuard, so only
+                    # names that are already in canonical, traversal-free form may reach its
+                    # include list; anything else is left pending and fails with a typed reason.
+                    why = "non_canonical_path"
                 if why is not None:
                     continue
                 k = seen[norm]
@@ -431,6 +436,20 @@ class Extractor:
             self.guard.rmtree_scratch(outdir)
             self.guard.rmtree_scratch(linkdir)
             self.budget.release_spool(reserved)
+
+
+def include_path_is_canonical(raw: str, norm: str | None) -> bool:
+    """True only when ``raw`` equals its normalized form and is safe to place in a 7zz ``-i@`` list.
+
+    No backslashes, no ``.``/empty segments, no ``..``, no leading ``/``, no control characters
+    (so no newline can split one include line into two), and no wildcard-significant leading ``@``
+    or ``!`` (belt and braces beside ``-spd``).
+    """
+    if norm is None or raw != norm:
+        return False
+    if "\\" in raw or raw.startswith(("/", "@", "!", "-")):
+        return False
+    return not any(seg in ("", ".", "..") for seg in raw.split("/"))
 
 
 class TokenBucket:
