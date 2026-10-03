@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "report": "inventory",
+  "generated_at": "2026-10-03T12:00:00Z",
+  "summary": {
+    "source_files": 8,
+    "archives": 2,
+    "loose": 1,
+    "containers": 3,
+    "failed_containers": 2,
+    "blobs": 7,
+    "occurrences": 8
+  },
+  "have": {
+    "unique_meshes": 5,
+    "unique_mesh_bytes": 720,
+    "mesh_occurrences": 8,
+    "duplicate_ratio": 0.375,
+    "unique_bytes": 1000,
+    "occurrence_bytes": 1320,
+    "mesh_occurrence_bytes": 1320
+  },
+  "asmt018": {
+    "archived_mesh_members_hashed_before": 0,
+    "archived_mesh_members_hashed_now": 8,
+    "archived_unique_meshes_now": 5,
+    "note": "ASMT-018: 0 of 718,974 archived mesh members had a digest"
+  },
+  "by_kind": [
+    {"kind": "mesh", "blobs": 5, "unique_bytes": 720, "occurrences": 8, "occurrence_bytes": 1320},
+    {"kind": "archive", "blobs": 2, "unique_bytes": 280, "occurrences": 2, "occurrence_bytes": 280}
+  ],
+  "by_format": [
+    {"kind": "archive", "format": "zip", "status": "done", "containers": 2, "members": 8, "bytes_read": 1320, "source_bytes": 280}
+  ],
+  "by_top_level_folder": [
+    {"folder": "Games", "files": 6, "bytes": 900, "archives": 2, "loose": 0},
+    {"folder": "D&D", "files": 2, "bytes": 100, "archives": 0, "loose": 1}
+  ],
+  "by_source_tag": [
+    {"tag": "AnySTL", "files": 2, "bytes": 200},
+    {"tag": "", "files": 6, "bytes": 800}
+  ],
+  "archives_vs_loose": [
+    {"kind": "archive", "files": 2, "bytes": 280},
+    {"kind": "loose", "files": 1, "bytes": 40}
+  ],
+  "depth_distribution": [
+    {"depth": 1, "containers": 3, "occurrences": 8}
+  ],
+  "failures": [
+    {"kind": "archive", "reason": "reader_error", "count": 1},
+    {"kind": "nested", "reason": "depth_exceeded", "count": 1}
+  ],
+  "failed_containers": [
+    {
+      "id": 1,
+      "kind": "archive",
+      "reason": "reader_error",
+      "depth": 1,
+      "path": "Games/<script>alert(1)</script>.zip"
+    },
+    {
+      "id": 2,
+      "kind": "nested",
+      "reason": "depth_exceeded",
+      "depth": 4,
+      "path": "D&D/City of Tarok.part1.rar"
+    }
+  ],
+  "meshes_by_ext": [
+    {"ext": "stl", "blobs": 5, "unique_bytes": 720, "occurrences": 8, "occurrence_bytes": 1320}
+  ],
+  "stl_triangles": {
+    "stl_blobs": 5,
+    "with_triangles": 5,
+    "missing_triangles": 0,
+    "min_triangles": 8,
+    "max_triangles": 100,
+    "avg_triangles": 40,
+    "sum_triangles": 200,
+    "unique_bytes": 720
+  }
+}

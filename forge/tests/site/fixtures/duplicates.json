@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "report": "duplicates",
+  "generated_at": "2026-10-03T12:00:00Z",
+  "min_copies": 2,
+  "min_shared": 1,
+  "limit": 500,
+  "summary": {
+    "unique_meshes": 5,
+    "reclaimable_bytes": 600,
+    "duplicate_ratio": 0.375
+  },
+  "have": {
+    "unique_meshes": 5,
+    "unique_mesh_bytes": 720,
+    "duplicate_ratio": 0.375,
+    "cross_pack_blobs": 3,
+    "reclaimable_bytes": 600
+  },
+  "blobs": [
+    {
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "size": 200,
+      "triangles": 12,
+      "ext": "stl",
+      "copies": 2,
+      "reclaimable_bytes": 200,
+      "sources": ["Games/alpha.zip > <script>alert(1)</script>.stl"]
+    }
+  ],
+  "pairs": [
+    {
+      "pack_a": "Games/<script>evil</script>.zip",
+      "pack_b": "Games/beta.zip",
+      "kind_a": "archive",
+      "kind_b": "archive",
+      "meshes_a": 4,
+      "meshes_b": 4,
+      "bytes_a": 400,
+      "bytes_b": 400,
+      "shared_meshes": 3,
+      "shared_bytes": 300,
+      "containment_count": 0.75,
+      "containment_bytes": 0.75,
+      "overlap_a": 0.75,
+      "overlap_b": 0.75,
+      "overlap_a_bytes": 0.75,
+      "overlap_b_bytes": 0.75,
+      "archives_differ": true,
+      "archive_sha_a": "1111111111111111111111111111111111111111111111111111111111111111",
+      "archive_sha_b": "2222222222222222222222222222222222222222222222222222222222222222",
+      "shared": [
+        {
+          "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "size": 100,
+          "name": "<script>alert(1)</script>.stl"
+        },
+        {
+          "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "size": 100,
+          "name": "safe.stl"
+        }
+      ]
+    }
+  ]
+}
