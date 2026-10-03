@@ -97,13 +97,20 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      # trivy-action@v0.32.0 install.sh (godownloader) exits 1 on ARC k8-build
+      # after "found version"; scan never runs. Scan via pinned Trivy image instead.
       - name: Trivy (fail on CRITICAL fixable)
-        uses: aquasecurity/trivy-action@v0.32.0
-        with:
-          image-ref: ghcr.io/networkbuild3r/library-forge:${{ github.sha }}
-          severity: CRITICAL
-          ignore-unfixed: true
-          exit-code: "1"
-          format: table
-          vuln-type: os,library
-          scanners: vuln
+        env:
+          IMAGE: ghcr.io/networkbuild3r/library-forge:${{ github.sha }}
+        run: |
+          docker pull "$IMAGE"
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            ghcr.io/aquasecurity/trivy:0.66.2 \
+            image \
+            --exit-code 1 \
+            --severity CRITICAL \
+            --ignore-unfixed \
+            --scanners vuln \
+            --pkg-types os,library \
+            "$IMAGE"
