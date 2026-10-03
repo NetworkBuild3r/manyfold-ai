@@ -11,6 +11,7 @@ from forge.db.enums import BlobKind, ContainerKind, ContainerStatus
 from forge.db.models import Blob, Container
 
 CATALOG_TABLES = (
+    "sweep_workers",
     "pack_decisions",
     "pack_containers",
     "packs",

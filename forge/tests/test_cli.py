@@ -23,9 +23,29 @@ def test_help_lists_subcommands(capsys) -> None:
 
 
 def test_stub_exits_2(capsys) -> None:
-    assert main(["sweep"]) == 2
+    assert main(["report"]) == 2
     err = capsys.readouterr().err
     assert "not implemented" in err
+
+
+def test_sweep_requires_worker_flag(capsys) -> None:
+    assert main(["sweep"]) == 2
+    assert "--worker" in capsys.readouterr().err
+
+
+def test_sweep_help_lists_flags(capsys) -> None:
+    with pytest.raises(SystemExit) as exc:
+        main(["sweep", "--help"])
+    assert exc.value.code == 0
+    out = capsys.readouterr().out
+    for flag in ("--worker", "--procs", "--once", "--metrics-port"):
+        assert flag in out
+
+
+def test_sweep_requires_source_root(monkeypatch, capsys) -> None:
+    monkeypatch.delenv("FORGE_SOURCE_ROOT", raising=False)
+    assert main(["sweep", "--worker", "--once"]) == 2
+    assert "FORGE_SOURCE_ROOT" in capsys.readouterr().err
 
 
 def test_walk_help_lists_flags(capsys) -> None:

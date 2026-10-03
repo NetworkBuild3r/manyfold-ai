@@ -1,9 +1,11 @@
-"""Library Forge CLI. Stubs print 'not implemented' and exit 2; `db` and `walk` are real.
+"""Library Forge CLI. Stubs print 'not implemented' and exit 2.
+
+Real: `db`, `walk`, `sweep`, `status`.
 
 Other specs add logic via modules (forge.walker.run, forge.sweep.run, …)
 without growing this file into a router.
 
-INIT-032/SPEC-004 · walk wired by SPEC-005
+INIT-032/SPEC-004 · walk wired by SPEC-005 · sweep/status by SPEC-007
 """
 
 from __future__ import annotations
@@ -14,8 +16,6 @@ import sys
 from forge import __version__
 
 _STUBS = (
-    "sweep",
-    "status",
     "report",
     "packs",
     "classify",
@@ -53,8 +53,38 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="N",
         help="os.scandir worker threads (default 8)",
     )
-    _add_stub(sub, "sweep", "Claim and process pending containers (SPEC-007)")
-    _add_stub(sub, "status", "Print sweep progress")
+    sweep = sub.add_parser("sweep", help="Claim and process pending containers (SPEC-007)")
+    sweep.add_argument(
+        "--worker",
+        action="store_true",
+        help="Run sweep worker processes (claim -> engine -> catalog)",
+    )
+    sweep.add_argument(
+        "--procs",
+        type=int,
+        default=8,
+        metavar="N",
+        help="worker processes, each with its own DB connection (default 8)",
+    )
+    sweep.add_argument(
+        "--once",
+        action="store_true",
+        help="exit when no pending or claimed containers remain instead of polling",
+    )
+    sweep.add_argument(
+        "--metrics-port",
+        type=int,
+        default=None,
+        metavar="PORT",
+        help="serve Prometheus /metrics on this port (e.g. 9100)",
+    )
+    sweep.add_argument(
+        "--worker-id",
+        default=None,
+        help="worker id prefix (default $FORGE_WORKER_ID, else the hostname)",
+    )
+    status = sub.add_parser("status", help="Print sweep progress (containers, failures, rate, ETA)")
+    status.add_argument("--json", action="store_true", help="machine-readable output")
     _add_stub(sub, "report", "Inventory and duplicate reports (SPEC-009)")
     _add_stub(sub, "packs", "Pack resolution (SPEC-010)")
     _add_stub(sub, "classify", "Category / name / creator (SPEC-011)")
@@ -83,6 +113,29 @@ def _cmd_walk(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_sweep(args: argparse.Namespace) -> int:
+    if not args.worker:
+        print("forge sweep: pass --worker to run sweep workers", file=sys.stderr)
+        return 2
+    if args.procs < 1:
+        print("forge sweep: --procs must be >= 1", file=sys.stderr)
+        return 2
+    from forge.sweep import main_sweep
+
+    return main_sweep(
+        procs=args.procs,
+        once=args.once,
+        metrics_port=args.metrics_port,
+        worker_id=args.worker_id,
+    )
+
+
+def _cmd_status(args: argparse.Namespace) -> int:
+    from forge.status import main_status
+
+    return main_status(as_json=args.json)
+
+
 def _cmd_db(args: argparse.Namespace) -> int:
     from forge.config import ConfigError
     from forge.db import migrate
@@ -107,6 +160,10 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     if args.command == "walk":
         return _cmd_walk(args)
+    if args.command == "sweep":
+        return _cmd_sweep(args)
+    if args.command == "status":
+        return _cmd_status(args)
     if args.command in _STUBS:
         return _not_implemented(args.command)
     if args.command == "db":

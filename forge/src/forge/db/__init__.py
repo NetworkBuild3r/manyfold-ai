@@ -24,6 +24,7 @@ from forge.db.models import (
     PackDecision,
     SourceFile,
     SweepRun,
+    SweepWorker,
     join_member_path,
 )
 from forge.db.session import get_engine, pending_claim_stmt, session_scope
@@ -50,6 +51,7 @@ __all__ = [
     "SourceFileKind",
     "SweepKind",
     "SweepRun",
+    "SweepWorker",
     "get_engine",
     "join_member_path",
     "pending_claim_stmt",

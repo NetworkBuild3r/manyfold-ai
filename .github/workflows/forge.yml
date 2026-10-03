@@ -27,7 +27,7 @@ concurrency:
 jobs:
   quality:
     runs-on: k8
-    timeout-minutes: 15
+    timeout-minutes: 25
     permissions:
       contents: read
     # k8 ARC has no Docker (containerMode unset, no DinD — see
@@ -63,6 +63,22 @@ jobs:
         run: |
           ruff check .
           ruff format --check .
+
+      # Engine + sweep tests need libarchive.so.13 and the pinned static 7zz (same sha as
+      # forge/Dockerfile). FORGE_REQUIRE_NATIVE=1 makes a missing lib fail instead of skip.
+      - name: Engine native deps
+        env:
+          SEVENZIP_URL: https://www.7-zip.org/a/7z2603-linux-x64.tar.xz
+          SEVENZIP_SHA256: dc99eff5008f1ab79bd7084c68513701547a808a89502bf4133683535ab3c695
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends libarchive13t64 xz-utils
+          curl -fsSL "$SEVENZIP_URL" -o "$RUNNER_TEMP/7z.tar.xz"
+          echo "$SEVENZIP_SHA256  $RUNNER_TEMP/7z.tar.xz" | sha256sum -c -
+          tar -xJf "$RUNNER_TEMP/7z.tar.xz" -C "$RUNNER_TEMP" 7zzs
+          echo "FORGE_7ZZ=$RUNNER_TEMP/7zzs" >> "$GITHUB_ENV"
+          echo "FORGE_REQUIRE_NATIVE=1" >> "$GITHUB_ENV"
 
       - name: Pytest
         working-directory: forge
