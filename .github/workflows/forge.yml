@@ -54,7 +54,7 @@ jobs:
   build:
     runs-on: k8-build
     needs: quality
-    timeout-minutes: 30
+    timeout-minutes: 60
     permissions:
       contents: read
       packages: write
