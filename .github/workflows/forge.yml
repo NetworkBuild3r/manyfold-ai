@@ -98,7 +98,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Trivy (fail on CRITICAL fixable)
-        uses: aquasecurity/trivy-action@0.32.0
+        uses: aquasecurity/trivy-action@v0.32.0
         with:
           image-ref: ghcr.io/networkbuild3r/library-forge:${{ github.sha }}
           severity: CRITICAL
