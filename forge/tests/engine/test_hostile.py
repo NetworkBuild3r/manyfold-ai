@@ -352,6 +352,21 @@ def test_nested_archive_detected_by_magic(src, scratch):
     assert sink.nested_results[("payload.bin",)].members == 6
 
 
+def test_archive_extension_without_signature_is_not_opened(src, scratch):
+    """Soak finding: ``*.osgjs.gz`` exports are plain JSON. Kind ``other``, never a child."""
+    p = zip_files(
+        src / "outer.zip",
+        {"file.osgjs.gz": b'{"Generator": "x"}', "part.002": b"\x00" * 64},
+    )
+    res, sink = run([p], scratch_dir=scratch)
+    assert res.status == "done"
+    assert {m[0][-1]: m[3] for m in sink.members} == {
+        "file.osgjs.gz": "other",
+        "part.002": "other",
+    }
+    assert sink.nested == [] and sink.nested_results == {}
+
+
 def test_nested_single_file_gzip(src, scratch):
     gz = (FIXTURES / "model.stl.gz").read_bytes()
     p = zip_files(src / "outer.zip", {"parts/model.stl.gz": gz})

@@ -101,15 +101,18 @@ def test_loose_batch(tmp_path):
     b.write_bytes(b"\x89PNG" + os.urandom(100))
     z = tmp_path / "c.dat"
     z.write_bytes(b"PK\x03\x04" + os.urandom(64))
+    fake = tmp_path / "model_file.bin.gz"
+    fake.write_bytes(b"\x8c\xfd\n\xf5" + os.urandom(64))  # named .gz, not gzip
     gone = tmp_path / "gone.stl"
     link = tmp_path / "link.stl"
     link.symlink_to(a)
-    res, sink = _loose([a, b, z, gone, link])
-    assert (res.status, res.members, res.max_depth) == ("done", 3, 0)
+    res, sink = _loose([a, b, z, fake, gone, link])
+    assert (res.status, res.members, res.max_depth) == ("done", 4, 0)
     got = {m[0]: m for m in sink.members}
     assert got[(str(a),)][3:] == ("mesh", 4, 0)
     assert got[(str(b),)][3] == "image"
     assert got[(str(z),)][3] == "archive"  # by magic
+    assert got[(str(fake),)][3] == "other"  # archive extension, no signature
     assert got[(str(a),)][1] == hashlib.sha256(a.read_bytes()).hexdigest()
     assert dict(sink.refusals) == {(str(gone),): "vanished", (str(link),): "symlink"}
     assert sink.nested == []

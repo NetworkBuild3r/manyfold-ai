@@ -53,7 +53,20 @@ def one(stratum: str, paths: list[str], scratch: Path) -> dict:
     t0 = time.monotonic()
     ref = ContainerRef("archive", tuple(Path(p) for p in paths), paths[0])
     res = process(ref, sink, Caps(), scratch)
+    loose = None
+    if res.reason == "unsupported_format" and res.format is None:
+        # No archive signature at all: the sweep runner re-routes the file to loose hashing.
+        lsink = CountSink()
+        lres = process(
+            ContainerRef("loose_batch", ref.paths, ref.display), lsink, Caps()
+        )
+        loose = {
+            "status": lres.status,
+            "members": lsink.members,
+            "kinds": dict(lsink.kinds),
+        }
     return {
+        "loose_fallback": loose,
         "stratum": stratum,
         "paths": paths,
         "status": res.status,

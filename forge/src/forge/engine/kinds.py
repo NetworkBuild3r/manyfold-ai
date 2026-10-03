@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import re
-
 MAGIC_BYTES = 512  # enough for tar's "ustar" at offset 257
 
 MESH_EXT = frozenset(
@@ -44,11 +42,6 @@ OPAQUE_EXT = frozenset(
         "dll",
     }
 )
-ARCHIVE_EXT = frozenset(
-    {"zip", "rar", "7z", "tar", "gz", "tgz", "bz2", "tbz", "tbz2", "xz", "txz", "zst", "tzst",
-     "lz4", "cbz", "cbr", "cb7", "cab", "lzh", "lha", "arj", "iso"}
-)  # fmt: skip
-_VOLUME_EXT = re.compile(r"^(r\d{2}|\d{3})$")  # .r00 (RAR4 volumes), .001 (raw splits)
 
 
 def magic_format(head: bytes) -> str | None:
@@ -88,9 +81,16 @@ def extension(name: str) -> str:
     return base.rsplit(".", 1)[-1].lower() if "." in base else ""
 
 
+# Archive formats whose signature is absent or beyond MAGIC_BYTES: the extension alone decides.
+_EXTENSION_ONLY_ARCHIVE = frozenset({"tar", "iso", "lzh", "lha", "arj"})
+
+
 def classify(name: str, head: bytes) -> str:
     """Kind of a member. A known mesh/image/doc extension wins over magic (3MF, FCStd and
-    friends are ZIP containers but are meshes); otherwise archive by extension OR magic."""
+    friends are ZIP containers but are meshes). Otherwise ``archive`` when the bytes carry an
+    archive signature, whatever the name; an archive *extension* without one (the library's
+    ``model_file.bin.gz`` exports are plain binary, a raw ``.002`` split volume is mid-stream)
+    is ``other`` and is never opened as a container."""
     ext = extension(name)
     if ext in MESH_EXT:
         return "mesh"
@@ -100,6 +100,6 @@ def classify(name: str, head: bytes) -> str:
         return "doc"
     if ext in OPAQUE_EXT:
         return "other"
-    if ext in ARCHIVE_EXT or _VOLUME_EXT.match(ext) or magic_format(head) is not None:
+    if magic_format(head) is not None or ext in _EXTENSION_ONLY_ARCHIVE:
         return "archive"
     return "other"
