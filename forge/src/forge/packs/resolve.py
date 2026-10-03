@@ -853,27 +853,50 @@ class _Resolver:
             self._q("SELECT count(*) FROM packs WHERE needs_review").scalar_one()
         )
 
+        # pack_containers means "this container's whole subtree belongs to the pack" (the SPEC-012
+        # planner reads it that way). A loose_batch holds up to 500 files in path order, so it is
+        # attached only when every one of its files belongs to this one pack; otherwise exact loose
+        # membership lives in pack_units / pack_unit_sources only.
         self._q("DELETE FROM pack_containers WHERE pack_id IN (SELECT pack_id FROM tmp_assign)")
+        temp_table(
+            self.conn,
+            "tmp_batch_cover",
+            "",
+            as_select="""
+                SELECT cf.container_id, count(*) AS files, count(a.pack_id) AS covered,
+                       count(DISTINCT a.pack_id) AS packs, min(a.pack_id) AS pack_id,
+                       min(CASE a.role WHEN 'primary' THEN 0 WHEN 'source' THEN 1 ELSE 2 END)
+                           AS role_rank
+                FROM container_files cf
+                JOIN containers c ON c.id = cf.container_id AND c.kind = 'loose_batch'
+                LEFT JOIN pack_unit_sources s ON s.source_file_id = cf.source_file_id
+                LEFT JOIN tmp_assign a ON a.unit_id = s.unit_id
+                GROUP BY cf.container_id
+                HAVING count(a.pack_id) > 0
+            """,
+        )
         self._q(
             """
             INSERT INTO pack_containers (pack_id, container_id, role)
-            SELECT DISTINCT ON (pack_id, container_id) pack_id, container_id,
-                   CAST(role AS pack_container_role)
-            FROM (
-                SELECT a.pack_id, u.root_container_id AS container_id, a.role
-                FROM tmp_assign a JOIN pack_units u ON u.id = a.unit_id
-                WHERE u.root_container_id IS NOT NULL
-                UNION ALL
-                SELECT a.pack_id, cf.container_id, a.role
-                FROM tmp_assign a
-                JOIN pack_units u ON u.id = a.unit_id AND u.kind = 'loose'
-                JOIN pack_unit_sources s ON s.unit_id = u.id
-                JOIN container_files cf ON cf.source_file_id = s.source_file_id
-                JOIN containers c ON c.id = cf.container_id AND c.kind = 'loose_batch'
-            ) x
-            ORDER BY pack_id, container_id,
-                     CASE role WHEN 'primary' THEN 0 WHEN 'source' THEN 1 ELSE 2 END
+            SELECT a.pack_id, u.root_container_id, CAST(a.role AS pack_container_role)
+            FROM tmp_assign a JOIN pack_units u ON u.id = a.unit_id
+            WHERE u.root_container_id IS NOT NULL
+            UNION ALL
+            SELECT pack_id, container_id,
+                   CAST((ARRAY['primary', 'source', 'absorbed'])[role_rank + 1]
+                        AS pack_container_role)
+            FROM tmp_batch_cover WHERE packs = 1 AND covered = files
             """
+        )
+        self.counts["loose_batches_whole"] = int(
+            self._q(
+                "SELECT count(*) FROM tmp_batch_cover WHERE packs = 1 AND covered = files"
+            ).scalar_one()
+        )
+        self.counts["loose_batches_split"] = int(
+            self._q(
+                "SELECT count(*) FROM tmp_batch_cover WHERE NOT (packs = 1 AND covered = files)"
+            ).scalar_one()
         )
         self._write_deterministic()
 

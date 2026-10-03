@@ -287,6 +287,21 @@ def test_colocate_all_joins_every_unit_of_a_model_root(lib, migrated_db):
         PacksSettings().with_overrides(colocate="sometimes")
 
 
+def test_loose_batch_in_pack_containers_only_when_wholly_inside_one_pack(lib, migrated_db):
+    whole = lib.loose({"Misc/Solo/solo.stl": "solo", "Misc/Solo/solo.jpg": "solo-img"})
+    split = lib.loose({"Misc/P1/p1.stl": "p1", "Misc/P2/p2.stl": "p2"})
+    res = resolve(migrated_db)
+    assert len(lib.packs_of()) == 3
+    attached = {r[0] for r in lib.rows("SELECT container_id FROM pack_containers")}
+    assert whole in attached and split not in attached
+    assert res.counts["loose_batches_whole"] == 1 and res.counts["loose_batches_split"] == 1
+    srcs = lib.scalar(
+        "SELECT count(*) FROM pack_unit_sources s JOIN pack_units u ON u.id = s.unit_id "
+        "WHERE u.unit_key IN ('loose:Misc/P1', 'loose:Misc/P2')"
+    )
+    assert srcs == 2  # exact membership for the planner's finer scope
+
+
 def test_bundle_root_is_not_colocated(lib, migrated_db):
     files = {"Dump/datapackage.json": "dp"}
     for i in range(4):
