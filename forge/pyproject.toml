@@ -7,7 +7,17 @@ name = "forge"
 version = "0.0.1"
 description = "Library Forge — catalog and materialize the 3D-print library"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "sqlalchemy>=2.0",
+    "alembic",
+    "psycopg[binary]>=3.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "ruff>=0.6",
+]
 
 [project.scripts]
 forge = "forge.cli:main"
@@ -17,4 +27,12 @@ where = ["src"]
 
 [tool.ruff]
 target-version = "py312"
-src = ["src"]
+src = ["src", "tests"]
+line-length = 100
+extend-exclude = ["spikes"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
