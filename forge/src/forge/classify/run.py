@@ -50,7 +50,8 @@ from forge.packs.resolve import acquire_lock, release_lock
 from forge.packs.sqlutil import copy_rows, temp_table
 
 RULES_VERSION = "classify-rules-v5"
-RETRYABLE_ERROR_PREFIXES = ("transport:", "http 5", "no attempt")
+# Any HTTP error is retried on the next run (a 404 "model does not exist" must not be cached).
+RETRYABLE_ERROR_PREFIXES = ("transport:", "http ", "no attempt")
 DEFAULT_MIN_CONFIDENCE = 0.6
 
 
