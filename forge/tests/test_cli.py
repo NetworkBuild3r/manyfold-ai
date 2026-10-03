@@ -23,7 +23,7 @@ def test_help_lists_subcommands(capsys) -> None:
 
 
 def test_stub_exits_2(capsys) -> None:
-    assert main(["report"]) == 2
+    assert main(["packs"]) == 2
     err = capsys.readouterr().err
     assert "not implemented" in err
 

@@ -1,11 +1,12 @@
 """Library Forge CLI. Stubs print 'not implemented' and exit 2.
 
-Real: `db`, `walk`, `sweep`, `status`.
+Real: `db`, `walk`, `sweep`, `status`, `report`.
 
 Other specs add logic via modules (forge.walker.run, forge.sweep.run, …)
 without growing this file into a router.
 
 INIT-032/SPEC-004 · walk wired by SPEC-005 · sweep/status by SPEC-007
+· report wired by SPEC-009
 """
 
 from __future__ import annotations
@@ -16,7 +17,6 @@ import sys
 from forge import __version__
 
 _STUBS = (
-    "report",
     "packs",
     "classify",
     "materialize",
@@ -85,7 +85,36 @@ def build_parser() -> argparse.ArgumentParser:
     )
     status = sub.add_parser("status", help="Print sweep progress (containers, failures, rate, ETA)")
     status.add_argument("--json", action="store_true", help="machine-readable output")
-    _add_stub(sub, "report", "Inventory and duplicate reports (SPEC-009)")
+    report = sub.add_parser("report", help="Inventory and duplicate reports (SPEC-009)")
+    report_sub = report.add_subparsers(dest="report_command", required=True)
+    inv = report_sub.add_parser("inventory", help="What the catalog actually holds")
+    dups = report_sub.add_parser("duplicates", help="Cross-pack mesh duplicates")
+    for p in (inv, dups):
+        p.add_argument(
+            "--format",
+            choices=("json", "csv", "md"),
+            default="json",
+            help="output format (default json)",
+        )
+        p.add_argument(
+            "--out",
+            metavar="DIR",
+            help="write report file(s) into DIR (stdout if omitted)",
+        )
+    dups.add_argument(
+        "--min-copies",
+        type=int,
+        default=2,
+        metavar="N",
+        help="list mesh blobs occurring in >= N distinct packs (default 2)",
+    )
+    dups.add_argument(
+        "--limit",
+        type=int,
+        default=500,
+        metavar="N",
+        help="max blob and pair rows (default 500; 0 = no cap)",
+    )
     _add_stub(sub, "packs", "Pack resolution (SPEC-010)")
     _add_stub(sub, "classify", "Category / name / creator (SPEC-011)")
     _add_stub(sub, "materialize", "Write the derived v2 tree (SPEC-012)")
@@ -136,6 +165,12 @@ def _cmd_status(args: argparse.Namespace) -> int:
     return main_status(as_json=args.json)
 
 
+def _cmd_report(args: argparse.Namespace) -> int:
+    from forge.reports.cli import main_report
+
+    return main_report(args)
+
+
 def _cmd_db(args: argparse.Namespace) -> int:
     from forge.config import ConfigError
     from forge.db import migrate
@@ -164,6 +199,8 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_sweep(args)
     if args.command == "status":
         return _cmd_status(args)
+    if args.command == "report":
+        return _cmd_report(args)
     if args.command in _STUBS:
         return _not_implemented(args.command)
     if args.command == "db":
