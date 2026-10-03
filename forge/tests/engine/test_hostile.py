@@ -115,6 +115,32 @@ def test_reachable_nested_bomb_fails_whole_tree(src, scratch, tmp_path):
     assert on_path and all(r.reason == "ratio_exceeded" for r in on_path)
 
 
+@needs_7zz
+@pytest.mark.parametrize("fmt", ["zip", "7z"])
+def test_large_compressible_members_are_not_bombs(fmt, src, scratch, tmp_path):
+    """Seekable readers (7z, zip) move the input position backwards; >16 MiB members with an
+    honest ~2:1 ratio must never trip ratio_exceeded (soak regression)."""
+    import binascii
+    import subprocess
+
+    from .conftest import sevenzip
+
+    payload = tmp_path / "payload"
+    payload.mkdir()
+    for i in range(2):
+        (payload / f"part{i}.obj").write_bytes(binascii.hexlify(os.urandom(10 << 20)))
+    out = src / f"large.{fmt}"
+    subprocess.run(
+        [sevenzip(), "a", "-bd", "-mx=1", f"-t{fmt}", str(out), "."],
+        cwd=payload,
+        check=True,
+        capture_output=True,
+    )
+    res, sink = run([out], scratch_dir=scratch)
+    assert res.status == "done", res
+    assert {m[2] for m in sink.members} == {20 << 20}
+
+
 # ------------------------------------------------------------------------------ AC3 depth cap
 
 

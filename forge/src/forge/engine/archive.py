@@ -246,7 +246,11 @@ def read_libarchive(ctx: Ctx, st: ContainerState, paths: list[Path]) -> str | No
                 if e.size is not None:
                     ctx.budget.check_member(e.size, None)
                 w = MemberWriter(ctx, st, norm)
-                c0 = r.compressed_bytes()
+                # archive_filter_bytes is an input *position*: seekable readers (7z, zip central
+                # directory) jump backwards. Count forward progress only, so a seek can never make
+                # a member look like a bomb.
+                last = r.compressed_bytes()
+                consumed = 0
                 try:
                     # libarchive 3.8 RAR5: read_data on a zero-length member of a solid stream
                     # fails ("Unsupported block header size"); a declared-empty member has no data.
@@ -254,7 +258,10 @@ def read_libarchive(ctx: Ctx, st: ContainerState, paths: list[Path]) -> str | No
                         n = r.read_into(ctx.buf, READ_BLOCK)
                         if n == 0:
                             break
-                        w.feed(mv[:n], r.compressed_bytes() - c0)
+                        cur = r.compressed_bytes()
+                        consumed += max(0, cur - last)
+                        last = cur
+                        w.feed(mv[:n], consumed)
                     if e.size is not None and e.size != w.size:
                         raise LocalFailure(
                             "reader_error", f"{name}: read {w.size} of {e.size} bytes"
