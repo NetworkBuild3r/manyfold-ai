@@ -9,7 +9,8 @@ on:
       - "forge/**"
       - ".github/workflows/forge.yml"
   pull_request:
-    branches: [main]
+    # init-032-library-forge: INIT-032 spec PRs target the integration branch until it merges.
+    branches: [main, init-032-library-forge]
     paths:
       - "forge/**"
       - ".github/workflows/forge.yml"
