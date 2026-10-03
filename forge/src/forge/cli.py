@@ -6,7 +6,7 @@ Other specs add logic via modules (forge.walker.run, forge.sweep.run, …)
 without growing this file into a router.
 
 INIT-032/SPEC-004 · walk wired by SPEC-005 · sweep/status by SPEC-007
-· report wired by SPEC-009
+· report wired by SPEC-009 · report site by SPEC-014
 """
 
 from __future__ import annotations
@@ -115,6 +115,21 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="N",
         help="max blob and pair rows (default 500; 0 = no cap)",
     )
+    site = report_sub.add_parser("site", help="Static HTML from JSON reports (SPEC-014)")
+    site.add_argument(
+        "--in",
+        dest="in_dir",
+        required=True,
+        metavar="DIR",
+        help="directory containing inventory.json and/or duplicates.json",
+    )
+    site.add_argument(
+        "--out",
+        dest="out_dir",
+        required=True,
+        metavar="DIR",
+        help="directory to write HTML, assets, and chunked pair JSON",
+    )
     _add_stub(sub, "packs", "Pack resolution (SPEC-010)")
     _add_stub(sub, "classify", "Category / name / creator (SPEC-011)")
     _add_stub(sub, "materialize", "Write the derived v2 tree (SPEC-012)")
@@ -166,6 +181,10 @@ def _cmd_status(args: argparse.Namespace) -> int:
 
 
 def _cmd_report(args: argparse.Namespace) -> int:
+    if args.report_command == "site":
+        from forge.site.cli import main_site
+
+        return main_site(args)
     from forge.reports.cli import main_report
 
     return main_report(args)
