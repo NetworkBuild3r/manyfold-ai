@@ -138,10 +138,14 @@ def _dispatch(sink: Sink, msg: list) -> Result | None:
     return None
 
 
+# The reader child parses hostile archives; it must never see pod secrets
+# (FORGE_DB_URL, tokens, Vault-injected vars). Whitelist only.
+_CHILD_ENV_ALLOW = ("PATH", "LANG", "LC_ALL", "FORGE_7ZZ", "FORGE_ENGINE_TEST_STALL_SECONDS")
+
+
 def _child_env() -> dict[str, str]:
-    env = dict(os.environ)
-    pkg_root = str(Path(__file__).resolve().parents[2])  # .../src containing forge/
-    env["PYTHONPATH"] = pkg_root + (os.pathsep + env["PYTHONPATH"] if env.get("PYTHONPATH") else "")
+    env = {k: os.environ[k] for k in _CHILD_ENV_ALLOW if k in os.environ}
+    env["PYTHONPATH"] = str(Path(__file__).resolve().parents[2])  # .../src containing forge/
     env.setdefault("LC_ALL", "C.UTF-8")
     return env
 
