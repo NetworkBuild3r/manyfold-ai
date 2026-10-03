@@ -19,7 +19,6 @@ from forge import __version__
 _STUBS = (
     "packs",
     "classify",
-    "materialize",
 )
 
 
@@ -132,7 +131,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _add_stub(sub, "packs", "Pack resolution (SPEC-010)")
     _add_stub(sub, "classify", "Category / name / creator (SPEC-011)")
-    _add_stub(sub, "materialize", "Write the derived v2 tree (SPEC-012)")
+    from forge.materialize.cli import add_parser as _add_materialize
+
+    _add_materialize(sub)
 
     db = sub.add_parser("db", help="Alembic wrappers (upgrade / downgrade / current)")
     db_sub = db.add_subparsers(dest="db_command", required=True)
@@ -220,6 +221,10 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_status(args)
     if args.command == "report":
         return _cmd_report(args)
+    if args.command == "materialize":
+        from forge.materialize.cli import main as materialize_main
+
+        return materialize_main(args)
     if args.command in _STUBS:
         return _not_implemented(args.command)
     if args.command == "db":
