@@ -37,9 +37,7 @@ class Ctx:
     scratch: Path
     sevenzip: str | None
     fatal: FatalFailure | None = None
-    buf: ctypes.Array = field(
-        default_factory=lambda: ctypes.create_string_buffer(READ_BLOCK)
-    )
+    buf: ctypes.Array = field(default_factory=lambda: ctypes.create_string_buffer(READ_BLOCK))
 
 
 @dataclass
@@ -49,16 +47,10 @@ class ContainerState:
     compressed: int
     name_hint: str
     members: int = 0
-    bytes_out: int = (
-        0  # uncompressed bytes read in this container (incl. refused/aborted data)
-    )
+    bytes_out: int = 0  # uncompressed bytes read in this container (incl. refused/aborted data)
     bytes_hashed: int = 0
-    seen: Counter = field(
-        default_factory=Counter
-    )  # normalized name -> occurrences emitted
-    handled: Counter = field(
-        default_factory=Counter
-    )  # keys finished by an earlier reader pass
+    seen: Counter = field(default_factory=Counter)  # normalized name -> occurrences emitted
+    handled: Counter = field(default_factory=Counter)  # keys finished by an earlier reader pass
 
     def chain_for(self, norm: str) -> tuple[str, ...]:
         k = self.seen[norm]
@@ -72,11 +64,7 @@ def map_error(message: str) -> str:
         return "encrypted"
     if "allocate" in m or "out of memory" in m:
         return "oom"
-    if (
-        "missing volume" in m
-        or "volume" in m
-        and ("missing" in m or "next" in m or "open" in m)
-    ):
+    if "missing volume" in m or "volume" in m and ("missing" in m or "next" in m or "open" in m):
         return "missing_volume"
     if "unrecognized archive format" in m or "unsupported" in m or "not supported" in m:
         return "unsupported_format"
@@ -96,9 +84,7 @@ class MemberWriter:
         self.stl = StlCounter() if is_stl_name(norm) else None
         self.head = bytearray()
         self.kind: str | None = None
-        self.existing = (
-            existing  # already on scratch (7zz extraction): recurse on it directly
-        )
+        self.existing = existing  # already on scratch (7zz extraction): recurse on it directly
         self.spool_path: Path | None = None
         self._spool = None
         self.spooled = 0
@@ -311,9 +297,7 @@ def open_container(
             read_libarchive(ctx, st, paths)
             if fmt is None and not st.seen:
                 # No archive magic and no entries: not something we recognise, never "done/0".
-                raise LocalFailure(
-                    "unsupported_format", "no entries and no archive signature"
-                )
+                raise LocalFailure("unsupported_format", "no entries and no archive signature")
         except LocalFailure as first:
             if (
                 first.reason in ("reader_error", "unsupported_format", "missing_volume")
@@ -326,9 +310,7 @@ def open_container(
                     fallback.read_7zz(ctx, st, paths)
                 except LocalFailure as second:
                     raise LocalFailure(
-                        second.reason
-                        if second.reason != "reader_error"
-                        else first.reason,
+                        second.reason if second.reason != "reader_error" else first.reason,
                         f"libarchive: {first.detail}; 7zz: {second.detail}",
                     ) from None
             else:

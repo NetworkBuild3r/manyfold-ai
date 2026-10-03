@@ -1,4 +1,4 @@
-"""AC1 — golden fixtures: every member's sha256 equals ground truth and a 7zz reference extraction."""
+"""AC1 — golden fixtures: every member's sha256 equals ground truth and a 7zz reference."""
 
 from __future__ import annotations
 
@@ -40,9 +40,7 @@ def test_golden_members_match_ground_truth(name, src, scratch, tmp_path):
     assert res.reader == spec.get("reader", "libarchive"), res
     got = sink.by_chain()
     want = _expected(name)
-    assert set(got) == set(want), (
-        f"missing={set(want) - set(got)} extra={set(got) - set(want)}"
-    )
+    assert set(got) == set(want), f"missing={set(want) - set(got)} extra={set(got) - set(want)}"
     for chain, m in want.items():
         _, sha, size, kind, tri, depth = got[chain]
         assert (sha, size, depth) == (m["sha256"], m["size"], m["depth"]), chain
@@ -61,9 +59,7 @@ def test_golden_members_match_ground_truth(name, src, scratch, tmp_path):
 
 
 @needs_7zz
-@pytest.mark.parametrize(
-    "name", [n for n in GOLDEN if MANIFEST[n].get("reader") != "stream"]
-)
+@pytest.mark.parametrize("name", [n for n in GOLDEN if MANIFEST[n].get("reader") != "stream"])
 def test_golden_matches_reference_extraction(name, src, scratch, tmp_path):
     paths = copy_fixture(MANIFEST[name]["paths"], src)
     res, sink = run(paths, scratch_dir=scratch)
@@ -107,7 +103,7 @@ def test_member_kinds(src, scratch):
 
 
 def test_split_rar_volumes_are_one_stream(src, scratch):
-    """A volume set read through archive_read_open_filenames: members spanning volumes hash whole."""
+    """Volume set via archive_read_open_filenames: a member spanning volumes hashes whole."""
     spec = MANIFEST["split_rar5"]
     paths = copy_fixture(spec["paths"], src)
     res, sink = run(paths, scratch_dir=scratch)

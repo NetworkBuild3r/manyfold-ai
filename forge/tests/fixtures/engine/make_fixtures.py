@@ -72,9 +72,7 @@ def write_tree(root: Path, files: dict[str, bytes]) -> None:
 
 
 def run(*argv, cwd: Path) -> None:
-    subprocess.run(
-        [str(a) for a in argv], cwd=cwd, check=True, stdout=subprocess.DEVNULL
-    )
+    subprocess.run([str(a) for a in argv], cwd=cwd, check=True, stdout=subprocess.DEVNULL)
 
 
 def rar(out: Path, src: Path, *flags: str) -> None:
@@ -96,9 +94,7 @@ def zip_dir(out: Path, files: dict[str, bytes], method=zipfile.ZIP_DEFLATED) -> 
     return out.read_bytes()
 
 
-def entries(
-    files: dict[str, bytes], prefix: tuple[str, ...] = (), depth: int = 1
-) -> list[dict]:
+def entries(files: dict[str, bytes], prefix: tuple[str, ...] = (), depth: int = 1) -> list[dict]:
     out = []
     for name, data in files.items():
         tri = None
@@ -254,9 +250,7 @@ def main() -> None:
             "members": entries({"model.stl": stl}),
         }
 
-    (HERE / "manifest.json").write_text(
-        json.dumps(manifest, indent=1, sort_keys=True) + "\n"
-    )
+    (HERE / "manifest.json").write_text(json.dumps(manifest, indent=1, sort_keys=True) + "\n")
     for p in sorted(HERE.iterdir()):
         if p.suffix != ".py" and p.name != "manifest.json":
             assert p.stat().st_size < 200_000, p

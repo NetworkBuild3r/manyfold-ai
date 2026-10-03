@@ -17,15 +17,15 @@ from .conftest import RecordingSink
 
 def _binary_stl(n: int, extra: bytes = b"") -> bytes:
     return (
-        b"solid but binary".ljust(80, b"\0")
-        + n.to_bytes(4, "little")
-        + os.urandom(50 * n)
-        + extra
+        b"solid but binary".ljust(80, b"\0") + n.to_bytes(4, "little") + os.urandom(50 * n) + extra
     )
 
 
 def _ascii_stl(n: int) -> bytes:
-    facet = "facet normal 0 0 1\n outer loop\n vertex 0 0 0\n vertex 1 0 0\n vertex 0 1 0\n endloop\nendfacet\n"
+    facet = (
+        "facet normal 0 0 1\n outer loop\n vertex 0 0 0\n vertex 1 0 0\n vertex 0 1 0\n"
+        " endloop\nendfacet\n"
+    )
     return ("solid t\n" + facet * n + "endsolid t\n").encode()
 
 

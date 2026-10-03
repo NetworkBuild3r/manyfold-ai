@@ -43,9 +43,7 @@ class CountSink:
         self.nested += 1
 
     def nested_result(self, chain, result) -> None:
-        self.nested_status[
-            result.status if result.status == "done" else result.reason
-        ] += 1
+        self.nested_status[result.status if result.status == "done" else result.reason] += 1
 
 
 def one(stratum: str, paths: list[str], scratch: Path) -> dict:
@@ -57,9 +55,7 @@ def one(stratum: str, paths: list[str], scratch: Path) -> dict:
     if res.reason == "unsupported_format" and res.format is None:
         # No archive signature at all: the sweep runner re-routes the file to loose hashing.
         lsink = CountSink()
-        lres = process(
-            ContainerRef("loose_batch", ref.paths, ref.display), lsink, Caps()
-        )
+        lres = process(ContainerRef("loose_batch", ref.paths, ref.display), lsink, Caps())
         loose = {
             "status": lres.status,
             "members": lsink.members,
@@ -116,7 +112,8 @@ def main(sample: str, out: str, workers: int = 3) -> None:
     for r in results:
         by[r["stratum"]].append(r)
     print(
-        "\n| stratum | n | done | done % | readers | failures | members | GB in | MB/s | max RSS MiB |"
+        "\n| stratum | n | done | done % | readers | failures | members | GB in | MB/s "
+        "| max RSS MiB |"
     )
     for s, rs in sorted(by.items()):
         done = [r for r in rs if r["status"] == "done"]
@@ -125,9 +122,10 @@ def main(sample: str, out: str, workers: int = 3) -> None:
         secs = sum(r["secs"] for r in rs) or 1
         gb = sum(r["csize"] for r in rs) / 1e9
         print(
-            f"| {s} | {len(rs)} | {len(done)} | {100 * len(done) / len(rs):.1f} | {dict(readers)} | "
-            f"{dict(fails)} | {sum(r['members_tree'] for r in rs)} | {gb:.1f} | {gb * 1000 / secs:.1f} | "
-            f"{max((r['peak_rss_kb'] or 0) for r in rs) / 1024:.0f} |",
+            f"| {s} | {len(rs)} | {len(done)} | {100 * len(done) / len(rs):.1f} "
+            f"| {dict(readers)} | {dict(fails)} | {sum(r['members_tree'] for r in rs)} "
+            f"| {gb:.1f} | {gb * 1000 / secs:.1f} "
+            f"| {max((r['peak_rss_kb'] or 0) for r in rs) / 1024:.0f} |",
             flush=True,
         )
 

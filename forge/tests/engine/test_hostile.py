@@ -65,9 +65,7 @@ def test_member_too_large_while_streaming(src, scratch):
         chunk = b"\0" * (1 << 20)
         for _ in range(96):
             g.write(chunk)
-    res, sink = run(
-        [p], caps=Caps(ratio=10**9, member_bytes=32 << 20), scratch_dir=scratch
-    )
+    res, sink = run([p], caps=Caps(ratio=10**9, member_bytes=32 << 20), scratch_dir=scratch)
     assert (res.status, res.reason) == ("failed", "member_too_large"), res
     assert sink.members == []
 
@@ -94,9 +92,7 @@ def test_42zip_shape_stopped_by_depth_cap(src, scratch, tmp_path):
     assert time.monotonic() - t0 < 60
     assert not any(m[0][-1] == "zeros.bin" for m in sink.members)
     deepest = [r for c, r in sink.nested_results.items() if len(c) == 3]
-    assert deepest and all(
-        (r.status, r.reason) == ("failed", "depth_exceeded") for r in deepest
-    )
+    assert deepest and all((r.status, r.reason) == ("failed", "depth_exceeded") for r in deepest)
     assert res.max_depth == 3
 
 
@@ -276,14 +272,11 @@ def _truncate(src_path: Path, dst: Path, keep: float) -> Path:
     ],
 )
 def test_truncated_archive_reader_error(fixture, manifest_key, keep, src, scratch):
-    p = _truncate(
-        FIXTURES / fixture, src / ("trunc_" + fixture.replace(".001", "")), keep
-    )
+    p = _truncate(FIXTURES / fixture, src / ("trunc_" + fixture.replace(".001", "")), keep)
     res, sink = run([p], scratch_dir=scratch)
     assert (res.status, res.reason) == ("failed", "reader_error"), res
     expected = {
-        tuple(m["chain"]): (m["sha256"], m["size"])
-        for m in MANIFEST[manifest_key]["members"]
+        tuple(m["chain"]): (m["sha256"], m["size"]) for m in MANIFEST[manifest_key]["members"]
     }
     got = {m[0]: (m[1], m[2]) for m in sink.members}
     # Whatever was recorded is byte-exact; the truncated member(s) are absent (GR-004).
@@ -301,9 +294,7 @@ def test_truncated_zip_mid_member_has_no_blob(src, scratch, tmp_path):
     p = _truncate(z, src / "trunc.zip", 0.5)
     res, sink = run([p], scratch_dir=scratch)
     assert (res.status, res.reason) == ("failed", "reader_error"), res
-    assert set(sink.by_chain()) == {
-        ("first.txt",)
-    }  # earlier member stays, truncated one absent
+    assert set(sink.by_chain()) == {("first.txt",)}  # earlier member stays, truncated one absent
 
 
 # ---------------------------------------------------------------------- typed reader failures
@@ -437,9 +428,7 @@ def test_kill_switch_stuck_reader(src, scratch, monkeypatch):
     monkeypatch.setenv("FORGE_ENGINE_TEST_STALL_SECONDS", "60")
     paths = copy_fixture(["basic.zip"], src)
     t0 = time.monotonic()
-    res, sink = run(
-        paths, caps=Caps(wall_seconds=1, kill_grace_seconds=1), scratch_dir=scratch
-    )
+    res, sink = run(paths, caps=Caps(wall_seconds=1, kill_grace_seconds=1), scratch_dir=scratch)
     assert (res.status, res.reason) == ("failed", "timeout"), res
     assert time.monotonic() - t0 < 10
     assert sink.members == []
@@ -486,8 +475,6 @@ def test_peak_rss_largest_fixture(src, scratch):
     assert res.status == "done", res
     assert sink.by_chain()[("big/random.bin",)][2] == 192 << 20
     child_peak = resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss
-    print(
-        f"reader peak RSS {res.peak_rss_kb} KiB; RUSAGE_CHILDREN max {child_peak} KiB"
-    )
+    print(f"reader peak RSS {res.peak_rss_kb} KiB; RUSAGE_CHILDREN max {child_peak} KiB")
     assert res.peak_rss_kb < 256 * 1024
     assert child_peak < WORKER_MEMORY_LIMIT_KB

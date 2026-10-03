@@ -128,9 +128,7 @@ def read_stream(ctx: Ctx, st: ContainerState, paths: list[Path], fmt: str) -> No
                 w.feed(memoryview(data), raw.consumed)
     except (EOFError, OSError, lzma.LZMAError, zlib.error, ValueError) as x:
         w.abort()
-        raise LocalFailure(
-            "reader_error", f"{fmt}: {type(x).__name__}: {x}"[:300]
-        ) from None
+        raise LocalFailure("reader_error", f"{fmt}: {type(x).__name__}: {x}"[:300]) from None
     except BaseException:
         w.abort()
         raise
@@ -222,7 +220,7 @@ def entry_type(e: dict[str, str]) -> str:
 
 
 def _seven_zip_reason(rc: int, err: str, default: str = "reader_error") -> str:
-    """Typed reason from 7zz **stderr** (never the ``-slt`` listing, which says ``Encrypted = -``)."""
+    """Typed reason from 7zz **stderr** — never the ``-slt`` listing (it says ``Encrypted = -``)."""
     low = err.lower()
     if (
         "wrong password" in low
@@ -296,9 +294,7 @@ def read_7zz(ctx: Ctx, st: ContainerState, paths: list[Path]) -> None:
         wanted = [e for e, _, why in plan if why is None]
         total = sum(int(e.get("Size") or 0) for e in wanted)
         if not ctx.budget.reserve_spool(total):
-            raise LocalFailure(
-                "spool_exceeded", f"7zz extraction needs {total} bytes of scratch"
-            )
+            raise LocalFailure("spool_exceeded", f"7zz extraction needs {total} bytes of scratch")
         reserved = total
         ctx.budget.check_container(total, st.compressed)
         rc, x_err = 0, ""

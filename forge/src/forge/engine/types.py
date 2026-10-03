@@ -49,9 +49,7 @@ REFUSAL_REASONS = frozenset(
 @dataclass(frozen=True)
 class ContainerRef:
     kind: ContainerKind
-    paths: tuple[
-        Path, ...
-    ]  # archive: volume set in order; loose_batch: the loose files
+    paths: tuple[Path, ...]  # archive: volume set in order; loose_batch: the loose files
     display: str  # for logs only
 
 
@@ -69,14 +67,10 @@ class Result:
     members: int
     bytes_read: int
     max_depth: int
-    format: str | None = (
-        None  # zip, rar4, rar5, 7z, tar, gzip, bzip2, xz, zstd, ... (from magic)
-    )
+    format: str | None = None  # zip, rar4, rar5, 7z, tar, gzip, bzip2, xz, zstd, ... (from magic)
     reader: str | None = None  # libarchive, 7zz, stream, loose
     detail: str | None = None  # truncated reader message, for logs/notes only
-    peak_rss_kb: int | None = (
-        None  # isolated reader process peak RSS (top-level results only)
-    )
+    peak_rss_kb: int | None = None  # isolated reader process peak RSS (top-level results only)
 
     def __post_init__(self) -> None:
         if self.status == "done" and self.reason is not None:
@@ -114,8 +108,6 @@ class Sink(Protocol):
 
     def refused(self, chain: tuple[str, ...], reason: str) -> None: ...
 
-    def nested_archive(
-        self, chain: tuple[str, ...], sha256: str, size: int
-    ) -> None: ...
+    def nested_archive(self, chain: tuple[str, ...], sha256: str, size: int) -> None: ...
 
     def nested_result(self, chain: tuple[str, ...], result: Result) -> None: ...

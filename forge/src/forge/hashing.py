@@ -84,9 +84,7 @@ class FileChangedError(OSError):
     """The file's size changed while it was being read; the digest would not describe it."""
 
 
-def _hash_open_fd(
-    fd: int, count_triangles: bool, head_bytes: int, deadline: float | None
-):
+def _hash_open_fd(fd: int, count_triangles: bool, head_bytes: int, deadline: float | None):
     import time
 
     st = os.fstat(fd)

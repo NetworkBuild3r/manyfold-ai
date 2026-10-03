@@ -88,9 +88,9 @@ def _mount_fstype(path: Path) -> str:
                 if len(parts) < 3:
                     continue
                 mnt = parts[1].replace("\\040", " ")
-                if (
-                    str(path) == mnt or str(path).startswith(mnt.rstrip("/") + "/")
-                ) and len(mnt) > len(best):
+                if (str(path) == mnt or str(path).startswith(mnt.rstrip("/") + "/")) and len(
+                    mnt
+                ) > len(best):
                     best, fstype = mnt, parts[2]
     except OSError:
         return ""
@@ -141,9 +141,7 @@ def _dispatch(sink: Sink, msg: list) -> Result | None:
 def _child_env() -> dict[str, str]:
     env = dict(os.environ)
     pkg_root = str(Path(__file__).resolve().parents[2])  # .../src containing forge/
-    env["PYTHONPATH"] = pkg_root + (
-        os.pathsep + env["PYTHONPATH"] if env.get("PYTHONPATH") else ""
-    )
+    env["PYTHONPATH"] = pkg_root + (os.pathsep + env["PYTHONPATH"] if env.get("PYTHONPATH") else "")
     env.setdefault("LC_ALL", "C.UTF-8")
     return env
 
@@ -168,9 +166,7 @@ def _reap(proc: subprocess.Popen, deadline: float) -> tuple[int, int]:
         time.sleep(0.02)
 
 
-def _process_isolated(
-    ref: ContainerRef, sink: Sink, caps: Caps, rundir: Path
-) -> Result:
+def _process_isolated(ref: ContainerRef, sink: Sink, caps: Caps, rundir: Path) -> Result:
     req = {
         "paths": [str(p) for p in ref.paths],
         "caps": asdict(caps),
@@ -269,9 +265,7 @@ def _process_loose(ref: ContainerRef, sink: Sink, caps: Caps) -> Result:
         if time.monotonic() > deadline:
             return Result("failed", "timeout", members, bytes_read, 0, reader="loose")
         try:
-            sha, size, tri, head = hash_file_full(
-                path, head_bytes=MAGIC_BYTES, deadline=deadline
-            )
+            sha, size, tri, head = hash_file_full(path, head_bytes=MAGIC_BYTES, deadline=deadline)
         except FileNotFoundError:
             sink.refused(chain, "vanished")
             continue

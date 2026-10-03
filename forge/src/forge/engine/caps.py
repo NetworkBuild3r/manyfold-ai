@@ -18,9 +18,7 @@ class Caps:
     ratio: int = 200  # uncompressed / compressed
     member_bytes: int = 8 << 30
     total_bytes: int = 64 << 30  # uncompressed bytes across the whole container tree
-    spool_bytes: int = (
-        24 << 30
-    )  # live nested-archive spool + fallback extraction on scratch
+    spool_bytes: int = 24 << 30  # live nested-archive spool + fallback extraction on scratch
     wall_seconds: int = 5400
     # Ratio checks apply only past this many uncompressed bytes (tiny highly-compressible
     # files such as empty text or padding are not bombs).
@@ -65,9 +63,7 @@ class FatalFailure(EngineFailure):
 class Budget:
     """Tree-wide accounting shared by every container opened under one ``process()`` call."""
 
-    def __init__(
-        self, caps: Caps, top_compressed: int, started: float | None = None
-    ) -> None:
+    def __init__(self, caps: Caps, top_compressed: int, started: float | None = None) -> None:
         self.caps = caps
         self.started = time.monotonic() if started is None else started
         self.deadline = self.started + caps.wall_seconds
@@ -78,9 +74,7 @@ class Budget:
 
     def check_time(self) -> None:
         if time.monotonic() > self.deadline:
-            raise FatalFailure(
-                "timeout", f"wall time {self.caps.wall_seconds}s exceeded"
-            )
+            raise FatalFailure("timeout", f"wall time {self.caps.wall_seconds}s exceeded")
 
     def remaining_seconds(self) -> float:
         return max(0.0, self.deadline - time.monotonic())
@@ -89,12 +83,8 @@ class Budget:
         self.tree_bytes += n
         caps = self.caps
         if self.tree_bytes > caps.total_bytes:
-            raise FatalFailure(
-                "total_too_large", f"> {caps.total_bytes} uncompressed bytes"
-            )
-        if self.tree_bytes > max(
-            caps.ratio_floor_bytes, caps.ratio * self.top_compressed
-        ):
+            raise FatalFailure("total_too_large", f"> {caps.total_bytes} uncompressed bytes")
+        if self.tree_bytes > max(caps.ratio_floor_bytes, caps.ratio * self.top_compressed):
             raise FatalFailure(
                 "ratio_exceeded",
                 f"tree {self.tree_bytes} B from {self.top_compressed} B compressed",
@@ -108,9 +98,7 @@ class Budget:
             caps.ratio_floor_bytes, caps.ratio * (compressed + READ_AHEAD_SLACK)
         ):
             # A bomb anywhere makes the whole source archive hostile: fatal, not local.
-            raise FatalFailure(
-                "ratio_exceeded", f"member {size} B from ~{compressed} B compressed"
-            )
+            raise FatalFailure("ratio_exceeded", f"member {size} B from ~{compressed} B compressed")
 
     def check_container(self, size: int, compressed: int) -> None:
         caps = self.caps

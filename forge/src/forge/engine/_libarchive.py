@@ -33,9 +33,7 @@ def _bind(name: str, restype, *argtypes):
 _read_new = _bind("archive_read_new", c_void_p)
 _support_filter_all = _bind("archive_read_support_filter_all", c_int, c_void_p)
 _support_format_all = _bind("archive_read_support_format_all", c_int, c_void_p)
-_open_filenames = _bind(
-    "archive_read_open_filenames", c_int, c_void_p, POINTER(c_char_p), c_size_t
-)
+_open_filenames = _bind("archive_read_open_filenames", c_int, c_void_p, POINTER(c_char_p), c_size_t)
 _next_header = _bind("archive_read_next_header", c_int, c_void_p, POINTER(c_void_p))
 _read_data = _bind("archive_read_data", c_ssize_t, c_void_p, c_void_p, c_size_t)
 _read_free = _bind("archive_read_free", c_int, c_void_p)
@@ -74,9 +72,7 @@ class Entry:
 class Reader:
     """One sequential pass over an archive (or a volume set opened as one stream)."""
 
-    def __init__(
-        self, paths: list[Path] | tuple[Path, ...], block_size: int = 1 << 20
-    ) -> None:
+    def __init__(self, paths: list[Path] | tuple[Path, ...], block_size: int = 1 << 20) -> None:
         self._a = _read_new()
         if not self._a:
             raise MemoryError("archive_read_new failed")
