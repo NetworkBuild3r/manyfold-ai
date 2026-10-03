@@ -379,8 +379,14 @@ def test_7zz_fallback_never_materialises_links(src, scratch, tmp_path, monkeypat
     assert (res.status, res.reader) == ("done", "7zz"), res
     assert list(outside.iterdir()) == []
     assert not (tmp_path / "up.txt").exists() and not (src / "up.txt").exists()
-    assert {c[-1]: r for c, r in sink.refusals} == {"d": "symlink", "../up.txt": "parent_traversal"}
-    assert set(sink.by_chain()) == {("d/pwned.txt",), ("ok.txt",)}  # a real dir on scratch
+    assert {c[-1]: r for c, r in sink.refusals} == {
+        "d": "symlink",
+        "../up.txt": "parent_traversal",
+    }
+    assert set(sink.by_chain()) == {
+        ("d/pwned.txt",),
+        ("ok.txt",),
+    }  # a real dir on scratch
 
 
 # ------------------------------------------------------------------ kill-switch, OOM, sink, RSS
