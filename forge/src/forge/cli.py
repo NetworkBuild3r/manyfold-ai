@@ -16,10 +16,7 @@ import sys
 
 from forge import __version__
 
-_STUBS = (
-    "packs",
-    "classify",
-)
+_STUBS: tuple[str, ...] = ()
 
 
 def _not_implemented(name: str) -> int:
@@ -129,8 +126,11 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="DIR",
         help="directory to write HTML, assets, and chunked pair JSON",
     )
-    _add_stub(sub, "packs", "Pack resolution (SPEC-010)")
-    _add_stub(sub, "classify", "Category / name / creator (SPEC-011)")
+    from forge.classify.cli import register as register_classify
+    from forge.packs.cli import register as register_packs
+
+    register_packs(sub)
+    register_classify(sub)
     from forge.materialize.cli import add_parser as _add_materialize
 
     _add_materialize(sub)
@@ -225,6 +225,14 @@ def main(argv: list[str] | None = None) -> int:
         from forge.materialize.cli import main as materialize_main
 
         return materialize_main(args)
+    if args.command == "packs":
+        from forge.packs.cli import main as packs_main
+
+        return packs_main(args)
+    if args.command == "classify":
+        from forge.classify.cli import main as classify_main
+
+        return classify_main(args)
     if args.command in _STUBS:
         return _not_implemented(args.command)
     if args.command == "db":

@@ -22,10 +22,11 @@ def test_help_lists_subcommands(capsys) -> None:
         assert name in out, f"{name} missing from forge --help"
 
 
-def test_stub_exits_2(capsys) -> None:
-    assert main(["packs"]) == 2
-    err = capsys.readouterr().err
-    assert "not implemented" in err
+def test_packs_requires_a_subcommand(capsys) -> None:
+    with pytest.raises(SystemExit) as exc:
+        main(["packs"])
+    assert exc.value.code == 2
+    assert "resolve" in capsys.readouterr().err
 
 
 def test_sweep_requires_worker_flag(capsys) -> None:
