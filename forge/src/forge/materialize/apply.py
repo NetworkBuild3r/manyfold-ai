@@ -816,6 +816,7 @@ def datapackage(pack, files: list[dict], missing: list[dict], plan_id: int) -> d
             "classified": meta.get("classified", True),
             "pack_status": meta.get("pack_status"),
             "source_containers": meta.get("containers", []),
+            "source_loose_units": meta.get("loose_units", []),
             "blob_shas": sorted({f["sha256"] for f in files}),
             "missing": missing,
         },

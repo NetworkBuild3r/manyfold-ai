@@ -71,10 +71,30 @@ All read `FORGE_DB_URL`; filesystem commands need `FORGE_V2_ROOT`, `FORGE_SOURCE
 - Packs: `status IN (resolved, materialized)` (plus `provisional` with the flag). Category
   outside the closed list or NULL → `Misc` (counted). Folder = sanitized pack name, or
   `pack-<id>`; a case-insensitive clash with an earlier pack gets ` [<id>]`.
-- Files: union of `mesh|image|doc` blobs over the pack's `pack_containers`, each container
-  **including its nested descendants**, deduplicated by blob. macOS debris (`__MACOSX/`,
-  `._name`) is skipped. *A `loose_batch` container contributes all of its files — SPEC-010 must
-  only attach a loose batch to a pack if the whole batch belongs to it.*
+- Files: union of `mesh|image|doc` blobs over (1) the pack's `pack_containers`, each container
+  **including its nested descendants**, and (2) the pack's loose units (below), deduplicated by
+  blob. macOS debris (`__MACOSX/`, `._name`) is skipped. A `pack_containers` row means "this whole
+  container belongs to the pack": a `loose_batch` listed there contributes all of its files, and
+  SPEC-010 lists a batch only when every one of its files belongs to that single pack.
+- **Loose units (split batches):** a batch whose files belong to several packs (or to none) is
+  *not* in `pack_containers`; its exact membership lives in `pack_units` (`kind = 'loose'`,
+  `pack_id`, `role`) + `pack_unit_sources(unit_id, source_file_id)`. For every present loose unit
+  with `pack_id` set, each `pack_unit_sources` source file contributes its loose-batch occurrence
+  (`member_chain = [source path]`) to that unit's pack, with the **unit's role** feeding the same
+  role priority below (`primary` > `source` > `absorbed`; every role is planned — `absorbed`
+  units are attached previews/img.zip content, not exclusions). The same source file may sit in
+  units of several packs: it is planned into each of them (one blob, one store inode, hardlinked
+  from the source). Dedupe-by-blob, path layout, sanitization, collision naming and the
+  hardlink-from-source rule are identical to whole-batch files; the plan stores the batch
+  container, the source path and `member_chain` as provenance and lists the units in the pack's
+  `meta.loose_units` (also `forge.source_loose_units[]` in `datapackage.json`).
+  A file reachable both ways for one pack (batch in `pack_containers` and in that pack's unit
+  sources) is planned once, through the container, with the container's role.
+  Archive units are never read here: they are planned through their `pack_containers` row.
+- **Unassigned units:** a present loose unit with `pack_id IS NULL` (the resolver put no pack on
+  it) is skipped — never guessed into a pack — and reported in the plan totals as
+  `unassigned_loose_units`, `unassigned_loose_files` and `unassigned_loose_unit_sample` (first 20
+  unit keys). The counts cover the whole catalog, not only `--pack` selections.
 - Path: from the pack's best occurrence (role primary > source > absorbed, then shallowest, then
   path). Relative to the common directory of the pack's anchors (archive file / loose file);
   nested archives become folders without their suffix (`mid.zip/inner.7z/x.stl` →
@@ -144,7 +164,7 @@ Frictionless-style: `name` (slug), `title`, `category`, `creator`, `source`, `ke
 {`container_id`, `source_path`, `member_chain`}, `materialized_from` {`kind: loose`, `path`} or
 {`kind: archive`, `container_id`, `member_chain`}), and `forge` {`pack_id`, `plan_id`, `tool`,
 `tool_version`, `materialized_at`, `needs_review`, `classified`, `pack_status`,
-`source_containers[]` (id, role, kind, source paths), `blob_shas[]`, `missing[]`}.
+`source_containers[]` (id, role, kind, source paths), `source_loose_units[]` (unit_id, unit_key, path, role), `blob_shas[]`, `missing[]`}.
 
 ## State tables (Alembic `0005_materialize`)
 
