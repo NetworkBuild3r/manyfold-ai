@@ -1,4 +1,4 @@
-"""``forge materialize {plan,apply,verify,preflight,audit-source,gc-plan}`` argument wiring."""
+"""``forge materialize {plan,apply,status,verify,preflight,audit-source,gc-plan}`` wiring."""
 
 from __future__ import annotations
 
@@ -91,9 +91,19 @@ def add_parser(sub: argparse._SubParsersAction) -> None:
         help="also print a deterministic digest of the whole v2 tree",
     )
 
-    msub.add_parser(
+    st = msub.add_parser("status", help="progress of the active (or given) plan")
+    st.add_argument("--plan", type=int, default=None, metavar="ID")
+
+    pre = msub.add_parser(
         "preflight",
-        help="go/no-go: mount layout, free space, and one real source->v2 hardlink probe",
+        help="go/no-go: mount layout, free space, real source->v2 hardlink probes",
+    )
+    pre.add_argument(
+        "--sample",
+        type=int,
+        default=20,
+        metavar="N",
+        help="random loose source files to probe (default 20)",
     )
 
     audit = msub.add_parser(
@@ -145,6 +155,7 @@ def _write_out(path: str, lines) -> None:
     except GuardError:
         area = "scratch"
         guard.check(path, "scratch")
+    guard.mkdirs(Path(path).parent, area)
     w = TempWriter(guard, guard.new_temp_name(Path(path).parent, ".forge-tmp-", area), area)
     try:
         for line in lines:
@@ -224,11 +235,24 @@ def main(args: argparse.Namespace) -> int:
                 report["tree_hash"] = tree_hash(Path(v2))
             _print(report)
             return 0 if report["ok"] else 1
+        if cmd == "status":
+            from .apply import active_plan_id
+            from .verify import status
+
+            engine = get_engine(db_url)
+            _print(status(engine, args.plan or active_plan_id(engine)))
+            return 0
         if cmd == "preflight":
             from .verify import preflight
 
             guard, report = _guard_from_env(require_scratch=True)
-            out = preflight(get_engine(db_url), guard, Path(guard.source_root), report.to_dict())
+            out = preflight(
+                get_engine(db_url),
+                guard,
+                Path(guard.source_root),
+                report.to_dict(),
+                sample=args.sample,
+            )
             _print(out)
             return 0 if out["ok"] else 1
         if cmd == "audit-source":

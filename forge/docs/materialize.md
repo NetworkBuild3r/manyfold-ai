@@ -56,8 +56,9 @@ All read `FORGE_DB_URL`; filesystem commands need `FORGE_V2_ROOT`, `FORGE_SOURCE
 
 | Command | Effect |
 | --- | --- |
-| `forge materialize plan [--layout tree\|flat] [--pack ID]... [--include-provisional] [--out PATH\|-]` | DB only. Supersedes the active plan. Prints totals (packs, files, unique/linked bytes, loose/archive/missing blobs, archive bytes to read, write bytes, free space). `--out` JSONL goes under v2 or scratch only. Refuses while an apply holds claims (`--force`). |
-| `forge materialize preflight` | Startup checks + free space + one real `link(source_file, v2/.forge-blobs/.preflight-*)` probe (name removed again). Exit 1 if the link is refused. Run this before every real apply. |
+| `forge materialize plan [--layout tree\|flat] [--pack ID]... [--include-provisional] [--out PATH\|-]` | DB only. Supersedes the active plan. Prints totals (packs, files, unique/linked bytes, loose/archive/missing blobs, archive bytes to read, write bytes, free space). `--out` JSONL goes under v2 or scratch only; `<v2>/.forge-plan/` is reserved for exports and is never a stray. Refuses while an apply holds claims (`--force`). |
+| `forge materialize preflight [--sample N]` | Startup checks + free space + `link(source_file, v2/.forge-blobs/.preflight-*)` probes on N random loose source files (each probe name removed again), with an owner/mode histogram. Exit 1 if any link is refused. Run this before every real apply. |
+| `forge materialize status [--plan ID]` | Units / blobs / packs by state, bytes done, first 50 errors. |
 | `forge materialize apply [--pack ID... \| --limit N] [--resume] [--retry-failed] [--procs N] [--io-mbps M] [--no-copy-fallback] [--verify-loose]` | Executes the active plan. Exit 0 ok, 1 some unit/pack errored, 3 guard refusal. |
 | `forge materialize verify [--sample N \| --all] [--tree-hash] [--no-strays]` | Store entries, pack files, link counts, sha256 (one hash per inode), strays. Exit 1 on any problem. |
 | `forge materialize audit-source [--sample N]` | `stat()` every present catalog source file; reports missing / size / mtime drift. Never opens a file. |
@@ -116,6 +117,13 @@ other apply is running.
    + `rename()`. `datapackage.json` is rewritten only if its content (ignoring
    `materialized_at`) changed. Status `done`, or `incomplete` when some blob failed/missing
    (listed in `datapackage.json` → `forge.missing`).
+
+**Hardlinks from a non-root pod:** with `fs.protected_hardlinks=1` (the node default) the kernel
+only lets a UID hardlink a file it owns or may read *and write*. Source files are owned by the
+Synology users (UID 1024/1026, GID 100); mode-666 files link from any UID, 644 files only from
+their owner. `preflight` shows the split; pick the Job's `runAsUser` accordingly. Files that
+cannot be linked are copied (verified), so the result is correct either way — only slower and
+larger.
 
 **Copy fallback:** if `link()` fails with `EXDEV/EPERM/EACCES/ENOTSUP/EMLINK`, a verified copy is
 written (temp + sha check + rename) and counted (`method=copied`). `--no-copy-fallback` turns

@@ -89,7 +89,7 @@ def test_audit_source_reports_drift(library) -> None:
 
 def test_cli_end_to_end(library, capsys) -> None:
     mat, _ = library
-    out = mat.scratch / "plan.jsonl"
+    out = mat.v2 / ".forge-plan" / "plan-1.jsonl"
     assert main(["materialize", "plan", "--out", str(out)]) == 0
     totals = json.loads(capsys.readouterr().out)
     assert totals["files"] == 17 and totals["free_bytes"] > 0
@@ -102,8 +102,13 @@ def test_cli_end_to_end(library, capsys) -> None:
     assert report["ok"] and len(report["tree_hash"]) == 64
     assert main(["materialize", "audit-source"]) == 0
     capsys.readouterr()
-    assert main(["materialize", "gc-plan"]) == 0
+    assert main(["materialize", "status"]) == 0
+    st = json.loads(capsys.readouterr().out)
+    assert st["packs"] == {"done": 3} and st["errors"] == []
+    assert set(st["units"]) == {"archive done", "loose done"}
+    assert main(["materialize", "gc-plan", "--apply-gc"]) == 0
     assert json.loads(capsys.readouterr().out)["strays"] == 0
+    assert out.exists()  # plan exports under .forge-plan are never strays
     assert (mat.v2 / "Games/Knight/stl/shared3.stl").read_bytes() == SHARED["shared3.stl"]
     assert sha((mat.v2 / "Games/Knight/stl/shared3.stl").read_bytes())
 
@@ -136,7 +141,7 @@ def test_preflight_probes_a_real_hardlink_and_leaves_no_trace(library, capsys) -
     nlinks = {p: p.stat().st_nlink for p in mat.src.rglob("*") if p.is_file()}
     assert main(["materialize", "preflight"]) == 0
     out = json.loads(capsys.readouterr().out)
-    assert out["ok"] and out["link_probe"] == {"ok": True, "same_inode": True}
+    assert out["ok"] and out["link_probe"]["linked"] == out["link_probe"]["sampled"] == 3
     assert out["startup"]["same_device"] and out["v2_free_bytes"] > 0
     assert not [p for p in (mat.v2 / ".forge-blobs").iterdir()]
     assert mat.source_snapshot() == before
@@ -154,4 +159,4 @@ def test_preflight_reports_refused_link(library, monkeypatch, capsys) -> None:
     monkeypatch.setattr(os, "link", no_link)
     assert main(["materialize", "preflight"]) == 1
     out = json.loads(capsys.readouterr().out)
-    assert out["link_probe"]["errno"] == "EPERM"
+    assert out["link_probe"]["errors"] == {"EPERM": 3} and out["link_probe"]["linked"] == 0

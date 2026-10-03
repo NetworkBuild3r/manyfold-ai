@@ -87,11 +87,16 @@ def expected_paths(engine: Engine, plan_id: int) -> set[str]:
     return out
 
 
+PLAN_DIR = ".forge-plan"  # plan exports (`plan --out`); never a stray, never gc'd
+
+
 def walk_v2(v2_root: Path):
     """Yield v2-relative paths of every non-directory entry (symlinks are not followed)."""
     root = str(v2_root)
     for dirpath, dirnames, filenames in os.walk(root, followlinks=False):
         rel_dir = os.path.relpath(dirpath, root)
+        if rel_dir == ".":
+            dirnames[:] = [d for d in dirnames if d != PLAN_DIR]
         for name in filenames + [d for d in dirnames if os.path.islink(os.path.join(dirpath, d))]:
             yield name if rel_dir == "." else f"{rel_dir}/{name}"
 
@@ -313,45 +318,72 @@ def _read_sysctl(name: str) -> str | None:
         return None
 
 
-def preflight(engine: Engine, guard: WriteGuard, source_root: Path, report: dict) -> dict:
-    """Cheap go/no-go before a long apply: can this pod hardlink a real catalog file into v2?
+def preflight(
+    engine: Engine, guard: WriteGuard, source_root: Path, report: dict, *, sample: int = 20
+) -> dict:
+    """Cheap go/no-go before a long apply: can this pod hardlink real catalog files into v2?
 
-    Links one present loose source file to ``<v2>/.forge-blobs/.preflight-*`` and removes that
-    probe NAME again (the source file is not modified). EPERM here usually means
-    ``fs.protected_hardlinks=1`` and the pod UID does not own the source files: apply would then
-    fall back to full copies.
+    Links up to ``sample`` random present loose source files to
+    ``<v2>/.forge-blobs/.preflight-*`` one at a time and removes each probe NAME again (the
+    source files are not modified). EPERM usually means ``fs.protected_hardlinks=1`` and the pod
+    UID neither owns the file nor may write it: apply would then fall back to full copies for
+    such files. The owner/mode histogram tells you which ``runAsUser`` links the most.
     """
     out: dict = {"startup": report, "uid": os.getuid(), "gid": os.getgid()}
     out["protected_hardlinks"] = _read_sysctl("fs.protected_hardlinks")
     st = os.statvfs(guard.v2_root)
     out["v2_free_bytes"] = int(st.f_bavail * st.f_frsize)
     with engine.connect() as conn:
-        rel = conn.execute(
-            text(
-                "SELECT path FROM source_files WHERE present AND kind = 'loose' ORDER BY id LIMIT 1"
-            )
-        ).scalar()
-    if rel is None or not is_v2_relative_safe(rel):
+        rels = list(
+            conn.execute(
+                text(
+                    "SELECT path FROM source_files WHERE present AND kind = 'loose' "
+                    "ORDER BY random() LIMIT :n"
+                ),
+                {"n": max(1, sample)},
+            ).scalars()
+        )
+    rels = [r for r in rels if is_v2_relative_safe(r)]
+    if not rels:
         out["link_probe"] = {"ok": False, "error": "no loose source file in the catalog"}
         out["ok"] = False
         return out
-    src = source_root / rel
-    sst = os.stat(src, follow_symlinks=False)
-    out["sample"] = {"path": rel, "uid": sst.st_uid, "gid": sst.st_gid, "mode": oct(sst.st_mode)}
     probe_dir = Path(guard.v2_root) / BLOB_DIR
     guard.mkdirs(probe_dir)
-    probe = guard.new_temp_name(probe_dir, ".preflight-")
-    try:
-        guard.link(src, probe)
-    except OSError as x:
-        out["link_probe"] = {"ok": False, "errno": errno.errorcode.get(x.errno), "error": str(x)}
-    else:
-        same = os.stat(probe).st_ino == sst.st_ino
-        guard.unlink(probe)
-        out["link_probe"] = {"ok": same, "same_inode": same}
-    after = os.stat(src, follow_symlinks=False)
-    out["source_unchanged"] = (after.st_size, after.st_mtime_ns) == (sst.st_size, sst.st_mtime_ns)
-    out["ok"] = bool(out["link_probe"]["ok"] and out["source_unchanged"])
+    linked = 0
+    errors: Counter = Counter()
+    owners: Counter = Counter()
+    unchanged = True
+    for rel in rels:
+        src = source_root / rel
+        try:
+            sst = os.stat(src, follow_symlinks=False)
+        except FileNotFoundError:
+            errors["source_missing"] += 1
+            continue
+        owners[f"uid={sst.st_uid} mode={stat.S_IMODE(sst.st_mode):o}"] += 1
+        probe = guard.new_temp_name(probe_dir, ".preflight-")
+        try:
+            guard.link(src, probe)
+        except OSError as x:
+            errors[errno.errorcode.get(x.errno, str(x.errno))] += 1
+        else:
+            if os.stat(probe).st_ino == sst.st_ino:
+                linked += 1
+            else:
+                errors["different_inode"] += 1
+            guard.unlink(probe)
+        after = os.stat(src, follow_symlinks=False)
+        unchanged &= (after.st_size, after.st_mtime_ns) == (sst.st_size, sst.st_mtime_ns)
+    out["link_probe"] = {
+        "ok": linked == len(rels),
+        "sampled": len(rels),
+        "linked": linked,
+        "errors": dict(errors),
+        "owners": dict(owners.most_common(10)),
+    }
+    out["source_unchanged"] = unchanged
+    out["ok"] = bool(linked == len(rels) and unchanged)
     return out
 
 
@@ -379,11 +411,15 @@ def gc_plan(
                 removed += 1
             except FileNotFoundError:
                 pass
-        keep = {str(v2), str(v2 / BLOB_DIR)}
+        keep = {str(v2), str(v2 / BLOB_DIR), str(v2 / PLAN_DIR)}
         for dirpath, _dirnames, _files in sorted(
             os.walk(str(v2), topdown=False, followlinks=False), key=lambda t: -len(t[0])
         ):
-            if dirpath in keep or os.path.islink(dirpath):
+            if (
+                dirpath in keep
+                or os.path.islink(dirpath)
+                or dirpath.startswith(str(v2 / PLAN_DIR) + "/")
+            ):
                 continue
             try:
                 if not os.listdir(dirpath):
@@ -399,3 +435,62 @@ def gc_plan(
         "removed_files": removed,
         "removed_dirs": removed_dirs,
     }
+
+
+# ------------------------------------------------------------------------------------ status
+
+
+def status(engine: Engine, plan_id: int) -> dict:
+    """Progress of one plan: units, blobs and packs by state, bytes done."""
+    with engine.connect() as conn:
+
+        def grouped(sql: str) -> dict:
+            return {
+                " ".join(str(x) for x in r[:-1]): int(r[-1])
+                for r in conn.execute(text(sql), {"p": plan_id}).all()
+            }
+
+        plan = (
+            conn.execute(
+                text("SELECT id, status, created_at, totals FROM materialize_plans WHERE id = :p"),
+                {"p": plan_id},
+            )
+            .mappings()
+            .first()
+        )
+        return {
+            "plan_id": plan_id,
+            "plan_status": plan["status"] if plan else None,
+            "created_at": plan["created_at"] if plan else None,
+            "units": grouped(
+                "SELECT kind, status, count(*) FROM materialize_units WHERE plan_id = :p "
+                "GROUP BY 1, 2 ORDER BY 1, 2"
+            ),
+            "blobs": grouped(
+                "SELECT state, coalesce(method, '-'), count(*) FROM materialize_blobs "
+                "WHERE plan_id = :p GROUP BY 1, 2 ORDER BY 1, 2"
+            ),
+            "blob_bytes": grouped(
+                "SELECT state, sum(size) FROM materialize_blobs WHERE plan_id = :p "
+                "GROUP BY 1 ORDER BY 1"
+            ),
+            "packs": grouped(
+                "SELECT status, count(*) FROM materialize_packs WHERE plan_id = :p "
+                "GROUP BY 1 ORDER BY 1"
+            ),
+            "errors": [
+                dict(r)
+                for r in conn.execute(
+                    text(
+                        "SELECT 'unit' AS what, id::text AS id, error FROM materialize_units "
+                        "WHERE plan_id = :p AND error IS NOT NULL "
+                        "UNION ALL SELECT 'blob', sha256, error FROM materialize_blobs "
+                        "WHERE plan_id = :p AND state = 'failed' "
+                        "UNION ALL SELECT 'pack', pack_id::text, error FROM materialize_packs "
+                        "WHERE plan_id = :p AND error IS NOT NULL LIMIT 50"
+                    ),
+                    {"p": plan_id},
+                ).mappings()
+            ],
+            "totals": json.loads(plan["totals"]) if plan and plan["totals"] else None,
+        }
