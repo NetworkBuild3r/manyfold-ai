@@ -25,6 +25,11 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: read
+    # k8 ARC has no Docker (containerMode unset, no DinD — see
+    # home_k3/apps/arc-runner-set-manyfold/values/k8.yaml), so GitHub
+    # `services:` cannot start a Postgres sidecar here. Manyfold's own
+    # .github/workflows/ci.yml uses the same postgres:16 / user / db
+    # shape on ubuntu-latest; we install that server in-job instead.
     steps:
       - uses: actions/checkout@v6
 
@@ -32,8 +37,21 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install ruff
-        run: pip install ruff
+      - name: Install PostgreSQL
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y postgresql postgresql-contrib
+          ver="$(pg_lsclusters --no-header | awk '{print $1; exit}')"
+          sudo pg_ctlcluster "$ver" main start || true
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -c "DO \$\$ BEGIN CREATE USER forge WITH PASSWORD 'forge'; EXCEPTION WHEN duplicate_object THEN NULL; END \$\$;"
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -c "ALTER USER forge WITH PASSWORD 'forge';"
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -c "SELECT 1 FROM pg_database WHERE datname = 'forge_test'" | grep -q 1 \
+            || sudo -u postgres createdb -O forge forge_test
+
+      - name: Install package + test extras
+        working-directory: forge
+        run: pip install -e ".[dev]"
 
       - name: Ruff
         working-directory: forge
@@ -43,13 +61,10 @@ jobs:
 
       - name: Pytest
         working-directory: forge
-        run: |
-          if [ -d tests ]; then
-            pip install -e . pytest
-            pytest tests -v
-          else
-            echo "forge/tests absent — skipping pytest (placeholder package)"
-          fi
+        env:
+          FORGE_TEST_DB_URL: postgresql+psycopg://forge:forge@127.0.0.1:5432/forge_test
+          FORGE_DB_URL: postgresql+psycopg://forge:forge@127.0.0.1:5432/forge_test
+        run: pytest tests -v
 
   build:
     runs-on: k8-build

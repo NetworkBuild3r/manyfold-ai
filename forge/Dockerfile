@@ -12,7 +12,8 @@ RUN apt-get update \
         libarchive-dev \
     && rm -rf /var/lib/apt/lists/*
 
-COPY pyproject.toml ./
+COPY pyproject.toml alembic.ini ./
+COPY alembic ./alembic
 COPY src ./src
 RUN pip install --no-cache-dir .
 
