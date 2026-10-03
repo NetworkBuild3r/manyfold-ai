@@ -165,6 +165,28 @@ def test_bundle_root_title_never_names_a_pack(lib, migrated_db, source_root):
     assert names == {"Mythic Mugs KS - Bundle 1"}
 
 
+def test_bundle_root_metadata_never_tags_a_pack(lib, migrated_db, fake_llm, source_root):
+    root = "AnySTL/Artisan Guild - Maneater Nagarots"
+    files = {f"{root}/datapackage.json": "dp"}
+    for i in range(30):
+        files[f"{root}/other{i}/x{i}.jpg"] = f"img{i}"
+    lib.loose(files)
+    write_dp(
+        source_root,
+        root,
+        title="Artisan Guild - Maneater Nagarots",
+        keywords=["spacecraft", "galaxy"],
+        contributors=[{"title": "3DArtGuy", "roles": ["creator"]}],
+    )
+    lib.archive(f"{root}/Dragon Trappers Lodge/Abyssal Maw.7z.001", {"maw.stl": "maw"})
+    fake_llm.responder = lambda body: answer(category="D&D", name="Abyssal Maw", creator="")
+    build(migrated_db, fake_llm, source_root)
+    row = lib.rows("SELECT name, creator, tags FROM packs WHERE mesh_count > 0")[0]
+    assert row[1] is None and "spacecraft" not in row[2]
+    ev = fake_llm.requests[0]["body"]["messages"][1]["content"]
+    assert "spacecraft" not in ev and "3DArtGuy" not in ev
+
+
 def test_category_outside_list_is_unsure_misc_and_in_review_csv(lib, migrated_db, fake_llm):
     lib.archive("Unknown/odd thing/odd.zip", {"odd.stl": "odd"})
     fake_llm.responder = lambda body: answer(category="Unknown")

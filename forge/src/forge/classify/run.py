@@ -49,7 +49,7 @@ from forge.packs.llm import LlmEndpoint, fingerprint, map_concurrent
 from forge.packs.resolve import acquire_lock, release_lock
 from forge.packs.sqlutil import copy_rows, temp_table
 
-RULES_VERSION = "classify-rules-v4"
+RULES_VERSION = "classify-rules-v5"
 RETRYABLE_ERROR_PREFIXES = ("transport:", "http 5", "no attempt")
 DEFAULT_MIN_CONFIDENCE = 0.6
 
@@ -429,11 +429,12 @@ class _Classifier:
 
     # ------------------------------------------------------------------------------ deterministic
     def _metas(self, p: PackInfo) -> list[ModelMeta]:
-        prim = p.primary
-        roots = [prim.model_root] + sorted(
-            {u.model_root for u in p.units if u.model_root and u.model_root != prim.model_root}
-        )
-        return [self.reader.for_root(r) for r in roots if r is not None]
+        """spark-curate metadata of the pack's non-bundle model roots, primary unit's first. A
+        bundle root's datapackage describes the whole dump (its creator / keywords are not ours)."""
+        own = {u.coloc_root for u in p.units if u.coloc_root}
+        prim = p.primary.model_root
+        roots = ([prim] if prim in own else []) + sorted(own - {prim})
+        return [self.reader.for_root(r) for r in roots]
 
     def _owns_root(self, p: PackInfo, root: str | None = None) -> bool:
         """True when the pack holds every mesh unit under the model root (default: the primary

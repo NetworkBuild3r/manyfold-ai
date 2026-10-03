@@ -34,6 +34,8 @@ _DATE = re.compile(
 )
 _COMPACT_DATE = re.compile(r"(?<!\d)(?:19|20)\d{2}(?:0[1-9]|1[0-2])(?:[0-2]\d|3[01])(?!\d)")
 _PREFIX = re.compile(r"^(?:attachment[_ -]+)", re.I)
+# A format word left as text after the real extension ('..._Unsupported_7z.001').
+_FORMAT_WORD = re.compile(r"[\s_.-]+(?:7z|zip|rar)$", re.I)
 _SEP_RUN = re.compile(r"(?:\s*[-–]\s*){2,}")
 _TRAIL = re.compile(r"[\s\-_.,;:~+&#@]+$")
 _LEAD = re.compile(r"^[\s\-_.,;:~+]+")
@@ -108,7 +110,7 @@ def clean_name(raw: str, *, keep_dates: bool = False) -> str:
     releases ('GoonMaster 2020-08') or split releases ('Man Eaters Part 1') differ only there."""
     name = unicodedata.normalize("NFC", raw or "")
     name = _CONTROL.sub(" ", name)
-    name = strip_archive_ext(name.strip())
+    name = _FORMAT_WORD.sub("", strip_archive_ext(name.strip()))
     if " " not in name and ("_" in name or "+" in name):
         name = name.replace("_", " ").replace("+", " ")
     name = _PREFIX.sub("", name)
