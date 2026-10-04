@@ -40,6 +40,7 @@ from forge.engine.fallback import find_7zz
 
 from .extract import Extractor, TokenBucket, Want
 from .guard import GuardError, WriteGuard, is_v2_relative_safe, join_v2, open_guard
+from .keywords import pack_keywords
 from .paths import DATAPACKAGE
 from .store import BlobStore, CopyDisabled, StoreCorrupt, TempWriter, hash_path
 
@@ -797,7 +798,13 @@ def datapackage(pack, files: list[dict], missing: list[dict], plan_id: int) -> d
                 "materialized_from": source,
             }
         )
-    keywords = [k for k in (pack["category"], meta.get("source_tag"), meta.get("creator")) if k]
+    keywords = pack_keywords(
+        category=pack["category"],
+        source_tag=meta.get("source_tag"),
+        creator=meta.get("creator"),
+        tags=meta.get("tags"),
+        tagged=bool(meta.get("tagged", False)),
+    )
     return {
         "name": slug or f"pack-{pack['pack_id']}",
         "title": name,

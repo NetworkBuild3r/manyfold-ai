@@ -10,7 +10,17 @@ import pytest
 from forge.cli import main
 from forge.config import ConfigError, require_db_url
 
-EXPECTED = ("walk", "sweep", "status", "report", "packs", "classify", "materialize", "db")
+EXPECTED = (
+    "walk",
+    "sweep",
+    "status",
+    "report",
+    "packs",
+    "classify",
+    "tags",
+    "materialize",
+    "db",
+)
 
 
 def test_help_lists_subcommands(capsys) -> None:

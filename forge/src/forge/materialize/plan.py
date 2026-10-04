@@ -107,7 +107,8 @@ ANALYZE mat_roots;
 """
 
 _PACKS = """
-SELECT id, name, category, creator, source_tag, status::text AS status, needs_review
+SELECT id, name, category, creator, source_tag, status::text AS status, needs_review,
+       tags, tags_fingerprint IS NOT NULL AS tagged
 FROM packs
 WHERE status::text = ANY(CAST(:statuses AS text[]))
   AND (CAST(:ids AS bigint[]) IS NULL OR id = ANY(CAST(:ids AS bigint[])))
@@ -421,6 +422,8 @@ def compute(conn: Connection, opts: PlanOptions) -> tuple[list[PlannedPack], dic
                 meta={
                     "creator": p["creator"],
                     "source_tag": p["source_tag"],
+                    "tags": list(p["tags"] or []),
+                    "tagged": bool(p["tagged"]),
                     "needs_review": bool(p["needs_review"]),
                     "pack_status": p["status"],
                     "classified": p["category"] is not None,

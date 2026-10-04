@@ -12,6 +12,7 @@ import json
 import pytest
 
 from forge.packs import judge
+from forge.packs import llm as llm_mod
 from forge.packs.llm import LlmConfigError
 from forge.packs.resolve import run
 from forge.packs.review import export_review, import_overrides, sample
@@ -118,6 +119,8 @@ def test_partial_overlap_one_llm_call_with_schema(lib, migrated_db, fake_llm):
 
 def test_llm_env_unset_errors_before_any_write(lib, migrated_db, monkeypatch):
     lib.archive("Misc/a.zip", {"a.stl": "m1"})
+    # No live endpoint in unit tests: /models is unreachable, so an unset model cannot resolve.
+    monkeypatch.setattr(llm_mod, "list_served_models", lambda *a, **k: None)
     monkeypatch.delenv("FORGE_LLM_URL", raising=False)
     monkeypatch.setenv("FORGE_LLM_MODEL", "m")
     with pytest.raises(LlmConfigError):

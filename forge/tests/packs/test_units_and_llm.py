@@ -9,6 +9,7 @@ import json
 
 import pytest
 
+from forge.packs import llm as llm_mod
 from forge.packs.judge import parse_verdict
 from forge.packs.llm import LlmConfigError, LlmEndpoint, map_concurrent
 from forge.packs.unionfind import ConstrainedUnionFind
@@ -85,6 +86,8 @@ def test_union_find_cannot_link_and_size_cap():
     ],
 )
 def test_endpoint_from_env(monkeypatch, url, model, ok):
+    # /models is "unreachable" here: the unit test must never depend on a live LLM endpoint.
+    monkeypatch.setattr(llm_mod, "list_served_models", lambda *a, **k: None)
     for name, value in (("FORGE_LLM_URL", url), ("FORGE_LLM_MODEL", model)):
         if value is None:
             monkeypatch.delenv(name, raising=False)

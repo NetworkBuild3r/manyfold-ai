@@ -1,4 +1,5 @@
-"""``forge materialize {plan,apply,status,verify,preflight,audit-source,gc-plan}`` wiring."""
+"""``forge materialize {plan,apply,status,verify,preflight,audit-source,gc-plan,
+refresh-datapackage}`` wiring."""
 
 from __future__ import annotations
 
@@ -89,6 +90,17 @@ def add_parser(sub: argparse._SubParsersAction) -> None:
         "--tree-hash",
         action="store_true",
         help="also print a deterministic digest of the whole v2 tree",
+    )
+
+    rd = msub.add_parser(
+        "refresh-datapackage",
+        help="rewrite only datapackage.json keywords of already-materialized packs (SPEC-016)",
+    )
+    rd.add_argument("--pack", type=int, action="append", dest="packs", metavar="ID")
+    rd.add_argument("--limit", type=int, default=None, metavar="N", help="at most N packs")
+    rd.add_argument("--plan", type=int, default=None, metavar="ID")
+    rd.add_argument(
+        "--dry-run", action="store_true", help="report what would change; write nothing"
     )
 
     st = msub.add_parser("status", help="progress of the active (or given) plan")
@@ -235,6 +247,23 @@ def main(args: argparse.Namespace) -> int:
                 report["tree_hash"] = tree_hash(Path(v2))
             _print(report)
             return 0 if report["ok"] else 1
+        if cmd == "refresh-datapackage":
+            from .apply import active_plan_id
+            from .refresh import refresh_datapackages
+
+            guard, _ = _guard_from_env()
+            engine = get_engine(db_url)
+            _print(
+                refresh_datapackages(
+                    engine,
+                    args.plan or active_plan_id(engine),
+                    guard,
+                    pack_ids=args.packs,
+                    limit=args.limit,
+                    dry_run=args.dry_run,
+                )
+            )
+            return 0
         if cmd == "status":
             from .apply import active_plan_id
             from .verify import status
