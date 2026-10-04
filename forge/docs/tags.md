@@ -64,9 +64,16 @@ cached and is retried on the next run.
 ### Normalisation (`normalize.py`, vocabulary in `vocab.json`)
 
 lowercase ASCII kebab-case, ≤ 40 characters (cut at a word boundary), no stopwords or bare numbers
-(`model`, `stl-file`, `3d-print`, `new`, `unknown`, …), a leading `the-` dropped, duplicates
-removed, the last word singularised when the plural is obvious (`dragons` → `dragon`,
-`bunnies` → `bunny`, `elves` → `elf`; `x-men`, `avengers`, `star-wars`, `series`, … are protected),
+(`model`, `stl-file`, `3d-print`, `new`, `unknown`, …), no e-mail addresses or URLs, a site name
+loses its TLD (`3Dfigureprints.com` → `3dfigureprints`), a leading `the-` dropped, duplicates
+removed, the last word of free text singularised when the plural is obvious (`dragons` → `dragon`,
+`bunnies` → `bunny`, `elves` → `elf`) and generic last words dropped (`marvel-files` → `marvel`).
+Names are not damaged: words ending in `s`/`os`/`as`/`us`/`is` are left alone (`kratos`, `thanos`,
+`atlas`), and `x-men`, `avengers`, `star-wars`, `looney-tunes`, `spongebob-squarepants`, `series`, …
+are protected. The creator / source names the code already derived are passed along as `keep`, so
+the classify and LLM lists can never turn `vxlabs` into a second tag `vxlab`. The LLM answer is
+cached as the raw reply and normalised again at read time, so a vocabulary fix reaches cached
+answers with no new call.
 synonyms folded (`dnd`, `d&d`, `dungeons & dragons` → `dungeons-and-dragons`; `dc comics` → `dc`;
 `sci-fi` → `science-fiction`; `40k` → `warhammer-40000`; `minis` → `miniature`). Creators, sources
 and categories keep their names (no singularising). The LLM list is capped at 12; the merged list
@@ -129,8 +136,8 @@ any re-resolution. To re-ask on purpose, change the prompt version (`PROMPT_VERS
   pipeline order is `packs resolve` → `classify` → `tags` → `materialize` and a classify rerun never
   discards tags.
 * `tag_decisions` — the LLM answer cache: `input_fingerprint` (sha256 of the evidence + prompt
-  hash), `prompt_hash`, `model`, `verdict`, `tags` (normalised), `raw_tags` (as returned), `error`,
-  `evidence`. Latest row per fingerprint wins.
+  hash), `prompt_hash`, `model`, `verdict`, `tags` (normalised when written — informational),
+  `raw_tags` (as returned — what is normalised again on every read), `error`, `evidence`. Latest row per fingerprint wins.
 * `tag_overrides` — the owner's edits, keyed by the pack's unit key (survives pack id changes).
 
 A pack is rewritten only when its inputs fingerprint (code tags, classify tags, LLM tags,
