@@ -18,7 +18,7 @@ from dataclasses import dataclass
 from forge.classify.vocab import FALLBACK_CATEGORY
 from forge.tags.normalize import normalise_tag, normalise_tags
 
-RULES_VERSION = "tags-rules-v1"
+RULES_VERSION = "tags-rules-v2"
 
 # --- file formats: extension -> tag (extensions without a dot, lowercase) ---------------------
 FORMAT_TAGS: tuple[tuple[str, tuple[str, ...]], ...] = (

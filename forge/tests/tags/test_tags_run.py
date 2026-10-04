@@ -234,6 +234,36 @@ def test_llm_limit_defers_and_a_later_run_completes_the_rest(lib, migrated_db, f
     assert all("marvel" in t for t in tags_of(lib).values())
 
 
+def test_names_the_code_derived_are_not_singularised_by_the_llm_or_classify_lists(
+    lib, migrated_db, fake_llm
+):
+    hero(lib)
+    catalog(migrated_db)
+    with lib.engine.begin() as conn:
+        conn.execute(text("UPDATE packs SET creator = 'VXLabs'"))
+    fake_llm.responder = lambda body: answer(franchise=["VXLabs", "Kratos"], characters=[])
+    run_tags(migrated_db, fake_llm)
+    got = tags_of(lib)["archive:Anime/Hero 32mm/Hero.zip"]
+    assert (
+        got.count("vxlabs") == 1 and "vxlab" not in got and "kratos" in got and "krato" not in got
+    )
+
+
+def test_a_vocabulary_fix_reaches_cached_answers_without_a_new_call(lib, migrated_db, fake_llm):
+    """The cache keeps the raw answer; the normalised column is informational."""
+    hero(lib)
+    catalog(migrated_db)
+    fake_llm.responder = lambda body: answer(franchise=["Kratos"], characters=[])
+    run_tags(migrated_db, fake_llm)
+    with lib.engine.begin() as conn:  # what an older normaliser would have stored
+        conn.execute(text("UPDATE tag_decisions SET tags = ARRAY['krato']"))
+        conn.execute(text("UPDATE packs SET tags = ARRAY['krato'], tags_fingerprint = 'old'"))
+    res = run_tags(migrated_db, fake_llm)
+    assert len(fake_llm.requests) == 1 and res.counts["tags_written"] == 1
+    got = tags_of(lib)["archive:Anime/Hero 32mm/Hero.zip"]
+    assert "kratos" in got and "krato" not in got
+
+
 def test_dry_run_calls_nothing_and_writes_nothing(lib, migrated_db, fake_llm):
     hero(lib)
     catalog(migrated_db)
