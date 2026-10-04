@@ -12,13 +12,14 @@ from text; the LLM only judges what a pack depicts, and code derives every fact 
 
 ## Where each tag comes from
 
-Order in the stored list is the order below (a stable set union; the first occurrence wins).
+Order in the stored list is the order below (a stable set union; the first occurrence wins; if the
+merged list ever exceeds 40 tags the tail — the older classify keywords — is what is cut).
 
 | # | Source | Tags | Module |
 | --- | --- | --- | --- |
 | 1 | **Code, from the catalog** | category (`dc`, `dungeons-and-dragons`; `Misc` yields none), creator (`sanix`), source (`cults3d`), file formats (`stl`, `3mf`, `obj`, `step`, `lychee`, `chitubox`, `gcode`, `blend`, `fbx`), supports (`presupported`, `unsupported`), scale (`28mm`, `scale-1-10`), part kinds (`bust`, `base`, `head`, `torso`, `arm`, `leg`, `hand`, `wing`, `tail`, `helmet`, `shield`, `cape`, `weapon`), `has-preview` | `derive.py` |
-| 2 | **classify** | the keywords `forge classify` stored (spark-curate `datapackage.json` keywords plus its own ≤ 8 LLM tags); an owner's `forge classify override` tags replace them | `run.py` |
-| 3 | **LLM**, one call per pack | franchise (≤ 2), characters (≤ 4), genre (≤ 3), object type (≤ 2, closed list), art style (≤ 1, closed list) — at most 12 | `judge.py` |
+| 2 | **LLM**, one call per pack | franchise (≤ 2), characters (≤ 4), genre (≤ 3), object type (≤ 2, closed list), art style (≤ 1, closed list) — at most 12 | `judge.py` |
+| 3 | **classify** | the keywords `forge classify` stored (spark-curate `datapackage.json` keywords plus its own ≤ 8 LLM tags); an owner's `forge classify override` tags replace them | `run.py` |
 
 Then the owner's tag overrides are applied (below). Every tag from every source goes through
 `normalize.py`.

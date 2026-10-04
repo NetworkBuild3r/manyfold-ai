@@ -1,13 +1,13 @@
 """`forge tags` — searchable tags for every pack, deterministic first, one LLM call per pack.
 
-Per pack, in order (earlier tags first in the stored list):
+Per pack, in order (earlier tags first in the stored list; when the list is capped the tail goes):
 
 1. **code** (derive.py): category, creator, source, file formats, supports, scale, part kinds,
    has-preview — from catalog names and paths;
-2. **classify**: the keywords `forge classify` stored for the pack (spark-curate keywords + its
-   own LLM tags), or the owner's classify override tags;
-3. **LLM** (judge.py): ONE schema-bound call (temperature 0, json_schema strict, <= 4 in flight)
-   returning franchise / characters / genre / object type / art style, from names and paths only.
+2. **LLM** (judge.py): ONE schema-bound call (temperature 0, json_schema strict, <= 4 in flight)
+   returning franchise / characters / genre / object type / art style, from names and paths only;
+3. **classify**: the keywords `forge classify` stored for the pack (spark-curate keywords + its
+   own LLM tags), or the owner's classify override tags.
 
 The union is stable-ordered and capped; owner overrides (``tag_overrides``: add / remove /
 replace) always win. Results are cached in ``tag_decisions`` by an input fingerprint + prompt hash
@@ -444,7 +444,7 @@ class _Tagger:
     def _final(self, w: Work) -> tuple[list[str], str]:
         add, remove, replace = w.override
         llm_tags = w.llm.tags if w.llm is not None and w.llm.verdict == "ok" else None
-        final = merge_tags(w.det, w.base, llm_tags or [], add=add, remove=remove, replace=replace)
+        final = merge_tags(w.det, llm_tags or [], w.base, add=add, remove=remove, replace=replace)
         fp = fingerprint(
             {
                 "rules": RULES_VERSION,

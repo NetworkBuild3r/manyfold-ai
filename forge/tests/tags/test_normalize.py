@@ -100,11 +100,35 @@ def test_singular_false_keeps_proper_names():
 
 @pytest.mark.parametrize(
     "raw",
-    ["", "   ", "the", "and", "Model", "models", "3D Print", "STL files", "new", "!new", "unknown",
+    ["", "   ", "the", "and", "Model", "models", "3D Print", "new", "!new", "unknown",
      "@untagged", "2024", "12", "Misc", None, 7, ["x"]],
 )  # fmt: skip
 def test_names_nothing_is_dropped(raw):
     assert normalise_tag(raw) is None
+
+
+@pytest.mark.parametrize(
+    "raw,want",
+    [
+        ("marvel files", "marvel"),
+        ("DC Collection", "dc"),
+        ("anime 3d print", "anime"),
+        ("dragon set", "dragon"),
+        ("batman stl", "batman"),
+        ("stl", "stl"),  # a lone format word stays (it is a real tag)
+        ("STL files", "stl"),
+        ("model", None),  # a lone generic word is a stopword
+        ("3d-print", None),
+        ("print-in-place", "print-in-place"),
+    ],
+)
+def test_trailing_generic_words_are_dropped_from_multi_word_tags(raw, want):
+    assert normalise_tag(raw) == want
+
+
+def test_owner_and_name_tags_are_not_cleaned_up():
+    assert normalise_tag("My Collection", singular=False) == "my-collection"
+    assert normalise_tag("Wicked Set", singular=False) == "wicked-set"
 
 
 def test_length_cap_cuts_at_a_word_boundary():
@@ -145,27 +169,33 @@ def test_vocabulary_is_self_consistent():
 
 
 def test_merge_is_a_stable_union_with_deterministic_first():
-    det, base, llm = ["dc", "stl", "has-preview"], ["marvel", "dc"], ["agent-carter", "stl", "bust"]
-    got = merge_tags(det, base, llm)
-    assert got == ["dc", "stl", "has-preview", "marvel", "agent-carter", "bust"]
+    det, llm, base = ["dc", "stl", "has-preview"], ["marvel", "dc", "agent-carter"], ["stl", "bust"]
+    assert merge_tags(det, llm, base) == [
+        "dc",
+        "stl",
+        "has-preview",
+        "marvel",
+        "agent-carter",
+        "bust",
+    ]
 
 
 def test_merge_owner_overrides_always_win():
-    det, base, llm = ["dc", "stl"], ["marvel"], ["wrong-guess", "bust"]
-    assert merge_tags(det, base, llm, add=["My Collection"], remove=["Wrong Guess"]) == [
+    det, llm, base = ["dc", "stl"], ["wrong-guess", "bust"], ["marvel"]
+    assert merge_tags(det, llm, base, add=["My Collection"], remove=["Wrong Guess"]) == [
         "dc",
         "stl",
-        "marvel",
         "bust",
+        "marvel",
         "my-collection",
     ]
     # replace beats every derived list; add / remove still apply on top of it
-    assert merge_tags(det, base, llm, replace=["Only This", "stl"], add=["extra"]) == [
+    assert merge_tags(det, llm, base, replace=["Only This", "stl"], add=["extra"]) == [
         "only-this",
         "stl",
         "extra",
     ]
-    assert merge_tags(det, base, llm, replace=["a", "b"], remove=["a"]) == ["b"]
+    assert merge_tags(det, llm, base, replace=["alpha", "beta"], remove=["alpha"]) == ["beta"]
     # an owner-added tag is not singularised or dropped by the LLM-oriented rules
     assert merge_tags([], [], [], add=["Sculpts"]) == ["sculpts"]
 

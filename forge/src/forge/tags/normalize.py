@@ -2,7 +2,8 @@
 
 A tag is lowercase ASCII kebab-case, at most 40 characters, never a stopword or a bare number.
 ``normalise_tag`` is: slugify -> drop a leading "the-" -> synonym map -> singularise the last
-word -> synonym map again -> stopword / length / digit checks. ``normalise_tags`` adds order-
+word -> drop trailing generic words (``marvel-files``) -> synonym map again -> stopword / length /
+digit checks. ``normalise_tags`` adds order-
 preserving dedupe and a cap (12 for the LLM list).
 
 The vocabulary (synonyms such as ``dnd`` -> ``dungeons-and-dragons``, protected plurals,
@@ -35,6 +36,7 @@ class Vocab:
     irregular: dict[str, str]
     ie_plurals: frozenset[str]
     stopwords: frozenset[str]
+    trailing_generic: frozenset[str]
 
 
 @lru_cache(maxsize=1)
@@ -48,6 +50,7 @@ def vocab() -> Vocab:
         irregular={str(k): str(v) for k, v in raw["irregular_plurals"].items()},
         ie_plurals=frozenset(raw["ie_plurals"]),
         stopwords=frozenset(raw["stopwords"]),
+        trailing_generic=frozenset(raw["trailing_generic"]),
     )
 
 
@@ -97,6 +100,16 @@ def singular_slug(slug: str) -> str:
     return head + sep + singular_word(last)
 
 
+def strip_trailing_generic(slug: str) -> str:
+    """``marvel-files`` / ``dc-collection`` -> ``marvel`` / ``dc``: a generic last word adds nothing
+    to a multi-word tag (a lone generic word is handled as a stopword instead)."""
+    generic = vocab().trailing_generic
+    words = slug.split("-")
+    while len(words) > 1 and words[-1] in generic:
+        words.pop()
+    return "-".join(words)
+
+
 def clip(slug: str, limit: int = MAX_TAG_LEN) -> str:
     """At most ``limit`` characters, cut at a word boundary when one exists; '' if too short."""
     if len(slug) <= limit:
@@ -111,7 +124,8 @@ def clip(slug: str, limit: int = MAX_TAG_LEN) -> str:
 def normalise_tag(raw: object, *, singular: bool = True) -> str | None:
     """The normalised tag, or ``None`` when the input names nothing (empty, stopword, number).
 
-    ``singular=False`` keeps proper names (creators, sources, categories) as written."""
+    ``singular=False`` keeps proper names (creators, sources, categories) and owner-written tags
+    as written: no singularising, no trailing-generic-word stripping (synonyms still apply)."""
     if not isinstance(raw, str):
         return None
     v = vocab()
@@ -125,8 +139,10 @@ def normalise_tag(raw: object, *, singular: bool = True) -> str | None:
     elif slug in v.synonyms:
         final = v.synonyms[slug]
     else:
-        if singular:
-            slug = singular_slug(slug)
+        if (
+            singular
+        ):  # free-text mode (LLM, classify keywords); names and owner tags stay as written
+            slug = strip_trailing_generic(singular_slug(slug))
         final = v.synonyms.get(slug, slug)
     final = clip(final)
     if not final or final in v.stopwords or final.replace("-", "").isdigit():
@@ -158,7 +174,7 @@ def merge_tags(
     replace: Iterable[object] | None = None,
     cap: int = MAX_FINAL_TAGS,
 ) -> list[str]:
-    """Stable set union: earlier lists first (deterministic tags, then classify, then LLM).
+    """Stable set union: earlier lists first (deterministic tags, then LLM, then classify).
 
     Owner overrides win: ``replace`` (when given) replaces every derived list, ``add`` is appended
     and ``remove`` is dropped from the result. Every input is normalised; ``add`` / ``replace`` are

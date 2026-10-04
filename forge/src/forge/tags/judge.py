@@ -109,7 +109,12 @@ witcher. Use the full common name, no abbreviations.
 batman, geralt-of-rivia. Not the sculptor, not the store.
 - genre (max 3): theme or setting, e.g. fantasy, science-fiction, horror, superhero, \
 post-apocalyptic, medieval, cyberpunk, military.
-- object_type (max 2): from the closed list in the schema (figure, bust, terrain, vehicle, ...).
+- object_type (max 2): from the closed list in the schema. Describe the PRINTED OBJECT, not the \
+character it shows: figure = a posed character or creature to display; bust = head and shoulders; \
+statue = a large sculpted piece; diorama = a scene with a base; terrain / building = scenery; \
+vehicle; prop = a replica item (sword, gun); armor / helmet / mask / costume-part = wearable \
+cosplay pieces; tool / container = a holder, stand, organizer or other functional item; toy; \
+game-piece; wall-art; accessory; base; other.
 - art_style (max 1): from the closed list in the schema.
 
 Do not repeat information the library already has: the category, the sculptor or creator, the \
