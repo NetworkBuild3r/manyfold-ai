@@ -83,7 +83,7 @@ def singular_word(word: str) -> str:
         return v.irregular[word]
     if word in v.protect or len(word) < 4 or not word.endswith("s"):
         return word
-    if word.endswith(("ss", "us", "is")):
+    if word.endswith(("ss", "us", "is", "os", "as")):  # kratos, thanos, atlas, texas, chassis
         return word
     if word.endswith("ies") and len(word) > 4:
         return word[:-1] if word in v.ie_plurals else word[:-3] + "y"
@@ -121,20 +121,44 @@ def clip(slug: str, limit: int = MAX_TAG_LEN) -> str:
     return cut if len(cut) >= 2 else ""
 
 
-def normalise_tag(raw: object, *, singular: bool = True) -> str | None:
-    """The normalised tag, or ``None`` when the input names nothing (empty, stopword, number).
+DOMAIN_SUFFIXES = frozenset({"com", "net", "org", "co", "io"})
+
+
+def strip_domain_suffix(raw: str, slug: str) -> str:
+    """``3Dfigureprints.com`` -> ``3dfigureprints``: a site name is tagged without its TLD (only
+    when the raw text really has a dot, so an owner's ``my-org`` is left alone)."""
+    head, sep, last = slug.rpartition("-")
+    if sep and "." in raw and last in DOMAIN_SUFFIXES:
+        return head
+    return slug
+
+
+def looks_like_contact(raw: str) -> bool:
+    """An e-mail address or a URL: never a tag (``name@host.com``, ``https://…``, ``www.…``)."""
+    low = raw.strip().lower()
+    return "@" in low[1:] or "://" in low or low.startswith(("http", "www."))
+
+
+def normalise_tag(
+    raw: object, *, singular: bool = True, keep: frozenset[str] | set[str] = frozenset()
+) -> str | None:
+    """The normalised tag, or ``None`` when the input names nothing (empty, stopword, number, an
+    e-mail address or a URL).
 
     ``singular=False`` keeps proper names (creators, sources, categories) and owner-written tags
-    as written: no singularising, no trailing-generic-word stripping (synonyms still apply)."""
-    if not isinstance(raw, str):
+    as written: no singularising, no trailing-generic-word stripping (synonyms still apply).
+    ``keep`` lists slugs that must stay exactly as written (the creator / source names the code
+    already established, so ``vxlabs`` is not turned into ``vxlab`` by a later singularise)."""
+    if not isinstance(raw, str) or looks_like_contact(raw):
         return None
     v = vocab()
     slug = slugify(raw)
+    slug = strip_domain_suffix(raw, slug)
     if slug.startswith("the-") and len(slug) > 4:
         slug = slug[4:]
     if not slug:
         return None
-    if slug in v.canonical:
+    if slug in v.canonical or slug in keep:
         final = slug
     elif slug in v.synonyms:
         final = v.synonyms[slug]
@@ -151,13 +175,17 @@ def normalise_tag(raw: object, *, singular: bool = True) -> str | None:
 
 
 def normalise_tags(
-    raw: Iterable[object], *, cap: int | None = MAX_TAGS, singular: bool = True
+    raw: Iterable[object],
+    *,
+    cap: int | None = MAX_TAGS,
+    singular: bool = True,
+    keep: frozenset[str] | set[str] = frozenset(),
 ) -> list[str]:
     """Normalise, dedupe (first occurrence wins, order kept) and cap."""
     out: list[str] = []
     seen: set[str] = set()
     for item in raw:
-        tag = normalise_tag(item, singular=singular)
+        tag = normalise_tag(item, singular=singular, keep=keep)
         if tag is None or tag in seen:
             continue
         seen.add(tag)

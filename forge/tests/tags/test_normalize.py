@@ -91,6 +91,71 @@ def test_singularise_obvious_plurals_only(raw, want):
     assert normalise_tag(raw) == want
 
 
+@pytest.mark.parametrize(
+    "raw,want",
+    [
+        ("Kratos", "kratos"),
+        ("Thanos", "thanos"),
+        ("Atlas", "atlas"),
+        ("Hercules", "hercules"),
+        ("SpongeBob SquarePants", "spongebob-squarepants"),
+        ("Looney Tunes", "looney-tunes"),
+        ("StarWars", "star-wars"),
+        ("Star Wars", "star-wars"),
+        ("The Marvels", "marvels"),
+        ("Dragons", "dragon"),
+    ],
+)
+def test_names_that_end_in_s_are_not_damaged(raw, want):
+    assert normalise_tag(raw) == want
+
+
+@pytest.mark.parametrize(
+    "raw",
+    [
+        "nlsinh@gmail.com",
+        "someone@example.org",
+        "https://cults3d.com/x",
+        "http://x",
+        "www.site.com",
+    ],
+)
+def test_emails_and_urls_are_never_tags(raw):
+    assert normalise_tag(raw) is None
+    assert normalise_tag(raw, singular=False) is None
+
+
+def test_leading_at_sign_is_a_handle_not_an_email():
+    assert normalise_tag("@funkostl") == "funkostl"
+
+
+@pytest.mark.parametrize(
+    "raw,want",
+    [("zsculptors.com", "zsculptors"), ("3dfigureprints.com", "3dfigureprints"), ("x.net", "x")],
+)
+def test_domain_suffixes_are_dropped(raw, want):
+    assert normalise_tag(raw, singular=False) == want
+    assert normalise_tag(raw, keep={want}) == want  # free-text mode with the name already known
+
+
+def test_site_names_lose_their_tld_in_every_mode_but_plain_words_do_not():
+    assert normalise_tag("3Dfigureprints.com", singular=False) == "3dfigureprints"
+    assert normalise_tag("Z Sculptors.com", singular=False) == "z-sculptors"
+    assert normalise_tag("my-org", singular=False) == "my-org"  # no dot: an owner's tag
+    assert normalise_tag("co", singular=False) == "co"
+
+
+def test_keep_leaves_established_names_as_written():
+    keep = {"vxlabs", "z-sculptors"}
+    assert normalise_tag("VXLabs") == "vxlab"  # without the hint a plural-looking name is cut
+    assert normalise_tag("VXLabs", keep=keep) == "vxlabs"
+    assert normalise_tags(["vxlabs", "Z Sculptors", "dragons"], keep=keep) == [
+        "vxlabs",
+        "z-sculptors",
+        "dragon",
+    ]
+
+
 def test_singular_false_keeps_proper_names():
     assert normalise_tag("Minis", singular=False) == "miniature"  # synonyms still apply
     assert normalise_tag("Sculpts", singular=False) == "sculpts"

@@ -51,6 +51,9 @@ def test_creator_and_source_keep_their_names():
     assert derive.creator_tag("Wicked Sculpts") == ["wicked-sculpts"]
     assert derive.creator_tag("Sanix") == ["sanix"]
     assert derive.creator_tag("") == [] and derive.creator_tag(None) == []
+    assert derive.creator_tag("3Dfigureprints.com") == ["3dfigureprints"]
+    assert derive.creator_tag("nlsinh@gmail.com") == []  # an address is not a tag
+    assert derive.creator_tag("@heheSTL") == ["hehestl"]
     assert derive.source_tag("AnySTL") == ["anystl"]
     assert derive.source_tag("Cults3D") == ["cults3d"]
 

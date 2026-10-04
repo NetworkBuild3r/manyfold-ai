@@ -372,7 +372,7 @@ class _Tagger:
         return Work(
             pack=p,
             det=det,
-            base=normalise_tags(base, cap=None),
+            base=normalise_tags(base, cap=None, keep=set(det)),
             evidence=evidence,
             lfp=lfp,
             override=override or ([], [], None),
@@ -443,7 +443,13 @@ class _Tagger:
     # -------------------------------------------------------------------------------- write
     def _final(self, w: Work) -> tuple[list[str], str]:
         add, remove, replace = w.override
-        llm_tags = w.llm.tags if w.llm is not None and w.llm.verdict == "ok" else None
+        # Normalised from the stored raw answer every time, so a vocabulary fix reaches cached
+        # answers without a new call; names the code already derived stay as written.
+        llm_tags = (
+            normalise_tags(w.llm.raw, keep=set(w.det))
+            if w.llm is not None and w.llm.verdict == "ok"
+            else None
+        )
         final = merge_tags(w.det, llm_tags or [], w.base, add=add, remove=remove, replace=replace)
         fp = fingerprint(
             {
