@@ -65,6 +65,7 @@ All read `FORGE_DB_URL`; filesystem commands need `FORGE_V2_ROOT`, `FORGE_SOURCE
 | `forge materialize verify [--sample N \| --all] [--tree-hash] [--no-strays]` | Store entries, pack files, link counts, sha256 (one hash per inode), strays. Exit 1 on any problem. |
 | `forge materialize audit-source [--sample N]` | `stat()` every present catalog source file; reports missing / size / mtime drift. Never opens a file. |
 | `forge materialize gc-plan [--apply-gc]` | Lists v2 entries not in the plan. Deletes only with `--apply-gc`, only under v2, then removes empty dirs. Never walks the source. |
+| `forge materialize refresh-datapackage [--pack ID]... [--limit N] [--plan ID] [--dry-run]` | Rewrites **only** the `keywords` array of `datapackage.json` for packs of the plan that are `done`/`incomplete`, from the live `packs` row (SPEC-016, `docs/tags.md`). Atomic (new temp name + `rename()` through the write guard, v2 only), only when the keywords changed; a missing / unreadable / symlinked file is counted and skipped, never created. Syncs `materialize_packs.meta`. Run it after `forge tags`. |
 
 ## Plan rules
 
@@ -159,7 +160,9 @@ uninterrupted run.
 
 ## datapackage.json
 
-Frictionless-style: `name` (slug), `title`, `category`, `creator`, `source`, `keywords`,
+Frictionless-style: `name` (slug), `title`, `category`, `creator`, `source`, `keywords` (the
+pack's tags — `packs.tags` once `forge tags` has run for it, else `[category, source, creator]`;
+Manyfold reads them as model tags, see `docs/tags.md`),
 `resources[]` (`path`, `bytes`, `hash: "sha256:<hex>"`, `forge_kind`, `provenance`
 {`container_id`, `source_path`, `member_chain`}, `materialized_from` {`kind: loose`, `path`} or
 {`kind: archive`, `container_id`, `member_chain`}), and `forge` {`pack_id`, `plan_id`, `tool`,

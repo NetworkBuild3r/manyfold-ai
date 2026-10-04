@@ -19,7 +19,7 @@ from sqlalchemy.engine import Engine
 from forge.db.models import join_member_path
 from forge.packs.llm import LlmEndpoint
 
-MY_TABLES = ("classify_decisions", "classify_overrides")
+MY_TABLES = ("classify_decisions", "classify_overrides", "tag_decisions", "tag_overrides")
 
 
 def sha(seed: str) -> str:
@@ -206,10 +206,15 @@ class Library:
 
 
 class FakeLlm:
-    """OpenAI-compatible chat-completions stub; responder(body) -> content | (status, body)."""
+    """OpenAI-compatible stub: ``POST /chat/completions`` via responder(body) -> content |
+    (status, body), and ``GET /models`` listing ``models`` (``None`` -> HTTP 503). When ``serves``
+    is a set, a chat request for any other model answers 404 like a real server."""
 
     def __init__(self) -> None:
         self.requests: list[dict] = []
+        self.model_gets = 0
+        self.models: list[str] | None = ["fake-qwen"]
+        self.serves: set[str] | None = None
         self.responder: Callable[[dict], object] = lambda body: json.dumps(
             {"verdict": "separate", "confidence": 0.9, "reason": "default"}
         )
@@ -219,10 +224,32 @@ class FakeLlm:
             def log_message(self, *args) -> None:  # silence
                 return
 
+            def _send(self, status: int, data: bytes) -> None:
+                self.send_response(status)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(data)))
+                self.end_headers()
+                self.wfile.write(data)
+
+            def do_GET(self) -> None:  # noqa: N802
+                if not self.path.rstrip("/").endswith("/models"):
+                    self._send(404, b"{}")
+                    return
+                fake.model_gets += 1
+                if fake.models is None:
+                    self._send(503, b"{}")
+                    return
+                listing = [{"id": m, "object": "model"} for m in fake.models]
+                self._send(200, json.dumps({"object": "list", "data": listing}).encode())
+
             def do_POST(self) -> None:  # noqa: N802
                 length = int(self.headers.get("Content-Length", "0"))
                 body = json.loads(self.rfile.read(length) or b"{}")
                 fake.requests.append({"path": self.path, "body": body})
+                if fake.serves is not None and body.get("model") not in fake.serves:
+                    err = {"error": {"message": f"The model `{body.get('model')}` does not exist."}}
+                    self._send(404, json.dumps(err).encode())
+                    return
                 out = fake.responder(body)
                 status = 200
                 if isinstance(out, tuple):
@@ -232,20 +259,20 @@ class FakeLlm:
                     data = json.dumps(
                         {"choices": [{"message": {"role": "assistant", "content": out}}]}
                     ).encode()
-                self.send_response(status)
-                self.send_header("Content-Type", "application/json")
-                self.send_header("Content-Length", str(len(data)))
-                self.end_headers()
-                self.wfile.write(data)
+                self._send(status, data)
 
         self.server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.thread.start()
 
     @property
+    def url(self) -> str:
+        return f"http://127.0.0.1:{self.server.server_port}/v1"
+
+    @property
     def endpoint(self) -> LlmEndpoint:
         # Built directly: the env path (LlmEndpoint.from_env) refuses loopback by design.
-        return LlmEndpoint(url=f"http://127.0.0.1:{self.server.server_port}/v1", model="fake-qwen")
+        return LlmEndpoint(url=self.url, model="fake-qwen")
 
     def close(self) -> None:
         self.server.shutdown()

@@ -14,6 +14,7 @@ import pytest
 from forge.classify import judge
 from forge.classify.review import export_review, import_overrides, sample
 from forge.classify.run import run as classify
+from forge.packs.llm import LlmEndpoint
 from forge.packs.resolve import run as resolve
 from forge.packs.settings import PacksSettings
 
@@ -219,6 +220,40 @@ def test_rerun_unchanged_makes_zero_llm_calls_and_is_idempotent(lib, migrated_db
     assert len(fake_llm.requests) == 1
     assert res.counts["cached"] == 2 and res.counts.get("llm_called", 0) == 0
     assert packs(lib) == before
+
+
+def test_a_changed_model_name_neither_invalidates_the_cache_nor_loses_the_audit_column(
+    lib, migrated_db, fake_llm
+):
+    """The model is recorded in `model`, never hashed into a cache key (SPEC-016)."""
+    lib.archive("AnySTL/heli/heli.zip", {"m.stl": "m"})
+    fake_llm.responder = lambda body: answer()
+    build(migrated_db, fake_llm)
+
+    class Renamed:
+        endpoint = LlmEndpoint(url=fake_llm.url, model="Qwen/Some-Newer-Model")
+
+    res = build(migrated_db, Renamed)
+    assert len(fake_llm.requests) == 1 and res.counts["cached"] == 1
+    assert {
+        r[0] for r in lib.rows("SELECT model FROM classify_decisions WHERE model IS NOT NULL")
+    } == {"fake-qwen"}
+
+
+def test_decision_rows_record_the_model_resolved_after_a_404(lib, migrated_db, fake_llm):
+    lib.archive("AnySTL/heli/heli.zip", {"m.stl": "m"})
+    fake_llm.responder = lambda body: answer()
+    fake_llm.models, fake_llm.serves = ["served-now"], {"served-now"}
+
+    class Stale:
+        endpoint = LlmEndpoint(url=fake_llm.url, model="served-before")
+
+    build(migrated_db, Stale)
+    assert [r["body"]["model"] for r in fake_llm.requests] == ["served-before", "served-now"]
+    models = {
+        r[0] for r in lib.rows("SELECT model FROM classify_decisions WHERE model IS NOT NULL")
+    }
+    assert models == {"served-now"}
 
 
 def test_human_override_round_trip_wins(lib, migrated_db, fake_llm):

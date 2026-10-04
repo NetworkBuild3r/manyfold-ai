@@ -6,7 +6,7 @@ Other specs add logic via modules (forge.walker.run, forge.sweep.run, …)
 without growing this file into a router.
 
 INIT-032/SPEC-004 · walk wired by SPEC-005 · sweep/status by SPEC-007
-· report wired by SPEC-009 · report site by SPEC-014
+· report wired by SPEC-009 · report site by SPEC-014 · tags by SPEC-016
 """
 
 from __future__ import annotations
@@ -128,9 +128,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     from forge.classify.cli import register as register_classify
     from forge.packs.cli import register as register_packs
+    from forge.tags.cli import register as register_tags
 
     register_packs(sub)
     register_classify(sub)
+    register_tags(sub)
     from forge.materialize.cli import add_parser as _add_materialize
 
     _add_materialize(sub)
@@ -233,6 +235,10 @@ def main(argv: list[str] | None = None) -> int:
         from forge.classify.cli import main as classify_main
 
         return classify_main(args)
+    if args.command == "tags":
+        from forge.tags.cli import main as tags_main
+
+        return tags_main(args)
     if args.command in _STUBS:
         return _not_implemented(args.command)
     if args.command == "db":

@@ -264,11 +264,13 @@ class _Classifier:
         self.counts["llm_deferred"] = len(deferred)
 
         endpoint = self.endpoint
-        model = endpoint.model if endpoint else None
         done = 0
         for (p, rec, ev, lfp), result in map_concurrent(
             lambda item: cls_judge.classify(endpoint, item[2]), todo, self.concurrency
         ):
+            # The model is audit data, never a cache key: read it after the call because the
+            # endpoint may have re-resolved to the served model on a 404.
+            model = endpoint.model if endpoint else None
             self._insert_raw(lfp, ev, result, model)
             self._apply_llm(p, rec, ev, result)
             self._insert(fps[p.id], rec, model)
@@ -714,10 +716,15 @@ class _Classifier:
             ),
         )
         self._q("UPDATE packs SET name = NULL WHERE id IN (SELECT pack_id FROM tmp_classify)")
+        # Once `forge tags` has run for a pack (tags_fingerprint set) it owns `packs.tags`: it
+        # re-reads this run's decision (and the owner's classify override tags) as an input, so
+        # classify must not replace the merged list with its own subset (SPEC-016).
         self._q(
             """
             UPDATE packs p SET name = t.name, category = t.category, creator = t.creator,
-                   source_tag = t.source_tag, tags = t.tags, decided_by = t.decided_by,
+                   source_tag = t.source_tag,
+                   tags = CASE WHEN p.tags_fingerprint IS NULL THEN t.tags ELSE p.tags END,
+                   decided_by = t.decided_by,
                    classify_confidence = t.confidence, classify_fingerprint = t.fp,
                    classified_at = now(), updated_at = now(),
                    review_reasons = ARRAY(
