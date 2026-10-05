@@ -36,7 +36,7 @@ def collect_status(engine: Engine) -> dict:
                     """
                     SELECT kind::text, status::text, count(*), coalesce(sum(members), 0),
                            coalesce(sum(bytes_read), 0), coalesce(sum(source_bytes), 0)
-                    FROM containers GROUP BY 1, 2 ORDER BY 1, 2
+                    FROM containers WHERE superseded_by_id IS NULL GROUP BY 1, 2 ORDER BY 1, 2
                     """
                 )
             ).all()
@@ -55,6 +55,11 @@ def collect_status(engine: Engine) -> dict:
         snap["requeued_as_loose"] = int(
             conn.execute(
                 text("SELECT count(*) FROM containers WHERE requeued_from_id IS NOT NULL")
+            ).scalar_one()
+        )
+        snap["superseded_volumes"] = int(
+            conn.execute(
+                text("SELECT count(*) FROM containers WHERE superseded_by_id IS NOT NULL")
             ).scalar_one()
         )
         snap["blobs"] = int(conn.execute(text("SELECT count(*) FROM blobs")).scalar_one())
@@ -164,6 +169,9 @@ def format_status(snap: dict) -> str:
     for row in snap["failures"]:
         lines.append(f"  {row['kind']:<12}{row['reason']:<22}{row['count']:>8}")
     lines.append(f"  re-queued not-an-archive -> loose_batch: {snap['requeued_as_loose']}")
+    lines.append(
+        f"  volumes folded into multi-volume sets (superseded): {snap['superseded_volumes']}"
+    )
     lines.append("")
     lines.append(f"blobs: {snap['blobs']}   occurrences: {snap['occurrences']}")
     lines.append(
@@ -217,6 +225,11 @@ def metrics_text(snap: dict) -> str:
         "forge_requeued_as_loose",
         "Not-an-archive containers re-queued as loose_batch",
         [({}, snap["requeued_as_loose"])],
+    )
+    gauge(
+        "forge_superseded_volumes",
+        "Volume containers folded into a multi-volume set container",
+        [({}, snap["superseded_volumes"])],
     )
     gauge("forge_blobs", "Distinct blobs (SHA-256)", [({}, snap["blobs"])])
     gauge("forge_occurrences", "Occurrence rows", [({}, snap["occurrences"])])

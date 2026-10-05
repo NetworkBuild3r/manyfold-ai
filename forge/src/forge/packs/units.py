@@ -61,6 +61,8 @@ class ContainerRow:
     parent_id: int | None
     status: str
     requeued_from_id: int | None = None
+    # A volume catalogued alone before its multi-volume set was resolved (0007): not a unit.
+    superseded_by_id: int | None = None
 
 
 class ModelRoots:
@@ -130,7 +132,10 @@ def plan_units(
     archive_tops = [
         c
         for c in cont.values()
-        if c.kind == "archive" and c.parent_id is None and c.id not in requeued
+        if c.kind == "archive"
+        and c.parent_id is None
+        and c.id not in requeued
+        and c.superseded_by_id is None
     ]
     archive_tops.sort(key=lambda c: c.id)
 
@@ -209,11 +214,11 @@ def load_plan(conn: Connection, *, bundle_items: int) -> list[UnitSpec]:
         for r in conn.execute(text("SELECT id, path, kind::text FROM source_files WHERE present"))
     ]
     containers = [
-        ContainerRow(int(r[0]), r[1], r[2], r[3], r[4], r[5])
+        ContainerRow(int(r[0]), r[1], r[2], r[3], r[4], r[5], r[6])
         for r in conn.execute(
             text(
                 "SELECT id, kind::text, source_file_id, parent_container_id, status::text, "
-                "requeued_from_id FROM containers"
+                "requeued_from_id, superseded_by_id FROM containers"
             )
         )
     ]

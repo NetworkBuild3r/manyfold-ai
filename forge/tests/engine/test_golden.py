@@ -112,6 +112,24 @@ def test_split_rar_volumes_are_one_stream(src, scratch):
     assert big[2] == 110_000
 
 
+def test_split_rar_volumes_in_sibling_part_folders_are_one_stream(src, scratch):
+    """The old spark-curate layout: every volume in its own ``<name>.partN/`` folder. The engine
+    gets the volumes in order and reads them as one container, byte-identical to one folder."""
+    spec = MANIFEST["split_rar5"]
+    folders = []
+    for name in spec["paths"]:
+        d = src / name.rsplit(".rar", 1)[0]
+        d.mkdir()
+        folders.append(copy_fixture([name], d)[0])
+    res, sink = run(folders, scratch_dir=scratch)
+    assert res.status == "done" and res.reader == "libarchive", res
+    expected = _expected("split_rar5")
+    got = sink.by_chain()
+    assert set(got) == set(expected)
+    for chain, member in expected.items():
+        assert got[chain][1] == member["sha256"], chain
+
+
 def test_caps_from_env(monkeypatch):
     monkeypatch.setenv("FORGE_CAP_DEPTH", "2")
     monkeypatch.setenv("FORGE_CAP_WALL_SECONDS", "7")
