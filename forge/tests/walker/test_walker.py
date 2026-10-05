@@ -193,16 +193,29 @@ def test_never_opens_source_for_write(fixture_tree: Path, monkeypatch) -> None:
     assert result.counts.files == 8
 
 
-def test_lone_partn_is_single_volume(tmp_path: Path) -> None:
-    folder = tmp_path / "Model.part2"
+def test_lone_part1_is_single_volume(tmp_path: Path) -> None:
+    folder = tmp_path / "Model.part1"
     folder.mkdir()
-    (folder / "Model.part2.rar").write_bytes(RAR5_MAGIC + b"solo")
+    (folder / "Model.part1.rar").write_bytes(RAR5_MAGIC + b"solo")
     files, _counts = walk_tree(tmp_path, threads=1)
     _annotated, groups = group_archive_sets(files)
     assert len(groups) == 1
     assert groups[0].missing_volume is False
     assert len(groups[0].files) == 1
     assert groups[0].volume_set is None
+
+
+def test_lone_partn_is_missing_volume(tmp_path: Path) -> None:
+    """A part 2..N with no sibling volumes cannot be opened: typed missing_volume (volume 1)."""
+    folder = tmp_path / "Model.part2"
+    folder.mkdir()
+    (folder / "Model.part2.rar").write_bytes(RAR5_MAGIC + b"solo")
+    files, _counts = walk_tree(tmp_path, threads=1)
+    _annotated, groups = group_archive_sets(files)
+    assert len(groups) == 1
+    assert groups[0].missing_volume is True
+    assert groups[0].missing == (1,)
+    assert len(groups[0].files) == 1
 
 
 def test_sync_beyond_bind_parameter_limit(session, engine) -> None:

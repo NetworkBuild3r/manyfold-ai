@@ -92,7 +92,7 @@ SELECT
   (SELECT coalesce(sum(size), 0) FROM source_files WHERE kind = 'archive') AS archive_bytes,
   (SELECT count(*) FROM source_files WHERE kind = 'loose') AS loose_files,
   (SELECT coalesce(sum(size), 0) FROM source_files WHERE kind = 'loose') AS loose_bytes,
-  (SELECT count(*) FROM containers) AS containers,
+  (SELECT count(*) FROM containers WHERE superseded_by_id IS NULL) AS containers,
   (SELECT count(*) FROM containers WHERE status = 'failed') AS failed_containers,
   (SELECT count(*) FROM blobs) AS blobs,
   (SELECT coalesce(sum(size), 0) FROM blobs) AS unique_bytes,
@@ -140,6 +140,7 @@ SELECT
   coalesce(sum(c.bytes_read), 0) AS bytes_read,
   coalesce(sum(c.source_bytes), 0) AS source_bytes
 FROM containers c
+WHERE c.superseded_by_id IS NULL
 GROUP BY c.kind, c.format, c.status
 ORDER BY c.kind, c.format, c.status
 """
@@ -177,7 +178,8 @@ FROM (
   SELECT depth FROM occurrences
 ) d
 LEFT JOIN (
-  SELECT depth, count(*) AS containers FROM containers GROUP BY depth
+  SELECT depth, count(*) AS containers FROM containers
+  WHERE superseded_by_id IS NULL GROUP BY depth
 ) c ON c.depth = d.depth
 LEFT JOIN (
   SELECT depth, count(*) AS occurrences FROM occurrences GROUP BY depth

@@ -202,6 +202,11 @@ class Container(Base):
             "requeued_from_id",
             postgresql_where=text("requeued_from_id IS NOT NULL"),
         ),
+        Index(
+            "ix_containers_superseded_by",
+            "superseded_by_id",
+            postgresql_where=text("superseded_by_id IS NOT NULL"),
+        ),
     )
 
     id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
@@ -239,6 +244,12 @@ class Container(Base):
     notes: Mapped[str | None] = mapped_column(Text)
     # A loose_batch re-queued from an archive container that was not an archive at all.
     requeued_from_id: Mapped[int | None] = mapped_column(
+        ForeignKey("containers.id", ondelete="SET NULL")
+    )
+    # 0007: a volume (2..N) that was catalogued alone before its multi-volume set was resolved.
+    # Points at the set container (the one whose container_files hold every volume). Superseded
+    # rows are 'done' with no members/source files/source bytes; every count and unit skips them.
+    superseded_by_id: Mapped[int | None] = mapped_column(
         ForeignKey("containers.id", ondelete="SET NULL")
     )
 

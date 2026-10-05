@@ -1,6 +1,6 @@
 """Library Forge CLI. Stubs print 'not implemented' and exit 2.
 
-Real: `db`, `walk`, `sweep`, `status`, `report`.
+Real: `db`, `walk`, `sweep`, `requeue`, `status`, `report`.
 
 Other specs add logic via modules (forge.walker.run, forge.sweep.run, …)
 without growing this file into a router.
@@ -79,6 +79,25 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="worker id prefix (default $FORGE_WORKER_ID, else the hostname)",
     )
+    requeue = sub.add_parser(
+        "requeue", help="Put failed containers back in the queue (second pass, SPEC-007)"
+    )
+    requeue.add_argument(
+        "--reason",
+        action="append",
+        metavar="REASON",
+        help="failure_reason to retry (repeatable); nested failures retry via their root archive",
+    )
+    requeue.add_argument("--id", action="append", type=int, metavar="ID", help="only this root")
+    requeue.add_argument(
+        "--max-source-bytes",
+        type=int,
+        default=None,
+        metavar="N",
+        help="skip roots whose source files total more than N bytes",
+    )
+    requeue.add_argument("--limit", type=int, default=None, metavar="N", help="at most N roots")
+    requeue.add_argument("--dry-run", action="store_true", help="count only, change nothing")
     status = sub.add_parser("status", help="Print sweep progress (containers, failures, rate, ETA)")
     status.add_argument("--json", action="store_true", help="machine-readable output")
     report = sub.add_parser("report", help="Inventory and duplicate reports (SPEC-009)")
@@ -221,6 +240,10 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_sweep(args)
     if args.command == "status":
         return _cmd_status(args)
+    if args.command == "requeue":
+        from forge.requeue import main_requeue
+
+        return main_requeue(args)
     if args.command == "report":
         return _cmd_report(args)
     if args.command == "materialize":

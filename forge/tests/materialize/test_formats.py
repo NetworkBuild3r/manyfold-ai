@@ -85,3 +85,32 @@ def test_7zz_fallback_extracts_only_planned_members(mat, monkeypatch) -> None:
     assert all(("data/random.bin",) not in pending for _, pending in calls)
     assert mat.verify(full=True)["ok"]
     assert not list(mat.scratch.iterdir())  # per-run scratch dirs removed
+
+
+def test_volume_set_in_sibling_part_folders_extracts_as_one_container(mat) -> None:
+    """Old layout: each RAR volume in its own ``Ruins.partN/`` folder. One container, the
+    materializer opens all volumes in order and the big member (spanning volumes) is byte-exact."""
+    for n in (1, 2, 3):
+        mat.copy_fixture(
+            f"split_rar5.part{n}.rar", f"Terrain/Ruins/Ruins.part{n}/Ruins.part{n}.rar"
+        )
+    mat.catalog()
+    tops = mat.rows(
+        "SELECT id FROM containers WHERE kind = 'archive' AND parent_container_id IS NULL"
+    )
+    assert len(tops) == 1
+    files = mat.rows(
+        "SELECT sf.path FROM container_files cf JOIN source_files sf ON sf.id = cf.source_file_id "
+        "WHERE cf.container_id = :c ORDER BY cf.ordinal",
+        c=tops[0]["id"],
+    )
+    assert [f["path"] for f in files] == [
+        f"Terrain/Ruins/Ruins.part{n}/Ruins.part{n}.rar" for n in (1, 2, 3)
+    ]
+    mat.pack("Ruins", "Terrain", [(int(tops[0]["id"]), "primary")])
+    assert mat.plan().totals["missing_blobs"] == 0
+    assert mat.apply() == 0
+    report = mat.verify(full=True)
+    assert report["ok"], report
+    # Members spanning the volume boundaries were read: every materialized file verified (full).
+    assert mat.scalar("SELECT count(*) FROM materialize_files") > 0

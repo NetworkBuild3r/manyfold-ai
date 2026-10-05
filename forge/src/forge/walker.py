@@ -67,6 +67,12 @@ _MAGICS: tuple[tuple[bytes, str], ...] = (
 
 _RE_EXT_NNN = re.compile(r"^(?P<base>.+)\.(?P<ext>7z|zip)\.(?P<num>\d{3})$", re.IGNORECASE)
 _RE_PART = re.compile(r"^(?P<base>.+)\.part(?P<num>\d+)\.(?P<ext>rar|zip|7z)$", re.IGNORECASE)
+# Loose spelling of the same idea (``X_part01.rar``, ``X part 2.rar``, ``X.part1 suffix.rar``).
+# Only trusted for RAR files whose main header carries the volume flag (see ``rar_volume_flag``).
+_RE_PARTX = re.compile(
+    r"^(?P<pre>.*?)(?:(?<=[ ._-])|^)part[ ._-]?(?P<num>\d+)(?P<post>.*)\.(?P<ext>rar)$",
+    re.IGNORECASE,
+)
 _RE_RNN = re.compile(r"^(?P<base>.+)\.r(?P<num>\d{2})$", re.IGNORECASE)
 _RE_ZNN = re.compile(r"^(?P<base>.+)\.z(?P<num>\d{2})$", re.IGNORECASE)
 _RE_NNN = re.compile(r"^(?P<base>.+)\.(?P<num>\d{3})$", re.IGNORECASE)
@@ -85,6 +91,8 @@ class WalkFile:
     format: str | None
     volume_set: str | None = None
     volume_ordinal: int | None = None  # 1-based among the container's files
+    # RAR main header "volume" flag; read only for rar files with a ``part`` in the name.
+    rar_volume: bool | None = None
 
 
 @dataclass(frozen=True)
@@ -95,6 +103,9 @@ class ArchiveGroup:
     files: tuple[WalkFile, ...]
     format: str | None
     missing_volume: bool
+    # Volume numbers absent from the set (``"lead"`` = the .rar / .zip file that closes an r / z
+    # set); with ``missing_volume`` this is what the failed container's notes record.
+    missing: tuple[int | str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -219,6 +230,55 @@ def sniff_format(path: str, *, extension: str) -> str | None:
     return None
 
 
+def _vint(buf: bytes, pos: int) -> tuple[int, int] | None:
+    """RAR5 variable-length integer at ``pos`` -> (value, next position), or None if truncated."""
+    value = 0
+    for shift in range(0, 70, 7):
+        if pos >= len(buf):
+            return None
+        byte = buf[pos]
+        pos += 1
+        value |= (byte & 0x7F) << shift
+        if not byte & 0x80:
+            return value, pos
+    return None
+
+
+def rar_volume_flag(head: bytes) -> bool | None:
+    """Whether a RAR file's main header says it is a volume of a multi-volume set.
+
+    ``head`` is the first >= 64 bytes. RAR4: ``MHD_VOLUME`` (0x0001) in the main header flags.
+    RAR5: bit 0 of the main header's archive flags. None when the header cannot be read. Used to
+    tell ``Foo_part1.rar`` volumes from independent archives that merely end in a number.
+    """
+    if head.startswith(b"Rar!\x1a\x07\x01\x00"):
+        pos = 8 + 4  # signature, header CRC32
+        got = _vint(head, pos)  # header size
+        if got is None:
+            return None
+        pos = got[1]
+        got = _vint(head, pos)  # header type: 1 = main archive header
+        if got is None or got[0] != 1:
+            return None
+        got = _vint(head, got[1])  # header flags
+        if got is None:
+            return None
+        flags, pos = got
+        for bit in (0x1, 0x2):  # extra area size, data area size
+            if flags & bit:
+                got = _vint(head, pos)
+                if got is None:
+                    return None
+                pos = got[1]
+        got = _vint(head, pos)  # archive flags: 0x1 = volume
+        return None if got is None else bool(got[0] & 0x1)
+    if head.startswith(b"Rar!\x1a\x07\x00"):
+        if len(head) < 7 + 7 or head[9] != 0x73:  # CRC16, type 0x73 = main header
+            return None
+        return bool(int.from_bytes(head[10:12], "little") & 0x0001)
+    return None
+
+
 def _rel_dir(relpath: str) -> str:
     directory = relpath.rsplit("/", 1)[0] if "/" in relpath else ""
     return directory
@@ -250,55 +310,125 @@ def _lead_schemes(filename: str) -> list[tuple[str, str, int]]:
     return out
 
 
-def _set_incomplete(scheme: str, sort_keys: Sequence[int]) -> bool:
-    keys = sorted(set(sort_keys))
-    if not keys:
-        return True
-    if scheme == "part":
-        if 1 not in keys:
-            return True
-        return keys != list(range(1, keys[-1] + 1))
+def _missing_volumes(scheme: str, numbers: Sequence[int]) -> list[int | str]:
+    """Volumes a set lacks, from the numbers present. ``"lead"`` is the .rar / .zip that closes an
+    r / z set (it is the first RAR volume, the last zip piece); ``.partN`` and ``.NNN`` sets
+    number from 1. A set cannot reveal that its *trailing* volumes are absent — the engine's typed
+    ``missing_volume`` (libarchive "next volume") covers that."""
+    keys = sorted(set(numbers))
+    out: list[int | str] = []
+    if scheme in {"part", "partx"}:
+        return [n for n in range(1, keys[-1] + 1) if n not in keys]
     if scheme in {"nnn", "extnnn"}:
         vols = [k for k in keys if k >= 1]
-        if 1 not in vols:
-            return True
-        return vols != list(range(1, vols[-1] + 1))
+        return [n for n in range(1, vols[-1] + 1) if n not in vols] if vols else [1]
     if scheme == "r":
         rest = [k for k in keys if k >= 0]
-        if -1 in keys:
-            return bool(rest) and rest != list(range(0, rest[-1] + 1))
-        if 0 not in rest:
-            return True
-        return rest != list(range(0, rest[-1] + 1))
+        if -1 not in keys:
+            out.append("lead")
+        out += [n for n in range(0, rest[-1] + 1) if n not in rest] if rest else []
+        return out
     if scheme == "z":
         rest = [k for k in keys if k >= 1]
-        if -1 in keys:
-            return bool(rest) and rest != list(range(1, rest[-1] + 1))
-        if 1 not in rest:
-            return True
-        return rest != list(range(1, rest[-1] + 1))
-    return False
+        if -1 not in keys:
+            out.append("lead")
+        out += [n for n in range(1, rest[-1] + 1) if n not in rest] if rest else []
+        return out
+    return out
+
+
+def _strip_part(text_: str, number: int) -> str:
+    """Casefolded text without the first ``partN`` token (zero-padding tolerated)."""
+    pattern = rf"[ ._-]*part[ ._-]*0*{number}(?!\d)"
+    return re.sub(pattern, "", text_, count=1, flags=re.IGNORECASE).strip().casefold()
+
+
+def _volume_set_dir(directory: str, filename: str, number: int) -> str:
+    """Directory a ``partN`` volume's set lives in.
+
+    The old spark-curate layout put each volume in its own folder named after the file
+    (``Naruto.part3/Naruto.part3.rar``, ``Harley Quinn part3/Harley Quinn.part3.rar``) and often
+    the first one in a folder with the bare set name (``Naruto/Naruto.part1.rar``). When the
+    folder is the file's own folder (same name once the ``partN`` token is dropped) the set
+    lives in its parent, so every sibling ``<set>.partN/`` folder resolves to the same set.
+    """
+    if not directory:
+        return directory
+    parent, _, leaf = directory.rpartition("/")
+    stem = filename.rsplit(".", 1)[0]
+    if _strip_part(leaf, number) == _strip_part(stem, number):
+        return parent
+    return directory
+
+
+@dataclass(frozen=True)
+class _PartIdentity:
+    set_dir: str
+    label: str  # displayed in volume_set
+    key: str  # casefolded, compared
+    scheme: str  # part | partx
+    ext: str
+    number: int
+
+
+def _part_identity(rec: WalkFile) -> _PartIdentity | None:
+    """Identity of a ``partN`` volume, or None when the name is not one (or not trusted)."""
+    name = rec.path.rsplit("/", 1)[-1]
+    directory = _rel_dir(rec.path)
+    match = _RE_PART.match(name)
+    if match:
+        number = int(match["num"])
+        return _PartIdentity(
+            _volume_set_dir(directory, name, number),
+            match["base"],
+            match["base"].casefold(),
+            "part",
+            match["ext"].casefold(),
+            number,
+        )
+    match = _RE_PARTX.match(name)
+    if match is None or rec.format not in {"rar4", "rar5"} or rec.rar_volume is not True:
+        return None
+    number = int(match["num"])
+    label = f"{match['pre']}#{match['post']}"
+    return _PartIdentity(
+        _volume_set_dir(directory, name, number), label, label.casefold(), "partx", "rar", number
+    )
 
 
 def group_archive_sets(files: Sequence[WalkFile]) -> tuple[list[WalkFile], list[ArchiveGroup]]:
-    """Group archive files. A set is >= 2 sibling volumes with the same base.
+    """Group archive files into containers.
 
-    Lone ``*.partN.rar`` files (typical: folder named *.partN holding one rar)
-    stay single-volume archives. A gap or a missing first volume marks the set
-    ``missing_volume``. Returns (all files with volume fields filled, groups).
+    ``name.partN.ext`` volumes form one set per (set directory, base, extension, format); the set
+    directory is the volume's folder, or that folder's parent when each volume sits in its own
+    ``<name>.partN/`` folder (``_volume_set_dir``), so sibling folders resolve to one set. The
+    loose spelling ``name_partNN.rar`` is accepted only for RAR files whose header carries the
+    volume flag. The other schemes (``.r00``, ``.z01``, ``.7z.001``, ``.001``) group siblings in
+    one directory. A gap, a missing first volume (or the .rar / .zip lead of an r / z set) marks
+    the set ``missing_volume`` with the missing numbers; a lone ``name.part1.rar`` is just a
+    one-volume archive. Returns (all files with volume fields filled, groups).
     """
     archives = [f for f in files if f.kind is SourceFileKind.archive]
     loose = [f for f in files if f.kind is SourceFileKind.loose]
-    buckets: dict[tuple[str, str, str], list[tuple[int, WalkFile]]] = defaultdict(list)
+    buckets: dict[tuple, list[tuple[int, WalkFile]]] = defaultdict(list)
+    labels: dict[tuple, tuple[str, str]] = {}  # bucket -> (set dir, label shown in volume_set)
     unparsed: list[WalkFile] = []
     for rec in archives:
+        ident = _part_identity(rec)
+        if ident is not None:
+            bucket = (ident.set_dir, ident.key, ident.scheme, ident.ext, rec.format)
+            buckets[bucket].append((ident.number, rec))
+            labels.setdefault(bucket, (ident.set_dir, ident.label))
+            continue
         name = rec.path.rsplit("/", 1)[-1]
         parsed = parse_volume(name)
-        if parsed is None:
+        if parsed is None or parsed.scheme == "part":
             unparsed.append(rec)
             continue
-        key = (_rel_dir(rec.path), parsed.base, parsed.scheme)
-        buckets[key].append((parsed.ordinal, rec))
+        directory = _rel_dir(rec.path)
+        bucket = (directory, parsed.base, parsed.scheme, "", None)
+        buckets[bucket].append((parsed.ordinal, rec))
+        labels.setdefault(bucket, (directory, parsed.base))
 
     singles: list[WalkFile] = []
     for rec in unparsed:
@@ -306,9 +436,9 @@ def group_archive_sets(files: Sequence[WalkFile]) -> tuple[list[WalkFile], list[
         directory = _rel_dir(rec.path)
         attached = False
         for base, scheme, ordinal in _lead_schemes(name):
-            key = (directory, base, scheme)
-            if key in buckets:
-                buckets[key].append((ordinal, rec))
+            bucket = (directory, base, scheme, "", None)
+            if bucket in buckets:
+                buckets[bucket].append((ordinal, rec))
                 attached = True
                 break
         if not attached:
@@ -316,22 +446,32 @@ def group_archive_sets(files: Sequence[WalkFile]) -> tuple[list[WalkFile], list[
 
     groups: list[ArchiveGroup] = []
     annotated: list[WalkFile] = []
-    for (directory, base, scheme), members in buckets.items():
-        if len(members) < 2:
+    for bucket, members in buckets.items():
+        scheme = bucket[2]
+        members.sort(key=lambda item: (item[0], item[1].path))
+        numbers = [number for number, _ in members]
+        # A lone continuation (.r00 / .z01 / partN, N > 1) is an incomplete set, not an archive.
+        lone_continuation = len(members) == 1 and (
+            (scheme in {"part", "partx"} and numbers[0] > 1) or scheme in {"r", "z"}
+        )
+        if len(members) < 2 and not lone_continuation:
             singles.extend(rec for _, rec in members)
             continue
-        members.sort(key=lambda item: item[0])
-        incomplete = _set_incomplete(scheme, [ord_ for ord_, _ in members])
-        key = _volume_set_key(directory, base, scheme)
-        updated: list[WalkFile] = []
-        for index, (_, rec) in enumerate(members, start=1):
-            updated.append(replace(rec, volume_set=key, volume_ordinal=index))
+        missing = _missing_volumes(scheme, numbers)
+        missing += [f"dup:{n}" for n in sorted({n for n in numbers if numbers.count(n) > 1})]
+        set_dir, label = labels[bucket]
+        key = _volume_set_key(set_dir, label, scheme)
+        updated = [
+            replace(rec, volume_set=key, volume_ordinal=index)
+            for index, (_, rec) in enumerate(members, start=1)
+        ]
         groups.append(
             ArchiveGroup(
                 volume_set=key,
                 files=tuple(updated),
                 format=updated[0].format,
-                missing_volume=incomplete,
+                missing_volume=bool(missing),
+                missing=tuple(missing),
             )
         )
         annotated.extend(updated)
@@ -383,7 +523,13 @@ def classify_file(root: str, abs_path: str, size: int, mtime_ns: int) -> WalkFil
     if name.lower().endswith(".tar"):
         ext = ".tar"
     fmt = sniff_format(abs_path, extension=ext)
-    return WalkFile(rel, size, mtime_ns, SourceFileKind.archive, fmt)
+    volume = None
+    if fmt in {"rar4", "rar5"} and "part" in name.lower():
+        try:
+            volume = rar_volume_flag(_read_magic(abs_path, 64, 0))
+        except OSError:
+            volume = None
+    return WalkFile(rel, size, mtime_ns, SourceFileKind.archive, fmt, rar_volume=volume)
 
 
 def walk_tree(
@@ -486,6 +632,20 @@ def _exec_chunked(
         conn.execute(statement, list(rows[index : index + size]))
 
 
+def _group_notes(group: ArchiveGroup, merged: Sequence[int] = ()) -> str | None:
+    """containers.notes for a freshly seeded / reset archive container (the sweep overwrites it
+    when it finishes the container). Documents the volume set: the volume count, which volumes
+    are missing, and the containers that were catalogued alone before the set was resolved."""
+    if group.volume_set is None:
+        return None
+    doc: dict = {"volume_set": group.volume_set, "volumes": len(group.files)}
+    if group.missing:
+        doc["missing_volumes"] = list(group.missing)
+    if merged:
+        doc["merged_containers"] = sorted(merged)
+    return json.dumps(doc, separators=(",", ":"))
+
+
 def _reset_container(
     conn: Connection,
     container_id: int,
@@ -494,8 +654,12 @@ def _reset_container(
     failure: str | None,
     source_file_id: int | None,
     fmt: str | None,
+    notes: str | None = None,
 ) -> None:
-    conn.execute(text("DELETE FROM occurrences WHERE container_id = :cid"), {"cid": container_id})
+    from forge.sweep import purge_outputs  # lazy: sweep pulls in the engine
+
+    # occurrences and any nested child containers a previous attempt wrote
+    purge_outputs(conn, container_id)
     conn.execute(
         text(
             """
@@ -508,7 +672,11 @@ def _reset_container(
                 claimed_by = NULL,
                 claimed_at = NULL,
                 members = 0,
-                bytes_read = 0
+                bytes_read = 0,
+                source_bytes = NULL,
+                finished_at = NULL,
+                superseded_by_id = NULL,
+                notes = :notes
             WHERE id = :cid
             """
         ),
@@ -518,6 +686,36 @@ def _reset_container(
             "failure": failure,
             "sid": source_file_id,
             "fmt": fmt,
+            "notes": notes,
+        },
+    )
+
+
+def _supersede_container(conn: Connection, container_id: int, by_id: int) -> None:
+    """Retire a container whose only volumes now belong to the set container ``by_id``.
+
+    Kept (packs and decisions may reference it) but ``done`` with nothing in it, so no count,
+    unit or report sees the volume twice. Its occurrences and nested children are removed."""
+    from forge.sweep import purge_outputs
+
+    purge_outputs(conn, container_id)
+    conn.execute(
+        text(
+            """
+            UPDATE containers SET
+                status = 'done', failure_reason = NULL, members = 0, bytes_read = 0,
+                source_bytes = NULL, claimed_by = NULL, claimed_at = NULL,
+                finished_at = now(), superseded_by_id = :by,
+                notes = :notes
+            WHERE id = :cid
+            """
+        ),
+        {
+            "cid": container_id,
+            "by": by_id,
+            "notes": json.dumps(
+                {"superseded_by": by_id, "reason": "volume_set_member"}, separators=(",", ":")
+            ),
         },
     )
 
@@ -554,19 +752,21 @@ def _insert_container(
     status: str,
     failure: str | None,
     file_ids: Sequence[int],
+    notes: str | None = None,
 ) -> int:
     container_id = conn.execute(
         text(
             """
             INSERT INTO containers (
-                source_file_id, kind, format, depth, status, failure_reason
+                source_file_id, kind, format, depth, status, failure_reason, notes
             ) VALUES (
                 :sid,
                 CAST(:kind AS container_kind),
                 :fmt,
                 :depth,
                 CAST(:status AS container_status),
-                CAST(:failure AS failure_reason)
+                CAST(:failure AS failure_reason),
+                :notes
             )
             RETURNING id
             """
@@ -578,6 +778,7 @@ def _insert_container(
             "depth": depth,
             "status": status,
             "failure": failure,
+            "notes": notes,
         },
     ).scalar_one()
     _replace_container_files(conn, container_id, file_ids)
@@ -644,7 +845,17 @@ def _sync_archive_groups(
             current_pairs = [(int(sid), int(ord_)) for sid, ord_ in current]
             membership_same = current_pairs == expected
             if membership_same and not any_changed:
-                continue
+                if not group.missing_volume:
+                    continue
+                state = conn.execute(
+                    text("SELECT status::text, failure_reason::text FROM containers WHERE id = :c"),
+                    {"c": cid},
+                ).one()
+                if tuple(state) == (
+                    ContainerStatus.failed.value,
+                    FailureReason.missing_volume.value,
+                ):
+                    continue  # already typed; a lone continuation read before is re-typed below
             if not membership_same:
                 _replace_container_files(conn, cid, file_ids)
             _reset_container(
@@ -654,6 +865,7 @@ def _sync_archive_groups(
                 failure=failure,
                 source_file_id=first_id,
                 fmt=group.format,
+                notes=_group_notes(group),
             )
             seeded += 1
             continue
@@ -667,11 +879,24 @@ def _sync_archive_groups(
                 status=status,
                 failure=failure,
                 file_ids=file_ids,
+                notes=_group_notes(group),
             )
             seeded += 1
             continue
-        keep = min(existing)
-        extras = [cid for cid in existing if cid != keep]
+        # Several containers claim volumes of this set (each volume was catalogued alone, or the
+        # set was grouped differently): the set container is the one that owns volume 1.
+        owner = {
+            int(cid): sid
+            for cid, sid in conn.execute(
+                text(
+                    "SELECT id, source_file_id FROM containers "
+                    "WHERE id = ANY(CAST(:ids AS bigint[]))"
+                ),
+                {"ids": sorted(existing)},
+            )
+        }
+        keep = next((cid for cid in sorted(existing) if owner.get(cid) == first_id), min(existing))
+        extras = [cid for cid in sorted(existing) if cid != keep]
         _replace_container_files(conn, keep, file_ids)
         _reset_container(
             conn,
@@ -680,9 +905,9 @@ def _sync_archive_groups(
             failure=failure,
             source_file_id=first_id,
             fmt=group.format,
+            notes=_group_notes(group, extras),
         )
         for extra in extras:
-            conn.execute(text("DELETE FROM occurrences WHERE container_id = :cid"), {"cid": extra})
             conn.execute(
                 text(
                     """
@@ -692,16 +917,25 @@ def _sync_archive_groups(
                 ),
                 {"cid": extra, "ids": file_ids},
             )
-            leftover = conn.execute(
-                text("SELECT 1 FROM container_files WHERE container_id = :cid LIMIT 1"),
+            rest = conn.execute(
+                text(
+                    "SELECT source_file_id FROM container_files WHERE container_id = :cid "
+                    "ORDER BY ordinal"
+                ),
                 {"cid": extra},
-            ).first()
-            packed = conn.execute(
-                text("SELECT 1 FROM pack_containers WHERE container_id = :cid LIMIT 1"),
-                {"cid": extra},
-            ).first()
-            if leftover is None and packed is None:
-                conn.execute(text("DELETE FROM containers WHERE id = :cid"), {"cid": extra})
+            ).all()
+            if rest:
+                # It also held volumes outside this set: re-read what is left of it.
+                _reset_container(
+                    conn,
+                    extra,
+                    status=ContainerStatus.pending.value,
+                    failure=None,
+                    source_file_id=int(rest[0][0]),
+                    fmt=None,
+                )
+            else:
+                _supersede_container(conn, extra, keep)
         seeded += 1
     return seeded
 
@@ -897,6 +1131,20 @@ def persist_walk(
                 """
             ),
             {"sid": sweep_id},
+        )
+
+        # volume_set / format follow the grouping rules, which can change without the file changing
+        conn.execute(
+            text(
+                """
+                UPDATE source_files s
+                SET volume_set = w.volume_set, format = w.format
+                FROM walk_stage w
+                WHERE s.path = w.path
+                  AND (s.volume_set IS DISTINCT FROM w.volume_set
+                       OR s.format IS DISTINCT FROM w.format)
+                """
+            )
         )
 
         new_rows = conn.execute(
