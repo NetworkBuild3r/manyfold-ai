@@ -29,8 +29,13 @@ module DuplicateTriage
       nested
       creator_a
       creator_b
+      lossless
+      contained_side
+      container_side
+      contained_files_all_images
       fingerprint
     ].freeze
+    IMAGE_EXTENSIONS = %w[.jpg .jpeg .png .webp .gif].freeze
 
     def self.build(model_a, model_b, files: nil)
       low, high = [model_a, model_b].minmax_by(&:id)
@@ -118,6 +123,31 @@ module DuplicateTriage
       Ancestry.nested?(@model_a, @model_b)
     end
     alias_method :nested?, :nested
+
+    # Side with fewer bytes (tie → a). Every one of its files exists byte-identical
+    # in the other side when `lossless` is true: merging loses no file.
+    def contained_side
+      (total_bytes_a <= total_bytes_b) ? "a" : "b"
+    end
+
+    def container_side
+      (contained_side == "a") ? "b" : "a"
+    end
+
+    def lossless
+      smaller_total = (contained_side == "a") ? total_bytes_a : total_bytes_b
+      return false if smaller_total.zero?
+
+      rows = (contained_side == "a") ? @rows_a : @rows_b
+      digest_set(rows).any? && unique_digest_set(rows).empty?
+    end
+    alias_method :lossless?, :lossless
+
+    # True when the contained side holds nothing but images (a promo-image stub next to the real pack).
+    def contained_files_all_images
+      rows = (contained_side == "a") ? @rows_a : @rows_b
+      rows.any? && rows.all? { |row| IMAGE_EXTENSIONS.include?(File.extname(row.filename).downcase) }
+    end
 
     def fingerprint
       Digest::SHA256.hexdigest(fingerprint_payload)
