@@ -1,0 +1,155 @@
+# Library Forge — quality on k8, amd64 image (arm64 opt-in) + Trivy on k8-build.
+# Never GitHub-hosted runners (github-actions-ci.mdc).
+name: forge
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "forge/**"
+      - ".github/workflows/forge.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "forge/**"
+      - ".github/workflows/forge.yml"
+  workflow_dispatch:
+    inputs:
+      arm64:
+        description: "Also build linux/arm64 (QEMU; heavy — only for the Spark worker)"
+        type: boolean
+        default: false
+
+concurrency:
+  group: forge-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    runs-on: k8
+    timeout-minutes: 40
+    permissions:
+      contents: read
+    # k8 ARC has no Docker (containerMode unset, no DinD — see
+    # home_k3/apps/arc-runner-set-manyfold/values/k8.yaml), so GitHub
+    # `services:` cannot start a Postgres sidecar here. Manyfold's own
+    # .github/workflows/ci.yml uses the same postgres:16 / user / db
+    # shape on ubuntu-latest; we install that server in-job instead.
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install PostgreSQL
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y postgresql postgresql-contrib
+          ver="$(pg_lsclusters --no-header | awk '{print $1; exit}')"
+          sudo pg_ctlcluster "$ver" main start || true
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -c "DO \$\$ BEGIN CREATE USER forge WITH PASSWORD 'forge'; EXCEPTION WHEN duplicate_object THEN NULL; END \$\$;"
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -c "ALTER USER forge WITH PASSWORD 'forge';"
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -c "SELECT 1 FROM pg_database WHERE datname = 'forge_test'" | grep -q 1 \
+            || sudo -u postgres createdb -O forge forge_test
+
+      - name: Install package + test extras
+        working-directory: forge
+        run: pip install -e ".[dev]"
+
+      - name: Ruff
+        working-directory: forge
+        run: |
+          ruff check .
+          ruff format --check .
+
+      # Engine + sweep tests need libarchive.so.13 and the pinned static 7zz (same sha as
+      # forge/Dockerfile). FORGE_REQUIRE_NATIVE=1 makes a missing lib fail instead of skip.
+      - name: Engine native deps
+        env:
+          SEVENZIP_URL: https://www.7-zip.org/a/7z2603-linux-x64.tar.xz
+          SEVENZIP_SHA256: dc99eff5008f1ab79bd7084c68513701547a808a89502bf4133683535ab3c695
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends libarchive13t64 xz-utils
+          curl -fsSL "$SEVENZIP_URL" -o "$RUNNER_TEMP/7z.tar.xz"
+          echo "$SEVENZIP_SHA256  $RUNNER_TEMP/7z.tar.xz" | sha256sum -c -
+          tar -xJf "$RUNNER_TEMP/7z.tar.xz" -C "$RUNNER_TEMP" 7zzs
+          echo "FORGE_7ZZ=$RUNNER_TEMP/7zzs" >> "$GITHUB_ENV"
+          echo "FORGE_REQUIRE_NATIVE=1" >> "$GITHUB_ENV"
+
+      - name: Pytest
+        working-directory: forge
+        env:
+          FORGE_TEST_DB_URL: postgresql+psycopg://forge:forge@127.0.0.1:5432/forge_test
+          FORGE_DB_URL: postgresql+psycopg://forge:forge@127.0.0.1:5432/forge_test
+        run: pytest tests -v
+
+  build:
+    runs-on: k8-build
+    needs: quality
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v6
+
+      # amd64 only by default: concurrent QEMU arm64 builds wedged node k83 (I/O
+      # pressure ~90%). arm64 is opt-in via workflow_dispatch arm64=true.
+      - name: Set up QEMU / binfmt
+        if: ${{ inputs.arm64 }}
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: linux/amd64,linux/arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/networkbuild3r/library-forge
+          tags: |
+            type=raw,value=${{ github.sha }}
+            type=raw,value=main,enable=${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: ./forge
+          file: ./forge/Dockerfile
+          platforms: ${{ inputs.arm64 && 'linux/amd64,linux/arm64' || 'linux/amd64' }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # trivy-action@v0.32.0 install.sh (godownloader) exits 1 on ARC k8-build
+      # after "found version"; scan never runs. Scan via pinned Trivy image instead.
+      - name: Trivy (fail on CRITICAL fixable)
+        env:
+          IMAGE: ghcr.io/networkbuild3r/library-forge:${{ github.sha }}
+        run: |
+          docker pull "$IMAGE"
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            ghcr.io/aquasecurity/trivy:0.75.0 \
+            image \
+            --exit-code 1 \
+            --severity CRITICAL \
+            --ignore-unfixed \
+            --scanners vuln \
+            --pkg-types os,library \
+            "$IMAGE"
