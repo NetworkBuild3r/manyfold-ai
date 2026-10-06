@@ -144,12 +144,12 @@ RSpec.describe DuplicateTriage::LlmJudge, type: :duplicate_triage do
     end
 
     it "presents the second prompt with sides swapped" do
-      bodies = []
-      stub_request(:post, completions).with { |req|
-        bodies << JSON.parse(JSON.parse(req.body).dig("messages", 1, "content")[%r{<evidence>\n(.*)\n</evidence>}m, 1])
-        true
-      }.to_return(verdict_body(decision: "keep_separate"))
+      stub_request(:post, completions).to_return(verdict_body(decision: "keep_separate"))
       described_class.consensus(lossless_evidence)
+      bodies = WebMock::RequestRegistry.instance.requested_signatures.hash.keys.map do |signature|
+        content = JSON.parse(signature.body).dig("messages", 1, "content")
+        JSON.parse(content[%r{<evidence>\n(.*)\n</evidence>}m, 1])
+      end
       expect(bodies.map { |b| b["name_a"] }).to eq(%w[Alpha Beta])
       expect(bodies.map { |b| b["contained_side"] }).to eq(%w[a b])
       expect(bodies.last["total_bytes_a"]).to eq(90_000_000)
