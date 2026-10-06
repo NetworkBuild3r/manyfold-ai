@@ -129,4 +129,57 @@ RSpec.describe DuplicateTriage::LlmJudge, type: :duplicate_triage do
     expect(described_class.call(evidence).decision).to eq("keep_separate")
     expect(WebMock).to have_requested(:post, completions).twice
   end
+
+  describe ".consensus" do
+    def verdict_body(decision:, keeper: "a", confidence: 0.95)
+      body = valid_verdict("decision" => decision, "keeper" => keeper, "confidence" => confidence)
+      {status: 200, headers: {"Content-Type" => "application/json"},
+       body: {choices: [{message: {content: body.to_json}}]}.to_json}
+    end
+
+    let(:lossless_evidence) do
+      evidence.merge(
+        lossless: true, contained_side: "a", container_side: "b", contained_files_all_images: true
+      )
+    end
+
+    it "presents the second prompt with sides swapped" do
+      bodies = []
+      stub_request(:post, completions).with { |req|
+        bodies << JSON.parse(JSON.parse(req.body).dig("messages", 1, "content")[%r{<evidence>\n(.*)\n</evidence>}m, 1])
+        true
+      }.to_return(verdict_body(decision: "keep_separate"))
+      described_class.consensus(lossless_evidence)
+      expect(bodies.map { |b| b["name_a"] }).to eq(%w[Alpha Beta])
+      expect(bodies.map { |b| b["contained_side"] }).to eq(%w[a b])
+      expect(bodies.last["total_bytes_a"]).to eq(90_000_000)
+    end
+
+    it "agrees on merge and maps the swapped keeper back" do
+      stub_request(:post, completions).to_return(
+        verdict_body(decision: "merge", keeper: "b", confidence: 0.95)
+      ).then.to_return(verdict_body(decision: "merge", keeper: "a", confidence: 0.9))
+      result = described_class.consensus(lossless_evidence)
+      expect(result.decision).to eq("merge")
+      expect(result.keeper).to eq("b")
+      expect(result.confidence).to eq(0.9)
+      expect(result.error).to be_nil
+    end
+
+    it "turns an order flip into unsure" do
+      stub_request(:post, completions).to_return(verdict_body(decision: "merge"))
+        .then.to_return(verdict_body(decision: "keep_separate"))
+      result = described_class.consensus(lossless_evidence)
+      expect(result.decision).to eq("unsure")
+      expect(result.error).to eq("order_disagreement")
+    end
+
+    it "is unsure when either run errors" do
+      stub_request(:post, completions).to_return(verdict_body(decision: "merge"))
+        .then.to_return(status: 200, body: {choices: [{message: {content: "not json"}}]}.to_json)
+      result = described_class.consensus(lossless_evidence)
+      expect(result.decision).to eq("unsure")
+      expect(result.error).to be_present
+    end
+  end
 end

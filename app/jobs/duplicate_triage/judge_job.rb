@@ -15,7 +15,9 @@ module DuplicateTriage
     #   conc 8: 367.3 pairs/h  p50 66s  p95 84s  (0 errors)
     # Chosen 8: best throughput, p95 still under the 180s read timeout, one
     # Sidekiq slot so the `low` digest drain is not starved (GR-004).
-    # 10k pairs @ 367/h ≈ 27h — REQ-007 12h is not met; the per-call floor
+    # v2 prompt: each pair is judged in both a/b orders (LlmJudge.consensus) = 2 calls per pair.
+    # Qwen3.6-35B-A3B on the Spark measured 2026-10-06: ~5 s median per call, 8 in flight.
+    # (v1 numbers above were Qwen3.8-Flash-Next.) 10k pairs @ 367/h ≈ 27h — REQ-007 12h is not met; the per-call floor
     # is ~1 minute. Override with DUPLICATE_TRIAGE_LLM_CONCURRENCY to retune.
     DEFAULT_CONCURRENCY = 8
     BATCH_PAUSE_SECONDS = 2
@@ -85,7 +87,7 @@ module DuplicateTriage
       lock = Mutex.new
       threads = batch.each_with_index.map do |item, offset|
         Thread.new do
-          judged[offset] = [item, LlmJudge.call(item.evidence.to_prompt_h)]
+          judged[offset] = [item, LlmJudge.consensus(item.evidence.to_prompt_h)]
         rescue => error
           lock.synchronize { failures << error }
         end

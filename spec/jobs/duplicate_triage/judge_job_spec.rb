@@ -106,9 +106,10 @@ RSpec.describe DuplicateTriage::JudgeJob, type: :duplicate_triage do
     isolated_pair("Idem", shared_size: 100)
     stub_ok
     described_class.perform_now
-    expect(WebMock).to have_requested(:post, completions).once
+    # one request per presentation order (a/b, then swapped)
+    expect(WebMock).to have_requested(:post, completions).twice
     described_class.perform_now
-    expect(WebMock).to have_requested(:post, completions).once
+    expect(WebMock).to have_requested(:post, completions).twice
   end
 
   it "skips a pair that already has a human verdict for this fingerprint" do
@@ -137,7 +138,7 @@ RSpec.describe DuplicateTriage::JudgeJob, type: :duplicate_triage do
     reverse_containment_pairs
     stub_judge_calls
     order = []
-    allow(DuplicateTriage::LlmJudge).to receive(:call) do |payload|
+    allow(DuplicateTriage::LlmJudge).to receive(:consensus) do |payload|
       order << containment(payload)
       keep_separate_result
     end
@@ -156,7 +157,7 @@ RSpec.describe DuplicateTriage::JudgeJob, type: :duplicate_triage do
     lock = Mutex.new
     high_finish = []
     low_start = nil
-    allow(DuplicateTriage::LlmJudge).to receive(:call) do |payload|
+    allow(DuplicateTriage::LlmJudge).to receive(:consensus) do |payload|
       value = containment(payload)
       if value >= 0.01
         sleep 0.05

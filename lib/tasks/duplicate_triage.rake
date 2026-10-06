@@ -29,6 +29,22 @@ namespace :manyfold do
       puts "enqueued DuplicateTriage::JudgeJob limit=#{limit.inspect}" # rubocop:disable Rails/Output -- operator enqueue
     end
 
+    desc "Run the LLM judge inline, no Sidekiq (workers may be scaled to 0). LIMIT=N optional"
+    task :judge_now, [:limit] => :environment do |_task, args|
+      limit = args[:limit].presence
+      DuplicateTriage::JudgeJob.perform_now(*(limit ? [Integer(limit)] : []))
+      puts "judged: #{DuplicatePairVerdict.where(source: "llm").group(:decision).count.inspect}" # rubocop:disable Rails/Output -- operator summary
+    end
+
+    desc "Auto-apply lossless LLM-consensus merges (no human gate). Dry run unless APPLY=1. LIMIT=50"
+    task apply: :environment do
+      apply = ENV.fetch("APPLY", "0").match?(/\A(1|true|yes)\z/i)
+      limit = Integer(ENV.fetch("LIMIT", DuplicateTriage::AutoApply::DEFAULT_LIMIT.to_s))
+      logger = ActiveSupport::BroadcastLogger.new(Rails.logger, Logger.new($stdout))
+      summary = DuplicateTriage::AutoApply.call(limit: limit, dry_run: !apply, logger: logger)
+      puts "AutoApply #{summary.to_h.inspect}" # rubocop:disable Rails/Output -- operator summary
+    end
+
     desc "Print a stratified calibration sample. INIT-031/SPEC-004"
     task :sample, [:n] => :environment do |_task, args|
       limit = Integer(args[:n].presence || 20)
