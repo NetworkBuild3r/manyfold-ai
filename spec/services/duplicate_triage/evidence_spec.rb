@@ -74,6 +74,35 @@ RSpec.describe DuplicateTriage::Evidence, type: :duplicate_triage do
       expect { task.execute }.to output(/"byte_containment"[\s\S]*"fingerprint"/).to_stdout
     }.not_to change(DuplicatePairVerdict, :count)
   end
+
+  describe "containment facts" do
+    it "is not lossless when both sides have unique files" do
+      expect(evidence.lossless).to be(false)
+      expect(evidence.contained_side).to eq("a")
+      expect(evidence.container_side).to eq("b")
+    end
+
+    it "is lossless when every file of the smaller side exists in the larger" do
+      stub = create(:model, library: library, path: "Pack/Stub", name: "Stub")
+      digested_file(stub, filename: "common.jpg", digest: "aaa", size: 1000)
+      contained = described_class.build(alpha, stub)
+      expect(contained.lossless).to be(true)
+      expect(contained.contained_side).to eq("b")
+      expect(contained.container_side).to eq("a")
+      expect(contained.contained_files_all_images).to be(true)
+    end
+
+    it "is not lossless when the smaller side has a file the larger lacks" do
+      stub = create(:model, library: library, path: "Pack/Stub", name: "Stub")
+      digested_file(stub, filename: "common.jpg", digest: "aaa", size: 500)
+      digested_file(stub, filename: "only_here.jpg", digest: "zzz", size: 10)
+      expect(described_class.build(alpha, stub).lossless).to be(false)
+    end
+
+    it "does not flag shared meshes as image-only" do
+      expect(evidence.contained_files_all_images).to be(false)
+    end
+  end
 end
 
 # Hand-computed (AC6 / ADR Addendum A-1):
@@ -117,34 +146,5 @@ RSpec.describe DuplicateTriage::Evidence, "byte-weighted overlap (AC6)", type: :
     expect(ev.total_bytes_a).to eq(0)
     expect(ev.total_bytes_b).to eq(0)
     expect(ev.byte_containment).to eq(0.0)
-  end
-
-  describe "containment facts" do
-    it "is not lossless when both sides have unique files" do
-      expect(evidence.lossless).to be(false)
-      expect(evidence.contained_side).to eq("a")
-      expect(evidence.container_side).to eq("b")
-    end
-
-    it "is lossless when every file of the smaller side exists in the larger" do
-      stub = create(:model, library: library, path: "Pack/Stub", name: "Stub")
-      digested_file(stub, filename: "common.jpg", digest: "aaa", size: 1000)
-      contained = described_class.build(alpha, stub)
-      expect(contained.lossless).to be(true)
-      expect(contained.contained_side).to eq("b")
-      expect(contained.container_side).to eq("a")
-      expect(contained.contained_files_all_images).to be(true)
-    end
-
-    it "is not lossless when the smaller side has a file the larger lacks" do
-      stub = create(:model, library: library, path: "Pack/Stub", name: "Stub")
-      digested_file(stub, filename: "common.jpg", digest: "aaa", size: 500)
-      digested_file(stub, filename: "only_here.jpg", digest: "zzz", size: 10)
-      expect(described_class.build(alpha, stub).lossless).to be(false)
-    end
-
-    it "does not flag shared meshes as image-only" do
-      expect(evidence.contained_files_all_images).to be(false)
-    end
   end
 end
