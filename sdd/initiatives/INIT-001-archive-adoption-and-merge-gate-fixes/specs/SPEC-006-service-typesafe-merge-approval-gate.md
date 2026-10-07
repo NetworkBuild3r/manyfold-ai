@@ -7,7 +7,7 @@ spec_id: SPEC-006
 initiative_id: INIT-001
 title: Require confidence and consistent answers for TypeSafe merge approval; route curator outcomes to human review
 domain: service
-status: needs_disambiguation
+status: complete
 primary_prompt: .claude/agents/principal-backend-developer/AGENT.md   # agents dir absent — described persona (disclosed)
 supplement_prompts: []
 model: sonnet
@@ -43,27 +43,27 @@ and tests in `tests/test_typesafe_merge.py`.
 
 ## Acceptance Criteria
 
-- [ ] ac-1 (MAJ-4): A merge is approved only when **all** of the following hold:
+- [x] ac-1 (MAJ-4): A merge is approved only when **all** of the following hold:
   - the routed outcome is `merge`;
   - `link_state.confidence ≥ curate.min_merge_confidence`;
   - `same_printable_product.noul ≥ 0.5`;
   - `character_or_franchise_only.noul < 0.5`.
 
-  — covered: no
-- [ ] ac-2 (MAJ-4): A `merge` outcome that fails any of those conditions returns `decision="merge"`,
+  — covered: yes
+- [x] ac-2 (MAJ-4): A `merge` outcome that fails any of those conditions returns `decision="merge"`,
   `approved=False`. Its reason is tagged with the failing condition, e.g. `(low confidence)` or
-  `(contradicts: franchise_only)`. — covered: no
-- [ ] ac-3 (MAJ-5): The curator outcome returns `decision="merge"`, `approved=False`, reason `… (curator)`.
+  `(contradicts: franchise_only)`. — covered: yes
+- [x] ac-3 (MAJ-5): The curator outcome returns `decision="merge"`, `approved=False`, reason `… (curator)`.
   For non-STRONG signals, `classify_hitl_band` yields `UNCERTAIN`; it appears as a `MERGE?` line in the run
-  log; and it is never auto-queued under any `MERGE_HITL` mode. — covered: no
-- [ ] ac-4: `merge-summary-*.json` adds a `typesafe_curator` count, and `merge_suggested` includes curator
-  plans. — covered: no
-- [ ] ac-5 (SUGG-1): The `min_merge_confidence` parameter is actually used; the outcome is computed once
-  and returned; the no-op `decided.error = base.error` is removed. — covered: no
-- [ ] ac-6: The README "Same character ≠ same model" paragraph states the new approval rule. — covered: no
-- [ ] ac-7: The existing tests in `tests/test_typesafe_merge.py`, `test_decide_merge.py`,
+  log; and it is never auto-queued under any `MERGE_HITL` mode. — covered: yes
+- [x] ac-4: `merge-summary-*.json` adds a `typesafe_curator` count, and `merge_suggested` includes curator
+  plans. — covered: yes
+- [x] ac-5 (SUGG-1): The `min_merge_confidence` parameter is actually used; the outcome is computed once
+  and returned; the no-op `decided.error = base.error` is removed. — covered: yes
+- [x] ac-6: The README "Same character ≠ same model" paragraph states the new approval rule. — covered: yes
+- [x] ac-7: The existing tests in `tests/test_typesafe_merge.py`, `test_decide_merge.py`,
   `test_merge_candidates.py` and `test_merge_hitl.py` still pass, updated only where they asserted the old
-  approval rule. — covered: no
+  approval rule. — covered: yes
 
 ## Assumptions Ledger
 
@@ -71,8 +71,8 @@ and tests in `tests/test_typesafe_merge.py`.
 | ----- | ---- | -------------- | ---- | -------- |
 | aud-1 | Gate on confidence + consistency | Yes (owner, 2026-10-07) | clear | yes |
 | aud-2 | Curator → unapproved merge plan | Yes (owner, 2026-10-07) | clear | yes |
-| aud-3 | NOUL thresholds | 0.5 for both, as module constants (not config) | ambiguous | no |
-| aud-4 | Missing NOUL answer (key absent) | Treated as failing consistency, so not approved | ambiguous | no |
+| aud-3 | NOUL thresholds | 0.5 for both, as module constants (not config) | clear (owner, 2026-10-07) | yes |
+| aud-4 | Missing NOUL answer (key absent) | Treated as failing consistency, so not approved | clear (owner, 2026-10-07) | yes |
 
 ## Deliverables
 

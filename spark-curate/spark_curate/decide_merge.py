@@ -121,50 +121,71 @@ MERGE_TYPESAFE_QUESTIONS = {
 
 
 def route_link_score(score_value: float) -> str:
-    """Nearest Score level is the outcome. No extra confidence threshold."""
+    """Nearest Score level is the outcome; approval gates live in apply_typesafe_merge_answers."""
     level = min(max(int(score_value + 0.5), 0), 2)
     return MERGE_TYPESAFE_OUTCOME[level]
+
+
+# Jev's two NOUL checks must agree with a merge before it is approved (INIT-001/SPEC-006).
+SAME_PRODUCT_MIN_NOUL = 0.5
+CHARACTER_ONLY_MAX_NOUL = 0.5
+
+
+def _answer_float(answer: Any, key: str) -> float | None:
+    """Numeric field from one TypeSafe answer; None when missing or unparsable."""
+    if not isinstance(answer, dict) or answer.get(key) is None:
+        return None
+    try:
+        return float(answer[key])
+    except (TypeError, ValueError):
+        return None
+
+
+def _fmt(value: float | None) -> str:
+    return "missing" if value is None else f"{value:.2f}"
 
 
 def apply_typesafe_merge_answers(
     answers: dict[str, Any],
     *,
     min_merge_confidence: float,
-) -> tuple[str, float, str, str, bool]:
-    """Map TypeSafe answers to decision, confidence, target, reason, approved."""
-    del min_merge_confidence  # cookbook: round the Score; HITL still gates queueing
+) -> tuple[str, float, str, str, bool, str]:
+    """
+    Map TypeSafe answers to decision, confidence, target, reason, approved, outcome.
+
+    A merge is approved only when the Score rounds to merge, link confidence is at
+    least min_merge_confidence, and both NOUL checks agree. A missing answer fails
+    closed. Curator ("a human should decide") is an unapproved merge plan so it
+    reaches the human review log (INIT-001/SPEC-006).
+    """
     link = answers.get("link_state") or {}
-    try:
-        score_value = float(link.get("score") or 0)
-    except (TypeError, ValueError):
-        score_value = 0.0
-    try:
-        link_conf = float(link.get("confidence") or 0)
-    except (TypeError, ValueError):
-        link_conf = 0.0
+    score_value = _answer_float(link, "score") or 0.0
+    link_conf = _answer_float(link, "confidence") or 0.0
     outcome = route_link_score(score_value)
-    same = answers.get("same_printable_product") or {}
-    only_char = answers.get("character_or_franchise_only") or {}
-    try:
-        same_noul = float(same.get("noul") or 0)
-    except (TypeError, ValueError):
-        same_noul = 0.0
-    try:
-        char_noul = float(only_char.get("noul") or 0)
-    except (TypeError, ValueError):
-        char_noul = 0.0
+    same_noul = _answer_float(answers.get("same_printable_product"), "noul")
+    char_noul = _answer_float(answers.get("character_or_franchise_only"), "noul")
     target = str((answers.get("keep_target") or {}).get("choice") or "a").lower().strip()
     if target not in {"a", "b"}:
         target = "a"
     reason = (
         f"typesafe {outcome} score={score_value:.2f} conf={link_conf:.2f} "
-        f"same_product={same_noul:.2f} character_only={char_noul:.2f}"
+        f"same_product={_fmt(same_noul)} character_only={_fmt(char_noul)}"
     )
-    if outcome == "merge":
-        return "merge", link_conf, target, reason, True
     if outcome == "curator":
-        return "keep_separate", link_conf, target, reason + " (curator)", False
-    return "keep_separate", link_conf, target, reason, False
+        return "merge", link_conf, target, reason + " (curator)", False, outcome
+    if outcome != "merge":
+        return "keep_separate", link_conf, target, reason, False, outcome
+
+    failed: list[str] = []
+    if link_conf < min_merge_confidence:
+        failed.append("low confidence")
+    if same_noul is None or same_noul < SAME_PRODUCT_MIN_NOUL:
+        failed.append("contradicts: same_product")
+    if char_noul is None or char_noul >= CHARACTER_ONLY_MAX_NOUL:
+        failed.append("contradicts: character_only")
+    if failed:
+        return "merge", link_conf, target, f"{reason} ({'; '.join(failed)})", False, outcome
+    return "merge", link_conf, target, reason, True, outcome
 
 
 @dataclass
@@ -316,15 +337,11 @@ def _record_typesafe(
     *,
     allow_approve: bool,
 ) -> MergeDecision:
-    link = answers.get("link_state") or {}
-    try:
-        base.typesafe_score = float(link.get("score"))
-    except (TypeError, ValueError):
-        base.typesafe_score = None
-    decision, confidence, target, reason, approved = apply_typesafe_merge_answers(
+    base.typesafe_score = _answer_float(answers.get("link_state"), "score")
+    decision, confidence, target, reason, approved, outcome = apply_typesafe_merge_answers(
         answers, min_merge_confidence=curate.min_merge_confidence
     )
-    base.typesafe_outcome = route_link_score(base.typesafe_score or 0)
+    base.typesafe_outcome = outcome
     if not _is_strong_structural(signals):
         decision, confidence, reason = _weak_overlap_guard(
             decision, confidence, reason, signals
@@ -436,7 +453,6 @@ def decide_merge_pair(
             base.error = f"typesafe failed: {type(e).__name__}: {str(e)[:180]}"
             if strong:
                 decided = _strong_plan_pending_review(base, cand)
-                decided.error = base.error
                 decided.reason = "STRONG structural duplicate; TypeSafe review failed, not approved"
                 return decided
 

@@ -23,7 +23,7 @@ It only needs:
 | `organize` (default) | Vision rename/move folders into Category/Model |
 | `merge` | Find duplicate packs (`Foo` / `Foo (2)`, shared digests) and queue merges |
 
-**Same character ≠ same model.** Two Batmans stay separate unless structural signals and a Jev review of the preview comparison agree they are the *same product*. STRONG file overlap is a plan only until that review approves it.
+**Same character ≠ same model.** Two Batmans stay separate unless structural signals and a Jev review of the preview comparison agree they are the *same product*. STRONG file overlap is a plan only until that review approves it. Jev approves a merge only when its score rounds to "same product", its confidence is at least `min_merge_confidence` (0.80), and its same-product / franchise-only answers agree; anything else, including "a human should decide", stays an unapproved plan in the review log.
 
 ### Merge dry-run / apply
 
