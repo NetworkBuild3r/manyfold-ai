@@ -1,13 +1,13 @@
 # Initiative: Archive image adoption hardening + spark-curate merge-gate fixes
 
 **Initiative ID:** INIT-001
-**Status:** planned
+**Status:** on_track
 **Slug:** INIT-001-archive-adoption-and-merge-gate-fixes
 **Discipline Profile:** `software`
 **Created:** 2026-10-07
 **Owner:** Brian Nelson
 **Ticket:** None (`branch_naming.ticket_system: none`)
-**Branch:** `archive-adoption-and-merge-gate-fixes` (deliberately not a worktree — these fixes layer on uncommitted work-in-progress on `main` that a fresh worktree would not contain; commit that WIP to this branch before executing SPEC-001)
+**Branch:** `archive-adoption-and-merge-gate-fixes` (created 2026-10-07 from main with the WIP committed as 4e5a3e7b8; deliberately not a worktree)
 **Target Completion:** 2026-10-14
 **Source:** `sdd/reviews/main-uncommitted/code-review-findings-2026-10-07.md` (CRIT-1, MAJ-1 … MAJ-7)
 

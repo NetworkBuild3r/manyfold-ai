@@ -7,7 +7,7 @@ spec_id: SPEC-005
 initiative_id: INIT-001
 title: Delete confirmation and outcome messaging for archive-adopted images
 domain: frontend
-status: ready
+status: complete
 primary_prompt: .claude/agents/principal-frontend-developer/AGENT.md   # agents dir absent — described persona (disclosed)
 supplement_prompts: [.claude/agents/ux-designer/AGENT.md]
 model: sonnet
@@ -35,21 +35,21 @@ success flash text, and i18n keys.
 
 ## Acceptance Criteria
 
-- [ ] ac-1: For a file with `adopted_from_entries` in a writable archive, the confirm text names the
-  archive(s), for example "This also removes shot.png from Pack.zip. This cannot be undone." — covered: no
-- [ ] ac-2: For an unwritable source (per SPEC-004 ac-4), the confirm text says the image will be hidden but
-  stays inside the archive. — covered: no
-- [ ] ac-3: Files without adopted entries keep today's confirm text unchanged. — covered: no
-- [ ] ac-4: All new strings are i18n keys in `config/locales/en.yml`. `i18n-tasks` and `erb_lint` are clean.
-  — covered: no
+- [x] ac-1: For a file with `adopted_from_entries` in a writable archive, the confirm text names the
+  archive(s), for example "This also removes shot.png from Pack.zip. This cannot be undone." — covered: yes
+- [x] ac-2: For an unwritable source (per SPEC-004 ac-4), the confirm text says the image will be hidden but
+  stays inside the archive. — covered: yes
+- [x] ac-3: Files without adopted entries keep today's confirm text unchanged. — covered: yes
+- [x] ac-4: All new strings are i18n keys in `config/locales/en.yml`. `i18n-tasks` and `erb_lint` are clean.
+  — covered: yes
 
 ## Deliverables
 
-- [ ] The model-file delete partial(s) under `app/views/` (exact path located at execution)
-- [ ] `config/locales/en.yml` (new keys)
-- [ ] An optional helper (e.g. `ModelFilesHelper#delete_confirmation_for(file)`) if logic would otherwise
+- [x] The model-file delete partial(s) under `app/views/` (exact path located at execution)
+- [x] `config/locales/en.yml` (new keys)
+- [x] An optional helper (e.g. `ModelFilesHelper#delete_confirmation_for(file)`) if logic would otherwise
   sit in the view
-- [ ] Tests: request or view spec for the three confirm variants
+- [x] Tests: request or view spec for the three confirm variants
 
 ## Security
 

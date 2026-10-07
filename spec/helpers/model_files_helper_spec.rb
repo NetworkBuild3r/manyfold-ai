@@ -41,4 +41,43 @@ RSpec.describe ModelFilesHelper do
       expect(url).to match(/lycheeslicer:\/\/open\/http%3A%2F%2Ftest.host%2Fmodels%2F#{file.model.to_param}%2Fmodel_files%2Fsigned%2Fey[0-9a-zA-Z-]+%2F#{file.filename}/)
     end
   end
+
+  describe "#delete_confirmation_for" do
+    let(:model) { create(:model) }
+    let(:image) { create(:model_file, model: model, filename: "shot.png") }
+    let(:base) { I18n.t("model_files.destroy.confirm") }
+
+    def source(filename, writable:)
+      archive = create(:model_file, model: model, filename: filename)
+      archive.archive_entries.create!(pathname: "pics/shot.png", kind: "image", adopted_model_file: image)
+      allow(Archive::RemoveEntries).to receive(:writable?).with(archive).and_return(writable)
+      archive
+    end
+
+    it "keeps the plain confirmation for files not adopted from an archive" do
+      expect(helper.delete_confirmation_for(image)).to eq(base)
+    end
+
+    it "names the archives the image will also be removed from" do
+      source("Pack.zip", writable: true)
+
+      expect(helper.delete_confirmation_for(image))
+        .to eq("#{base} This also removes shot.png from Pack.zip. This cannot be undone.")
+    end
+
+    it "says the image stays inside archives that cannot be rewritten" do
+      source("Pack.rar", writable: false)
+
+      expect(helper.delete_confirmation_for(image))
+        .to eq("#{base} Pack.rar cannot be rewritten, so shot.png will be hidden here but stays inside it.")
+    end
+
+    it "checks each archive once per render" do
+      source("Pack.zip", writable: true)
+
+      2.times { helper.delete_confirmation_for(image) }
+
+      expect(Archive::RemoveEntries).to have_received(:writable?).once
+    end
+  end
 end

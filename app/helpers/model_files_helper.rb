@@ -1,4 +1,27 @@
 module ModelFilesHelper
+  # Delete confirmation that names any archive the image will also be removed
+  # from, or stay inside if that archive cannot be rewritten (INIT-001/SPEC-005).
+  def delete_confirmation_for(file)
+    message = [t("model_files.destroy.confirm")]
+    archives = file.adopted_source_archives.to_a
+    return message.first if archives.empty?
+
+    writable, kept = archives.partition { |archive| archive_writable?(archive) }
+    if writable.any?
+      message << t("model_files.destroy.confirm_archive_remove", file: file.filename, archives: writable.map(&:filename).to_sentence)
+    end
+    if kept.any?
+      message << t("model_files.destroy.confirm_archive_keep", file: file.filename, archives: kept.map(&:filename).to_sentence)
+    end
+    message.join(" ")
+  end
+
+  # Memoized per render: a model page can list many images from one archive.
+  def archive_writable?(archive)
+    cache = (@archive_writable ||= {}) # rubocop:disable Rails/HelperInstanceVariable -- per-render memo
+    cache.fetch(archive.id) { cache[archive.id] = Archive::RemoveEntries.writable?(archive) }
+  end
+
   def app_links(file)
     supported_types = {
       bambu: [:threemf],
