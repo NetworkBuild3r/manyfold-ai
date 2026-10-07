@@ -49,6 +49,24 @@ RSpec.describe Scan::Model::CheckForProblemsJob do
         expect(model.reload.preview_file).to eq(image)
       end
     end
+
+    it "still runs the remaining detectors when preview backfill fails" do
+      MockDirectory.create(["broken/part.stl"]) do |path|
+        library = create(:library, path: path)
+        model = create(:model, library: library, path: "broken", preview_file: nil)
+        create(:model_file, model: model, filename: "part.stl")
+        allow(PreviewFilePicker).to receive(:new).and_raise(Errno::EIO)
+        allow(Problems::NoImage).to receive(:detect).and_call_original
+        allow(Problems::NoLicense).to receive(:detect).and_call_original
+        allow(Problems::MissingFile).to receive(:detect).and_call_original
+
+        described_class.perform_now(model.id)
+
+        expect(Problems::NoImage).to have_received(:detect)
+        expect(Problems::NoLicense).to have_received(:detect)
+        expect(Problems::MissingFile).to have_received(:detect)
+      end
+    end
   end
 
   context "when checking for missing 3d files" do

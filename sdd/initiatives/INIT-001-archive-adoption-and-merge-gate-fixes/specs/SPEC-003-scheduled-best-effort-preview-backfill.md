@@ -7,7 +7,7 @@ spec_id: SPEC-003
 initiative_id: INIT-001
 title: Best-effort, error-isolated preview backfill in CheckForProblems and HealMissingPreviews
 domain: scheduled
-status: ready
+status: complete
 primary_prompt: .claude/agents/principal-backend-developer/AGENT.md   # agents dir absent — described persona (disclosed)
 supplement_prompts: []
 model: sonnet
@@ -40,22 +40,22 @@ error:
 
 ## Understood
 
-- [ ] und-1: Preview backfill is best-effort. It must never stop problem detection or a heal batch.
+- [x] und-1: Preview backfill is best-effort. It must never stop problem detection or a heal batch.
 
 ## Acceptance Criteria
 
-- [ ] ac-1: `EnsurePreview#call` rescues `StandardError` after the three typed rescues, logs
-  `[EnsurePreview] model=<id> <class>: <message>`, and returns `nil`. — covered: no
-- [ ] ac-2: If `ensure_image_preview!` raises inside `CheckForProblemsJob`, every subsequent detector still
+- [x] ac-1: `EnsurePreview#call` rescues `StandardError` after the three typed rescues, logs
+  `[EnsurePreview] model=<id> <class>: <message>`, and returns `nil`. — covered: yes
+- [x] ac-2: If `ensure_image_preview!` raises inside `CheckForProblemsJob`, every subsequent detector still
   runs. A spec stubs it to raise and asserts that `Problems::NoImage` / `NoLicense` / `MissingFile` were
-  invoked. — covered: no
-- [ ] ac-3: `heal_nil_previews` continues past a model whose backfill raises. A spec with 3 models where the
-  2nd raises heals models 1 and 3, and the job returns the correct `healed` count. — covered: no
-- [ ] ac-4: The new archive-only branch in `heal_nil_previews` is tested: it heals once, counts once, and
-  calls `check_for_problems_later`. — covered: no
-- [ ] ac-5 (MIN-1): `best_archive_image` selects from `ArchiveEntry.adoptable`, excludes `preview_failed`
+  invoked. — covered: yes
+- [x] ac-3: `heal_nil_previews` continues past a model whose backfill raises. A spec with 3 models where the
+  2nd raises heals models 1 and 3, and the job returns the correct `healed` count. — covered: yes
+- [x] ac-4: The new archive-only branch in `heal_nil_previews` is tested: it heals once, counts once, and
+  calls `check_for_problems_later`. — covered: yes
+- [x] ac-5 (MIN-1): `best_archive_image` selects from `ArchiveEntry.adoptable`, excludes `preview_failed`
   and entries over `SiteSettings.max_file_extract_size`, and still prefers preview/cover/thumb names among
-  the eligible entries. — covered: no
+  the eligible entries. — covered: yes
 
 ## Assumptions Ledger
 
@@ -65,10 +65,10 @@ error:
 
 ## Deliverables
 
-- [ ] `app/services/archive/ensure_preview.rb`
-- [ ] `app/jobs/scan/model/check_for_problems_job.rb`
-- [ ] `app/jobs/scan/model/heal_missing_previews_job.rb`
-- [ ] Tests: `spec/jobs/scan/model/check_for_problems_job_spec.rb`,
+- [x] `app/services/archive/ensure_preview.rb`
+- [x] `app/jobs/scan/model/check_for_problems_job.rb`
+- [x] `app/jobs/scan/model/heal_missing_previews_job.rb`
+- [x] Tests: `spec/jobs/scan/model/check_for_problems_job_spec.rb`,
   `spec/jobs/scan/model/heal_missing_previews_job_spec.rb`, `spec/services/archive/ensure_preview_spec.rb` (new)
 
 ## Gates & Controls

@@ -350,7 +350,7 @@ RSpec.describe ArchiveEntryService do
       described_class.new(@file).list!
       expect(@model.preview_file).to be_nil
 
-      @model.ensure_image_preview!
+      perform_enqueued_jobs { @model.ensure_image_preview! }
 
       expect(@model.reload.preview_file.filename).to eq("shot.png")
       expect(@model.model_files.where(filename: "shot.png").count).to eq(1)
