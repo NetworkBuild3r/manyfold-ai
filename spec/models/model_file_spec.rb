@@ -285,4 +285,46 @@ RSpec.describe ModelFile do
       expect(file.ai_indexable?).to eq model.ai_indexable?
     end
   end
+
+  describe "#delete_from_disk_and_destroy for an archive-adopted image" do
+    include ActiveJob::TestHelper
+
+    let(:model) { create(:model) }
+    let(:archive) { create(:model_file, model: model, filename: "pack.zip") }
+    let(:other_archive) { create(:model_file, model: model, filename: "more.zip") }
+    let(:image) { create(:model_file, model: model, filename: "shot.png") }
+
+    def adopted_entry(source, pathname)
+      source.archive_entries.create!(pathname: pathname, kind: "image", status: "preview_ready", adopted_model_file: image)
+    end
+
+    it "dismisses the source entries and queues one rewrite per archive" do
+      a = adopted_entry(archive, "pics/shot.png")
+      b = adopted_entry(archive, "copy/shot.png")
+      c = adopted_entry(other_archive, "shot.png")
+
+      expect { image.delete_from_disk_and_destroy }
+        .to have_enqueued_job(Scan::ModelFile::RemoveArchiveEntriesJob).with(archive.id).once
+        .and have_enqueued_job(Scan::ModelFile::RemoveArchiveEntriesJob).with(other_archive.id).once
+      expect([a, b, c].map { |e| e.reload.status }).to all(eq("dismissed"))
+      expect(ModelFile.exists?(image.id)).to be false
+    end
+
+    it "never rewrites an archive belonging to another model" do
+      foreign = create(:model_file, filename: "foreign.zip")
+      entry = foreign.archive_entries.create!(pathname: "shot.png", kind: "image", adopted_model_file: image)
+
+      expect { image.delete_from_disk_and_destroy }
+        .not_to have_enqueued_job(Scan::ModelFile::RemoveArchiveEntriesJob)
+      expect(entry.reload.status).to eq("listed")
+    end
+
+    it "behaves as before for a file with no source entries" do
+      plain = create(:model_file, model: model, filename: "plain.png")
+
+      expect { plain.delete_from_disk_and_destroy }
+        .not_to have_enqueued_job(Scan::ModelFile::RemoveArchiveEntriesJob)
+      expect(ModelFile.exists?(plain.id)).to be false
+    end
+  end
 end

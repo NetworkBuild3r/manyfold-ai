@@ -57,7 +57,7 @@ blocks: None
 - [x] ac-4: `smoke()` tests: with a key set and `system_one` mocked, it exits 0 when all checks pass and 1
   when TypeSafe fails; with no key, it prints SKIP. — covered: yes
 - [x] ac-5: The suite passes identically with `TYPESAFE_API_KEY=dummy` exported and with it unset. —
-  covered: no
+  covered: yes
 
 ## Deliverables
 

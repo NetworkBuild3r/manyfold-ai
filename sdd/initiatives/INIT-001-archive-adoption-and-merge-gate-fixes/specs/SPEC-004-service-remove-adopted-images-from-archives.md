@@ -7,7 +7,7 @@ spec_id: SPEC-004
 initiative_id: INIT-001
 title: Deleting an adopted image removes it from the model and from its source archive(s)
 domain: service
-status: ready
+status: in_review
 primary_prompt: .claude/agents/principal-backend-developer/AGENT.md   # agents dir absent — described persona (disclosed)
 supplement_prompts: []
 model: opus   # pinned: destructive, irreversible-at-runtime operation on user originals
@@ -49,33 +49,33 @@ archive" without deleting.
 
 ## Acceptance Criteria
 
-- [ ] ac-1: Deleting a ModelFile with `adopted_from_entries` deletes the loose file and the row, sets each
+- [x] ac-1: Deleting a ModelFile with `adopted_from_entries` deletes the loose file and the row, sets each
   linked entry to `dismissed`, and enqueues `Scan::ModelFile::RemoveArchiveEntriesJob` once per source
-  archive. — covered: no
-- [ ] ac-2: For writable formats (at minimum zip, 7z and tar variants libarchive can write), the job:
+  archive. — covered: yes
+- [x] ac-2: For writable formats (at minimum zip, 7z and tar variants libarchive can write), the job:
   1. writes a new archive in the **same format and filter** to a temp path in the same directory, copying
      every entry except the removed ones (preserving path, mtime and mode);
   2. verifies by re-reading that the entry count is the original count minus the removed count, and that
      none of the removed paths are present;
   3. `File.rename`s it over the original.
 
-  — covered: no
-- [ ] ac-3: On any failure (read error, verify mismatch, ENOSPC, EACCES) the original archive is
-  byte-identical, the temp file is gone, the entries stay `dismissed`, and the error is logged. — covered: no
-- [ ] ac-4: Unwritable or unsupported formats are not rewritten. This covers RAR, encrypted or multi-volume
+  — covered: yes
+- [x] ac-3: On any failure (read error, verify mismatch, ENOSPC, EACCES) the original archive is
+  byte-identical, the temp file is gone, the entries stay `dismissed`, and the error is logged. — covered: yes
+- [x] ac-4: Unwritable or unsupported formats are not rewritten. This covers RAR, encrypted or multi-volume
   archives, and non-filesystem (S3) libraries. The job records `error_message: "archive format not
-  writable; image hidden but kept in archive"` on the entry and returns cleanly. — covered: no
-- [ ] ac-5: After a successful rewrite:
+  writable; image hidden but kept in archive"` on the entry and returns cleanly. — covered: yes
+- [x] ac-5: After a successful rewrite:
   - the removed `ArchiveEntry` rows and their preview/cache derivatives under `.manyfold/` are deleted;
   - the archive ModelFile's digest and size are recalculated and its attachment metadata refreshed;
   - other entries keep their `public_id`s.
 
-  — covered: no
-- [ ] ac-6: Deleting a ModelFile with **no** linked entries behaves exactly as today (regression spec). —
-  covered: no
-- [ ] ac-7: Two images removed from the same archive in quick succession produce a correct final archive.
+  — covered: yes
+- [x] ac-6: Deleting a ModelFile with **no** linked entries behaves exactly as today (regression spec). —
+  covered: yes
+- [x] ac-7: Two images removed from the same archive in quick succession produce a correct final archive.
   The job holds a per-archive lock (`unique` / `with_lock` on the archive ModelFile), so rewrites never
-  interleave. — covered: no
+  interleave. — covered: yes
 
 ## Assumptions Ledger
 
@@ -89,11 +89,11 @@ archive" without deleting.
 
 ## Deliverables
 
-- [ ] `app/services/archive/remove_entries.rb` (new)
-- [ ] `app/jobs/scan/model_file/remove_archive_entries_job.rb` (new; `unique :until_executed`, keyed by
+- [x] `app/services/archive/remove_entries.rb` (new)
+- [x] `app/jobs/scan/model_file/remove_archive_entries_job.rb` (new; `unique :until_executed`, keyed by
   archive file id)
-- [ ] `app/models/model_file.rb`: `delete_from_disk_and_destroy` hook (dismiss and enqueue)
-- [ ] Tests: `spec/services/archive/remove_entries_spec.rb`,
+- [x] `app/models/model_file.rb`: `delete_from_disk_and_destroy` hook (dismiss and enqueue)
+- [x] Tests: `spec/services/archive/remove_entries_spec.rb`,
   `spec/jobs/scan/model_file/remove_archive_entries_job_spec.rb`, and `spec/models/model_file_spec.rb`
   (destroy hook). Fixtures: zip and 7z built in-spec; a RAR fixture or stubbed writer-unsupported path.
 

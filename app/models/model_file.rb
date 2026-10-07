@@ -255,11 +255,28 @@ class ModelFile < ApplicationRecord
   end
 
   def delete_from_disk_and_destroy
-    model.library.storage.delete path_within_library
+    source_archive_ids = dismiss_adopted_entries!
+    begin
+      model.library.storage.delete path_within_library
+    rescue Shrine::FileNotFound, Errno::ENOENT
+      # If the file is already gone, still remove the DB record.
+    end
     destroy
-  rescue Shrine::FileNotFound, Errno::ENOENT
-    # If the file is already gone, still remove the DB record.
-    destroy
+    source_archive_ids.each { |id| Scan::ModelFile::RemoveArchiveEntriesJob.perform_later(id) }
+  end
+
+  # Archives this image was adopted from, in this model only. Dismissing the
+  # entries first means a deleted image is never re-adopted, even when the
+  # archive cannot be rewritten (INIT-001/SPEC-004).
+  def adopted_source_archives
+    ModelFile.where(id: adopted_from_entries.select(:model_file_id), model_id: model_id) # rubocop:disable Pundit/UsePolicyScope -- same-model lookup
+  end
+
+  def dismiss_adopted_entries!
+    entries = adopted_from_entries.joins(:model_file).where(model_files: {model_id: model_id})
+    ids = entries.distinct.pluck(:model_file_id)
+    entries.find_each { |entry| entry.update!(status: "dismissed", error_message: nil) }
+    ids
   end
 
   def analyse_later(delay: 5.seconds)

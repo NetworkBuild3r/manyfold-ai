@@ -47,7 +47,7 @@ the provenance link write (SPEC-001), and specs.
 
 - [x] ac-1 (CRIT-1): The `AdoptImage` class doc states the every-image policy. An archive with N distinct
   images yields exactly N adopted ModelFiles. Running the preview pass a second time adds 0 files. —
-  covered: no
+  covered: yes
 - [x] ac-2 (CRIT-1): Each adopted or digest-matched file is linked back via
   `entry.update!(adopted_model_file: file)`. A `dismissed` entry is never adopted. — covered: yes
 - [x] ac-3 (MAJ-1): `extract_preview_image!` writes the thumbnail **before** adopting. An adoption failure is
@@ -60,7 +60,7 @@ the provenance link write (SPEC-001), and specs.
   `x-1.png`), each with the correct digest of its own bytes. Two entries with the same bytes produce one
   file. — covered: yes
 - [x] ac-6 (MIN-2, same lines): `matching_image` ignores ModelFiles that are not `exists_on_storage?`. —
-  covered: no
+  covered: yes
 - [x] ac-7 (MAJ-6): Every criterion above has a spec example. The existing three examples in
   `spec/services/archive_entry_service_spec.rb` still pass. — covered: yes
 
