@@ -7,7 +7,7 @@ spec_id: SPEC-001
 initiative_id: INIT-001
 title: Archive-entry to adopted-ModelFile provenance link and dismissed status
 domain: data
-status: ready
+status: complete
 primary_prompt: .claude/agents/database-architect/AGENT.md   # agents dir absent — executes under described persona (disclosed)
 supplement_prompts: []
 model: sonnet
@@ -38,19 +38,19 @@ and a deleted image would be re-adopted on the next scan.
 
 ## Understood
 
-- [ ] und-1: Many entries (same image in several archives, or repeated in one archive) may point at one ModelFile.
-- [ ] und-2: The link must survive file *renames* (it is an id, not a filename).
+- [x] und-1: Many entries (same image in several archives, or repeated in one archive) may point at one ModelFile.
+- [x] und-2: The link must survive file *renames* (it is an id, not a filename).
 
 ## Acceptance Criteria
 
-- [ ] ac-1: The migration runs up and down cleanly on SQLite, MySQL and PostgreSQL. `db/schema.rb` shows the
-  column, index and FK. — covered: no
-- [ ] ac-2: `ArchiveEntry belongs_to :adopted_model_file, class_name: "ModelFile", optional: true` and
+- [x] ac-1: The migration runs up and down cleanly on SQLite, MySQL and PostgreSQL. `db/schema.rb` shows the
+  column, index and FK. — covered: yes
+- [x] ac-2: `ArchiveEntry belongs_to :adopted_model_file, class_name: "ModelFile", optional: true` and
   `ModelFile has_many :adopted_from_entries, class_name: "ArchiveEntry", foreign_key: :adopted_model_file_id,
-  dependent: :nullify, inverse_of: :adopted_model_file`. — covered: no
-- [ ] ac-3: `dismissed` is accepted wherever `ArchiveEntry` validates or enumerates status.
-  `ArchiveEntry.adoptable` excludes `dismissed`, `too_large` and `skipped`. — covered: no
-- [ ] ac-4: Destroying a ModelFile nullifies its entries' links; it does not destroy them. — covered: no
+  dependent: :nullify, inverse_of: :adopted_model_file`. — covered: yes
+- [x] ac-3: `dismissed` is accepted wherever `ArchiveEntry` validates or enumerates status.
+  `ArchiveEntry.adoptable` excludes `dismissed`, `too_large` and `skipped`. — covered: yes
+- [x] ac-4: Destroying a ModelFile nullifies its entries' links; it does not destroy them. — covered: yes
 
 ## Assumptions Ledger
 
@@ -60,16 +60,16 @@ and a deleted image would be re-adopted on the next scan.
 
 ## Deliverables
 
-- [ ] `db/migrate/<ts>_add_adopted_model_file_to_archive_entries.rb`
-- [ ] `db/schema.rb`
-- [ ] `app/models/archive_entry.rb`, `app/models/model_file.rb` (associations and scope only)
-- [ ] Tests: `spec/models/archive_entry_spec.rb` (association, scope, nullify on destroy)
+- [x] `db/migrate/<ts>_add_adopted_model_file_to_archive_entries.rb`
+- [x] `db/schema.rb`
+- [x] `app/models/archive_entry.rb`, `app/models/model_file.rb` (associations and scope only)
+- [x] Tests: `spec/models/archive_entry_spec.rb` (association, scope, nullify on destroy)
 
 ## Technical Requirements
 
-- [ ] Use `add_reference ... foreign_key: {to_table: :model_files, on_delete: :nullify}`. Do not backfill;
+- [x] Use `add_reference ... foreign_key: {to_table: :model_files, on_delete: :nullify}`. Do not backfill;
   existing rows stay `NULL`.
-- [ ] Follow the existing migration style in `db/migrate/`.
+- [x] Follow the existing migration style in `db/migrate/`.
 
 ## Gates & Controls
 

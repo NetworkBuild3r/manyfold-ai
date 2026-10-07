@@ -4,11 +4,14 @@ class ArchiveEntry < ApplicationRecord
   include PublicIDable
 
   KINDS = %w[mesh image other].freeze
-  STATUSES = %w[listed preview_pending preview_ready preview_failed too_large skipped].freeze
+  # dismissed: tombstone after the adopted image was deleted — never adopt or preview again.
+  STATUSES = %w[listed preview_pending preview_ready preview_failed too_large skipped dismissed].freeze
+  NOT_ADOPTABLE_STATUSES = %w[too_large skipped dismissed].freeze
 
   RENDERABLE_EXTENSIONS = %w[stl obj 3mf ply gltf glb drc fbx 3ds gcode mpd ldr 3dm].freeze
 
   belongs_to :model_file, touch: true
+  belongs_to :adopted_model_file, class_name: "ModelFile", optional: true, inverse_of: :adopted_from_entries
 
   validates :pathname, presence: true, uniqueness: {scope: :model_file_id}
   validates :kind, inclusion: {in: KINDS}
@@ -18,6 +21,7 @@ class ArchiveEntry < ApplicationRecord
   scope :images, -> { where(kind: "image") }
   scope :previewable, -> { where(kind: %w[mesh image]) }
   scope :with_preview, -> { where(status: "preview_ready") }
+  scope :adoptable, -> { images.where.not(status: NOT_ADOPTABLE_STATUSES) }
 
   delegate :model, to: :model_file
 

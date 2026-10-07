@@ -76,21 +76,21 @@ and tests in `tests/test_typesafe_merge.py`.
 
 ## Deliverables
 
-- [ ] `spark-curate/spark_curate/decide_merge.py`
-- [ ] `spark-curate/spark_curate/apply_merges.py` and/or `__main__.py` (summary count)
-- [ ] `spark-curate/README.md`
-- [ ] Tests: `spark-curate/tests/test_typesafe_merge.py`, plus `test_merge_hitl.py` for band and log of a
+- [x] `spark-curate/spark_curate/decide_merge.py`
+- [x] `spark-curate/spark_curate/apply_merges.py` and/or `__main__.py` (summary count)
+- [x] `spark-curate/README.md`
+- [x] Tests: `spark-curate/tests/test_typesafe_merge.py`, plus `test_merge_hitl.py` for band and log of a
   curator plan
 
 ## Technical Requirements
 
-- [ ] Type hints on all changed functions. Keep the stdlib-only dependency footprint.
+- [x] Type hints on all changed functions. Keep the stdlib-only dependency footprint.
 
 ## Security
 
 - **Sensitivity:** standard. Triggers: an external-service decision gating a destructive merge.
 - **Security acceptance criteria:**
-  - [ ] Every new branch fails closed: any unparsable or missing answer means not approved.
+  - [x] Every new branch fails closed: any unparsable or missing answer means not approved.
 
 ## Verification Strategy
 

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_08_29_153100) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_07_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "fuzzystrmatch"
   enable_extension "pg_catalog.plpgsql"
@@ -40,6 +40,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_29_153100) do
     t.text "error_message"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "adopted_model_file_id"
+    t.index ["adopted_model_file_id"], name: "index_archive_entries_on_adopted_model_file_id"
     t.index ["model_file_id", "kind"], name: "index_archive_entries_on_model_file_id_and_kind"
     t.index ["model_file_id", "pathname"], name: "index_archive_entries_on_model_file_id_and_pathname", unique: true
     t.index ["model_file_id", "status"], name: "index_archive_entries_on_model_file_id_and_status"
@@ -692,6 +694,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_29_153100) do
     t.index ["user_id", "role_id"], name: "index_users_roles_on_user_id_and_role_id"
   end
 
+  add_foreign_key "archive_entries", "model_files", column: "adopted_model_file_id", on_delete: :nullify
   add_foreign_key "archive_entries", "model_files", on_delete: :cascade
   add_foreign_key "collections", "collections"
   add_foreign_key "collections", "creators"

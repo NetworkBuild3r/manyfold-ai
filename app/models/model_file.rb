@@ -15,6 +15,9 @@ class ModelFile < ApplicationRecord
 
   belongs_to :model, touch: true
   has_many :archive_entries, dependent: :destroy
+  # Archive entries this image was adopted from (INIT-001/SPEC-001).
+  has_many :adopted_from_entries, class_name: "ArchiveEntry", foreign_key: :adopted_model_file_id,
+    inverse_of: :adopted_model_file, dependent: :nullify
 
   after_create :attach_existing_file_on_create!
 
