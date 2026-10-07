@@ -1,55 +1,84 @@
 # frozen_string_literal: true
 
 module Archive
-  # Copy an image found inside an archive onto the model when no existing image
-  # has the same SHA-512 digest. ModelFile#calculate_digest is SHA-512, so this
-  # matches files the scanner already hashed. If the model has no on-disk image
-  # preview, the adopted or matching file becomes preview_file (image search).
+  # Adopt an image found inside an archive onto the model. Every image entry is
+  # adopted (INIT-001 owner decision), once: a file with the same SHA-512 digest
+  # is reused instead of copied. ModelFile#calculate_digest is SHA-512, so this
+  # matches files the scanner already hashed. The entry is linked to the file it
+  # resolved to so deleting that file can also remove it from the archive.
+  # If the model has no on-disk image preview, the file becomes preview_file.
   class AdoptImage
     def self.call(...)
       new(...).call
     end
 
-    def initialize(model:, source_path:, filename:)
+    def initialize(model:, source_path:, filename:, entry: nil)
       @model = model
       @source_path = source_path
       @filename = filename
+      @entry = entry
     end
 
     def call
       return unless File.file?(@source_path)
+      return if @entry&.status == "dismissed"
 
       digest = sha512(@source_path)
       return if digest.blank?
 
-      file = matching_image(digest) || create_image!(digest)
+      file = adopt!(digest)
+      @entry&.update!(adopted_model_file: file)
       assign_preview!(file)
       file
     end
 
     private
 
+    # Copy outside the lock; match, name, place and create under a per-model
+    # lock so concurrent preview jobs cannot pick the same name or both miss a
+    # digest match (INIT-001/SPEC-002).
+    def adopt!(digest)
+      staged = stage_copy
+      begin
+        @model.with_lock { matching_image(digest) || create_image!(digest, staged) }
+      ensure
+        FileUtils.rm_f(staged)
+      end
+    end
+
+    def stage_copy
+      dir = File.join(model_dir, ".manyfold", "tmp")
+      FileUtils.mkdir_p(dir)
+      staged = File.join(dir, "adopt-#{SecureRandom.hex(8)}#{File.extname(@filename.to_s)}")
+      FileUtils.cp(@source_path, staged)
+      staged
+    end
+
     def matching_image(digest)
-      known = @model.model_files.where(digest: digest).detect(&:is_image?)
+      known = @model.model_files.where(digest: digest).detect { |file| file.is_image? && file.exists_on_storage? }
       return known if known
 
       @model.model_files.where(digest: [nil, ""]).find do |file|
-        next unless file.is_image?
+        next unless file.is_image? && file.exists_on_storage?
 
         hashed = file.calculate_digest
         next if hashed.blank?
 
-        file.update_column(:digest, hashed) if file.digest != hashed
+        file.update_column(:digest, hashed) if file.digest != hashed # rubocop:disable Rails/SkipsModelValidations -- cache digest only
         hashed == digest
       end
     end
 
-    def create_image!(digest)
+    def create_image!(digest, staged)
       filename = unique_filename
-      dest = File.join(@model.library.path, @model.path, filename)
-      FileUtils.mkdir_p(File.dirname(dest))
-      FileUtils.cp(@source_path, dest)
-      @model.model_files.create!(filename: filename, digest: digest)
+      dest = File.join(model_dir, filename)
+      File.rename(staged, dest)
+      begin
+        @model.model_files.create!(filename: filename, digest: digest)
+      rescue
+        FileUtils.rm_f(dest)
+        raise
+      end
     end
 
     def unique_filename
@@ -67,8 +96,11 @@ module Archive
     end
 
     def name_taken?(filename)
-      @model.model_files.exists?(filename: filename) ||
-        File.exist?(File.join(@model.library.path, @model.path, filename))
+      @model.model_files.exists?(filename: filename) || File.exist?(File.join(model_dir, filename))
+    end
+
+    def model_dir
+      File.join(@model.library.path, @model.path)
     end
 
     def assign_preview!(file)

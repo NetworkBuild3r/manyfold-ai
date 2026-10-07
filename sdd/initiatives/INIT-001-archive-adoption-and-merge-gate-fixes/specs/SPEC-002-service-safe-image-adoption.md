@@ -7,7 +7,7 @@ spec_id: SPEC-002
 initiative_id: INIT-001
 title: Safe, idempotent, isolated archive image adoption
 domain: service
-status: needs_disambiguation
+status: complete
 primary_prompt: .claude/agents/principal-backend-developer/AGENT.md   # agents dir absent — described persona (disclosed)
 supplement_prompts: []
 model: sonnet
@@ -38,53 +38,53 @@ the provenance link write (SPEC-001), and specs.
 
 ## Understood
 
-- [ ] und-1: **Every** image entry in an archive is adopted onto its model (owner decision, 2026-10-07). This
+- [x] und-1: **Every** image entry in an archive is adopted onto its model (owner decision, 2026-10-07). This
   is policy, not a bug. CRIT-1 is resolved by making adoption idempotent, traceable and failure-isolated.
-- [ ] und-2: Adoption must never block or fail the archive thumbnail.
-- [ ] und-3: An existing on-disk image preview is never replaced by adoption.
+- [x] und-2: Adoption must never block or fail the archive thumbnail.
+- [x] und-3: An existing on-disk image preview is never replaced by adoption.
 
 ## Acceptance Criteria
 
-- [ ] ac-1 (CRIT-1): The `AdoptImage` class doc states the every-image policy. An archive with N distinct
+- [x] ac-1 (CRIT-1): The `AdoptImage` class doc states the every-image policy. An archive with N distinct
   images yields exactly N adopted ModelFiles. Running the preview pass a second time adds 0 files. —
   covered: no
-- [ ] ac-2 (CRIT-1): Each adopted or digest-matched file is linked back via
-  `entry.update!(adopted_model_file: file)`. A `dismissed` entry is never adopted. — covered: no
-- [ ] ac-3 (MAJ-1): `extract_preview_image!` writes the thumbnail **before** adopting. An adoption failure is
+- [x] ac-2 (CRIT-1): Each adopted or digest-matched file is linked back via
+  `entry.update!(adopted_model_file: file)`. A `dismissed` entry is never adopted. — covered: yes
+- [x] ac-3 (MAJ-1): `extract_preview_image!` writes the thumbnail **before** adopting. An adoption failure is
   logged with the entry id and the entry still ends `preview_ready`. Failures covered:
-  `SystemCallError`, `ActiveRecord::RecordInvalid`, `ActiveRecord::RecordNotUnique`. — covered: no
-- [ ] ac-4 (MAJ-2): Match → name → copy → create runs inside `@model.with_lock`. Bytes are copied to a temp
+  `SystemCallError`, `ActiveRecord::RecordInvalid`, `ActiveRecord::RecordNotUnique`. — covered: yes
+- [x] ac-4 (MAJ-2): Match → name → copy → create runs inside `@model.with_lock`. Bytes are copied to a temp
   name in the model folder and renamed only after `create!` succeeds. A failed `create!` leaves no file on
-  disk. — covered: no
-- [ ] ac-5 (MAJ-2): Two entries with the same basename and different bytes produce two files (`x.png`,
+  disk. — covered: yes
+- [x] ac-5 (MAJ-2): Two entries with the same basename and different bytes produce two files (`x.png`,
   `x-1.png`), each with the correct digest of its own bytes. Two entries with the same bytes produce one
-  file. — covered: no
-- [ ] ac-6 (MIN-2, same lines): `matching_image` ignores ModelFiles that are not `exists_on_storage?`. —
+  file. — covered: yes
+- [x] ac-6 (MIN-2, same lines): `matching_image` ignores ModelFiles that are not `exists_on_storage?`. —
   covered: no
-- [ ] ac-7 (MAJ-6): Every criterion above has a spec example. The existing three examples in
-  `spec/services/archive_entry_service_spec.rb` still pass. — covered: no
+- [x] ac-7 (MAJ-6): Every criterion above has a spec example. The existing three examples in
+  `spec/services/archive_entry_service_spec.rb` still pass. — covered: yes
 
 ## Assumptions Ledger
 
 | id    | item | interpretation | tone | resolved |
 | ----- | ---- | -------------- | ---- | -------- |
 | aud-1 | Adoption scope | Every image, always; no site setting (owner, 2026-10-07) | clear | yes |
-| aud-2 | Link for a *matched* pre-existing loose image | Link it too, so deleting that file also removes the image from the archive (SPEC-004) | ambiguous | no |
-| aud-3 | Lock granularity | Per-model row lock (`with_lock`), not a global advisory lock | ambiguous | no |
+| aud-2 | Link for a *matched* pre-existing loose image | Link it too, so deleting that file also removes the image from the archive (SPEC-004) | clear (owner: defaults, 2026-10-07) | yes |
+| aud-3 | Lock granularity | Per-model row lock (`with_lock`), not a global advisory lock | clear (owner: defaults, 2026-10-07) | yes |
 
 ## Deliverables
 
-- [ ] `app/services/archive/adopt_image.rb`: lock, temp-then-rename, link, dismissed skip, storage check,
+- [x] `app/services/archive/adopt_image.rb`: lock, temp-then-rename, link, dismissed skip, storage check,
   class doc
-- [ ] `app/services/archive/preview_entry.rb`: thumbnail first, isolated adoption with `entry:` passed
-- [ ] Tests: `spec/services/archive_entry_service_spec.rb` (extend) and/or a new
+- [x] `app/services/archive/preview_entry.rb`: thumbnail first, isolated adoption with `entry:` passed
+- [x] Tests: `spec/services/archive_entry_service_spec.rb` (extend) and/or a new
   `spec/services/archive/adopt_image_spec.rb`
 
 ## Technical Requirements
 
-- [ ] Keep the SHA-512 chunked hashing identical to `ModelFile#calculate_digest`.
-- [ ] Keep `unique_filename` basename-only; do not weaken path safety.
-- [ ] `rubocop` clean, matching the surrounding service style (no new comment density beyond the class doc).
+- [x] Keep the SHA-512 chunked hashing identical to `ModelFile#calculate_digest`.
+- [x] Keep `unique_filename` basename-only; do not weaken path safety.
+- [x] `rubocop` clean, matching the surrounding service style (no new comment density beyond the class doc).
 
 ## Gates & Controls
 
@@ -94,9 +94,9 @@ the provenance link write (SPEC-001), and specs.
 
 - **Sensitivity:** standard. Triggers: external input (archive filenames and bytes written into the library).
 - **Security acceptance criteria:**
-  - [ ] An adopted filename is always a single path segment under `library/model/`. A spec feeds
+  - [x] An adopted filename is always a single path segment under `library/model/`. A spec feeds
     `../evil.png` and `a/../../b.png` entry names and asserts the destination.
-  - [ ] Temp files are created in the model folder (same filesystem for atomic rename) and removed on
+  - [x] Temp files are created in the model folder (same filesystem for atomic rename) and removed on
     every failure path.
 
 ## Verification Strategy

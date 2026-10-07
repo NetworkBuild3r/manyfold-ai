@@ -7,7 +7,7 @@ spec_id: SPEC-004
 initiative_id: INIT-001
 title: Deleting an adopted image removes it from the model and from its source archive(s)
 domain: service
-status: needs_disambiguation
+status: ready
 primary_prompt: .claude/agents/principal-backend-developer/AGENT.md   # agents dir absent — described persona (disclosed)
 supplement_prompts: []
 model: opus   # pinned: destructive, irreversible-at-runtime operation on user originals
@@ -81,11 +81,11 @@ archive" without deleting.
 
 | id    | item | interpretation | tone | resolved |
 | ----- | ---- | -------------- | ---- | -------- |
-| aud-1 | Image present in several archives | Remove from **every** linked archive | ambiguous | no |
-| aud-2 | Backup of original archive | No `.bak`. Rely on atomic temp, verify, rename | ambiguous | no |
-| aud-3 | Sync vs async rewrite | Async job; dismiss synchronously (und-1) | ambiguous | no |
-| aud-4 | Deleting a pre-existing loose image that was digest-matched (SPEC-002 aud-2) | Also removes the image from linked archives | ambiguous | no |
-| aud-5 | Writable format set | Whatever `Archive::Writer` supports for the detected format, probed at runtime; never hard-coded "zip only" | ambiguous | no |
+| aud-1 | Image present in several archives | Remove from **every** linked archive | clear (owner: defaults, 2026-10-07) | yes |
+| aud-2 | Backup of original archive | No `.bak`. Rely on atomic temp, verify, rename | clear (owner: defaults, 2026-10-07) | yes |
+| aud-3 | Sync vs async rewrite | Async job; dismiss synchronously (und-1) | clear (owner: defaults, 2026-10-07) | yes |
+| aud-4 | Deleting a pre-existing loose image that was digest-matched (SPEC-002 aud-2) | Also removes the image from linked archives | clear (owner: defaults, 2026-10-07) | yes |
+| aud-5 | Writable format set | Whatever `Archive::Writer` supports for the detected format, probed at runtime; never hard-coded "zip only" | clear (owner: defaults, 2026-10-07) | yes |
 
 ## Deliverables
 

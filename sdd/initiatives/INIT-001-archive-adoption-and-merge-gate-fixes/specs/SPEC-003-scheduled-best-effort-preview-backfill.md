@@ -7,7 +7,7 @@ spec_id: SPEC-003
 initiative_id: INIT-001
 title: Best-effort, error-isolated preview backfill in CheckForProblems and HealMissingPreviews
 domain: scheduled
-status: needs_disambiguation
+status: ready
 primary_prompt: .claude/agents/principal-backend-developer/AGENT.md   # agents dir absent — described persona (disclosed)
 supplement_prompts: []
 model: sonnet
@@ -61,7 +61,7 @@ error:
 
 | id    | item | interpretation | tone | resolved |
 | ----- | ---- | -------------- | ---- | -------- |
-| aud-1 | Inline vs enqueued archive extraction in `CheckForProblemsJob` | Enqueue `PreviewArchiveEntryJob` for the chosen entry instead of extracting inline, so the `:scan` queue stays light | ambiguous | no |
+| aud-1 | Inline vs enqueued archive extraction in `CheckForProblemsJob` | Enqueue `PreviewArchiveEntryJob` for the chosen entry instead of extracting inline, so the `:scan` queue stays light | clear (owner: defaults, 2026-10-07) | yes |
 
 ## Deliverables
 

@@ -321,6 +321,30 @@ RSpec.describe ArchiveEntryService do
       expect(File.exist?(File.join(@library_path, "model_a", "shot.png"))).to be false
     end
 
+    it "still writes the thumbnail when adoption fails" do
+      service = described_class.new(@file)
+      allow(service).to receive(:write_image_preview!)
+      allow(Archive::AdoptImage).to receive(:call).and_raise(Errno::EROFS)
+      service.list!
+      entry = @file.archive_entries.find_by!(pathname: "pics/shot.png")
+
+      service.extract_preview_image!(entry)
+
+      expect(service).to have_received(:write_image_preview!)
+      expect(entry.reload.status).to eq("preview_ready")
+      expect(@model.model_files.where(filename: "shot.png")).to be_empty
+    end
+
+    it "does not enqueue previews for dismissed entries" do
+      service = described_class.new(@file)
+      service.list!
+      @file.archive_entries.find_by!(pathname: "pics/shot.png").update!(status: "dismissed")
+
+      service.enqueue_previews!
+
+      expect(@file.archive_entries.find_by!(pathname: "pics/shot.png").status).to eq("dismissed")
+    end
+
     it "lets the scanner assign a preview from an already listed archive image" do
       allow_any_instance_of(described_class).to receive(:write_image_preview!) # rubocop:disable RSpec/AnyInstance
       described_class.new(@file).list!
