@@ -12,6 +12,8 @@ _ROOT = Path(__file__).resolve().parents[1]
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
+from _isolation import setUpModule, tearDownModule  # noqa: E402, F401 — no live TypeSafe calls
+
 from spark_curate.candidates import MergeCandidate  # noqa: E402
 from spark_curate.config import CurateConfig, SparkConfig  # noqa: E402
 from spark_curate.decide_merge import (  # noqa: E402

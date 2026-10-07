@@ -59,7 +59,7 @@ def system_one(
             body = resp.read().decode("utf-8")
             out = json.loads(body) if body else {}
     except urllib.error.HTTPError as e:
-        err = e.read().decode("utf-8", errors="replace")
+        err = e.read().decode("utf-8", errors="replace").replace(api_key, "[redacted]")
         raise HttpError(f"HTTP {e.code} TypeSafe systemone: {err[:300]}") from e
     except urllib.error.URLError as e:
         raise HttpError(f"TypeSafe connection failed: {e}") from e

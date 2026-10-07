@@ -7,7 +7,7 @@ spec_id: SPEC-007
 initiative_id: INIT-001
 title: Hermetic spark-curate merge tests and coverage for the TypeSafe client and fallback paths
 domain: service
-status: ready
+status: complete
 primary_prompt: .claude/agents/principal-backend-developer/AGENT.md   # agents dir absent — described persona (disclosed)
 supplement_prompts: []
 model: sonnet
@@ -35,11 +35,11 @@ blocks: None
 
 ## Acceptance Criteria
 
-- [ ] ac-1: Every merge-related test module (`test_decide_merge.py`, `test_merge_candidates.py`,
+- [x] ac-1: Every merge-related test module (`test_decide_merge.py`, `test_merge_candidates.py`,
   `test_merge_hitl.py`, `test_typesafe_merge.py`) blanks `TYPESAFE_API_KEY` for the whole module. Use
   `setUpModule`/`tearDownModule` with `patch.dict(os.environ, …)` or a shared helper. A guard test proves
-  that `urllib.request.urlopen` is never called by the suite. — covered: no
-- [ ] ac-2: `typesafe_client.system_one` tests use a fake `urlopen`. They cover:
+  that `urllib.request.urlopen` is never called by the suite. — covered: yes
+- [x] ac-2: `typesafe_client.system_one` tests use a fake `urlopen`. They cover:
   - success;
   - empty key (raises before any request);
   - `HTTPError` (message truncated to 300 chars and **never** containing the API key);
@@ -47,31 +47,31 @@ blocks: None
   - non-JSON body;
   - a body missing `answers`.
 
-  `api_key_from` precedence (config over env) is also tested. — covered: no
-- [ ] ac-3: `decide_merge_pair` fallback tests cover:
+  `api_key_from` precedence (config over env) is also tested. — covered: yes
+- [x] ac-3: `decide_merge_pair` fallback tests cover:
   - TypeSafe raises on a STRONG pair, giving a pending plan with `error` set and approved False;
   - TypeSafe raises on an UNCERTAIN pair, falling back to the curator/Qwen path;
   - UNCERTAIN with previews where Gemma raises, returning an error without calling TypeSafe.
 
-  — covered: no
-- [ ] ac-4: `smoke()` tests: with a key set and `system_one` mocked, it exits 0 when all checks pass and 1
-  when TypeSafe fails; with no key, it prints SKIP. — covered: no
-- [ ] ac-5: The suite passes identically with `TYPESAFE_API_KEY=dummy` exported and with it unset. —
+  — covered: yes
+- [x] ac-4: `smoke()` tests: with a key set and `system_one` mocked, it exits 0 when all checks pass and 1
+  when TypeSafe fails; with no key, it prints SKIP. — covered: yes
+- [x] ac-5: The suite passes identically with `TYPESAFE_API_KEY=dummy` exported and with it unset. —
   covered: no
 
 ## Deliverables
 
-- [ ] `spark-curate/tests/test_typesafe_client.py` (new)
-- [ ] `spark-curate/tests/test_typesafe_merge.py` (fallback cases)
-- [ ] `spark-curate/tests/test_decide_merge.py`, `test_merge_candidates.py`, `test_merge_hitl.py`
+- [x] `spark-curate/tests/test_typesafe_client.py` (new)
+- [x] `spark-curate/tests/test_typesafe_merge.py` (fallback cases)
+- [x] `spark-curate/tests/test_decide_merge.py`, `test_merge_candidates.py`, `test_merge_hitl.py`
   (module-level env isolation)
-- [ ] Optional: `spark-curate/tests/_isolation.py` helper
+- [x] Optional: `spark-curate/tests/_isolation.py` helper
 
 ## Security
 
 - **Sensitivity:** standard. Trigger: secret handling.
 - **Security acceptance criteria:**
-  - [ ] A test asserts the API key string never appears in any raised `HttpError` message (ac-2).
+  - [x] A test asserts the API key string never appears in any raised `HttpError` message (ac-2).
 
 ## Verification Strategy
 

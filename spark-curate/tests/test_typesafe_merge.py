@@ -2,17 +2,25 @@
 from __future__ import annotations
 
 import io
+import os
 import sys
+import urllib.request
 import tempfile
 import unittest
 from pathlib import Path
+import unittest.mock
 from unittest.mock import patch
 
 _ROOT = Path(__file__).resolve().parents[1]
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
+from _isolation import setUpModule, tearDownModule  # noqa: E402, F401 — no live TypeSafe calls
+
+from _isolation import NetworkCallInTest  # noqa: E402
+from spark_curate.__main__ import smoke  # noqa: E402
 from spark_curate.apply_merges import write_merge_plans  # noqa: E402
+from spark_curate.clients import HttpError  # noqa: E402
 from spark_curate.candidates import MergeCandidate  # noqa: E402
 from spark_curate.config import CurateConfig, SparkConfig  # noqa: E402
 from spark_curate.decide_merge import (  # noqa: E402
@@ -267,6 +275,107 @@ class DecideMergeTypesafePathTests(unittest.TestCase):
             self.assertEqual(d.decision, "merge")
             self.assertFalse(d.approved_for_apply)
             self.assertIn("not approved without a preview comparison", d.reason)
+
+
+class IsolationGuardTests(unittest.TestCase):
+    def test_module_blanks_key_and_refuses_network(self) -> None:
+        self.assertEqual(os.environ.get("TYPESAFE_API_KEY"), "")
+        with self.assertRaises(NetworkCallInTest):
+            urllib.request.urlopen("https://api.typesafe.ai/v1/systemone")
+
+
+class TypesafeFallbackTests(unittest.TestCase):
+    """INIT-001/SPEC-007: failure branches in decide_merge_pair."""
+
+    def setUp(self) -> None:
+        self.spark = SparkConfig()
+        self.curate = CurateConfig(typesafe_api_key="test-key", min_merge_confidence=0.80)
+
+    def _decide(self, tmp: Path, signals: list[str], **patches: object):
+        cand = _pair(tmp, signals)
+        with (
+            patch("spark_curate.decide_merge._preview_jpeg", return_value=b"\xff\xd8fakejpeg"),
+            patch("spark_curate.decide_merge.clients.gemma_vision", **patches.get("gemma", {"return_value": "same pack"})) as gemma,
+            patch("spark_curate.decide_merge.typesafe_client.system_one", **patches.get("ts", {})) as ts,
+            patch("spark_curate.decide_merge.clients.curator_json", **patches.get("qwen", {})) as qwen,
+        ):
+            d = decide_merge_pair(cand, self.spark, self.curate, tmp / ".thumbs")
+        return d, gemma, ts, qwen
+
+    def test_typesafe_failure_on_strong_pair_is_pending_plan(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            d, _gemma, ts, qwen = self._decide(
+                Path(tmp), ["shared_digest:2"], ts={"side_effect": HttpError("HTTP 503")}
+            )
+        ts.assert_called_once()
+        qwen.assert_not_called()
+        self.assertEqual(d.decision, "merge")
+        self.assertFalse(d.approved_for_apply)
+        self.assertTrue(d.error.startswith("typesafe failed: HttpError"))
+        self.assertIn("TypeSafe review failed", d.reason)
+
+    def test_typesafe_failure_on_uncertain_pair_falls_back_to_curator(self) -> None:
+        qwen_json = '{"decision": "merge", "confidence": 0.92, "target": "b", "reason": "same pack"}'
+        with tempfile.TemporaryDirectory() as tmp:
+            d, _gemma, ts, qwen = self._decide(
+                Path(tmp),
+                ["name_near_dupe"],
+                ts={"side_effect": HttpError("HTTP 503")},
+                qwen={"return_value": qwen_json},
+            )
+        ts.assert_called_once()
+        qwen.assert_called_once()
+        self.assertEqual(d.decision, "merge")
+        self.assertTrue(d.approved_for_apply)
+        self.assertEqual(d.target, "b")
+        self.assertTrue(d.error.startswith("typesafe failed"))
+
+    def test_vision_failure_on_uncertain_pair_skips_typesafe(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            d, _gemma, ts, qwen = self._decide(
+                Path(tmp), ["name_near_dupe"], gemma={"side_effect": HttpError("gemma down")}
+            )
+        ts.assert_not_called()
+        qwen.assert_not_called()
+        self.assertEqual(d.decision, "keep_separate")
+        self.assertFalse(d.approved_for_apply)
+        self.assertTrue(d.error.startswith("vision failed"))
+
+
+def _ok_response() -> object:
+    resp = unittest.mock.MagicMock()
+    resp.status = 200
+    resp.__enter__.return_value = resp
+    return resp
+
+
+class SmokeTypesafeTests(unittest.TestCase):
+    def _smoke(self, curate: CurateConfig, **ts_patch: object) -> tuple[int, str]:
+        out = io.StringIO()
+        with (
+            patch("urllib.request.urlopen", return_value=_ok_response()),
+            patch("spark_curate.typesafe_client.system_one", **ts_patch) as ts,
+            patch("sys.stdout", out),
+        ):
+            code = smoke(SparkConfig(), curate)
+        self._ts = ts
+        return code, out.getvalue()
+
+    def test_passes_when_typesafe_answers(self) -> None:
+        code, out = self._smoke(CurateConfig(typesafe_api_key="k"), return_value={"answers": {}})
+        self.assertEqual(code, 0)
+        self.assertIn("OK  typesafe systemone", out)
+
+    def test_fails_when_typesafe_errors(self) -> None:
+        code, out = self._smoke(CurateConfig(typesafe_api_key="k"), side_effect=HttpError("HTTP 401"))
+        self.assertEqual(code, 1)
+        self.assertIn("FAIL typesafe systemone", out)
+
+    def test_skips_typesafe_without_key(self) -> None:
+        code, out = self._smoke(CurateConfig())
+        self.assertEqual(code, 0)
+        self.assertIn("SKIP typesafe", out)
+        self._ts.assert_not_called()
 
 
 if __name__ == "__main__":
