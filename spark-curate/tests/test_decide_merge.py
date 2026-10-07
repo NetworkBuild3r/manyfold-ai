@@ -134,22 +134,25 @@ class DecideMergeLandmineTests(unittest.TestCase):
             self.assertFalse(d.approved_for_apply)
             self.assertIn("preview-less", d.reason)
 
-    def test_strong_shared_digest_previewless_still_merges(self) -> None:
-        """aud-1: multi-file shared_digest (≥2) may remain STRONG without Gemma."""
+    def test_strong_shared_digest_previewless_not_approved(self) -> None:
+        """STRONG without a preview comparison is a plan only. Jev must see previews to approve."""
         with tempfile.TemporaryDirectory() as tmp:
             cand = _pair(Path(tmp), signals=["shared_digest:2", "name_near_dupe"])
             with patch(
                 "spark_curate.decide_merge._preview_jpeg",
                 return_value=None,
-            ):
+            ), patch(
+                "spark_curate.decide_merge.typesafe_client.api_key_from",
+                return_value="",
+            ), patch("spark_curate.decide_merge.clients.gemma_vision") as gemma:
                 d = decide_merge_pair(cand, self.spark, self.curate, Path(tmp) / ".thumbs")
+            gemma.assert_not_called()
             self.assertEqual(d.decision, "merge")
-            self.assertGreaterEqual(d.confidence, 0.80)
-            self.assertTrue(d.approved_for_apply)
-            self.assertIn("STRONG", d.reason)
+            self.assertFalse(d.approved_for_apply)
+            self.assertIn("TypeSafe review required", d.reason)
 
-    def test_strong_archive_overlap_skips_gemma_with_previews(self) -> None:
-        """SPEC-005 hook: ≥T mesh overlaps → STRONG, skip Gemma even with JPEGs."""
+    def test_strong_archive_overlap_asks_gemma_but_not_approved_without_jev(self) -> None:
+        """≥T mesh overlaps still need a preview comparison plus Jev before apply."""
         with tempfile.TemporaryDirectory() as tmp:
             cand = _pair(
                 Path(tmp),
@@ -158,11 +161,18 @@ class DecideMergeLandmineTests(unittest.TestCase):
             with patch(
                 "spark_curate.decide_merge._preview_jpeg",
                 return_value=b"\xff\xd8fakejpeg",
-            ), patch("spark_curate.decide_merge.clients.gemma_vision") as gemma:
+            ), patch(
+                "spark_curate.decide_merge.typesafe_client.api_key_from",
+                return_value="",
+            ), patch(
+                "spark_curate.decide_merge.clients.gemma_vision",
+                return_value="same pack, two folder names",
+            ) as gemma:
                 d = decide_merge_pair(cand, self.spark, self.curate, Path(tmp) / ".thumbs")
-            gemma.assert_not_called()
+            gemma.assert_called_once()
             self.assertEqual(d.decision, "merge")
-            self.assertTrue(d.approved_for_apply)
+            self.assertFalse(d.approved_for_apply)
+            self.assertIn("TypeSafe review required", d.reason)
 
 
 if __name__ == "__main__":

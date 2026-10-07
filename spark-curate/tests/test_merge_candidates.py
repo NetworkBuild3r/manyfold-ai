@@ -204,13 +204,13 @@ class ArchiveCandidateWireTests(unittest.TestCase):
 
 
 class ArchiveDecideStrongTests(unittest.TestCase):
-    """INIT-018/SPEC-005 ac-4: STRONG archive skips Gemma."""
+    """STRONG archive overlap is a plan until Jev confirms a preview comparison."""
 
     def setUp(self) -> None:
         self.spark = SparkConfig()
         self.curate = CurateConfig(min_merge_confidence=0.80)
 
-    def test_ac4_strong_archive_skips_gemma_when_previews_exist(self) -> None:
+    def test_ac4_strong_archive_calls_gemma_and_waits_for_jev(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             a = root / "Games" / "Pack"
@@ -227,13 +227,18 @@ class ArchiveDecideStrongTests(unittest.TestCase):
             with patch(
                 "spark_curate.decide_merge._preview_jpeg",
                 return_value=b"\xff\xd8fakejpeg",
-            ), patch("spark_curate.decide_merge.clients.gemma_vision") as gemma:
+            ), patch(
+                "spark_curate.decide_merge.typesafe_client.api_key_from",
+                return_value="",
+            ), patch(
+                "spark_curate.decide_merge.clients.gemma_vision",
+                return_value="same mesh pack",
+            ) as gemma:
                 d = decide_merge_pair(cand, self.spark, self.curate, Path(tmp) / ".thumbs")
-            gemma.assert_not_called()
+            gemma.assert_called_once()
             self.assertEqual(d.decision, "merge")
-            self.assertGreaterEqual(d.confidence, 0.80)
-            self.assertTrue(d.approved_for_apply)
-            self.assertIn("STRONG", d.reason)
+            self.assertFalse(d.approved_for_apply)
+            self.assertIn("TypeSafe review required", d.reason)
 
     def test_one_mesh_plus_name_is_uncertain_calls_gemma(self) -> None:
         """(≥1 mesh + name_near_dupe) is UNCERTAIN — not STRONG."""

@@ -85,6 +85,11 @@ class CurateConfig:
     max_merge_pairs: int = 200
     # Graduated HITL apply policy (INIT-018/SPEC-006). Default hitl_all — never silent hitl_off.
     merge_hitl: str = "hitl_all"
+    # TypeSafe System One (text judgments). API key from TYPESAFE_API_KEY / this field.
+    typesafe_api_key: str = ""
+    typesafe_model: str = "jev-latest"
+    typesafe_base_url: str = "https://api.typesafe.ai"
+    typesafe_timeout: float = 60.0
 
     def resolved_work_dir(self) -> Path:
         if self.work_dir:

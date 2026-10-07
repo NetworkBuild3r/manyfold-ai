@@ -59,6 +59,20 @@ class Scan::Model::HealMissingPreviewsJob < ApplicationJob
       break if healed >= max
 
       pick = PreviewFilePicker.new(model).call(require_on_disk: true)
+      if pick&.is_image?
+        apply_pick!(model, pick)
+        healed += 1
+        next
+      end
+
+      # Pictures that only exist inside an archive are not ModelFiles yet.
+      before = model.preview_file_id
+      model.ensure_image_preview!
+      if model.reload.preview_file&.is_image? && model.preview_file_id != before
+        healed += 1
+        next
+      end
+
       next if pick.nil?
 
       apply_pick!(model, pick)

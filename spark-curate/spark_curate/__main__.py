@@ -116,22 +116,49 @@ def build_parser() -> argparse.ArgumentParser:
     return p
 
 
-def smoke(spark: SparkConfig) -> int:
+def smoke(spark: SparkConfig, curate: CurateConfig | None = None) -> int:
     import urllib.request
 
+    from spark_curate import typesafe_client
+
     ok = 0
-    for name, url in [
+    checks = [
         ("gemma models", spark.gemma_url.rstrip("/") + "/models"),
         ("curator models", spark.curator_url.rstrip("/") + "/models"),
         ("nudenet health", spark.nudenet_url.rstrip("/") + "/health"),
-    ]:
+    ]
+    for name, url in checks:
         try:
             with urllib.request.urlopen(url, timeout=15) as r:
                 print(f"OK  {name}: HTTP {r.status}")
                 ok += 1
         except Exception as e:  # noqa: BLE001
             print(f"FAIL {name}: {e}")
-    return 0 if ok == 3 else 1
+    need = len(checks)
+    api_key = typesafe_client.api_key_from(curate)
+    if api_key:
+        need += 1
+        try:
+            typesafe_client.system_one(
+                api_key=api_key,
+                state="smoke",
+                questions={
+                    "ok": {
+                        "type": "noul",
+                        "instructions": "Is this a connectivity smoke check?",
+                    }
+                },
+                model=(curate.typesafe_model if curate else "jev-latest"),
+                base_url=(curate.typesafe_base_url if curate else typesafe_client.DEFAULT_BASE_URL),
+                timeout=30.0,
+            )
+            print("OK  typesafe systemone")
+            ok += 1
+        except Exception as e:  # noqa: BLE001
+            print(f"FAIL typesafe systemone: {e}")
+    else:
+        print("SKIP typesafe (TYPESAFE_API_KEY not set)")
+    return 0 if ok == need else 1
 
 
 def run_organize(args: argparse.Namespace, spark: SparkConfig, curate: CurateConfig) -> int:
@@ -415,7 +442,7 @@ def main(argv: list[str] | None = None) -> int:
         curate.skip_if_has_preview_and_known_category = True
 
     if args.smoke:
-        return smoke(spark)
+        return smoke(spark, curate)
 
     if args.mode == "match":
         return run_match(args, curate)

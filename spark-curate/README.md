@@ -23,7 +23,7 @@ It only needs:
 | `organize` (default) | Vision rename/move folders into Category/Model |
 | `merge` | Find duplicate packs (`Foo` / `Foo (2)`, shared digests) and queue merges |
 
-**Same character ≠ same model.** Two Batmans stay separate unless structural signals + vision say they are the *same product* (confidence ≥ 0.80).
+**Same character ≠ same model.** Two Batmans stay separate unless structural signals and a Jev review of the preview comparison agree they are the *same product*. STRONG file overlap is a plan only until that review approves it.
 
 ### Merge dry-run / apply
 
@@ -63,7 +63,8 @@ kubectl exec -n manyfold deploy/manyfold -- bundle exec rake manyfold:apply_spar
 ┌──────────────────────────┐     HTTP      ┌─────────────────────┐
 │  spark-curate container  │ ────────────► │ DGX Spark           │
 │  (this project)          │               │ :11435 Gemma vision │
-│  mount: /library         │               │ :11436 Qwen curator │
+│  mount: /library         │               │ :11436 Qwen fallback│
+│                          │ ────────────► │ TypeSafe Jev        │
 └────────────┬─────────────┘               │ :8090  NudeNet      │
              │ move/rename                 └─────────────────────┘
              ▼
@@ -145,6 +146,7 @@ docker compose up -d
 | `GEMMA_URL` | `http://192.168.11.161:11435/v1` | |
 | `CURATOR_URL` | `http://192.168.11.161:11436/v1` | |
 | `NUDENET_URL` | `http://192.168.11.161:8090` | |
+| `TYPESAFE_API_KEY` | | Jev judgments for UNCERTAIN merge pairs (Vault `kv/shared/common/llm/typesafe`) |
 
 ---
 

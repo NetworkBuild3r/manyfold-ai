@@ -284,4 +284,52 @@ RSpec.describe ArchiveEntryService do
       expect { service.extract_mesh_and_preview!(entry) }.to raise_error(ArchiveEntryService::UnsafePath)
     end
   end
+
+  describe "#extract_preview_image!" do
+    def png_bytes
+      Base64.decode64("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==")
+    end
+
+    it "adds the archive image and sets it as preview when none exists" do
+      service = described_class.new(@file)
+      allow(service).to receive(:write_image_preview!)
+      service.list!
+      entry = @file.archive_entries.find_by!(pathname: "pics/shot.png")
+
+      service.extract_preview_image!(entry)
+
+      image = @model.model_files.find_by!(filename: "shot.png")
+      expect(image.digest).to eq(Digest::SHA512.hexdigest(png_bytes))
+      expect(@model.reload.preview_file).to eq(image)
+      expect(entry.reload.status).to eq("preview_ready")
+    end
+
+    it "does not add a second file when an image with the same digest exists" do
+      cover = File.join(@library_path, "model_a", "cover.png")
+      File.binwrite(cover, png_bytes)
+      existing = create(:model_file, model: @model, filename: "cover.png", attachment: nil)
+      existing.attach_existing_file!(refresh: false)
+      existing.update!(digest: Digest::SHA512.file(cover).hexdigest)
+
+      service = described_class.new(@file)
+      allow(service).to receive(:write_image_preview!)
+      service.list!
+      entry = @file.archive_entries.find_by!(pathname: "pics/shot.png")
+
+      expect { service.extract_preview_image!(entry) }.not_to change { @model.model_files.count }
+      expect(@model.reload.preview_file).to eq(existing)
+      expect(File.exist?(File.join(@library_path, "model_a", "shot.png"))).to be false
+    end
+
+    it "lets the scanner assign a preview from an already listed archive image" do
+      allow_any_instance_of(described_class).to receive(:write_image_preview!) # rubocop:disable RSpec/AnyInstance
+      described_class.new(@file).list!
+      expect(@model.preview_file).to be_nil
+
+      @model.ensure_image_preview!
+
+      expect(@model.reload.preview_file.filename).to eq("shot.png")
+      expect(@model.model_files.where(filename: "shot.png").count).to eq(1)
+    end
+  end
 end

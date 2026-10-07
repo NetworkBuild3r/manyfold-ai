@@ -208,6 +208,12 @@ class Model < ApplicationRecord
     model_files.select(&:is_image?)
   end
 
+  # Scanner backfill: models that already have an on-disk image but no image
+  # preview (archive scans used to leave preview_file nil) get one assigned.
+  def ensure_image_preview!
+    Archive::EnsurePreview.call(self)
+  end
+
   def three_d_files
     model_files.select(&:is_3d_model?)
   end

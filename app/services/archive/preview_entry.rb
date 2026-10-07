@@ -45,6 +45,9 @@ module Archive
       Tempfile.create(["archive-entry", ".#{entry.extension.presence || "bin"}"]) do |tmp|
         tmp.binmode
         extract_entries_to!(entry.pathname => tmp.path)
+        # Hash the original bytes (not the resized PNG) so a later scan matches
+        # ModelFile#calculate_digest and does not add the same picture twice.
+        Archive::AdoptImage.call(model: @model, source_path: tmp.path, filename: entry.basename)
         write_image_preview!(tmp.path, absolute)
       end
 

@@ -36,6 +36,19 @@ RSpec.describe Scan::Model::CheckForProblemsJob do
       described_class.perform_now(model.id)
       expect(model.problems.map(&:category)).to include("no_image")
     end
+
+    it "assigns an on-disk image as preview when none is set" do
+      MockDirectory.create(["pictured/photo.png", "pictured/part.stl"]) do |path|
+        library = create(:library, path: path)
+        model = create(:model, library: library, path: "pictured", preview_file: nil)
+        create(:model_file, model: model, filename: "part.stl")
+        image = create(:model_file, model: model, filename: "photo.png")
+
+        described_class.perform_now(model.id)
+
+        expect(model.reload.preview_file).to eq(image)
+      end
+    end
   end
 
   context "when checking for missing 3d files" do
