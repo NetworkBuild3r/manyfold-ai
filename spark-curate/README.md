@@ -170,7 +170,10 @@ docker compose up -d
 | `GEMMA_URL` | `http://192.168.11.161:11435/v1` | |
 | `CURATOR_URL` | `http://192.168.11.161:11436/v1` | |
 | `NUDENET_URL` | `http://192.168.11.161:8090` | |
-| `TYPESAFE_API_KEY` | | Jev judgments for UNCERTAIN merge pairs (Vault `kv/shared/common/llm/typesafe`) |
+| `TYPESAFE_API_KEY` | | Optional. Enables Jev merge judgments (Vault `kv/shared/common/llm/typesafe`). Folder paths, up to 25 file names per folder and the vision model's preview descriptions are sent to the vendor. The environment variable wins over a key in the config JSON. Unset = Gemma + curator only. |
+| `TYPESAFE_MODEL` | `jev-latest` | TypeSafe model name |
+| `TYPESAFE_BASE_URL` | `https://api.typesafe.ai` | Must be `https` (plain `http` only for localhost). Redirects are refused. |
+| `TYPESAFE_TIMEOUT` | `60` | Request timeout in seconds |
 
 ---
 
