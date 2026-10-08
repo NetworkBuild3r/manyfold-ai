@@ -59,6 +59,19 @@ class Scan::Model::HealMissingPreviewsJob < ApplicationJob
       break if healed >= max
 
       pick = PreviewFilePicker.new(model).call(require_on_disk: true)
+      if pick.is_a?(ModelFile) && pick.is_image?
+        apply_pick!(model, pick)
+        healed += 1
+        next
+      end
+
+      # Pictures that only exist inside an archive are not ModelFiles yet;
+      # their adoption job assigns the preview (INIT-001/SPEC-003).
+      if backfill_from_archive(model) == :enqueued
+        healed += 1
+        next
+      end
+
       next if pick.nil?
 
       apply_pick!(model, pick)
@@ -90,6 +103,14 @@ class Scan::Model::HealMissingPreviewsJob < ApplicationJob
       healed += 1
     end
     healed
+  end
+
+  # One bad archive must not abort the rest of the batch.
+  def backfill_from_archive(model)
+    model.ensure_image_preview!
+  rescue => e
+    Rails.logger.warn("[scan] HealMissingPreviewsJob backfill model=#{model.id} #{e.class}: #{e.message}")
+    nil
   end
 
   # INIT-026/SPEC-003: ArchiveEntry picks set preview_archive_entry (D-4).

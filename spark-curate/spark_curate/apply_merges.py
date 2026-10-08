@@ -46,6 +46,7 @@ def write_merge_plans(
     queued = 0
     kept = 0
     errors = 0
+    typesafe_curator = 0
     skipped_hitl = 0
 
     with plans_path.open("w", encoding="utf-8") as fh:
@@ -64,6 +65,8 @@ def write_merge_plans(
 
             if d.error:
                 errors += 1
+            if d.typesafe_outcome == "curator":
+                typesafe_curator += 1
             if d.decision != "merge":
                 kept += 1
                 continue
@@ -117,6 +120,7 @@ def write_merge_plans(
         "planned": planned,
         "queued_for_manyfold": queued,
         "keep_separate": kept,
+        "typesafe_curator": typesafe_curator,
         "skipped_hitl": skipped_hitl,
         "errors": errors,
         "apply": do_apply,

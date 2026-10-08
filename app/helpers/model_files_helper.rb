@@ -1,4 +1,11 @@
 module ModelFilesHelper
+  # Delete confirmation that names any archive the image will also be removed
+  # from, or stay inside if that archive cannot be rewritten (INIT-001/SPEC-005).
+  def delete_confirmation_for(file)
+    cache = (@archive_writable ||= {}) # rubocop:disable Rails/HelperInstanceVariable -- per-render memo
+    Archive::DeleteConfirmation.call(file, base: t("model_files.destroy.confirm"), cache: cache)
+  end
+
   def app_links(file)
     supported_types = {
       bambu: [:threemf],

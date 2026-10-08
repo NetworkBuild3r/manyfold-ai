@@ -190,7 +190,7 @@ class Components::ImageCarousel < Components::Base
     else
       FileDeleteControl(
         href: model_model_file_path(image.model, image),
-        confirm: translate("models.gallery.delete_confirm_loose"),
+        confirm: Archive::DeleteConfirmation.call(image, base: translate("models.gallery.delete_confirm_loose")),
         label: t("models.gallery.delete_image"),
         icon_only: true
       )

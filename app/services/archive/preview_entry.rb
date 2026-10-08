@@ -10,7 +10,7 @@ module Archive
     # INIT-026/SPEC-003: every image under the size cap is queued (not a single cover).
     # force: true re-queues even when a derivative already exists (full rescan).
     def enqueue_previews!(entries = nil, images_only: false, force: false, batch_size: ArchiveEntryService::DEFAULT_PREVIEW_BATCH, stagger: ArchiveEntryService::DEFAULT_PREVIEW_STAGGER)
-      entries ||= @model_file.archive_entries.previewable.where.not(status: %w[too_large skipped])
+      entries ||= @model_file.archive_entries.previewable.where.not(status: ArchiveEntry::NOT_ADOPTABLE_STATUSES)
       images = entries.select(&:is_image?).sort_by { |e| e.size.to_i }
       meshes = if images_only
         []
@@ -58,6 +58,7 @@ module Archive
         # Hash the original bytes (same SHA-512 as ModelFile#calculate_digest).
         digest = Archive::AdoptImage.hexdigest(tmp.path)
         write_image_preview!(tmp.path, absolute)
+        adopt_image!(entry, tmp.path)
       end
 
       entry.update!(preview_path: relative, status: "preview_ready", error_message: nil, digest: digest)
@@ -95,6 +96,15 @@ module Archive
     end
 
     private
+
+    # Adoption is best-effort: a read-only library or a validation failure must
+    # not cost the archive its thumbnail (INIT-001/SPEC-002).
+    def adopt_image!(entry, source_path)
+      Archive::AdoptImage.call(model: @model, source_path: source_path, filename: entry.basename, entry: entry)
+    rescue SystemCallError, ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique, LibraryPathJail::EscapeError => e
+      Rails.logger.warn("[ArchiveEntryService] adopt failed entry=#{entry.id}: #{e.class}: #{e.message}")
+      nil
+    end
 
     def write_image_preview!(source_path, dest_path)
       ImageProcessing::MiniMagick

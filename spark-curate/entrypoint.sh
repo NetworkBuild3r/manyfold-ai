@@ -43,6 +43,9 @@ curate = {
     "nudenet_sensitive_threshold": float(os.environ.get("NUDENET_SENSITIVE_THRESHOLD", "0.6")),
     "max_image_edge": int(os.environ.get("MAX_IMAGE_EDGE", "1024")),
     "jpeg_quality": int(os.environ.get("JPEG_QUALITY", "85")),
+    "typesafe_model": os.environ.get("TYPESAFE_MODEL", "jev-latest"),
+    "typesafe_base_url": os.environ.get("TYPESAFE_BASE_URL", "https://api.typesafe.ai"),
+    "typesafe_timeout": float(os.environ.get("TYPESAFE_TIMEOUT", "60")),
 }
 path = Path(os.environ.get("CONFIG_PATH", "/app/runtime-config.json"))
 path.write_text(json.dumps({"spark": spark, "curate": curate}, indent=2), encoding="utf-8")

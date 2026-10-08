@@ -155,9 +155,10 @@ RSpec.describe ArchiveEntryService do
     end
   end
 
-  # INIT-026/SPEC-003: thumbs stay under .manyfold; originals never land in the pack folder.
+  # Thumbs stay under .manyfold; the original image is adopted into the model
+  # folder once (INIT-001 replaces INIT-026's no-copy rule).
   describe "#extract_preview_image!" do
-    it "writes the derivative under .manyfold and not into the model folder" do
+    it "writes the derivative under .manyfold and adopts the original into the model folder" do
       service = described_class.new(@file)
       allow(service).to receive(:write_image_preview!) do |_src, dest|
         FileUtils.mkdir_p(File.dirname(dest))
@@ -169,12 +170,12 @@ RSpec.describe ArchiveEntryService do
       expect(rel).to include(".manyfold/derivatives/archives/")
       expect(rel).to end_with("preview.png")
       expect(File.file?(File.join(@library_path, rel))).to be true
-      expect(File.exist?(File.join(@library_path, "model_a", "shot.png"))).to be false
+      expect(File.exist?(File.join(@library_path, "model_a", "shot.png"))).to be true
       expect(File.exist?(File.join(@library_path, "model_a", "pics", "shot.png"))).to be false
       expect(entry.reload.status).to eq("preview_ready")
     end
 
-    it "stores the SHA-512 digest and sets the archive image as preview" do
+    it "stores the SHA-512 digest and sets the adopted image as preview" do
       png = Base64.decode64("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==")
       service = described_class.new(@file)
       allow(service).to receive(:write_image_preview!)
@@ -184,8 +185,9 @@ RSpec.describe ArchiveEntryService do
       service.extract_preview_image!(entry)
 
       expect(entry.reload.digest).to eq(Digest::SHA512.hexdigest(png))
-      expect(@model.reload.preview_archive_entry).to eq(entry)
-      expect(File.exist?(File.join(@library_path, "model_a", "shot.png"))).to be false
+      expect(@model.reload.preview_file).to eq(entry.adopted_model_file)
+      expect(@model.preview_file.filename).to eq("shot.png")
+      expect(@model.preview_archive_entry).to be_nil
     end
 
     it "reuses a matching image file instead of adding another preview image" do
@@ -407,6 +409,78 @@ RSpec.describe ArchiveEntryService do
       entry = @file.archive_entries.find_by!(pathname: "parts/widget.stl")
       allow(service).to receive(:unsafe_pathname?).and_return(true)
       expect { service.extract_mesh_and_preview!(entry) }.to raise_error(ArchiveEntryService::UnsafePath)
+    end
+  end
+
+  describe "#extract_preview_image!" do
+    def png_bytes
+      Base64.decode64("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==")
+    end
+
+    it "adds the archive image and sets it as preview when none exists" do
+      service = described_class.new(@file)
+      allow(service).to receive(:write_image_preview!)
+      service.list!
+      entry = @file.archive_entries.find_by!(pathname: "pics/shot.png")
+
+      service.extract_preview_image!(entry)
+
+      image = @model.model_files.find_by!(filename: "shot.png")
+      expect(image.digest).to eq(Digest::SHA512.hexdigest(png_bytes))
+      expect(@model.reload.preview_file).to eq(image)
+      expect(entry.reload.status).to eq("preview_ready")
+    end
+
+    it "does not add a second file when an image with the same digest exists" do
+      cover = File.join(@library_path, "model_a", "cover.png")
+      File.binwrite(cover, png_bytes)
+      existing = create(:model_file, model: @model, filename: "cover.png", attachment: nil)
+      existing.attach_existing_file!(refresh: false)
+      existing.update!(digest: Digest::SHA512.file(cover).hexdigest)
+
+      service = described_class.new(@file)
+      allow(service).to receive(:write_image_preview!)
+      service.list!
+      entry = @file.archive_entries.find_by!(pathname: "pics/shot.png")
+
+      expect { service.extract_preview_image!(entry) }.not_to change { @model.model_files.count }
+      expect(@model.reload.preview_file).to eq(existing)
+      expect(File.exist?(File.join(@library_path, "model_a", "shot.png"))).to be false
+    end
+
+    it "still writes the thumbnail when adoption fails" do
+      service = described_class.new(@file)
+      allow(service).to receive(:write_image_preview!)
+      allow(Archive::AdoptImage).to receive(:call).and_raise(Errno::EROFS)
+      service.list!
+      entry = @file.archive_entries.find_by!(pathname: "pics/shot.png")
+
+      service.extract_preview_image!(entry)
+
+      expect(service).to have_received(:write_image_preview!)
+      expect(entry.reload.status).to eq("preview_ready")
+      expect(@model.model_files.where(filename: "shot.png")).to be_empty
+    end
+
+    it "does not enqueue previews for dismissed entries" do
+      service = described_class.new(@file)
+      service.list!
+      @file.archive_entries.find_by!(pathname: "pics/shot.png").update!(status: "dismissed")
+
+      service.enqueue_previews!
+
+      expect(@file.archive_entries.find_by!(pathname: "pics/shot.png").status).to eq("dismissed")
+    end
+
+    it "lets the scanner assign a preview from an already listed archive image" do
+      allow_any_instance_of(described_class).to receive(:write_image_preview!) # rubocop:disable RSpec/AnyInstance
+      described_class.new(@file).list!
+      expect(@model.preview_file).to be_nil
+
+      perform_enqueued_jobs { @model.ensure_image_preview! }
+
+      expect(@model.reload.preview_file.filename).to eq("shot.png")
+      expect(@model.model_files.where(filename: "shot.png").count).to eq(1)
     end
   end
 end

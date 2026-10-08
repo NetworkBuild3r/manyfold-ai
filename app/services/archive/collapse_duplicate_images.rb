@@ -118,7 +118,10 @@ module Archive
       when ArchiveEntry
         image.update!(status: "skipped", error_message: "duplicate image")
       when ModelFile
-        image.delete_from_disk_and_destroy
+        # Keep archive links on the surviving copy so deleting this duplicate
+        # does not also remove the image from its archive (INIT-001).
+        image.adopted_from_entries.update_all(adopted_model_file_id: keep.id) if keep.is_a?(ModelFile) # rubocop:disable Rails/SkipsModelValidations
+        image.reload.delete_from_disk_and_destroy
       end
     end
 

@@ -12,6 +12,8 @@ _ROOT = Path(__file__).resolve().parents[1]
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
+from _isolation import setUpModule, tearDownModule  # noqa: E402, F401 — no live TypeSafe calls
+
 from spark_curate.candidates import MergeCandidate  # noqa: E402
 from spark_curate.config import CurateConfig, SparkConfig  # noqa: E402
 from spark_curate.decide_merge import (  # noqa: E402
@@ -141,12 +143,18 @@ class DecideMergeLandmineTests(unittest.TestCase):
             with patch(
                 "spark_curate.decide_merge._preview_jpeg",
                 return_value=None,
-            ):
+            ), patch(
+                "spark_curate.decide_merge.typesafe_client.api_key_from",
+                return_value="",
+            ), patch("spark_curate.decide_merge.clients.gemma_vision") as gemma:
                 d = decide_merge_pair(cand, self.spark, self.curate, Path(tmp) / ".thumbs")
+            gemma.assert_not_called()
             self.assertEqual(d.decision, "merge")
             self.assertEqual(d.confidence, 0.0)
             self.assertFalse(d.approved_for_apply)
             self.assertIn("missing preview", d.reason)
+
+    def test_strong_archive_overlap_goes_through_gemma(self) -> None:
         """INIT-001/SPEC-002: ≥T mesh overlaps still go through Gemma."""
         with tempfile.TemporaryDirectory() as tmp:
             cand = _pair(
@@ -175,6 +183,7 @@ class DecideMergeLandmineTests(unittest.TestCase):
                 d = decide_merge_pair(cand, self.spark, self.curate, Path(tmp) / ".thumbs")
             gemma.assert_called_once()
             self.assertEqual(d.decision, "merge")
+            self.assertGreaterEqual(d.confidence, 0.80)
             self.assertTrue(d.approved_for_apply)
 
     def test_strong_vision_failure_not_approved(self) -> None:

@@ -1,11 +1,18 @@
 # frozen_string_literal: true
 
 module Archive
-  # Identity for an image found inside an archive. Digest is SHA-512, matching
-  # ModelFile#calculate_digest. A matching image is not copied into the model
-  # folder (INIT-026). If the model has no image preview, the match — or this
-  # entry — becomes the preview so image search can see it.
+  # Adopt an image found inside an archive onto the model. Every image entry is
+  # adopted (INIT-001 owner decision), once: a file with the same SHA-512 digest
+  # is reused instead of copied. ModelFile#calculate_digest is SHA-512, so this
+  # matches files the scanner already hashed. The entry is linked to the file it
+  # resolved to so deleting that file can also remove it from the archive.
+  # If the model has no on-disk image preview, the file becomes preview_file.
   class AdoptImage
+    def self.call(...)
+      new(...).call
+    end
+
+    # SHA-512 of a file, matching ModelFile#calculate_digest.
     def self.hexdigest(path)
       digest = Digest::SHA512.new
       File.open(path, "rb") do |io|
@@ -16,55 +23,111 @@ module Archive
       digest.hexdigest
     end
 
+    # Fallback when adoption could not place a loose copy: the archive entry
+    # itself becomes the preview (INIT-026). See Archive::EntryPreview.
     def self.assign_preview!(model:, entry:)
-      new(model, entry).assign_preview!
+      Archive::EntryPreview.new(model, entry).assign_preview!
     end
 
-    def initialize(model, entry)
+    def initialize(model:, source_path:, filename:, entry: nil)
       @model = model
+      @source_path = source_path
+      @filename = filename
       @entry = entry
     end
 
-    def assign_preview!
-      return if image_preview?
+    def call
+      return unless File.file?(@source_path)
+      return if @entry&.status == "dismissed"
 
-      source = preview_source(matching_image(@entry.digest))
-      case source
-      when ModelFile
-        @model.update!(preview_file: source)
-      when ArchiveEntry
-        @model.update!(preview_archive_entry: source) unless @model.preview_archive_entry_id == source.id
-      end
+      digest = self.class.hexdigest(@source_path)
+      return if digest.blank?
+
+      file = adopt!(digest)
+      @entry&.update!(adopted_model_file: file)
+      assign_preview!(file)
+      file
     end
 
     private
 
-    def preview_source(match)
-      case match
-      when ModelFile
-        match
-      when ArchiveEntry
-        match.preview_exists? ? match : @entry
-      else
-        @entry
+    # Copy outside the lock; match, name, place and create under a per-model
+    # lock so concurrent preview jobs cannot pick the same name or both miss a
+    # digest match (INIT-001/SPEC-002).
+    def adopt!(digest)
+      staged = stage_copy
+      begin
+        @model.with_lock { matching_image(digest) || create_image!(digest, staged) }
+      ensure
+        FileUtils.rm_f(staged)
       end
     end
 
-    def image_preview?
-      file = @model.preview_file
-      return true if file&.is_image? && file.exists_on_storage?
-
-      current = @model.preview_archive_entry
-      current&.is_image? && current.preview_exists?
+    def stage_copy
+      dir = File.join(model_dir, ".manyfold", "tmp")
+      FileUtils.mkdir_p(dir)
+      staged = File.join(dir, "adopt-#{SecureRandom.hex(8)}#{File.extname(@filename.to_s)}")
+      FileUtils.cp(@source_path, staged)
+      staged
     end
 
     def matching_image(digest)
-      return if digest.blank?
+      known = @model.model_files.where(digest: digest).detect { |file| file.is_image? && file.exists_on_storage? }
+      return known if known
 
-      file = @model.model_files.where(digest: digest).detect(&:is_image?)
-      return file if file
+      @model.model_files.where(digest: [nil, ""]).find do |file|
+        next unless file.is_image? && file.exists_on_storage?
 
-      @model.archive_entries.where(digest: digest, kind: "image").where.not(id: @entry.id).first
+        hashed = file.calculate_digest
+        next if hashed.blank?
+
+        file.update_column(:digest, hashed) if file.digest != hashed # rubocop:disable Rails/SkipsModelValidations -- cache digest only
+        hashed == digest
+      end
+    end
+
+    def create_image!(digest, staged)
+      filename = unique_filename
+      dest = File.join(model_dir, filename)
+      File.rename(staged, dest)
+      begin
+        @model.model_files.create!(filename: filename, digest: digest)
+      rescue
+        FileUtils.rm_f(dest)
+        raise
+      end
+    end
+
+    def unique_filename
+      base = File.basename(@filename.to_s)
+      base = "image.png" if base.blank? || base == "." || base == ".."
+      ext = File.extname(base)
+      stem = File.basename(base, ext)
+      candidate = base
+      n = 1
+      while name_taken?(candidate)
+        candidate = "#{stem}-#{n}#{ext}"
+        n += 1
+      end
+      candidate
+    end
+
+    def name_taken?(filename)
+      @model.model_files.exists?(filename: filename) || File.exist?(File.join(model_dir, filename))
+    end
+
+    def model_dir
+      LibraryPathJail.assert_within!(@model.library.path, @model.path) if @model.path.present?
+      File.join(@model.library.path, @model.path)
+    end
+
+    def assign_preview!(file)
+      return unless file&.is_image?
+
+      current = @model.preview_file
+      return if current&.is_image? && current.exists_on_storage?
+
+      @model.update!(preview_file: file) unless @model.preview_file_id == file.id
     end
   end
 end
