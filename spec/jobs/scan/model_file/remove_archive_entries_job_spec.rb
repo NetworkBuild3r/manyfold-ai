@@ -73,6 +73,16 @@ RSpec.describe Scan::ModelFile::RemoveArchiveEntriesJob do
     expect(shot.error_message).to eq(described_class::UNWRITABLE_MESSAGE)
   end
 
+  it "treats an unreadable archive as unwritable instead of failing the job" do
+    shot = entry("pics/shot.png")
+    shot.update!(status: "dismissed")
+    allow(Archive::RemoveEntries).to receive(:call).and_raise(Archive::Error, "Passphrase required")
+
+    expect { described_class.perform_now(archive.id) }.not_to raise_error
+    expect(shot.reload.status).to eq("dismissed")
+    expect(shot.error_message).to eq(described_class::UNWRITABLE_MESSAGE)
+  end
+
   it "does nothing when the archive has no dismissed entries" do
     allow(Archive::RemoveEntries).to receive(:call)
 

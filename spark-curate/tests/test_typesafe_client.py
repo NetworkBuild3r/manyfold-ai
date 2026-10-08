@@ -42,7 +42,7 @@ def _call(**kwargs: object) -> dict:
 class SystemOneTests(unittest.TestCase):
     def test_success_posts_payload_and_returns_body(self) -> None:
         body = json.dumps({"answers": {"q": {"noul": 0.9}}}).encode()
-        with patch("urllib.request.urlopen", return_value=_response(body)) as urlopen:
+        with patch.object(typesafe_client._OPENER, "open", return_value=_response(body)) as urlopen:
             out = _call(model="jev-x", timeout=5.0)
 
         self.assertEqual(out["answers"]["q"]["noul"], 0.9)
@@ -56,7 +56,7 @@ class SystemOneTests(unittest.TestCase):
         self.assertEqual(urlopen.call_args.kwargs["timeout"], 5.0)
 
     def test_empty_key_raises_before_any_request(self) -> None:
-        with patch("urllib.request.urlopen") as urlopen:
+        with patch.object(typesafe_client._OPENER, "open") as urlopen:
             with self.assertRaises(HttpError):
                 _call(api_key="")
         urlopen.assert_not_called()
@@ -66,7 +66,7 @@ class SystemOneTests(unittest.TestCase):
         err = urllib.error.HTTPError(
             "https://ts.example/v1/systemone", 401, "Unauthorized", None, io.BytesIO(body)
         )
-        with patch("urllib.request.urlopen", side_effect=err):
+        with patch.object(typesafe_client._OPENER, "open", side_effect=err):
             with self.assertRaises(HttpError) as ctx:
                 _call()
 
@@ -77,39 +77,85 @@ class SystemOneTests(unittest.TestCase):
         self.assertLess(len(msg), 400)
 
     def test_connection_failure_maps_to_http_error(self) -> None:
-        with patch("urllib.request.urlopen", side_effect=urllib.error.URLError("refused")):
+        with patch.object(typesafe_client._OPENER, "open", side_effect=urllib.error.URLError("refused")):
             with self.assertRaises(HttpError) as ctx:
                 _call()
         self.assertIn("connection failed", str(ctx.exception))
         self.assertNotIn(KEY, str(ctx.exception))
 
     def test_non_json_body(self) -> None:
-        with patch("urllib.request.urlopen", return_value=_response(b"<html>oops</html>")):
+        with patch.object(typesafe_client._OPENER, "open", return_value=_response(b"<html>oops</html>")):
             with self.assertRaises(HttpError) as ctx:
                 _call()
         self.assertIn("non-JSON", str(ctx.exception))
 
     def test_body_without_answers(self) -> None:
-        with patch("urllib.request.urlopen", return_value=_response(b'{"error": "quota"}')):
+        with patch.object(typesafe_client._OPENER, "open", return_value=_response(b'{"error": "quota"}')):
             with self.assertRaises(HttpError) as ctx:
                 _call()
         self.assertIn("Unexpected TypeSafe response", str(ctx.exception))
 
 
 class ApiKeyFromTests(unittest.TestCase):
-    def test_config_wins_over_env(self) -> None:
+    def test_env_wins_over_config(self) -> None:
         with patch.dict(os.environ, {"TYPESAFE_API_KEY": "env-key"}):
             self.assertEqual(
-                typesafe_client.api_key_from(CurateConfig(typesafe_api_key=" cfg-key ")), "cfg-key"
+                typesafe_client.api_key_from(CurateConfig(typesafe_api_key="stale-cfg-key")), "env-key"
             )
 
-    def test_env_used_when_config_blank(self) -> None:
-        with patch.dict(os.environ, {"TYPESAFE_API_KEY": "env-key"}):
-            self.assertEqual(typesafe_client.api_key_from(CurateConfig()), "env-key")
+    def test_config_used_when_env_blank(self) -> None:
+        self.assertEqual(
+            typesafe_client.api_key_from(CurateConfig(typesafe_api_key=" cfg-key ")), "cfg-key"
+        )
 
     def test_blank_everywhere_means_unconfigured(self) -> None:
         self.assertEqual(typesafe_client.api_key_from(CurateConfig()), "")
         self.assertEqual(typesafe_client.api_key_from(None), "")
+
+
+class TransportSafetyTests(unittest.TestCase):
+    def test_redirects_are_refused_so_the_token_is_never_resent(self) -> None:
+        handler = typesafe_client._NoRedirect()
+        with self.assertRaises(HttpError) as ctx:
+            handler.redirect_request(None, None, 302, "Found", {}, "http://evil.example/")
+        self.assertIn("redirect refused", str(ctx.exception))
+
+    def test_non_https_base_url_is_refused_before_any_request(self) -> None:
+        with patch.object(typesafe_client._OPENER, "open") as opener:
+            with self.assertRaises(HttpError) as ctx:
+                typesafe_client.system_one(
+                    api_key=KEY, state={}, questions={}, base_url="http://api.typesafe.ai"
+                )
+        self.assertIn("https", str(ctx.exception))
+        opener.assert_not_called()
+
+    def test_plain_http_is_allowed_for_localhost_only(self) -> None:
+        body = json.dumps({"answers": {}}).encode()
+        for base in ("http://localhost:8080", "http://127.0.0.1:9"):
+            with self.subTest(base), patch.object(
+                typesafe_client._OPENER, "open", return_value=_response(body)
+            ):
+                typesafe_client.system_one(api_key=KEY, state={}, questions={}, base_url=base)
+
+    def test_vendor_error_text_has_no_control_characters_and_is_capped(self) -> None:
+        err = urllib.error.HTTPError(
+            "https://ts.example/v1/systemone", 422, "Unprocessable", None,
+            io.BytesIO(("bad\r\nINJECTED\x1b[31m " + "y" * 500).encode()),
+        )
+        with patch.object(typesafe_client._OPENER, "open", side_effect=err):
+            with self.assertRaises(HttpError) as ctx:
+                _call()
+        msg = str(ctx.exception)
+        self.assertNotRegex(msg, r"[\x00-\x1f]")
+        self.assertLess(len(msg), 200)
+
+    def test_unexpected_response_reports_keys_not_content(self) -> None:
+        body = b'{"error": "quota", "detail": "secret-ish text"}'
+        with patch.object(typesafe_client._OPENER, "open", return_value=_response(body)):
+            with self.assertRaises(HttpError) as ctx:
+                _call()
+        self.assertIn("keys:", str(ctx.exception))
+        self.assertNotIn("secret-ish", str(ctx.exception))
 
 
 if __name__ == "__main__":

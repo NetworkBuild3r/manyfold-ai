@@ -3,7 +3,7 @@
 Use as ``from _isolation import setUpModule, tearDownModule`` in any test module
 that can reach TypeSafe. Blanks TYPESAFE_API_KEY so a key exported in the shell
 or container never turns a unit test into a live API call, and makes any real
-``urllib.request.urlopen`` call fail the test.
+``urllib.request.urlopen`` or opener call fail the test.
 """
 from __future__ import annotations
 
@@ -22,6 +22,7 @@ def _refuse_network(*args: object, **kwargs: object) -> None:
 _patches = [
     patch.dict(os.environ, {"TYPESAFE_API_KEY": ""}),
     patch("urllib.request.urlopen", side_effect=_refuse_network),
+    patch("urllib.request.OpenerDirector.open", side_effect=_refuse_network),
 ]
 
 

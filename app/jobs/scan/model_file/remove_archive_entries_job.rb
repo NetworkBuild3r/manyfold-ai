@@ -18,7 +18,7 @@ class Scan::ModelFile::RemoveArchiveEntriesJob < ApplicationJob
       entries = file.archive_entries.where(status: "dismissed").to_a
       next if entries.empty?
 
-      result = Archive::RemoveEntries.call(model_file: file, pathnames: entries.map(&:pathname))
+      result = rewrite(file, entries)
       case result.status
       when :removed
         cleanup!(file, entries.select { |e| result.removed.include?(e.pathname) })
@@ -29,6 +29,15 @@ class Scan::ModelFile::RemoveArchiveEntriesJob < ApplicationJob
   end
 
   private
+
+  # Encrypted, multi-volume or corrupt archives raise from libarchive. The
+  # original is untouched, so treat them as unwritable rather than retrying.
+  def rewrite(file, entries)
+    Archive::RemoveEntries.call(model_file: file, pathnames: entries.map(&:pathname))
+  rescue ::Archive::Error, Archive::RemoveEntries::VerifyFailed => e
+    Rails.logger.warn("[RemoveArchiveEntries] file=#{file.id} #{e.class}: #{e.message}")
+    Archive::RemoveEntries::Result.new(status: :unwritable, removed: [], message: e.message)
+  end
 
   def cleanup!(file, entries)
     entries.each do |entry|

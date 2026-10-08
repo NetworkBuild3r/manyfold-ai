@@ -66,6 +66,11 @@ RSpec.describe Archive::AdoptImage do
     expect(Digest::SHA512.file(File.join(model_dir, "1-1.png")).hexdigest).to eq(b.digest)
   end
 
+  it "does not adopt SVG images" do
+    expect(adopt(source("logo.svg", "<svg onload=alert(1)/>"))).to be_nil
+    expect(File.exist?(File.join(model_dir, "logo.svg"))).to be false
+  end
+
   it "does not adopt a dismissed entry" do
     e = entry("pics/gone.png", status: "dismissed")
 
@@ -128,5 +133,51 @@ RSpec.describe Archive::AdoptImage do
     expect([evil.filename, nested.filename]).to eq(["evil.png", "b.png"])
     expect(File.exist?(File.join(model_dir, "evil.png"))).to be true
     expect(File.exist?(File.join(library_path, "evil.png"))).to be false
+  end
+
+  describe "unsafe destinations" do # rubocop:disable RSpec/MultipleMemoizedHelpers
+    let(:outside) { Dir.mktmpdir("adopt_image_outside") }
+
+    after { FileUtils.rm_rf(outside) }
+
+    it "never writes through a dangling symlink at the destination name" do
+      target = File.join(outside, "victim")
+      File.symlink(target, File.join(model_dir, "shot.png"))
+
+      file = adopt(source("shot.png", "payload"))
+
+      expect(File.exist?(target)).to be false
+      expect(file.filename).to eq("shot-1.png")
+      expect(File.symlink?(File.join(model_dir, "shot.png"))).to be true
+    end
+
+    it "does not delete or overwrite a pre-existing regular file when the name races" do
+      File.binwrite(File.join(model_dir, "shot.png"), "mine")
+      allow(model.model_files).to receive(:exists?).and_return(false)
+
+      file = adopt(source("shot.png", "payload"))
+
+      expect(File.binread(File.join(model_dir, "shot.png"))).to eq("mine")
+      expect(file.filename).to eq("shot-1.png")
+    end
+
+    it "refuses a model folder that is a symlink out of the library" do
+      FileUtils.rm_rf(model_dir)
+      File.symlink(outside, model_dir)
+
+      expect { adopt(source("shot.png", "payload")) }.to raise_error(LibraryPathJail::EscapeError)
+      expect(Dir.children(outside)).to be_empty
+    end
+
+    it "uploads through the library storage for non-filesystem libraries" do
+      storage = instance_double(LibraryFileSystem, upload: nil, exists?: false)
+      # with_lock reloads the model, so stub every Library instance.
+      allow_any_instance_of(Library).to receive_messages(storage_service: "s3", storage: storage) # rubocop:disable RSpec/AnyInstance
+
+      adopt(source("shot.png", "payload"))
+
+      expect(storage).to have_received(:upload).with(anything, "model_a/shot.png")
+      expect(File.exist?(File.join(model_dir, "shot.png"))).to be false
+    end
   end
 end
