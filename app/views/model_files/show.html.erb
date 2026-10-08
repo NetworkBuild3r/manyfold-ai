@@ -95,7 +95,7 @@
     <% if policy(@model).edit? && (@file.is_renderable? || @file.is_image?) && @file != @model.preview_file %>
       <%= SetPreviewControl(model: @model, preview_file_id: @file.id) %>
     <% end %>
-    <%= FileDeleteControl(href: model_model_file_path(@model, @file), confirm: t("model_files.destroy.confirm"), label: t("models.file.delete")) if policy(@file).destroy? %>
+    <%= FileDeleteControl(href: model_model_file_path(@model, @file), confirm: delete_confirmation_for(@file), label: t("models.file.delete")) if policy(@file).destroy? %>
     <%= BurgerMenu do %>
       <%= DropdownItem(icon: "pencil", label: translate("general.edit"), path: edit_model_model_file_path(@model, @file)) if policy(@model).edit? %>
     <% end %>

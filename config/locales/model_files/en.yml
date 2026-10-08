@@ -19,6 +19,8 @@ en:
       success: File(s) uploaded successfully!
     destroy:
       confirm: Are you sure you want to remove this file from your filesystem?
+      confirm_archive_keep: "%{archives} cannot be rewritten, so %{file} will be hidden here but stays inside it."
+      confirm_archive_remove: This also removes %{file} from %{archives}. This cannot be undone.
       success: File deleted!
     download:
       bambu: Open in Bambu Studio

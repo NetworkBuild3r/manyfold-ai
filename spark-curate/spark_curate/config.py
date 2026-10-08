@@ -93,6 +93,11 @@ class CurateConfig:
     min_curator_confidence: float = 0.70
     # Operator-added categories beyond the live library's top-level folders (aud-2)
     category_extensions: list[str] = field(default_factory=list)
+    # TypeSafe System One (text judgments). API key from TYPESAFE_API_KEY / this field.
+    typesafe_api_key: str = ""
+    typesafe_model: str = "jev-latest"
+    typesafe_base_url: str = "https://api.typesafe.ai"
+    typesafe_timeout: float = 60.0
 
     def resolved_work_dir(self) -> Path:
         if self.work_dir:

@@ -37,7 +37,7 @@ RSpec.describe Scan::Model::CheckForProblemsJob do
       expect(model.problems.map(&:category)).to include("no_image")
     end
 
-    it "assigns a ready archive image when no preview is set" do
+    it "queues adoption of a ready archive image when no preview is set" do
       MockDirectory.create(["pictured/pack.zip", "pictured/.manyfold/preview.png"]) do |path|
         library = create(:library, path: path)
         model = create(:model, library: library, path: "pictured", preview_file: nil)
@@ -51,9 +51,39 @@ RSpec.describe Scan::Model::CheckForProblemsJob do
           size: 8
         )
 
+        expect { described_class.perform_now(model.id) }
+          .to have_enqueued_job(Scan::ModelFile::PreviewArchiveEntryJob).with(entry.id)
+      end
+    end
+
+    it "assigns an on-disk image as preview when none is set" do
+      MockDirectory.create(["pictured/photo.png", "pictured/part.stl"]) do |path|
+        library = create(:library, path: path)
+        model = create(:model, library: library, path: "pictured", preview_file: nil)
+        create(:model_file, model: model, filename: "part.stl")
+        image = create(:model_file, model: model, filename: "photo.png")
+
         described_class.perform_now(model.id)
 
-        expect(model.reload.preview_archive_entry).to eq(entry)
+        expect(model.reload.preview_file).to eq(image)
+      end
+    end
+
+    it "still runs the remaining detectors when preview backfill fails" do
+      MockDirectory.create(["broken/part.stl"]) do |path|
+        library = create(:library, path: path)
+        model = create(:model, library: library, path: "broken", preview_file: nil)
+        create(:model_file, model: model, filename: "part.stl")
+        allow(PreviewFilePicker).to receive(:new).and_raise(Errno::EIO)
+        allow(Problems::NoImage).to receive(:detect).and_call_original
+        allow(Problems::NoLicense).to receive(:detect).and_call_original
+        allow(Problems::MissingFile).to receive(:detect).and_call_original
+
+        described_class.perform_now(model.id)
+
+        expect(Problems::NoImage).to have_received(:detect)
+        expect(Problems::NoLicense).to have_received(:detect)
+        expect(Problems::MissingFile).to have_received(:detect)
       end
     end
   end

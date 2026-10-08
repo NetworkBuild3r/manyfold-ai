@@ -90,4 +90,16 @@ RSpec.describe Scan::Model::HealMissingPreviewsJob do
       described_class.perform_now(limit: 10)
     }.not_to change { model.reload.preview_file_id }
   end
+
+  it "queues archive-only models and keeps going past one whose backfill raises" do
+    models = %w[arch_1 arch_2 arch_3].map { |p| create(:model, library: library, path: p, preview_file: nil) }
+    broken_id = models[1].id
+    allow_any_instance_of(Model).to receive(:ensure_image_preview!) do |model| # rubocop:disable RSpec/AnyInstance
+      raise Errno::EIO if model.id == broken_id
+
+      :enqueued
+    end
+
+    expect(described_class.perform_now(limit: 10)).to eq(2)
+  end
 end

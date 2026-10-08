@@ -10,7 +10,7 @@ class Scan::ModelFile::PreviewArchiveEntryJob < ApplicationJob
     file = entry.model_file
     return unless file.is_archive?
     return unless file.exists_on_storage?
-    return if entry.status == "too_large"
+    return if entry.status.in?(%w[too_large dismissed])
 
     service = ArchiveEntryService.new(file)
 

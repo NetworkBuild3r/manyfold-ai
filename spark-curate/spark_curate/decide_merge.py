@@ -12,7 +12,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
-from . import clients
+from . import clients, typesafe_client
 from .candidates import DEFAULT_MESH_OVERLAP_T, MergeCandidate
 from .config import CurateConfig, SparkConfig
 from .decide import _sample_files
@@ -63,6 +63,130 @@ MERGE_CURATOR_SYSTEM = """Normalize merge-decision JSON. Output ONLY valid JSON:
 If input is garbage: decision=keep_separate, confidence=0, target=a, reason="parse_failed".
 """
 
+# Entity-alignment Score: outcomes are the levels; code rounds to nearest (no fitted threshold).
+MERGE_TYPESAFE_LEVELS = [
+    (
+        "They are two different printable products: different sculpts, poses, "
+        "scales, or artists. Keep them as separate Manyfold models."
+    ),
+    (
+        "They are closely related (same character or franchise, a possible split pack, "
+        "or incomplete evidence) and a human should decide whether to merge."
+    ),
+    (
+        "They are the same printable product: a duplicate download, renamed copy, "
+        "or an obvious split of one pack that should be one Manyfold model."
+    ),
+]
+MERGE_TYPESAFE_OUTCOME = {0: "keep_separate", 1: "curator", 2: "merge"}
+MERGE_TYPESAFE_QUESTIONS = {
+    "link_state": {
+        "type": "score",
+        "instructions": (
+            "How do `folder_a` and `folder_b` relate as printable products, "
+            "given `filesystem_signals`, `preview_comparison`, and `policy`?"
+        ),
+        "criteria": MERGE_TYPESAFE_LEVELS,
+    },
+    "same_printable_product": {
+        "type": "noul",
+        "instructions": (
+            "Are `folder_a` and `folder_b` the same printable product "
+            "(duplicate, rename, or split of one pack)?"
+        ),
+        "criteria": {
+            "true": "Same downloadable pack / same sculpt files.",
+            "false": "Different sculpts, poses, scales, or artists.",
+        },
+    },
+    "character_or_franchise_only": {
+        "type": "noul",
+        "instructions": (
+            "Do `folder_a` and `folder_b` only share a character or franchise, "
+            "without being the same product?"
+        ),
+    },
+    "keep_target": {
+        "type": "choice",
+        "instructions": (
+            "If these folders were merged, which should remain as the Manyfold model? "
+            "Prefer the better-named, more-complete pack between `folder_a` and `folder_b`."
+        ),
+        "criteria": {
+            "a": "Keep folder_a as the surviving model.",
+            "b": "Keep folder_b as the surviving model.",
+        },
+    },
+}
+
+
+def route_link_score(score_value: float) -> str:
+    """Nearest Score level is the outcome; approval gates live in apply_typesafe_merge_answers."""
+    level = min(max(int(score_value + 0.5), 0), 2)
+    return MERGE_TYPESAFE_OUTCOME[level]
+
+
+# Jev's two NOUL checks must agree with a merge before it is approved (INIT-001/SPEC-006).
+SAME_PRODUCT_MIN_NOUL = 0.5
+CHARACTER_ONLY_MAX_NOUL = 0.5
+
+
+def _answer_float(answer: Any, key: str) -> float | None:
+    """Numeric field from one TypeSafe answer; None when missing or unparsable."""
+    if not isinstance(answer, dict) or answer.get(key) is None:
+        return None
+    try:
+        return float(answer[key])
+    except (TypeError, ValueError):
+        return None
+
+
+def _fmt(value: float | None) -> str:
+    return "missing" if value is None else f"{value:.2f}"
+
+
+def apply_typesafe_merge_answers(
+    answers: dict[str, Any],
+    *,
+    min_merge_confidence: float,
+) -> tuple[str, float, str, str, bool, str]:
+    """
+    Map TypeSafe answers to decision, confidence, target, reason, approved, outcome.
+
+    A merge is approved only when the Score rounds to merge, link confidence is at
+    least min_merge_confidence, and both NOUL checks agree. A missing answer fails
+    closed. Curator ("a human should decide") is an unapproved merge plan so it
+    reaches the human review log (INIT-001/SPEC-006).
+    """
+    link = answers.get("link_state") or {}
+    score_value = _answer_float(link, "score") or 0.0
+    link_conf = _answer_float(link, "confidence") or 0.0
+    outcome = route_link_score(score_value)
+    same_noul = _answer_float(answers.get("same_printable_product"), "noul")
+    char_noul = _answer_float(answers.get("character_or_franchise_only"), "noul")
+    target = str((answers.get("keep_target") or {}).get("choice") or "a").lower().strip()
+    if target not in {"a", "b"}:
+        target = "a"
+    reason = (
+        f"typesafe {outcome} score={score_value:.2f} conf={link_conf:.2f} "
+        f"same_product={_fmt(same_noul)} character_only={_fmt(char_noul)}"
+    )
+    if outcome == "curator":
+        return "merge", link_conf, target, reason + " (curator)", False, outcome
+    if outcome != "merge":
+        return "keep_separate", link_conf, target, reason, False, outcome
+
+    failed: list[str] = []
+    if link_conf < min_merge_confidence:
+        failed.append("low confidence")
+    if same_noul is None or same_noul < SAME_PRODUCT_MIN_NOUL:
+        failed.append("contradicts: same_product")
+    if char_noul is None or char_noul >= CHARACTER_ONLY_MAX_NOUL:
+        failed.append("contradicts: character_only")
+    if failed:
+        return "merge", link_conf, target, f"{reason} ({'; '.join(failed)})", False, outcome
+    return "merge", link_conf, target, reason, True, outcome
+
 
 @dataclass
 class MergeDecision:
@@ -78,6 +202,8 @@ class MergeDecision:
     approved_for_apply: bool
     error: str | None = None
     raw_vision: str | None = None
+    typesafe_outcome: str | None = None
+    typesafe_score: float | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -161,6 +287,81 @@ def _is_strong_structural(
     return False
 
 
+def _strong_plan_pending_review(base: MergeDecision, cand: MergeCandidate) -> MergeDecision:
+    """STRONG is a plan, not permission. Jev must confirm before apply."""
+    base.decision = "merge"
+    base.confidence = 0.0
+    base.target = "a" if len(cand.a.name) <= len(cand.b.name) else "b"
+    base.reason = "STRONG structural duplicate; TypeSafe review required before apply"
+    base.approved_for_apply = False
+    return base
+
+
+def _typesafe_state(
+    cand: MergeCandidate,
+    signals: list[str],
+    files_a: str,
+    files_b: str,
+    preview_comparison: str,
+    *,
+    strong: bool,
+) -> dict[str, Any]:
+    return {
+        "folder_a": {
+            "path": cand.a.rel_posix,
+            "name": cand.a.name,
+            "files": files_a,
+        },
+        "folder_b": {
+            "path": cand.b.rel_posix,
+            "name": cand.b.name,
+            "files": files_b,
+        },
+        "filesystem_signals": signals,
+        "structural_band": "STRONG" if strong else "UNCERTAIN",
+        "preview_comparison": preview_comparison,
+        "policy": (
+            "Merge only if they are the same printable product. "
+            "Same character or franchise with different sculpts, poses, "
+            "scales, or artists stays separate. "
+            "A structural signal without a preview comparison is not visual confirmation."
+        ),
+    }
+
+
+def _record_typesafe(
+    base: MergeDecision,
+    answers: dict[str, Any],
+    signals: list[str],
+    curate: CurateConfig,
+    *,
+    allow_approve: bool,
+) -> MergeDecision:
+    base.typesafe_score = _answer_float(answers.get("link_state"), "score")
+    decision, confidence, target, reason, approved, outcome = apply_typesafe_merge_answers(
+        answers, min_merge_confidence=curate.min_merge_confidence
+    )
+    base.typesafe_outcome = outcome
+    if not _is_strong_structural(signals):
+        decision, confidence, reason = _weak_overlap_guard(
+            decision, confidence, reason, signals
+        )
+    if decision != "merge":
+        approved = False
+    if not allow_approve:
+        approved = False
+        if decision == "merge":
+            reason = (
+                reason + " | not approved without a preview comparison"
+            ).strip(" |")
+    base.decision = decision
+    base.confidence = confidence
+    base.target = target
+    base.reason = reason[:300]
+    base.approved_for_apply = approved and decision == "merge"
+    return base
+
+
 def decide_merge_pair(
     cand: MergeCandidate,
     spark: SparkConfig,
@@ -186,39 +387,84 @@ def decide_merge_pair(
         base.reason = "no structural duplicate signal; refuse franchise-only merge"
         return base
 
-    # INIT-001/SPEC-002: STRONG is a plan, not permission. Same vision path as UNCERTAIN.
+    # STRONG is evidence for Jev, not an automatic merge. Preview-less UNCERTAIN stays refused.
+    strong = _is_strong_structural(signals)
     jpeg_a = _preview_jpeg(cand.a.path, thumb_cache, curate)
     jpeg_b = _preview_jpeg(cand.b.path, thumb_cache, curate)
-    if jpeg_a is None or jpeg_b is None:
-        # A STRONG pair is a plan. Without preview text it is not permission.
-        if _is_strong_structural(signals):
-            base.decision = "merge"
-            base.confidence = 0.0
-            base.target = "a" if len(cand.a.name) <= len(cand.b.name) else "b"
-            base.reason = "STRONG structural duplicate; missing preview; not approved"
-            base.approved_for_apply = False
-            return base
+    has_previews = jpeg_a is not None and jpeg_b is not None
+    if strong and not has_previews and not typesafe_client.api_key_from(curate):
+        decided = _strong_plan_pending_review(base, cand)
+        decided.reason = "STRONG structural duplicate; missing preview; not approved"
+        return decided
+    if not strong and not has_previews:
+        # INIT-018/SPEC-003: preview-less name_near_dupe / weak overlap must NOT auto-merge (ADR D-5)
         base.reason = (
-            "missing preview on one or both folders; refuse preview-less merge"
+            "missing preview on one or both folders; refuse preview-less non-STRONG merge"
         )
         return base
 
     files_a = ", ".join(_sample_files(cand.a.path)[:25]) or "(none)"
     files_b = ", ".join(_sample_files(cand.b.path)[:25]) or "(none)"
-    prompt = MERGE_VISION_PROMPT.format(
-        path_a=cand.a.rel_posix,
-        path_b=cand.b.rel_posix,
-        files_a=files_a,
-        files_b=files_b,
-        signals=", ".join(signals) or "(none)",
-    )
+    raw = ""
+    if has_previews:
+        prompt = MERGE_VISION_PROMPT.format(
+            path_a=cand.a.rel_posix,
+            path_b=cand.b.rel_posix,
+            files_a=files_a,
+            files_b=files_b,
+            signals=", ".join(signals) or "(none)",
+        )
+        try:
+            raw = clients.gemma_vision(spark, prompt, [jpeg_a, jpeg_b])
+            base.raw_vision = raw[:4000]
+        except Exception as e:  # noqa: BLE001
+            base.error = f"vision failed: {e}"
+            if not strong:
+                base.reason = str(e)[:200]
+                return base
+            raw = ""
 
-    try:
-        raw = clients.gemma_vision(spark, prompt, [jpeg_a, jpeg_b])
-        base.raw_vision = raw[:4000]
-    except Exception as e:  # noqa: BLE001
-        base.error = f"vision failed: {e}"
-        base.reason = str(e)[:200]
+    api_key = typesafe_client.api_key_from(curate)
+    if api_key:
+        preview_comparison = raw[:4000] if raw else (
+            "No preview comparison is available. Missing images are not evidence "
+            "that the folders are the same product."
+        )
+        try:
+            ts = typesafe_client.system_one(
+                api_key=api_key,
+                state=_typesafe_state(
+                    cand,
+                    signals,
+                    files_a,
+                    files_b,
+                    preview_comparison,
+                    strong=strong,
+                ),
+                questions=MERGE_TYPESAFE_QUESTIONS,
+                model=curate.typesafe_model,
+                base_url=curate.typesafe_base_url,
+                timeout=curate.typesafe_timeout,
+            )
+            return _record_typesafe(
+                base,
+                ts.get("answers") or {},
+                signals,
+                curate,
+                allow_approve=bool(has_previews and raw),
+            )
+        except Exception as e:  # noqa: BLE001
+            base.error = f"typesafe failed: {type(e).__name__}: {str(e)[:180]}"
+            if strong:
+                decided = _strong_plan_pending_review(base, cand)
+                decided.reason = "STRONG structural duplicate; TypeSafe review failed, not approved"
+                return decided
+
+    if strong and not raw:
+        return _strong_plan_pending_review(base, cand)
+
+    if not raw:
+        base.reason = base.reason or "vision failed"
         return base
 
     try:
@@ -245,10 +491,34 @@ def decide_merge_pair(
     if target not in {"a", "b"}:
         target = "a"
     reason = str(data.get("reason") or "")[:300]
+    decision, confidence, reason = _weak_overlap_guard(
+        decision, confidence, reason, signals
+    )
 
-    # Post-rule: if signals are only weak overlap and vision says merge with low structural support
-    # Archive-overlap STRONG already has a structural signal. Do not force
-    # keep_separate just because basename overlap is low (INIT-001/SPEC-002).
+    base.decision = decision
+    base.confidence = confidence
+    base.target = target
+    base.reason = reason
+    base.approved_for_apply = (
+        decision == "merge"
+        and confidence >= curate.min_merge_confidence
+        and bool(base.raw_vision)
+    )
+    return base
+
+
+def _weak_overlap_guard(
+    decision: str,
+    confidence: float,
+    reason: str,
+    signals: list[str],
+) -> tuple[str, float, str]:
+    """
+    Code policy: weak file overlap cannot auto-merge (ADR D-7 companion).
+
+    Archive-overlap STRONG already has a structural signal; do not force
+    keep_separate just because basename overlap is low (INIT-001/SPEC-002).
+    """
     if (
         decision == "merge"
         and not _is_strong_structural(signals)
@@ -266,17 +536,7 @@ def decide_merge_pair(
             decision = "keep_separate"
             reason = (reason + " | forced keep_separate: weak file overlap").strip(" |")
             confidence = min(confidence, 0.5)
-
-    base.decision = decision
-    base.confidence = confidence
-    base.target = target
-    base.reason = reason
-    base.approved_for_apply = (
-        decision == "merge"
-        and confidence >= curate.min_merge_confidence
-        and bool(base.raw_vision)
-    )
-    return base
+    return decision, confidence, reason
 
 
 def decide_merge_pair_safe(
