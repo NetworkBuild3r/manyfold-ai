@@ -3,8 +3,19 @@
 require "rails_helper"
 
 RSpec.describe "scripts/mesh_thumbnail.mjs" do
+  # `command` is a shell builtin, not a program, so `system("command", "-v", "node")` never
+  # succeeds and silently skipped this spec everywhere. Ask node itself.
+  def node_available?
+    system("node", "--version", out: File::NULL, err: File::NULL) ? true : false
+  end
+
   it "renders a valid PNG from a tiny ASCII STL" do
-    skip "node not on PATH" unless system("command", "-v", "node", out: File::NULL, err: File::NULL)
+    unless node_available?
+      # CI images ship node; a missing node there is a broken image, not a reason to skip.
+      raise "node is required in CI to test scripts/mesh_thumbnail.mjs" if ENV["CI"].present?
+
+      skip "node not on PATH"
+    end
 
     script = Rails.root.join("scripts/mesh_thumbnail.mjs")
     expect(script).to be_file

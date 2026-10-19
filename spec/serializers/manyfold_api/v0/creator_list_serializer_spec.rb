@@ -9,8 +9,9 @@ RSpec.describe ManyfoldApi::V0::CreatorListSerializer do
     end
 
     let(:output) { serializer.serialize }
-    let(:object) { Creator.all.page(0).per(2) }
-    let(:creator) { Creator.first }
+    # Explicit order: an unordered page has no guaranteed first row, so compare against the page itself.
+    let(:object) { Creator.order(:id).page(0).per(2) }
+    let(:creator) { object.first }
 
     it "uses HYDRA JSON-LD context" do
       expect(output[:@context][1]).to include({hydra: "http://www.w3.org/ns/hydra/core#"})

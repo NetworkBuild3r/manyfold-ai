@@ -502,7 +502,22 @@ RSpec.describe "Models" do
             expect(flash[:alert]).to be_present
           end
 
-          it "is denied if the user doesn't have update permission on the target"
+          it "is denied if the user doesn't have update permission on the target", :as_contributor do
+            # The contributor may edit the source model, but not the target it would be merged into.
+            model_two.grant_permission_to("edit", User.last)
+            merge_post
+            expect(response).to have_http_status(:not_found)
+            expect(Model.exists?(model_two.id)).to be true
+            expect(model_one.reload.merge_histories).to be_empty
+          end
+
+          it "succeeds when the user can update both the target and the models", :as_contributor do
+            # Control for the denial specs above: the only difference is the permission.
+            [model_one, model_two].each { |model| model.grant_permission_to("edit", User.last) }
+            merge_post
+            expect(response).to redirect_to(model_one)
+            expect(model_one.reload.merge_histories).not_to be_empty
+          end
         end
 
         context "without any models", :as_moderator do

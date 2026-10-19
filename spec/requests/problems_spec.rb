@@ -6,7 +6,13 @@ require "support/mock_directory"
 
 RSpec.describe "Problems" do
   context "when signed out" do
-    it "needs testing when multiuser is enabled"
+    context "when multiuser is enabled", :after_first_run, :multiuser do
+      it "forbids listing problems" do
+        create(:problem)
+        get "/problems"
+        expect(response).to have_http_status(:forbidden)
+      end
+    end
   end
 
   context "when signed in" do

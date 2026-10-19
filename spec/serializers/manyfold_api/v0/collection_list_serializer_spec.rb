@@ -9,8 +9,9 @@ RSpec.describe ManyfoldApi::V0::CollectionListSerializer do
     end
 
     let(:output) { serializer.serialize }
-    let(:object) { Collection.all.page(0).per(2) }
-    let(:collection) { Collection.first }
+    # Explicit order: an unordered page has no guaranteed first row, so compare against the page itself.
+    let(:object) { Collection.order(:id).page(0).per(2) }
+    let(:collection) { object.first }
 
     it "uses HYDRA JSON-LD context" do
       expect(output[:@context][1]).to include({hydra: "http://www.w3.org/ns/hydra/core#"})

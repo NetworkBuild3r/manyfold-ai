@@ -144,7 +144,9 @@ Rails.application.routes.draw do
   resources :libraries, except: [:index]
 
   concern :followable do |options|
-    if SiteSettings.multiuser_enabled?
+    # Like the federation routes above, always drawn in test so request specs can cover them;
+    # FollowingPolicy still decides at request time.
+    if SiteSettings.multiuser_enabled? || Rails.env.test?
       resources :follows, {only: [:create]}.merge(options) do
         collection do
           delete "/", action: "destroy"

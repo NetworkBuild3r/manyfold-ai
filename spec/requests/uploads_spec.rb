@@ -1,26 +1,31 @@
 require "rails_helper"
 
+# Uploads go through the tus server mounted at /upload, inside a route constraint that only lets
+# signed-in contributors reach it. Visitors who are not signed in are sent to the sign-in page;
+# signed-in users without the contributor role get a routing 404, as if it were not there.
 RSpec.describe "Uploads" do
+  let(:tus_headers) { {"Tus-Resumable" => "1.0.0", "Upload-Length" => "10"} }
+
   context "when signed out" do
-    describe "POST /uploads" do
-      it "is denied" do
-        post "/uploads"
-        expect(response).to have_http_status :not_found
+    describe "POST /upload" do
+      it "redirects to sign in" do
+        post "/upload", headers: tus_headers
+        expect(response).to redirect_to(new_user_session_path)
       end
     end
   end
 
   context "when signed in" do
-    describe "POST /uploads" do
+    describe "POST /upload" do
       it "is denied to non-contributors", :as_member do
-        post "/uploads"
+        post "/upload", headers: tus_headers
         expect(response).to have_http_status :not_found
       end
 
-      it "is OK for contributors", :as_contributor do
-        skip "test does not yet work with authenticate block in routes.rb"
-        post "/uploads"
-        expect(response).to be_http_success
+      it "starts an upload for contributors", :as_contributor do
+        post "/upload", headers: tus_headers
+        expect(response).to have_http_status :created
+        expect(response.headers["Location"]).to match(%r{/upload/\w+})
       end
     end
   end

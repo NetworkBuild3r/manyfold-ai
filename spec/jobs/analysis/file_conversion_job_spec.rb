@@ -42,8 +42,6 @@ RSpec.describe Analysis::FileConversionJob do
       expect { ModelFile.find(file.id) }.not_to raise_error
     end
 
-    it "should create a file equivalence with the original file"
-
     it "logs an error for non-manifold meshes" do
       skip "temporarily disabled"
       allow(file).to receive(:manifold?).and_return(false)
