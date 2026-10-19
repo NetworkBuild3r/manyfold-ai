@@ -2,6 +2,11 @@
 require "spec_helper"
 
 ENV["RAILS_ENV"] ||= "test"
+# The suite is written for a federated install (ActivityPub, webfinger, actor-backed search and
+# comments). CI sets this explicitly; defaulting it here keeps a bare `bundle exec rspec` (local or
+# in a container) from failing ~120 specs that only exist to cover federation. Set FEDERATION=disabled
+# to run without it.
+ENV["FEDERATION"] = "enabled" if ENV["FEDERATION"].to_s.empty?
 require "simplecov"
 require "simplecov-cobertura"
 SimpleCov.start "rails" do

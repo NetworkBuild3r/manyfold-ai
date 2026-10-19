@@ -154,8 +154,6 @@ RSpec.describe Model do
         expect(new_model.model_files.exists?(filename: "model_two/part_two.stl")).to be true
       end
 
-      it "handles filename clashes"
-
       it "removes old models" do # rubocop:disable RSpec/MultipleExpectations
         expect { model_one.reload }.to raise_error(ActiveRecord::RecordNotFound)
         expect { model_two.reload }.to raise_error(ActiveRecord::RecordNotFound)
@@ -202,11 +200,50 @@ RSpec.describe Model do
         expect(model_one.model_files.exists?(filename: "model_two/part_two.stl")).to be true
       end
 
-      it "handles filename clashes"
-
       it "removes old model" do
         expect { model_two.reload }.to raise_error(ActiveRecord::RecordNotFound)
       end
+    end
+  end
+
+  context "when merging models that each hold a file with the same name" do
+    around do |ex|
+      MockDirectory.create([
+        "common/root/model_one/same.stl",
+        "common/root/model_two/same.stl",
+        "elsewhere/model_three/same.stl"
+      ]) do |path|
+        @library_path = path
+        ex.run
+      end
+    end
+
+    let!(:library) { create(:library, path: @library_path) } # rubocop:todo RSpec/InstanceVariable
+    let!(:model_one) { create(:model, library: library, path: "common/root/model_one") }
+    let!(:model_two) { create(:model, library: library, path: "common/root/model_two") }
+    let!(:model_three) { create(:model, library: library, path: "elsewhere/model_three") }
+
+    before do
+      create(:model_file, model: model_one, filename: "same.stl", digest: "aaaa")
+      create(:model_file, model: model_two, filename: "same.stl", digest: "bbbb")
+      create(:model_file, model: model_three, filename: "same.stl", digest: "cccc")
+    end
+
+    it "keeps both files apart by source folder when merging into a new parent" do
+      parent = create(:model, library: library, path: "common/root")
+      parent.merge! model_one, model_two
+      expect(parent.model_files.reload.pluck(:filename)).to contain_exactly("model_one/same.stl", "model_two/same.stl")
+    end
+
+    it "keeps the target's own file and prefixes the merged one when the models are disjoint" do
+      model_one.merge! model_three
+      expect(model_one.model_files.reload.pluck(:filename)).to contain_exactly("same.stl", "model_three/same.stl")
+    end
+
+    it "loses no file, and every file still exists on storage" do
+      parent = create(:model, library: library, path: "common/root")
+      expect { parent.merge! model_one, model_two }.not_to change(ModelFile, :count)
+      expect(parent.model_files.reload).to all(satisfy(&:exists_on_storage?))
     end
   end
 

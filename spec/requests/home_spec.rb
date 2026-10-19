@@ -4,7 +4,16 @@ require "rails_helper"
 
 RSpec.describe "Home" do
   context "when signed out" do
-    it "needs testing when multiuser is enabled"
+    context "when multiuser is enabled", :after_first_run, :multiuser do
+      it "shows the home page without exposing private models" do
+        private_model = create(:model, name: "Hidden private thing")
+        public_model = create(:model, :public, name: "Visible public thing")
+        get "/"
+        expect(response).to have_http_status(:ok)
+        expect(response.body).not_to include(private_model.name)
+        expect(response.body).to include(public_model.name)
+      end
+    end
   end
 
   context "when signed in" do

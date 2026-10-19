@@ -144,7 +144,17 @@ RSpec.describe ProcessUploadedFileJob do
       }.not_to change(Model, :count)
     end
 
-    it "leaves the uploaded file in place"
+    it "leaves the uploaded file in place so the upload can be retried" do
+      Tempfile.create(%w[upload .zip]) do |tmp|
+        tmp.write("PK")
+        tmp.flush
+        upload = Rack::Test::UploadedFile.new(tmp.path, "application/zip")
+        job = described_class.new
+        allow(job).to receive(:unzip_into_model).and_raise(StandardError)
+        expect { job.perform(library.id, upload) }.to raise_error(StandardError)
+        expect(File.exist?(tmp.path)).to be true
+      end
+    end
   end
 
   context "when extracting a zip file" do
