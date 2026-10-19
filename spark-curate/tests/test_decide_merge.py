@@ -143,9 +143,6 @@ class DecideMergeLandmineTests(unittest.TestCase):
             with patch(
                 "spark_curate.decide_merge._preview_jpeg",
                 return_value=None,
-            ), patch(
-                "spark_curate.decide_merge.typesafe_client.api_key_from",
-                return_value="",
             ), patch("spark_curate.decide_merge.clients.gemma_vision") as gemma:
                 d = decide_merge_pair(cand, self.spark, self.curate, Path(tmp) / ".thumbs")
             gemma.assert_not_called()

@@ -12,7 +12,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
-from . import clients, typesafe_client
+from . import clients, merge_judge
 from .candidates import DEFAULT_MESH_OVERLAP_T, MergeCandidate
 from .config import CurateConfig, SparkConfig
 from .decide import _sample_files
@@ -63,8 +63,8 @@ MERGE_CURATOR_SYSTEM = """Normalize merge-decision JSON. Output ONLY valid JSON:
 If input is garbage: decision=keep_separate, confidence=0, target=a, reason="parse_failed".
 """
 
-# Entity-alignment Score: outcomes are the levels; code rounds to nearest (no fitted threshold).
-MERGE_TYPESAFE_LEVELS = [
+# Entity-alignment Score (provider-neutral, see merge_judge.py): outcomes are the levels; code rounds to nearest (no fitted threshold).
+MERGE_JUDGE_LEVELS = [
     (
         "They are two different printable products: different sculpts, poses, "
         "scales, or artists. Keep them as separate Manyfold models."
@@ -78,15 +78,15 @@ MERGE_TYPESAFE_LEVELS = [
         "or an obvious split of one pack that should be one Manyfold model."
     ),
 ]
-MERGE_TYPESAFE_OUTCOME = {0: "keep_separate", 1: "curator", 2: "merge"}
-MERGE_TYPESAFE_QUESTIONS = {
+MERGE_JUDGE_OUTCOME = {0: "keep_separate", 1: "curator", 2: "merge"}
+MERGE_JUDGE_QUESTIONS = {
     "link_state": {
         "type": "score",
         "instructions": (
             "How do `folder_a` and `folder_b` relate as printable products, "
             "given `filesystem_signals`, `preview_comparison`, and `policy`?"
         ),
-        "criteria": MERGE_TYPESAFE_LEVELS,
+        "criteria": MERGE_JUDGE_LEVELS,
     },
     "same_printable_product": {
         "type": "noul",
@@ -121,18 +121,18 @@ MERGE_TYPESAFE_QUESTIONS = {
 
 
 def route_link_score(score_value: float) -> str:
-    """Nearest Score level is the outcome; approval gates live in apply_typesafe_merge_answers."""
+    """Nearest Score level is the outcome; approval gates live in apply_judge_answers."""
     level = min(max(int(score_value + 0.5), 0), 2)
-    return MERGE_TYPESAFE_OUTCOME[level]
+    return MERGE_JUDGE_OUTCOME[level]
 
 
-# Jev's two NOUL checks must agree with a merge before it is approved (INIT-002/SPEC-006).
+# The judge's two NOUL checks must agree with a merge before it is approved (INIT-002/SPEC-006).
 SAME_PRODUCT_MIN_NOUL = 0.5
 CHARACTER_ONLY_MAX_NOUL = 0.5
 
 
 def _answer_float(answer: Any, key: str) -> float | None:
-    """Numeric field from one TypeSafe answer; None when missing or unparsable."""
+    """Numeric field from one judge answer; None when missing or unparsable."""
     if not isinstance(answer, dict) or answer.get(key) is None:
         return None
     try:
@@ -145,13 +145,13 @@ def _fmt(value: float | None) -> str:
     return "missing" if value is None else f"{value:.2f}"
 
 
-def apply_typesafe_merge_answers(
+def apply_judge_answers(
     answers: dict[str, Any],
     *,
     min_merge_confidence: float,
 ) -> tuple[str, float, str, str, bool, str]:
     """
-    Map TypeSafe answers to decision, confidence, target, reason, approved, outcome.
+    Map judge answers to decision, confidence, target, reason, approved, outcome.
 
     A merge is approved only when the Score rounds to merge, link confidence is at
     least min_merge_confidence, and both NOUL checks agree. A missing answer fails
@@ -168,7 +168,7 @@ def apply_typesafe_merge_answers(
     if target not in {"a", "b"}:
         target = "a"
     reason = (
-        f"typesafe {outcome} score={score_value:.2f} conf={link_conf:.2f} "
+        f"judge {outcome} score={score_value:.2f} conf={link_conf:.2f} "
         f"same_product={_fmt(same_noul)} character_only={_fmt(char_noul)}"
     )
     if outcome == "curator":
@@ -202,8 +202,8 @@ class MergeDecision:
     approved_for_apply: bool
     error: str | None = None
     raw_vision: str | None = None
-    typesafe_outcome: str | None = None
-    typesafe_score: float | None = None
+    judge_outcome: str | None = None
+    judge_score: float | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -288,16 +288,16 @@ def _is_strong_structural(
 
 
 def _strong_plan_pending_review(base: MergeDecision, cand: MergeCandidate) -> MergeDecision:
-    """STRONG is a plan, not permission. Jev must confirm before apply."""
+    """STRONG is a plan, not permission. A judge must confirm before apply."""
     base.decision = "merge"
     base.confidence = 0.0
     base.target = "a" if len(cand.a.name) <= len(cand.b.name) else "b"
-    base.reason = "STRONG structural duplicate; TypeSafe review required before apply"
+    base.reason = "STRONG structural duplicate; judge review required before apply"
     base.approved_for_apply = False
     return base
 
 
-def _typesafe_state(
+def _judge_state(
     cand: MergeCandidate,
     signals: list[str],
     files_a: str,
@@ -329,7 +329,7 @@ def _typesafe_state(
     }
 
 
-def _record_typesafe(
+def _record_judgement(
     base: MergeDecision,
     answers: dict[str, Any],
     signals: list[str],
@@ -337,11 +337,11 @@ def _record_typesafe(
     *,
     allow_approve: bool,
 ) -> MergeDecision:
-    base.typesafe_score = _answer_float(answers.get("link_state"), "score")
-    decision, confidence, target, reason, approved, outcome = apply_typesafe_merge_answers(
+    base.judge_score = _answer_float(answers.get("link_state"), "score")
+    decision, confidence, target, reason, approved, outcome = apply_judge_answers(
         answers, min_merge_confidence=curate.min_merge_confidence
     )
-    base.typesafe_outcome = outcome
+    base.judge_outcome = outcome
     if not _is_strong_structural(signals):
         decision, confidence, reason = _weak_overlap_guard(
             decision, confidence, reason, signals
@@ -387,12 +387,13 @@ def decide_merge_pair(
         base.reason = "no structural duplicate signal; refuse franchise-only merge"
         return base
 
-    # STRONG is evidence for Jev, not an automatic merge. Preview-less UNCERTAIN stays refused.
+    # STRONG is evidence for the judge, not an automatic merge. Preview-less UNCERTAIN stays refused.
     strong = _is_strong_structural(signals)
+    judge = merge_judge.judge_for(curate)
     jpeg_a = _preview_jpeg(cand.a.path, thumb_cache, curate)
     jpeg_b = _preview_jpeg(cand.b.path, thumb_cache, curate)
     has_previews = jpeg_a is not None and jpeg_b is not None
-    if strong and not has_previews and not typesafe_client.api_key_from(curate):
+    if strong and not has_previews and judge is None:
         decided = _strong_plan_pending_review(base, cand)
         decided.reason = "STRONG structural duplicate; missing preview; not approved"
         return decided
@@ -424,16 +425,14 @@ def decide_merge_pair(
                 return base
             raw = ""
 
-    api_key = typesafe_client.api_key_from(curate)
-    if api_key:
+    if judge is not None:
         preview_comparison = raw[:4000] if raw else (
             "No preview comparison is available. Missing images are not evidence "
             "that the folders are the same product."
         )
         try:
-            ts = typesafe_client.system_one(
-                api_key=api_key,
-                state=_typesafe_state(
+            answers = judge.answers(
+                _judge_state(
                     cand,
                     signals,
                     files_a,
@@ -441,23 +440,20 @@ def decide_merge_pair(
                     preview_comparison,
                     strong=strong,
                 ),
-                questions=MERGE_TYPESAFE_QUESTIONS,
-                model=curate.typesafe_model,
-                base_url=curate.typesafe_base_url,
-                timeout=curate.typesafe_timeout,
+                MERGE_JUDGE_QUESTIONS,
             )
-            return _record_typesafe(
+            return _record_judgement(
                 base,
-                ts.get("answers") or {},
+                answers,
                 signals,
                 curate,
                 allow_approve=bool(has_previews and raw),
             )
         except Exception as e:  # noqa: BLE001
-            base.error = f"typesafe failed: {type(e).__name__}: {str(e)[:180]}"
+            base.error = f"{judge.name} judge failed: {type(e).__name__}: {str(e)[:180]}"
             if strong:
                 decided = _strong_plan_pending_review(base, cand)
-                decided.reason = "STRONG structural duplicate; TypeSafe review failed, not approved"
+                decided.reason = "STRONG structural duplicate; judge review failed, not approved"
                 return decided
 
     if strong and not raw:

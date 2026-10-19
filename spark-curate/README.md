@@ -24,7 +24,7 @@ It only needs:
 | `merge` | Find duplicate packs (`Foo` / `Foo (2)`, shared digests) and queue merges |
 | `relocate` | Lift pack roots out of **one** named library dump dest (INIT-025). Default `APPLY=0`. |
 
-**Same character ≠ same model.** Two Batmans stay separate unless structural signals and a Jev review of the preview comparison agree they are the *same product*. STRONG file overlap is a plan only until that review approves it. Jev approves a merge only when its score rounds to "same product", its confidence is at least `min_merge_confidence` (0.80), and its same-product / franchise-only answers agree; anything else, including "a human should decide", stays an unapproved plan in the review log.
+**Same character ≠ same model.** Two Batmans stay separate unless structural signals and a judge review of the preview comparison agree they are the *same product*. STRONG file overlap is a plan only until that review approves it. The merge judge (see below) approves only when its score rounds to "same product", its confidence is at least `min_merge_confidence` (0.80), and its same-product / franchise-only answers agree; anything else, including "a human should decide", stays an unapproved plan in the review log. These rules are the same whichever model judges.
 
 ### Relocate dry-run (`MODE=relocate`, INIT-025/SPEC-003)
 
@@ -87,7 +87,7 @@ kubectl exec -n manyfold deploy/manyfold -- bundle exec rake manyfold:apply_spar
 │  spark-curate container  │ ────────────► │ DGX Spark           │
 │  (this project)          │               │ :11435 Gemma vision │
 │  mount: /library         │               │ :11436 Qwen fallback│
-│                          │ ────────────► │ TypeSafe Jev        │
+│                          │ ─ optional ─► │ MERGE_JUDGE provider│
 └────────────┬─────────────┘               │ :8090  NudeNet      │
              │ move/rename                 └─────────────────────┘
              ▼
@@ -170,10 +170,26 @@ docker compose up -d
 | `GEMMA_URL` | `http://192.168.11.161:11435/v1` | |
 | `CURATOR_URL` | `http://192.168.11.161:11436/v1` | |
 | `NUDENET_URL` | `http://192.168.11.161:8090` | |
-| `TYPESAFE_API_KEY` | | Optional. Enables Jev merge judgments (Vault `kv/shared/common/llm/typesafe`). Folder paths, up to 25 file names per folder and the vision model's preview descriptions are sent to the vendor. The environment variable wins over a key in the config JSON. Unset = Gemma + curator only. |
-| `TYPESAFE_MODEL` | `jev-latest` | TypeSafe model name |
-| `TYPESAFE_BASE_URL` | `https://api.typesafe.ai` | Must be `https` (plain `http` only for localhost). Redirects are refused. |
-| `TYPESAFE_TIMEOUT` | `60` | Request timeout in seconds |
+| `MERGE_JUDGE` | `local` | Who judges UNCERTAIN/STRONG merge pairs: `local` (Gemma + Qwen on the Spark box; nothing leaves your network), `typesafe`, or `openai` (any OpenAI-compatible endpoint). Unknown or half-configured values fail at startup. See "Choosing the merge judge". |
+| `JUDGE_BASE_URL` / `JUDGE_MODEL` | | `openai` only: endpoint (e.g. `https://…/v1`) and model name |
+| `JUDGE_API_KEY` | | `openai` only, optional. The environment variable wins over the config file. |
+| `JUDGE_TIMEOUT` | `60` | Request timeout in seconds |
+| `TYPESAFE_API_KEY` | | `typesafe` only (Vault `kv/shared/common/llm/typesafe`). Setting it alone does **not** enable anything; `MERGE_JUDGE=typesafe` does. |
+| `TYPESAFE_MODEL` / `TYPESAFE_BASE_URL` / `TYPESAFE_TIMEOUT` | `jev-latest` / `https://api.typesafe.ai` / `60` | `typesafe` only |
+
+### Choosing the merge judge
+
+The judge answers four fixed questions about a pair (link score, "same product?", "only the same franchise?", which folder to keep). The approval rules above are applied in code, so changing the model never changes what gets approved.
+
+| `MERGE_JUDGE` | Sent off your network | Notes |
+| --- | --- | --- |
+| `local` (default) | nothing | Gemma describes the previews, Qwen normalizes the verdict. |
+| `openai` | yes, to `JUDGE_BASE_URL` | Folder paths, up to 25 file names per folder and the vision model's preview descriptions. Use a hosted model or one you run yourself. |
+| `typesafe` | yes, to TypeSafe | Same data as above. |
+
+External providers must use `https` (plain `http` only for a private LAN IP such as `http://192.168.x.x`), redirects are refused so a key is never resent elsewhere, and vendor error text is shortened before it reaches logs or audit files. The run header prints `MERGE_JUDGE` and warns when it is not `local`.
+
+**Add another provider:** implement `Judge` in `spark_curate/merge_judge.py` (a `name` and `answers(state, questions)`), register it in `_BUILDERS` and `PROVIDERS`, and add its settings above.
 
 ---
 

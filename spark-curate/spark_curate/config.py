@@ -93,6 +93,14 @@ class CurateConfig:
     min_curator_confidence: float = 0.70
     # Operator-added categories beyond the live library's top-level folders (aud-2)
     category_extensions: list[str] = field(default_factory=list)
+    # Merge judge provider (spark_curate.merge_judge): local | typesafe | openai.
+    # "local" sends nothing off the Spark box; the others are explicit opt-ins.
+    merge_judge: str = "local"
+    # openai: any OpenAI-compatible chat endpoint. Key from JUDGE_API_KEY / this field.
+    judge_base_url: str = ""
+    judge_model: str = ""
+    judge_api_key: str = ""
+    judge_timeout: float = 60.0
     # TypeSafe System One (text judgments). API key from TYPESAFE_API_KEY / this field.
     typesafe_api_key: str = ""
     typesafe_model: str = "jev-latest"
@@ -110,12 +118,19 @@ class CurateConfig:
 
         return parse_merge_hitl(self.merge_hitl)
 
+    def validated_merge_judge(self) -> str:
+        """Fail loud on an unknown or half-configured MERGE_JUDGE."""
+        from .merge_judge import validate
+
+        return validate(self)
+
 
 def load_config(path: str | Path | None) -> tuple[SparkConfig, CurateConfig]:
     spark = SparkConfig()
     curate = CurateConfig()
     if not path:
         curate.merge_hitl = curate.validated_merge_hitl()
+        curate.merge_judge = curate.validated_merge_judge()
         return spark, curate
     p = Path(path)
     if not p.is_file():
@@ -139,6 +154,7 @@ def load_config(path: str | Path | None) -> tuple[SparkConfig, CurateConfig]:
             setattr(curate, k, v)
     # Validate after load — InvalidMergeHitlError propagates (fail loud)
     curate.merge_hitl = curate.validated_merge_hitl()
+    curate.merge_judge = curate.validated_merge_judge()
     return spark, curate
 
 
