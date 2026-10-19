@@ -4,7 +4,7 @@
 
 ```yaml
 spec_id: SPEC-005
-initiative_id: INIT-001
+initiative_id: INIT-002
 title: Delete confirmation and outcome messaging for archive-adopted images
 domain: frontend
 status: complete
@@ -69,4 +69,4 @@ success flash text, and i18n keys.
 
 - Reads SPEC-004's writability check (expose it as a method on the service or model, not duplicated in
   the view).
-- **Provenance tag:** `INIT-001/SPEC-005`
+- **Provenance tag:** `INIT-002/SPEC-005`

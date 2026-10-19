@@ -1,6 +1,6 @@
 # SPEC-002 Completion Summary — Safe, idempotent, isolated image adoption
 
-**Provenance:** `INIT-001/SPEC-002` · **Completed:** 2026-10-07 · **Findings closed:** CRIT-1 (re-scoped by owner), MAJ-1, MAJ-2, MAJ-6 (adoption part), MIN-2
+**Provenance:** `INIT-002/SPEC-002` · **Completed:** 2026-10-07 · **Findings closed:** CRIT-1 (re-scoped by owner), MAJ-1, MAJ-2, MAJ-6 (adoption part), MIN-2
 
 ## Changes
 - `app/services/archive/adopt_image.rb`:

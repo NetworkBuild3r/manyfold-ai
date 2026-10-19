@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Remove dismissed image entries from their archive after the adopted image was
-# deleted from the model (INIT-001/SPEC-004). Processes every dismissed entry
+# deleted from the model (INIT-002/SPEC-004). Processes every dismissed entry
 # of the archive, so a burst of deletions collapses into one rewrite; the row
 # lock serializes rewrites of the same archive.
 class Scan::ModelFile::RemoveArchiveEntriesJob < ApplicationJob

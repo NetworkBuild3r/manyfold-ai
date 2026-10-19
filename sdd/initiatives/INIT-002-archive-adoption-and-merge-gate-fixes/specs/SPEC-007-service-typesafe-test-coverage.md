@@ -4,7 +4,7 @@
 
 ```yaml
 spec_id: SPEC-007
-initiative_id: INIT-001
+initiative_id: INIT-002
 title: Hermetic spark-curate merge tests and coverage for the TypeSafe client and fallback paths
 domain: service
 status: complete
@@ -85,4 +85,4 @@ blocks: None
 ## Integration Points
 
 - Tests the semantics delivered by SPEC-006.
-- **Provenance tag:** `INIT-001/SPEC-007`
+- **Provenance tag:** `INIT-002/SPEC-007`

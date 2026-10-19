@@ -4,7 +4,7 @@
 
 ```yaml
 spec_id: SPEC-002
-initiative_id: INIT-001
+initiative_id: INIT-002
 title: Safe, idempotent, isolated archive image adoption
 domain: service
 status: complete
@@ -117,4 +117,4 @@ the provenance link write (SPEC-001), and specs.
 
 - SPEC-004 relies on the `adopted_model_file` link this spec writes.
 - **Change:** hardened adoption plus a provenance write.
-- **Provenance tag:** `INIT-001/SPEC-002`
+- **Provenance tag:** `INIT-002/SPEC-002`

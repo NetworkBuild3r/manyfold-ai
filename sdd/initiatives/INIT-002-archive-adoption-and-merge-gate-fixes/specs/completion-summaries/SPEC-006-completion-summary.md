@@ -1,6 +1,6 @@
 # SPEC-006 Completion Summary — TypeSafe merge approval gate + curator routing
 
-**Provenance:** `INIT-001/SPEC-006` · **Completed:** 2026-10-07 · **Findings closed:** MAJ-4, MAJ-5, SUGG-1
+**Provenance:** `INIT-002/SPEC-006` · **Completed:** 2026-10-07 · **Findings closed:** MAJ-4, MAJ-5, SUGG-1
 
 ## Changes
 - `spark_curate/decide_merge.py`: `apply_typesafe_merge_answers` now returns

@@ -3,7 +3,7 @@
 require "ffi-libarchive"
 
 module Archive
-  # Rewrite an archive without some of its entries (INIT-001/SPEC-004). The new
+  # Rewrite an archive without some of its entries (INIT-002/SPEC-004). The new
   # archive is written next to the original, re-read to verify it holds exactly
   # the expected entries, then renamed over the original. On any failure the
   # original is left byte-identical. Formats libarchive cannot write back (RAR,

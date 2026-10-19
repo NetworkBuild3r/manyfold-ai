@@ -126,7 +126,7 @@ def route_link_score(score_value: float) -> str:
     return MERGE_TYPESAFE_OUTCOME[level]
 
 
-# Jev's two NOUL checks must agree with a merge before it is approved (INIT-001/SPEC-006).
+# Jev's two NOUL checks must agree with a merge before it is approved (INIT-002/SPEC-006).
 SAME_PRODUCT_MIN_NOUL = 0.5
 CHARACTER_ONLY_MAX_NOUL = 0.5
 
@@ -156,7 +156,7 @@ def apply_typesafe_merge_answers(
     A merge is approved only when the Score rounds to merge, link confidence is at
     least min_merge_confidence, and both NOUL checks agree. A missing answer fails
     closed. Curator ("a human should decide") is an unapproved merge plan so it
-    reaches the human review log (INIT-001/SPEC-006).
+    reaches the human review log (INIT-002/SPEC-006).
     """
     link = answers.get("link_state") or {}
     score_value = _answer_float(link, "score") or 0.0

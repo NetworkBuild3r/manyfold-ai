@@ -98,7 +98,7 @@ module Archive
     private
 
     # Adoption is best-effort: a read-only library or a validation failure must
-    # not cost the archive its thumbnail (INIT-001/SPEC-002).
+    # not cost the archive its thumbnail (INIT-002/SPEC-002).
     def adopt_image!(entry, source_path)
       Archive::AdoptImage.call(model: @model, source_path: source_path, filename: entry.basename, entry: entry)
     rescue SystemCallError, ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique, LibraryPathJail::EscapeError => e

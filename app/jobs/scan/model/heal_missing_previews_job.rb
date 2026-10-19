@@ -66,7 +66,7 @@ class Scan::Model::HealMissingPreviewsJob < ApplicationJob
       end
 
       # Pictures that only exist inside an archive are not ModelFiles yet;
-      # their adoption job assigns the preview (INIT-001/SPEC-003).
+      # their adoption job assigns the preview (INIT-002/SPEC-003).
       if backfill_from_archive(model) == :enqueued
         healed += 1
         next

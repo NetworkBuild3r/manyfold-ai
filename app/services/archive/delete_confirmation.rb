@@ -3,7 +3,7 @@
 module Archive
   # Delete confirmation for a loose file that names any archive it will also
   # be removed from, or stay inside if that archive cannot be rewritten
-  # (INIT-001/SPEC-005). cache memoizes writability per archive id.
+  # (INIT-002/SPEC-005). cache memoizes writability per archive id.
   class DeleteConfirmation
     def self.call(file, base:, cache: {})
       archives = file.adopted_source_archives.to_a

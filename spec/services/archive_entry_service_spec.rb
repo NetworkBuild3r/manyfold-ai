@@ -156,7 +156,7 @@ RSpec.describe ArchiveEntryService do
   end
 
   # Thumbs stay under .manyfold; the original image is adopted into the model
-  # folder once (INIT-001 replaces INIT-026's no-copy rule).
+  # folder once (INIT-002 replaces INIT-026's no-copy rule).
   describe "#extract_preview_image!" do
     it "writes the derivative under .manyfold and adopts the original into the model folder" do
       service = described_class.new(@file)

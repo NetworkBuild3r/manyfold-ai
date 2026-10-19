@@ -1,6 +1,6 @@
 # SPEC-005 Completion Summary — Model-page delete UX for archive-adopted images
 
-**Provenance:** `INIT-001/SPEC-005` · **Completed:** 2026-10-07
+**Provenance:** `INIT-002/SPEC-005` · **Completed:** 2026-10-07
 
 ## Changes
 - `app/helpers/model_files_helper.rb`: `delete_confirmation_for(file)`.

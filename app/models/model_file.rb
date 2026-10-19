@@ -15,7 +15,7 @@ class ModelFile < ApplicationRecord
 
   belongs_to :model, touch: true
   has_many :archive_entries, dependent: :destroy
-  # Archive entries this image was adopted from (INIT-001/SPEC-001).
+  # Archive entries this image was adopted from (INIT-002/SPEC-001).
   has_many :adopted_from_entries, class_name: "ArchiveEntry", foreign_key: :adopted_model_file_id,
     inverse_of: :adopted_model_file, dependent: :nullify
 
@@ -290,7 +290,7 @@ class ModelFile < ApplicationRecord
 
   # Archives this image was adopted from, in this model only. Dismissing the
   # entries first means a deleted image is never re-adopted, even when the
-  # archive cannot be rewritten (INIT-001/SPEC-004).
+  # archive cannot be rewritten (INIT-002/SPEC-004).
   def adopted_source_archives
     ModelFile.where(id: adopted_from_entries.select(:model_file_id), model_id: model_id) # rubocop:disable Pundit/UsePolicyScope -- same-model lookup
   end

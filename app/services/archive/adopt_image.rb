@@ -2,7 +2,7 @@
 
 module Archive
   # Adopt an image found inside an archive onto the model. Every image entry is
-  # adopted (INIT-001 owner decision), once: a file with the same SHA-512 digest
+  # adopted (INIT-002 owner decision), once: a file with the same SHA-512 digest
   # is reused instead of copied. ModelFile#calculate_digest is SHA-512, so this
   # matches files the scanner already hashed. The entry is linked to the file it
   # resolved to so deleting that file can also remove it from the archive.
@@ -56,7 +56,7 @@ module Archive
     private
 
     # Match, name, write and create under a per-model lock so concurrent preview
-    # jobs cannot pick the same name or both miss a digest match (INIT-001/SPEC-002).
+    # jobs cannot pick the same name or both miss a digest match (INIT-002/SPEC-002).
     def adopt!(digest)
       @model.with_lock { matching_image(digest) || create_image!(digest) }
     end
