@@ -1,6 +1,6 @@
 # SPEC-004 Completion Summary — Remove adopted images from their source archives
 
-**Provenance:** `INIT-001/SPEC-004` · **Status:** in_review (merge gate: owner review of the rewrite code) · **Date:** 2026-10-07
+**Provenance:** `INIT-002/SPEC-004` · **Status:** in_review (merge gate: owner review of the rewrite code) · **Date:** 2026-10-07
 
 ## Changes
 - `app/services/archive/remove_entries.rb` (new): `Archive::RemoveEntries.call(model_file:, pathnames:)`.

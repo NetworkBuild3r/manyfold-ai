@@ -1,4 +1,4 @@
-"""TypeSafe System One client — fake urlopen, no live calls (INIT-001/SPEC-007)."""
+"""TypeSafe System One client — fake urlopen, no live calls (INIT-002/SPEC-007)."""
 from __future__ import annotations
 
 import io

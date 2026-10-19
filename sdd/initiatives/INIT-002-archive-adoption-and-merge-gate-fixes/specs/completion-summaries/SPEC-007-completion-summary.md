@@ -1,6 +1,6 @@
 # SPEC-007 Completion Summary — Hermetic TypeSafe tests + client/fallback coverage
 
-**Provenance:** `INIT-001/SPEC-007` · **Completed:** 2026-10-07 · **Findings closed:** MAJ-7
+**Provenance:** `INIT-002/SPEC-007` · **Completed:** 2026-10-07 · **Findings closed:** MAJ-7
 
 ## Changes
 - `tests/_isolation.py` (new): module hooks that blank `TYPESAFE_API_KEY` and replace

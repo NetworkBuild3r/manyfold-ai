@@ -1,8 +1,8 @@
 # Initiative: Archive image adoption hardening + spark-curate merge-gate fixes
 
-**Initiative ID:** INIT-001
-**Status:** on_track
-**Slug:** INIT-001-archive-adoption-and-merge-gate-fixes
+**Initiative ID:** INIT-002
+**Status:** complete
+**Slug:** INIT-002-archive-adoption-and-merge-gate-fixes
 **Discipline Profile:** `software`
 **Created:** 2026-10-07
 **Owner:** Brian Nelson
@@ -183,11 +183,11 @@ None. Inherits defaults.
 
 `main` advanced 111 commits while this initiative ran. That included INIT-026 (archive images stay
 inside archives, with `preview_archive_entry` previews and a zip-only member delete) and `jev-judgments`
-(spark-curate, without TypeSafe). Owner decision: **INIT-001's design replaces INIT-026's**, and the
+(spark-curate, without TypeSafe). Owner decision: **INIT-002's design replaces INIT-026's**, and the
 TypeSafe work is ported onto `main`. Branch `init-001-archive-adoption` = `origin/main` + this branch,
 resolved as follows:
 
-- **Adoption:** `Archive::AdoptImage` keeps INIT-001's adoption (`call`) plus `main`'s `hexdigest`.
+- **Adoption:** `Archive::AdoptImage` keeps INIT-002's adoption (`call`) plus `main`'s `hexdigest`.
   `main`'s entry-as-preview logic moved to `Archive::EntryPreview`, which is used only as a fallback when
   adoption fails.
 - **Previews:** `EnsurePreview` and the heal job adopt archive images rather than setting
@@ -209,3 +209,12 @@ Verification (PostgreSQL Docker):
   rerun (595 examples, 0 failures).
 - spark-curate merge tests: 73, OK. Full suite on Linux: 343, with 1 failure caused only by the mount
   layout (the runbook lives outside `spark-curate/`).
+
+## 14. Renumbering (2026-10-19)
+
+This initiative was first numbered INIT-001 in a checkout that had no `sdd/initiatives/` folder. `main`
+already had `INIT-001-jev-judgments`, so after merge two initiatives shared the id. This one was renumbered
+to **INIT-002** (directory, documents, and provenance tags in `app/`, `db/`, `spec/` and its own spark-curate
+files). Commits, PRs #69/#70 and the early SPEC commit messages still say INIT-001; read those as INIT-002.
+`INIT-001/SPEC-002` tags in `spark-curate/spark_curate/decide_merge.py`, `test_decide_merge.py` and
+`test_merge_candidates.py` belong to the Jev initiative and were left alone.

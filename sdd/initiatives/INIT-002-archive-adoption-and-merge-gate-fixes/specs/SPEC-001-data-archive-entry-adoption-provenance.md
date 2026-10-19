@@ -4,7 +4,7 @@
 
 ```yaml
 spec_id: SPEC-001
-initiative_id: INIT-001
+initiative_id: INIT-002
 title: Archive-entry to adopted-ModelFile provenance link and dismissed status
 domain: data
 status: complete
@@ -94,4 +94,4 @@ and a deleted image would be re-adopted on the next scan.
 
 - SPEC-002 writes `adopted_model_file`. SPEC-004 reads it to find source archives and writes `dismissed`.
 - **Change:** an additive provenance column and a tombstone status.
-- **Provenance tag:** `INIT-001/SPEC-001`
+- **Provenance tag:** `INIT-002/SPEC-001`

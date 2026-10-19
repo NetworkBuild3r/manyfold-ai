@@ -1,6 +1,6 @@
 # SPEC-001 Completion Summary — Archive-entry → adopted-file provenance + `dismissed`
 
-**Provenance:** `INIT-001/SPEC-001` · **Completed:** 2026-10-07
+**Provenance:** `INIT-002/SPEC-001` · **Completed:** 2026-10-07
 
 ## Changes
 - `db/migrate/20261007120000_add_adopted_model_file_to_archive_entries.rb`: a nullable

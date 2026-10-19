@@ -76,7 +76,7 @@ def _answers(
 
 
 class ApplyTypesafeAnswersTests(unittest.TestCase):
-    """INIT-001/SPEC-006: confidence + consistency gate; curator is an unapproved plan."""
+    """INIT-002/SPEC-006: confidence + consistency gate; curator is an unapproved plan."""
 
     def test_same_product_with_confidence_and_consistent_answers_approves(self) -> None:
         decision, confidence, target, reason, approved, outcome = apply_typesafe_merge_answers(
@@ -285,7 +285,7 @@ class IsolationGuardTests(unittest.TestCase):
 
 
 class TypesafeFallbackTests(unittest.TestCase):
-    """INIT-001/SPEC-007: failure branches in decide_merge_pair."""
+    """INIT-002/SPEC-007: failure branches in decide_merge_pair."""
 
     def setUp(self) -> None:
         self.spark = SparkConfig()

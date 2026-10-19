@@ -1,4 +1,4 @@
-"""Module-level network isolation for merge tests (INIT-001/SPEC-007).
+"""Module-level network isolation for merge tests (INIT-002/SPEC-007).
 
 Use as ``from _isolation import setUpModule, tearDownModule`` in any test module
 that can reach TypeSafe. Blanks TYPESAFE_API_KEY so a key exported in the shell

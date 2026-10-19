@@ -4,7 +4,7 @@
 
 ```yaml
 spec_id: SPEC-006
-initiative_id: INIT-001
+initiative_id: INIT-002
 title: Require confidence and consistent answers for TypeSafe merge approval; route curator outcomes to human review
 domain: service
 status: complete
@@ -105,4 +105,4 @@ and tests in `tests/test_typesafe_merge.py`.
 ## Integration Points
 
 - SPEC-007 adds client and fallback coverage on top of these semantics.
-- **Provenance tag:** `INIT-001/SPEC-006`
+- **Provenance tag:** `INIT-002/SPEC-006`

@@ -4,7 +4,7 @@
 
 ```yaml
 spec_id: SPEC-003
-initiative_id: INIT-001
+initiative_id: INIT-002
 title: Best-effort, error-isolated preview backfill in CheckForProblems and HealMissingPreviews
 domain: scheduled
 status: complete
@@ -93,4 +93,4 @@ error:
 
 - Consumes `ArchiveEntry.adoptable` (SPEC-001) and hardened adoption (SPEC-002).
 - **Change:** error isolation for preview backfill in scan jobs.
-- **Provenance tag:** `INIT-001/SPEC-003`
+- **Provenance tag:** `INIT-002/SPEC-003`

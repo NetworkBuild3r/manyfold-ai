@@ -1,6 +1,6 @@
 # SPEC-003 Completion Summary — Best-effort preview backfill in scan jobs
 
-**Provenance:** `INIT-001/SPEC-003` · **Completed:** 2026-10-07 · **Findings closed:** MAJ-3, MAJ-6 (job part), MIN-1
+**Provenance:** `INIT-002/SPEC-003` · **Completed:** 2026-10-07 · **Findings closed:** MAJ-3, MAJ-6 (job part), MIN-1
 
 ## Changes
 - `app/services/archive/ensure_preview.rb`:

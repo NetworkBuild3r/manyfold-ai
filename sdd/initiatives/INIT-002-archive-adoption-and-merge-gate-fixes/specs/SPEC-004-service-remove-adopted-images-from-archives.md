@@ -4,10 +4,10 @@
 
 ```yaml
 spec_id: SPEC-004
-initiative_id: INIT-001
+initiative_id: INIT-002
 title: Deleting an adopted image removes it from the model and from its source archive(s)
 domain: service
-status: in_review
+status: complete
 primary_prompt: .claude/agents/principal-backend-developer/AGENT.md   # agents dir absent — described persona (disclosed)
 supplement_prompts: []
 model: opus   # pinned: destructive, irreversible-at-runtime operation on user originals
@@ -148,4 +148,4 @@ archive" without deleting.
 
 - Consumes SPEC-001's link and status, and SPEC-002's link writes. SPEC-005 surfaces the outcome.
 - **Change:** delete-from-archive for adopted images.
-- **Provenance tag:** `INIT-001/SPEC-004`
+- **Provenance tag:** `INIT-002/SPEC-004`

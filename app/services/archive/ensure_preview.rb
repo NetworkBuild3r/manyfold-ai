@@ -5,7 +5,7 @@ module Archive
   # pictures are inside an archive, queue the best unadopted archive image so
   # PreviewArchiveEntryJob adopts it (and AdoptImage sets it as preview).
   # Best-effort: never raises, so problem checks and heal batches keep going
-  # (INIT-001/SPEC-003). Returns :assigned, :enqueued or nil.
+  # (INIT-002/SPEC-003). Returns :assigned, :enqueued or nil.
   class EnsurePreview
     PREFERRED_NAMES = %w[preview cover thumb].freeze
 
