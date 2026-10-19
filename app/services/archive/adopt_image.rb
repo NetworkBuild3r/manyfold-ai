@@ -8,6 +8,8 @@ module Archive
   # resolved to so deleting that file can also remove it from the archive.
   # If the model has no on-disk image preview, the file becomes preview_file.
   class AdoptImage
+    MAX_NAME_ATTEMPTS = 5
+
     def self.call(...)
       new(...).call
     end
@@ -39,6 +41,8 @@ module Archive
     def call
       return unless File.file?(@source_path)
       return if @entry&.status == "dismissed"
+      # SVG can carry active content; the rasterized preview is enough for it.
+      return if File.extname(@filename.to_s).casecmp?(".svg")
 
       digest = self.class.hexdigest(@source_path)
       return if digest.blank?
@@ -51,24 +55,10 @@ module Archive
 
     private
 
-    # Copy outside the lock; match, name, place and create under a per-model
-    # lock so concurrent preview jobs cannot pick the same name or both miss a
-    # digest match (INIT-001/SPEC-002).
+    # Match, name, write and create under a per-model lock so concurrent preview
+    # jobs cannot pick the same name or both miss a digest match (INIT-001/SPEC-002).
     def adopt!(digest)
-      staged = stage_copy
-      begin
-        @model.with_lock { matching_image(digest) || create_image!(digest, staged) }
-      ensure
-        FileUtils.rm_f(staged)
-      end
-    end
-
-    def stage_copy
-      dir = File.join(model_dir, ".manyfold", "tmp")
-      FileUtils.mkdir_p(dir)
-      staged = File.join(dir, "adopt-#{SecureRandom.hex(8)}#{File.extname(@filename.to_s)}")
-      FileUtils.cp(@source_path, staged)
-      staged
+      @model.with_lock { matching_image(digest) || create_image!(digest) }
     end
 
     def matching_image(digest)
@@ -86,16 +76,50 @@ module Archive
       end
     end
 
-    def create_image!(digest, staged)
-      filename = unique_filename
-      dest = File.join(model_dir, filename)
-      File.rename(staged, dest)
+    def create_image!(digest)
+      filename = write_unique!
       begin
         @model.model_files.create!(filename: filename, digest: digest)
+      rescue
+        remove_written(filename)
+        raise
+      end
+    end
+
+    # Never follows or overwrites an existing path (including a dangling
+    # symlink): local files are opened O_EXCL|O_NOFOLLOW, then the name is
+    # retried. Other storages upload through the library's own adapter.
+    def write_unique!
+      MAX_NAME_ATTEMPTS.times do
+        filename = unique_filename
+        (library.storage_service == "filesystem") ? write_local!(filename) : write_storage!(filename)
+        return filename
+      rescue Errno::EEXIST, Errno::ELOOP
+        next
+      end
+      raise Errno::EEXIST, "no free filename for #{@filename}"
+    end
+
+    def write_local!(filename)
+      dest = File.join(local_model_dir, filename)
+      flags = File::WRONLY | File::CREAT | File::EXCL | File::NOFOLLOW
+      File.open(dest, flags, 0o644) do |out|
+        # Past this point the file is ours; a failed copy must not leave a partial.
+        File.open(@source_path, "rb") { |src| IO.copy_stream(src, out) }
       rescue
         FileUtils.rm_f(dest)
         raise
       end
+    end
+
+    def write_storage!(filename)
+      File.open(@source_path, "rb") { |io| library.storage.upload(io, storage_key(filename)) }
+    end
+
+    def remove_written(filename)
+      library.storage.delete(storage_key(filename))
+    rescue Shrine::FileNotFound, Errno::ENOENT
+      nil
     end
 
     def unique_filename
@@ -113,12 +137,30 @@ module Archive
     end
 
     def name_taken?(filename)
-      @model.model_files.exists?(filename: filename) || File.exist?(File.join(model_dir, filename))
+      return true if @model.model_files.exists?(filename: filename)
+      return true if library.has_file?(storage_key(filename))
+
+      # File.exist? is false for a dangling symlink, which a write would follow.
+      library.storage_service == "filesystem" && File.symlink?(File.join(local_model_dir, filename))
     end
 
-    def model_dir
-      LibraryPathJail.assert_within!(@model.library.path, @model.path) if @model.path.present?
-      File.join(@model.library.path, @model.path)
+    def library
+      @model.library
+    end
+
+    def storage_key(filename)
+      File.join(*[@model.path, filename].compact_blank)
+    end
+
+    # Real, existing model directory, verified to sit inside the real library
+    # root so a symlinked folder cannot redirect the write.
+    def local_model_dir
+      LibraryPathJail.assert_within!(library.path, @model.path) if @model.path.present?
+      root = File.realpath(library.path)
+      dir = File.realpath(File.join(library.path, @model.path.to_s))
+      raise LibraryPathJail::EscapeError, "model folder escapes library" unless LibraryPathJail.contained?(root, dir)
+
+      dir
     end
 
     def assign_preview!(file)

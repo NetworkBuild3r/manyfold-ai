@@ -33,17 +33,19 @@ findings were identified.
 | SECFIND ID | ID     | Severity | OWASP / class        | Title                                                                                       | Status |
 | ---------- | ------ | -------- | -------------------- | ------------------------------------------------------------------------------------------- | ------ |
 | —          | HIGH-1 | High     | Custom (CWE-201)     | Library content sent to an external API with no opt-in, minimization, or sensitivity gate   | open   |
-| —          | MED-1  | Medium   | Custom (CWE-59)      | `AdoptImage` writes through dangling symlinks: arbitrary-content write outside the library | open   |
+| —          | MED-1  | Medium   | Custom (CWE-59)      | `AdoptImage` writes through dangling symlinks: arbitrary-content write outside the library | fixed (INIT-001 hardening)   |
 | —          | MED-2  | Medium   | API10 · LLM01 (CWE-1427) | Untrusted library text steers the external LLM whose verdict is the sole apply authority | open   |
-| —          | MED-3  | Medium   | API8 (CWE-668)       | `AdoptImage` bypasses library storage; on S3 libraries it writes to the container's local filesystem | open   |
-| —          | LOW-1  | Low      | API8 (CWE-522)       | TypeSafe bearer token is forwarded on redirects, and the base URL is not pinned to https   | open   |
-| —          | LOW-2  | Low      | API10 (CWE-117)      | Vendor error/response text persisted to the audit JSONL in the library share and printed by `--smoke` | open   |
-| —          | LOW-3  | Low      | API8 (CWE-260)       | Config JSON outranks env for the API key; example config invites a plaintext key            | open   |
-| —          | LOW-4  | Low      | Custom (CWE-434)     | Archive bytes are materialized unvalidated (incl. SVG) as library files and previews        | open   |
+| —          | MED-3  | Medium   | API8 (CWE-668)       | `AdoptImage` bypasses library storage; on S3 libraries it writes to the container's local filesystem | fixed (INIT-001 hardening)   |
+| —          | LOW-1  | Low      | API8 (CWE-522)       | TypeSafe bearer token is forwarded on redirects, and the base URL is not pinned to https   | fixed (INIT-001 hardening)   |
+| —          | LOW-2  | Low      | API10 (CWE-117)      | Vendor error/response text persisted to the audit JSONL in the library share and printed by `--smoke` | fixed (INIT-001 hardening)   |
+| —          | LOW-3  | Low      | API8 (CWE-260)       | Config JSON outranks env for the API key; example config invites a plaintext key            | fixed (INIT-001 hardening)   |
+| —          | LOW-4  | Low      | Custom (CWE-434)     | Archive bytes are materialized unvalidated (incl. SVG) as library files and previews        | fixed (INIT-001 hardening)   |
 
 <!-- SECFIND ID / Status: the registry (scripts/dev/security_scan_indexer.py, sdd/security-reviews/ ledgers) does not exist in this repo — no SECFIND ids minted. See Review Notes. -->
 
-**Totals:** 0 Critical, 1 High, 3 Medium, 4 Low
+**Totals:** 0 Critical, 1 High, 3 Medium, 4 Low.
+
+**Status 2026-10-07 (INIT-001 hardening, PR following #69):** MED-1, MED-3, LOW-1, LOW-2, LOW-3, LOW-4 are fixed in code. **HIGH-1** (no explicit opt-in or payload minimization for the external API) and **MED-2** (untrusted library text steering the external LLM) remain open: they are product decisions about what may leave the LAN and are not changed here.
 
 ---
 
