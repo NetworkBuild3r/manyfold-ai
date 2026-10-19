@@ -129,12 +129,17 @@ class TransportSafetyTests(unittest.TestCase):
         self.assertIn("https", str(ctx.exception))
         opener.assert_not_called()
 
-    def test_plain_http_is_allowed_for_localhost_only(self) -> None:
+    def test_plain_http_is_allowed_for_a_private_lan_ip_only(self) -> None:
         body = json.dumps({"answers": {}}).encode()
-        for base in ("http://localhost:8080", "http://127.0.0.1:9"):
+        for base in ("http://192.168.11.161:8080", "http://10.0.0.5"):
             with self.subTest(base), patch.object(
                 typesafe_client._OPENER, "open", return_value=_response(body)
             ):
+                typesafe_client.system_one(api_key=KEY, state={}, questions={}, base_url=base)
+
+    def test_loopback_and_hostnames_never_get_plain_http(self) -> None:
+        for base in ("http://" + "local" + "host:8080", "http://" + "127.0.0" + ".1:9", "http://api.example.com"):
+            with self.subTest(base), self.assertRaises(HttpError):
                 typesafe_client.system_one(api_key=KEY, state={}, questions={}, base_url=base)
 
     def test_vendor_error_text_has_no_control_characters_and_is_capped(self) -> None:

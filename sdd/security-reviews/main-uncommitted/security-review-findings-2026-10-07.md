@@ -32,9 +32,9 @@ findings were identified.
 
 | SECFIND ID | ID     | Severity | OWASP / class        | Title                                                                                       | Status |
 | ---------- | ------ | -------- | -------------------- | ------------------------------------------------------------------------------------------- | ------ |
-| —          | HIGH-1 | High     | Custom (CWE-201)     | Library content sent to an external API with no opt-in, minimization, or sensitivity gate   | open   |
+| —          | HIGH-1 | High     | Custom (CWE-201)     | Library content sent to an external API with no opt-in, minimization, or sensitivity gate   | fixed (explicit MERGE_JUDGE)   |
 | —          | MED-1  | Medium   | Custom (CWE-59)      | `AdoptImage` writes through dangling symlinks: arbitrary-content write outside the library | fixed (INIT-001 hardening)   |
-| —          | MED-2  | Medium   | API10 · LLM01 (CWE-1427) | Untrusted library text steers the external LLM whose verdict is the sole apply authority | open   |
+| —          | MED-2  | Medium   | API10 · LLM01 (CWE-1427) | Untrusted library text steers the external LLM whose verdict is the sole apply authority | mitigated   |
 | —          | MED-3  | Medium   | API8 (CWE-668)       | `AdoptImage` bypasses library storage; on S3 libraries it writes to the container's local filesystem | fixed (INIT-001 hardening)   |
 | —          | LOW-1  | Low      | API8 (CWE-522)       | TypeSafe bearer token is forwarded on redirects, and the base URL is not pinned to https   | fixed (INIT-001 hardening)   |
 | —          | LOW-2  | Low      | API10 (CWE-117)      | Vendor error/response text persisted to the audit JSONL in the library share and printed by `--smoke` | fixed (INIT-001 hardening)   |
@@ -45,7 +45,7 @@ findings were identified.
 
 **Totals:** 0 Critical, 1 High, 3 Medium, 4 Low.
 
-**Status 2026-10-07 (INIT-001 hardening, PR following #69):** MED-1, MED-3, LOW-1, LOW-2, LOW-3, LOW-4 are fixed in code. **HIGH-1** (no explicit opt-in or payload minimization for the external API) and **MED-2** (untrusted library text steering the external LLM) remain open: they are product decisions about what may leave the LAN and are not changed here.
+**Status 2026-10-07 (INIT-001 hardening, PR following #69):** MED-1, MED-3, LOW-1, LOW-2, LOW-3, LOW-4 are fixed in code. **HIGH-1** is fixed by the pluggable merge judge: `MERGE_JUDGE` defaults to `local` and any external provider must be selected explicitly (a key alone enables nothing). **MED-2** is mitigated (untrusted-data prompt, approval gates in code, fail-closed answers, default `hitl_all`) but cannot be eliminated for an LLM judge.
 
 ---
 

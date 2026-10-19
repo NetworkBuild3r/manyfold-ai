@@ -49,22 +49,26 @@ green CI; the manual real-zip check is still open.
 Standard-depth review of the uncommitted changes (`sdd/security-reviews/main-uncommitted/`).
 
 - **Findings:** Critical: 0 · High: 1 · Medium: 3 · Low: 4 · **overall risk at review time:** High
-- **Unresolved Critical/High:** **HIGH-1 remains open** (no explicit opt-in or payload minimization for the
-  external TypeSafe API). This is a deliberate product decision, not a code defect; no risk acceptance has been
-  signed. It is mitigated by TypeSafe being disabled unless an API key is configured, and by the spark-curate
-  CronJob being suspended in the cluster.
+- **Unresolved Critical/High:** None. HIGH-1 (library data sent to an external API with no opt-in) was resolved
+  after deployment by making the merge judge a pluggable provider chosen explicitly with `MERGE_JUDGE` (default
+  `local`: nothing leaves the network). An exported key alone no longer enables anything. Payload minimization
+  is documented rather than enforced: external providers receive folder paths, up to 25 file names per folder
+  and the preview descriptions, and the run header warns when a non-local provider is selected.
 
 | Finding | Severity | Class                  | Spec     | Status                |
 | ------- | -------- | ---------------------- | -------- | --------------------- |
-| HIGH-1  | High     | CWE-201 external send  | SPEC-006 | open (owner decision) |
+| HIGH-1  | High     | CWE-201 external send  | SPEC-006 | fixed (explicit `MERGE_JUDGE`, default local) |
 | MED-1   | Medium   | CWE-59 symlink write   | SPEC-002 | fixed (#70)           |
-| MED-2   | Medium   | LLM01 prompt steering  | SPEC-006 | open (owner decision) |
+| MED-2   | Medium   | LLM01 prompt steering  | SPEC-006 | mitigated, not eliminated (see below) |
 | MED-3   | Medium   | CWE-668 storage bypass | SPEC-002 | fixed (#70)           |
 | LOW-1   | Low      | redirect / https       | SPEC-007 | fixed (#70)           |
 | LOW-2   | Low      | error text in audit    | SPEC-007 | fixed (#70)           |
 | LOW-3   | Low      | key precedence         | SPEC-007 | fixed (#70)           |
 | LOW-4   | Low      | SVG adoption           | SPEC-002 | fixed (#70)           |
 
+- **MED-2 residual risk:** library text can still influence the external judge. Mitigations: the judge prompt
+  marks all folder data as untrusted, approval needs confidence plus agreeing yes/no answers in code, missing
+  answers fail closed, and the default `MERGE_HITL=hitl_all` never auto-applies a merge.
 - **Positive observations:** basename handling already blocked traversal; spark-curate approval paths fail
   closed; the archive rewrite never modifies the original on failure (verified by failure-injection tests).
 
@@ -104,7 +108,8 @@ Standard-depth review of the uncommitted changes (`sdd/security-reviews/main-unc
   model lock, with cleanup on failure.
 - **SPEC-003:** archive extraction moved from inline to an enqueued job.
 - **SPEC-007:** one production change (API-key redaction in `typesafe_client.py`).
-- **Beyond the plan:** PR #70 (security hardening) and home_k3#32 (deploy).
+- **Beyond the plan:** PR #70 (security hardening), home_k3#32 (deploy), and the pluggable merge judge
+  (`spark_curate/merge_judge.py`, `safe_http.py`) that replaced the TypeSafe-only integration.
 - No git or issue-tracker operations were skipped by the guard.
 
 ---
@@ -136,8 +141,9 @@ Standard-depth review of the uncommitted changes (`sdd/security-reviews/main-unc
 
 - **Manual check (SPEC-004):** delete one adopted image from a real zip in production and confirm the archive
   still opens and no longer contains it.
-- **HIGH-1 / MED-2:** explicit TypeSafe opt-in and prompt-steering mitigation, pending owner decision.
-- **TypeSafe wiring:** Vault key (`shared/common/llm/typesafe`) not yet connected to the spark-curate CronJob.
+- **Judge provider in the cluster:** the spark-curate CronJob is suspended and runs with `MERGE_JUDGE=local`.
+  To use `typesafe` or `openai`, set `MERGE_JUDGE` and the provider's settings (key from Vault via an External
+  Secret) in `home_k3`.
 - **Pre-existing:** about 120 failing Rails specs on `main`; the Docker workflow's smoke-test step.
 - **Hygiene:** the pre-deploy database dump sits in the postgres pod's `/tmp` and is lost on restart.
 

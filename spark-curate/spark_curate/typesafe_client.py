@@ -7,30 +7,22 @@ from __future__ import annotations
 
 import json
 import os
-import re
 import urllib.error
-import urllib.parse
 import urllib.request
 from typing import Any
 
+from . import safe_http
 from .clients import HttpError
 
 DEFAULT_BASE_URL = "https://api.typesafe.ai"
 DEFAULT_MODEL = "jev-latest"
 
 
-_LOCAL_HOSTS = {"localhost", "127.0.0.1", "::1"}
-_CONTROL_CHARS = re.compile(r"[\x00-\x1f\x7f]+")
-
-
-class _NoRedirect(urllib.request.HTTPRedirectHandler):
-    """Never follow a redirect: the default handler would resend the bearer token."""
-
-    def redirect_request(self, *args: Any, **kwargs: Any) -> None:
-        raise HttpError("TypeSafe redirect refused")
-
-
-_OPENER = urllib.request.build_opener(_NoRedirect)
+# Shared rules (no redirects, https only, short vendor text) live in safe_http.
+_NoRedirect = safe_http.NoRedirect
+_OPENER = safe_http.OPENER
+_check_base_url = safe_http.check_base_url
+_short = safe_http.short
 
 
 def api_key_from(curate: Any | None = None) -> str:
@@ -45,18 +37,6 @@ def api_key_from(curate: Any | None = None) -> str:
     if curate is not None:
         return str(getattr(curate, "typesafe_api_key", "") or "").strip()
     return ""
-
-
-def _check_base_url(base_url: str) -> None:
-    parsed = urllib.parse.urlparse(base_url)
-    if parsed.scheme == "https" or (parsed.scheme == "http" and parsed.hostname in _LOCAL_HOSTS):
-        return
-    raise HttpError("TypeSafe base URL must use https")
-
-
-def _short(text: str, limit: int = 120) -> str:
-    """Vendor text for logs and audit files: no control characters, capped."""
-    return _CONTROL_CHARS.sub(" ", text).strip()[:limit]
 
 
 def system_one(

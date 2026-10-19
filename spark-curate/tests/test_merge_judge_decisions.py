@@ -24,7 +24,7 @@ from spark_curate.clients import HttpError  # noqa: E402
 from spark_curate.candidates import MergeCandidate  # noqa: E402
 from spark_curate.config import CurateConfig, SparkConfig  # noqa: E402
 from spark_curate.decide_merge import (  # noqa: E402
-    apply_typesafe_merge_answers,
+    apply_judge_answers,
     decide_merge_pair,
     route_link_score,
 )
@@ -79,7 +79,7 @@ class ApplyTypesafeAnswersTests(unittest.TestCase):
     """INIT-002/SPEC-006: confidence + consistency gate; curator is an unapproved plan."""
 
     def test_same_product_with_confidence_and_consistent_answers_approves(self) -> None:
-        decision, confidence, target, reason, approved, outcome = apply_typesafe_merge_answers(
+        decision, confidence, target, reason, approved, outcome = apply_judge_answers(
             _answers(target="b"), min_merge_confidence=0.80
         )
         self.assertEqual(decision, "merge")
@@ -87,7 +87,7 @@ class ApplyTypesafeAnswersTests(unittest.TestCase):
         self.assertEqual(outcome, "merge")
         self.assertEqual(target, "b")
         self.assertAlmostEqual(confidence, 0.9)
-        self.assertIn("typesafe merge", reason)
+        self.assertIn("judge merge", reason)
 
     def test_each_failing_condition_blocks_approval(self) -> None:
         cases = [
@@ -101,7 +101,7 @@ class ApplyTypesafeAnswersTests(unittest.TestCase):
         ]
         for name, answers, tag in cases:
             with self.subTest(name):
-                decision, _conf, _target, reason, approved, outcome = apply_typesafe_merge_answers(
+                decision, _conf, _target, reason, approved, outcome = apply_judge_answers(
                     answers, min_merge_confidence=0.80
                 )
                 self.assertEqual(outcome, "merge")
@@ -112,13 +112,13 @@ class ApplyTypesafeAnswersTests(unittest.TestCase):
     def test_unparsable_noul_fails_closed(self) -> None:
         answers = _answers()
         answers["same_printable_product"]["noul"] = "very likely"
-        *_rest, approved, _outcome = apply_typesafe_merge_answers(
+        *_rest, approved, _outcome = apply_judge_answers(
             answers, min_merge_confidence=0.80
         )
         self.assertFalse(approved)
 
     def test_related_is_unapproved_merge_plan_for_curator(self) -> None:
-        decision, _confidence, target, reason, approved, outcome = apply_typesafe_merge_answers(
+        decision, _confidence, target, reason, approved, outcome = apply_judge_answers(
             _answers(score=1.1, confidence=0.7, same=0.45, char_only=0.8),
             min_merge_confidence=0.80,
         )
@@ -129,7 +129,7 @@ class ApplyTypesafeAnswersTests(unittest.TestCase):
         self.assertIn("(curator)", reason)
 
     def test_different_products_keep_separate(self) -> None:
-        decision, *_rest, approved, outcome = apply_typesafe_merge_answers(
+        decision, *_rest, approved, outcome = apply_judge_answers(
             _answers(score=0.2), min_merge_confidence=0.80
         )
         self.assertEqual(outcome, "keep_separate")
@@ -141,13 +141,13 @@ class CuratorPlanHitlTests(unittest.TestCase):
     """Curator plans reach the review log and are never auto-queued."""
 
     def _curator_decision(self, tmp: Path) -> object:
-        curate = CurateConfig(typesafe_api_key="test-key", min_merge_confidence=0.80)
+        curate = CurateConfig(merge_judge="typesafe", typesafe_api_key="test-key", min_merge_confidence=0.80)
         ts_body = {"answers": _answers(score=1.0, confidence=0.6, same=0.5, char_only=0.4)}
         cand = _pair(tmp, ["name_near_dupe"])
         with (
             patch("spark_curate.decide_merge._preview_jpeg", return_value=b"\xff\xd8fakejpeg"),
             patch("spark_curate.decide_merge.clients.gemma_vision", return_value="similar busts"),
-            patch("spark_curate.decide_merge.typesafe_client.system_one", return_value=ts_body),
+            patch("spark_curate.typesafe_client.system_one", return_value=ts_body),
         ):
             return decide_merge_pair(cand, SparkConfig(), curate, tmp / ".thumbs")
 
@@ -156,7 +156,7 @@ class CuratorPlanHitlTests(unittest.TestCase):
             d = self._curator_decision(Path(tmp))
         self.assertEqual(d.decision, "merge")
         self.assertFalse(d.approved_for_apply)
-        self.assertEqual(d.typesafe_outcome, "curator")
+        self.assertEqual(d.judge_outcome, "curator")
         self.assertEqual(classify_hitl_band(d), "UNCERTAIN")
         for mode in ("hitl_all", "hitl_uncertain", "hitl_off"):
             with self.subTest(mode):
@@ -171,7 +171,7 @@ class CuratorPlanHitlTests(unittest.TestCase):
             result = write_merge_plans(cfg, [d], do_apply=True, run_id="t", log_fh=log)
         self.assertIn("MERGE? band=UNCERTAIN", log.getvalue())
         self.assertIn("(curator)", log.getvalue())
-        self.assertEqual(result["typesafe_curator"], 1)
+        self.assertEqual(result["judge_curator"], 1)
         self.assertEqual(result["queued_for_manyfold"], 0)
         self.assertEqual(result["keep_separate"], 0)
 
@@ -179,7 +179,7 @@ class CuratorPlanHitlTests(unittest.TestCase):
 class DecideMergeTypesafePathTests(unittest.TestCase):
     def test_uncertain_with_previews_uses_typesafe_not_qwen(self) -> None:
         spark = SparkConfig()
-        curate = CurateConfig(typesafe_api_key="test-key", min_merge_confidence=0.80)
+        curate = CurateConfig(merge_judge="typesafe", typesafe_api_key="test-key", min_merge_confidence=0.80)
         ts_body = {
             "answers": {
                 "link_state": {"type": "score", "score": 1.88, "confidence": 0.9},
@@ -200,7 +200,7 @@ class DecideMergeTypesafePathTests(unittest.TestCase):
                     return_value='{"notes": "same pack, renamed"}',
                 ) as gemma,
                 patch(
-                    "spark_curate.decide_merge.typesafe_client.system_one",
+                    "spark_curate.typesafe_client.system_one",
                     return_value=ts_body,
                 ) as ts,
                 patch("spark_curate.decide_merge.clients.curator_json") as qwen,
@@ -211,11 +211,11 @@ class DecideMergeTypesafePathTests(unittest.TestCase):
             qwen.assert_not_called()
             self.assertEqual(d.decision, "merge")
             self.assertTrue(d.approved_for_apply)
-            self.assertEqual(d.typesafe_outcome, "merge")
+            self.assertEqual(d.judge_outcome, "merge")
 
     def test_strong_with_previews_approves_only_when_jev_says_merge(self) -> None:
         spark = SparkConfig()
-        curate = CurateConfig(typesafe_api_key="test-key", min_merge_confidence=0.80)
+        curate = CurateConfig(merge_judge="typesafe", typesafe_api_key="test-key", min_merge_confidence=0.80)
         ts_body = {
             "answers": {
                 "link_state": {"type": "score", "score": 1.9, "confidence": 0.88},
@@ -236,7 +236,7 @@ class DecideMergeTypesafePathTests(unittest.TestCase):
                     return_value="both previews show the same bust",
                 ) as gemma,
                 patch(
-                    "spark_curate.decide_merge.typesafe_client.system_one",
+                    "spark_curate.typesafe_client.system_one",
                     return_value=ts_body,
                 ) as ts,
             ):
@@ -251,7 +251,7 @@ class DecideMergeTypesafePathTests(unittest.TestCase):
 
     def test_strong_without_previews_is_not_approved_even_if_jev_says_merge(self) -> None:
         spark = SparkConfig()
-        curate = CurateConfig(typesafe_api_key="test-key")
+        curate = CurateConfig(merge_judge="typesafe", typesafe_api_key="test-key")
         ts_body = {
             "answers": {
                 "link_state": {"type": "score", "score": 1.9, "confidence": 0.9},
@@ -266,7 +266,7 @@ class DecideMergeTypesafePathTests(unittest.TestCase):
                 patch("spark_curate.decide_merge._preview_jpeg", return_value=None),
                 patch("spark_curate.decide_merge.clients.gemma_vision") as gemma,
                 patch(
-                    "spark_curate.decide_merge.typesafe_client.system_one",
+                    "spark_curate.typesafe_client.system_one",
                     return_value=ts_body,
                 ),
             ):
@@ -289,14 +289,14 @@ class TypesafeFallbackTests(unittest.TestCase):
 
     def setUp(self) -> None:
         self.spark = SparkConfig()
-        self.curate = CurateConfig(typesafe_api_key="test-key", min_merge_confidence=0.80)
+        self.curate = CurateConfig(merge_judge="typesafe", typesafe_api_key="test-key", min_merge_confidence=0.80)
 
     def _decide(self, tmp: Path, signals: list[str], **patches: object):
         cand = _pair(tmp, signals)
         with (
             patch("spark_curate.decide_merge._preview_jpeg", return_value=b"\xff\xd8fakejpeg"),
             patch("spark_curate.decide_merge.clients.gemma_vision", **patches.get("gemma", {"return_value": "same pack"})) as gemma,
-            patch("spark_curate.decide_merge.typesafe_client.system_one", **patches.get("ts", {})) as ts,
+            patch("spark_curate.typesafe_client.system_one", **patches.get("ts", {})) as ts,
             patch("spark_curate.decide_merge.clients.curator_json", **patches.get("qwen", {})) as qwen,
         ):
             d = decide_merge_pair(cand, self.spark, self.curate, tmp / ".thumbs")
@@ -311,8 +311,8 @@ class TypesafeFallbackTests(unittest.TestCase):
         qwen.assert_not_called()
         self.assertEqual(d.decision, "merge")
         self.assertFalse(d.approved_for_apply)
-        self.assertTrue(d.error.startswith("typesafe failed: HttpError"))
-        self.assertIn("TypeSafe review failed", d.reason)
+        self.assertTrue(d.error.startswith("typesafe judge failed: HttpError"))
+        self.assertIn("judge review failed", d.reason)
 
     def test_typesafe_failure_on_uncertain_pair_falls_back_to_curator(self) -> None:
         qwen_json = '{"decision": "merge", "confidence": 0.92, "target": "b", "reason": "same pack"}'
@@ -328,7 +328,7 @@ class TypesafeFallbackTests(unittest.TestCase):
         self.assertEqual(d.decision, "merge")
         self.assertTrue(d.approved_for_apply)
         self.assertEqual(d.target, "b")
-        self.assertTrue(d.error.startswith("typesafe failed"))
+        self.assertTrue(d.error.startswith("typesafe judge failed"))
 
     def test_vision_failure_on_uncertain_pair_skips_typesafe(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -362,19 +362,19 @@ class SmokeTypesafeTests(unittest.TestCase):
         return code, out.getvalue()
 
     def test_passes_when_typesafe_answers(self) -> None:
-        code, out = self._smoke(CurateConfig(typesafe_api_key="k"), return_value={"answers": {}})
+        code, out = self._smoke(CurateConfig(merge_judge="typesafe", typesafe_api_key="k"), return_value={"answers": {}})
         self.assertEqual(code, 0)
-        self.assertIn("OK  typesafe systemone", out)
+        self.assertIn("OK  typesafe merge judge", out)
 
     def test_fails_when_typesafe_errors(self) -> None:
-        code, out = self._smoke(CurateConfig(typesafe_api_key="k"), side_effect=HttpError("HTTP 401"))
+        code, out = self._smoke(CurateConfig(merge_judge="typesafe", typesafe_api_key="k"), side_effect=HttpError("HTTP 401"))
         self.assertEqual(code, 1)
-        self.assertIn("FAIL typesafe systemone", out)
+        self.assertIn("FAIL typesafe merge judge", out)
 
     def test_skips_typesafe_without_key(self) -> None:
         code, out = self._smoke(CurateConfig())
         self.assertEqual(code, 0)
-        self.assertIn("SKIP typesafe", out)
+        self.assertIn("SKIP merge judge", out)
         self._ts.assert_not_called()
 
 

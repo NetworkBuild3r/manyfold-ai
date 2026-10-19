@@ -256,7 +256,7 @@ def build_parser() -> argparse.ArgumentParser:
 def smoke(spark: SparkConfig, curate: CurateConfig | None = None) -> int:
     import urllib.request
 
-    from spark_curate import typesafe_client
+    from spark_curate import merge_judge
 
     ok = 0
     checks = [
@@ -272,29 +272,20 @@ def smoke(spark: SparkConfig, curate: CurateConfig | None = None) -> int:
         except Exception as e:  # noqa: BLE001
             print(f"FAIL {name}: {e}")
     need = len(checks)
-    api_key = typesafe_client.api_key_from(curate)
-    if api_key:
+    judge = merge_judge.judge_for(curate) if curate is not None else None
+    if judge is not None:
         need += 1
         try:
-            typesafe_client.system_one(
-                api_key=api_key,
-                state="smoke",
-                questions={
-                    "ok": {
-                        "type": "noul",
-                        "instructions": "Is this a connectivity smoke check?",
-                    }
-                },
-                model=(curate.typesafe_model if curate else "jev-latest"),
-                base_url=(curate.typesafe_base_url if curate else typesafe_client.DEFAULT_BASE_URL),
-                timeout=30.0,
+            judge.answers(
+                "smoke",
+                {"ok": {"type": "noul", "instructions": "Is this a connectivity smoke check?"}},
             )
-            print("OK  typesafe systemone")
+            print(f"OK  {judge.name} merge judge")
             ok += 1
         except Exception as e:  # noqa: BLE001
-            print(f"FAIL typesafe systemone: {e}")
+            print(f"FAIL {judge.name} merge judge: {e}")
     else:
-        print("SKIP typesafe (TYPESAFE_API_KEY not set)")
+        print("SKIP merge judge (MERGE_JUDGE=local: nothing leaves the local network)")
     return 0 if ok == need else 1
 
 
@@ -464,6 +455,7 @@ def run_merge(args: argparse.Namespace, spark: SparkConfig, curate: CurateConfig
     print(f"Work dir: {work}")
     print(f"Mode:     merge {'APPLY(queue pending)' if args.apply else 'DRY-RUN'}")
     print(f"MERGE_HITL: {curate.merge_hitl}")
+    print(f"MERGE_JUDGE: {curate.merge_judge}" + ("" if curate.merge_judge == "local" else " (sends folder paths, file names and preview descriptions to that provider)"))
     print(f"Min merge conf: {curate.min_merge_confidence}")
     print(f"Max pairs: {curate.max_merge_pairs}")
     print(f"Workers:  {curate.workers}")
@@ -617,6 +609,7 @@ def main(argv: list[str] | None = None) -> int:
         curate.merge_hitl = args.merge_hitl
     # Fail loud on invalid MERGE_HITL before any library work (INIT-018/SPEC-006)
     curate.merge_hitl = curate.validated_merge_hitl()
+    curate.merge_judge = curate.validated_merge_judge()
     if args.skip_good:
         curate.skip_if_has_preview_and_known_category = True
 
